@@ -36,3 +36,28 @@ pre-commit run --all-files
 ## Documentazione
 
 Per architettura, stack, modelli dati, pipeline e roadmap, consulta la [guida di implementazione](doc/PROJECT.md).
+
+## Sviluppo guidato dalle specifiche (Spec Kit)
+
+Il repository integra [GitHub Spec Kit](https://speckit.org/) per definire e verificare le
+funzionalità prima dell'implementazione. Per installare la CLI in un ambiente isolato:
+
+```bash
+uv tool install specify-cli==1.3.2
+```
+
+In GitHub Copilot, esegui le skill nella chat, una alla volta:
+
+1. `/speckit-specify` — crea la specifica della funzionalità.
+2. `/speckit-clarify` — chiarisce i requisiti ambigui, se necessario.
+3. `/speckit-plan` — definisce l'approccio tecnico.
+4. `/speckit-checklist` — verifica la qualità dei requisiti, se utile.
+5. `/speckit-tasks` — genera i task ordinati.
+6. `/speckit-analyze` — controlla coerenza e lacune prima di implementare.
+7. `/speckit-implement` — realizza i task dopo aver revisionato gli artefatti.
+8. `/speckit-converge` — confronta il risultato con specifica, piano e task.
+
+La costituzione del progetto è in `.specify/memory/constitution.md`; template, script e
+skill Copilot sono in `.specify/` e `.github/skills/`. Gli artefatti delle singole
+funzionalità vengono creati in `specs/`. Spec Kit è uno strumento di sviluppo e non una
+dipendenza runtime di `ca-cli`.
