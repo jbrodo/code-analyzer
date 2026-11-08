@@ -1,4 +1,4 @@
-"""Motore della policy licenze (K-12, ADR-0013). IPOTESI D-0013.
+"""Motore della policy licenze (K-12, ADR-0013). Policy configurata per progetto.
 
 Puro: nessun elenco di licenze nel codice, `forbidden` e `require_approval` vengono solo dalla
 configurazione. Le voci sono identificatori SPDX esatti, senza equivalenze implicite

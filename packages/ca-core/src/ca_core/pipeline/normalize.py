@@ -1,6 +1,6 @@
 """Passo `normalize` (K-17, ADR-0002, ADR-0007, ADR-0008, ADR-0009, ADR-0012, ADR-0013, ADR-0014).
 
-IPOTESI D-0009-A e D-0013: il passo compone `level` provvisori e la policy licenze, ma non
+IPOTESI D-0009-A: il passo compone `level` provvisori e la policy licenze, ma non
 contiene né soglie né elenchi di licenze (vengono da `scoring.levels` e dalla configurazione).
 
 Dagli output dei plugin all'elenco ordinato dei finding. Ordine di composizione:

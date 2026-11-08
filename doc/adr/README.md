@@ -16,7 +16,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 | [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Proposto (report confermato; prova: K-13, L-02..L-05) | No |
 | [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Proposto (prova: K-14) | No |
 | [0012](0012-segreti-in-fase-1.md) | Rilevamento dei segreti in Fase 1 | Accettato | Presa il 2026-11-08 |
-| [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Proposto | Sì |
+| [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Accettato | Presa il 2026-11-08 |
 | [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Proposto (schema confermato; prova: K-08, K-09, L-02, R-02, K-16) | No |
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Proposto | Sì |
 

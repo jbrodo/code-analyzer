@@ -387,8 +387,8 @@ gate:
   block_on: [critico, alto]
   warn_on: [medio]
 licenses:
-  forbidden: [AGPL-3.0-only, SSPL-1.0]
-  require_approval: [GPL-3.0-only, LGPL-3.0-only]
+  forbidden: [AGPL-3.0-only, AGPL-3.0-or-later, SSPL-1.0]
+  require_approval: [GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later, LGPL-2.1-only, LGPL-2.1-or-later, LGPL-3.0-only, LGPL-3.0-or-later]
   distributed_product: true
 plugins:
   disable: []
@@ -718,7 +718,7 @@ Una funzionalità è completa quando:
 ## 18. Decisioni aperte
 
 - [ ] Catalogo servizi disponibile per C ed E? Formato e fonte.
-- [ ] Elenco licenze vietate o soggette ad approvazione.
+- [x] Elenco licenze vietate o soggette ad approvazione — D-0013, 2026-11-08. Gli identificatori sono esatti secondo SPDX; rivedere la policy con il referente legale prima della distribuzione.
 - [ ] Provider LLM ammessi dalle policy.
 - [ ] Hardware per Laya in self-hosted (GPU o solo CPU → valutare jevos).
 - [ ] Variante di scoring predefinita (esito del Gate 2).

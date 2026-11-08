@@ -1,13 +1,13 @@
 # ADR-0013: Valutazione della policy di licenze
 
-- Stato: Proposto
+- Stato: Accettato
 - Data: 2026-11-08
-- Decisione umana richiesta: sì (elenco licenze, §18; livelli)
+- Decisione umana richiesta: no (D-0013 decisa il 2026-11-08)
 - Riferimenti: §4.2, §6.1, §6.3, §7.3, §8, §13, §18
 
 ## Contesto
 
-§8 definisce `forbidden`, `require_approval` e `distributed_product`, ma non come si valutano. Sono aperti: confronto con espressioni SPDX, varianti `-or-later` (l'esempio vieta `AGPL-3.0-only`, e `AGPL-3.0-or-later` passerebbe), licenza dichiarata contro rilevata, licenze ignote, caso `forbidden` con `distributed_product: false`. L'elenco delle licenze è una decisione aperta di §18.
+§8 definisce `forbidden`, `require_approval` e `distributed_product`, ma non come si valutano. Restavano da definire il confronto con espressioni SPDX, le varianti `-or-later`, la valutazione delle licenze dichiarate e rilevate, le licenze ignote e il caso `forbidden` con `distributed_product: false`. D-0013 ha fissato gli elenchi, `distributed_product: true` e il livello alto per l'approvazione; questo ADR documenta anche le regole operative adottate.
 
 ## Opzioni
 
@@ -33,6 +33,30 @@ Opzione 2 per le espressioni, e `alto` per `require_approval`.
 - `licenses` assente: la policy non viene valutata e il report lo dichiara. Nessun elenco predefinito nel codice (§18).
 - L'approvazione passa per `exceptions` (ADR-0014).
 
+### Decisione D-0013 (2026-11-08)
+
+Per la policy prudenziale del prodotto:
+
+```yaml
+licenses:
+  forbidden:
+    - AGPL-3.0-only
+    - AGPL-3.0-or-later
+    - SSPL-1.0
+  require_approval:
+    - GPL-2.0-only
+    - GPL-2.0-or-later
+    - GPL-3.0-only
+    - GPL-3.0-or-later
+    - LGPL-2.1-only
+    - LGPL-2.1-or-later
+    - LGPL-3.0-only
+    - LGPL-3.0-or-later
+  distributed_product: true
+```
+
+Le voci sono identificatori SPDX esatti. Licenze non elencate, incluse MIT, Apache-2.0 e BSD, non richiedono approvazione in questa policy. È una regola operativa di triage, non un parere legale: il referente legale deve verificarla prima della distribuzione (D-0015).
+
 | Caso | Livello |
 | --- | --- |
 | `forbidden` e `distributed_product: true` | critico (override §6.3) |
@@ -44,5 +68,5 @@ Opzione 2 per le espressioni, e `alto` per `require_approval`.
 
 ## Conseguenze
 
-- Fino alla decisione su §18 le fixture usano una policy di test e nessun progetto reale ha valori predefiniti.
+- Le fixture usano una policy di test separata; gli elenchi approvati non sono predefiniti nel codice e vanno applicati nella configurazione del progetto.
 - La scelta `alto` per l'approvazione rende la policy vincolante e richiede un'eccezione per ogni dipendenza approvata; G = 0,6 in §6.1 è coerente con un tetto di 60, cioè Alto.

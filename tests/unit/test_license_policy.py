@@ -1,4 +1,4 @@
-"""K-12: motore della policy licenze (IPOTESI D-0013). Policy di test, nessun elenco reale."""
+"""K-12: motore della policy licenze. Policy di test, separata da quella del prodotto."""
 
 import pytest
 from builders import NOW, finding

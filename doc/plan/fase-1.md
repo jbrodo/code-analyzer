@@ -41,6 +41,8 @@ Prese dall'utente il 2026-11-08: D-CI (GitHub Actions), D-0004 (`hardened-contai
 
 D-0012: l'utente ha confermato il livello `alto` il 2026-11-08. Ha confermato anche la disattivazione di B105, B106 e B107.
 
+D-0013: decisa il 2026-11-08. Vietate `AGPL-3.0-only`, `AGPL-3.0-or-later` e `SSPL-1.0`; soggette ad approvazione `GPL-2.0-only`, `GPL-2.0-or-later`, `GPL-3.0-only`, `GPL-3.0-or-later`, `LGPL-2.1-only`, `LGPL-2.1-or-later`, `LGPL-3.0-only` e `LGPL-3.0-or-later`. `distributed_product: true`; l'approvazione è di livello `alto`. Verifica legale prima della distribuzione resta in D-0015.
+
 Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle che fermano lavoro sul percorso critico o sulle verifiche continue.
 
 | Decisione | Oggetto e raccomandazione | Proprietario | Task bloccati direttamente | Bloccati indirettamente | Gate 1 |
@@ -52,7 +54,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0009-A** | Livelli provvisori invece di anticipare la Variante A | Utente | A-02, A-03 | X-07 | Non blocca le tre condizioni; ne cambia il contenuto se respinta |
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
 | **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
-| **D-0013** | Elenchi `forbidden` e `require_approval` (§18); `alto` per l'approvazione | Utente | X-03 | Nessuno sul gate (X-07 lo richiede solo se la decisione è presa) | Non blocca |
+| **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
 | **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Persona designata dall'utente, non un agente | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
 
 Blocchi non legati a un ADR da confermare con l'utente, senza effetto sul percorso critico:
@@ -60,7 +62,7 @@ Blocchi non legati a un ADR da confermare con l'utente, senza effetto sul percor
 - `sbom --format spdx` è in §9.1 ma non in §13. ADR-0010 lo omette e il piano lo lascia fuori. Se deve rientrare, serve un task in più in `ca_core/sbom/` e in L-03.
 - `trufflehog` resta fuori (ADR-0012, ADR-0015): nessuna cartella `builtin/trufflehog/` in Fase 1, benché §3 la elenchi.
 
-### Cosa cambia se la raccomandazione viene respinta
+### Effetti se una raccomandazione non viene accolta o una decisione viene riaperta
 
 | Decisione | Alternativa | Effetto sul piano |
 | --- | --- | --- |
@@ -510,7 +512,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §13, §16 regola 3. ADR: 0009, 0012.
 
 #### K-12 — Motore della policy licenze
-- Agente: `backend`. Stato: `IPOTESI` (D-0013).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/policy/licenses.py`.
 - Dipende da: C-01, C-03, K-06.
 - Accettazione: semantica `AND`/`OR`, entrambe le fonti, licenze ignote `medio`, tabella dei casi di ADR-0013. Nessun elenco predefinito nel codice; `licenses` assente è segnalato nel report. Eventuale libreria di espressioni SPDX verificata per licenza e manutenzione.
@@ -545,7 +547,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §5, §7.2. ADR: 0002, 0007.
 
 #### K-17 — Passo `normalize`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, D-0013).
+- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-05, K-06, K-07, K-08, K-09, K-10, K-11, K-12.
 - Accettazione: composizione idempotente: dagli output dei plugin all'elenco ordinato, con esecuzione ripetuta identica.
@@ -778,7 +780,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1, §13. ADR: 0001, 0010.
 
 #### L-02 — `config validate`
-- Agente: `backend`. Stato: `IPOTESI` (D-0013).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: L-01, C-03, K-12.
 - Accettazione: controllo offline di schema, espressioni SPDX, date e percorsi, con avviso per la sola variante `-only`. Chiavi inerti segnalate. Exit 0 o 2.
@@ -854,10 +856,10 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.2. ADR: 0004.
 
 #### X-03 — Applicare l'elenco licenze approvato
-- Agente: `test`. Stato: `BLOCCATO` da D-0013.
+- Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `.code-analyzer.yml`.
 - Dipende da: F-06.
-- Accettazione: blocco `licenses` con i valori approvati e `config validate` verde. Stessa configurazione indicata per i pilota. §18 aggiornata da `architect`.
+- Accettazione: blocco `licenses` con i valori decisi in D-0013 e `config validate` verde. Stessa configurazione indicata per i pilota. §18 aggiornata da `architect`.
 - Spec: §8, §18. ADR: 0013.
 
 #### X-04 — Scansione dei repository pilota
