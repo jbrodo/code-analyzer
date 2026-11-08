@@ -1,6 +1,6 @@
 # ADR-0004: Esecuzione dei plugin e livelli di isolamento
 
-- Stato: Proposto
+- Stato: Accettato il 2026-11-08 dall'utente; rischio residuo da valutare con `security` (S-01)
 - Data: 2026-11-08
 - Decisione umana richiesta: sì (accettare un isolamento inferiore a gVisor in CI e in locale)
 - Riferimenti: §2, §7.1, §7.2, §15; lacuna 8

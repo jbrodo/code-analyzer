@@ -1,6 +1,6 @@
 # ADR-0006: Database delle vulnerabilità in Fase 1
 
-- Stato: Proposto
+- Stato: Accettato il 2026-11-08 dall'utente
 - Data: 2026-11-08
 - Decisione umana richiesta: sì (flusso dei dati verso l'esterno)
 - Riferimenti: §7.1, §7.2, §13, §15, §16 regola 7
