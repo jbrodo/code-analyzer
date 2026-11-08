@@ -1,6 +1,6 @@
 # Verifica degli scanner per la Fase 1
 
-Esiti dei task V di `doc/plan/fase-1.md`. Stato: V-01..V-08 eseguiti il 2026-11-08 sulle versioni fissate, con una voce aperta in V-05; V-09 da eseguire.
+Esiti dei task V di `doc/plan/fase-1.md`. Stato: V-01..V-09 eseguiti il 2026-11-08 sulle versioni fissate; resta aperta la voce di V-05 sulla firma degli snapshot.
 
 ## V-01 — Versioni candidate
 
@@ -124,3 +124,83 @@ scancode 32.5.0 non si avvia con `pluggy` 1.7.0 (`did not find any 'pre_scan' ho
 Su `saleor/saleor` al commit `1d707dcf6127b098c187a181e5ee344017cdb064` (4.726 file analizzati, circa 1,06 milioni di righe), con `--license --copyright -n 4 --timeout 120`, nel profilo V-07, limite 4 CPU e 8 GB, macchina a 20 core.
 
 **249 secondi, il 41,5% del budget di 10 minuti, zero errori.** Sotto la soglia della metà, quindi nessuna contromisura per ora; X-04 misurerà l'insieme dei plugin.
+
+## V-09 — Consolidamento
+
+Esiti ricavati dal testo di V-01..V-08 e dai campioni in `tests/fixtures/plugin-output/`. Nessuna nuova esecuzione degli scanner. I presupposti impliciti sono indicati come tali.
+
+### Esiti
+
+| ADR | Affermazione | Esito | Fonte e nota |
+| --- | --- | --- | --- |
+| 0004 | Il profilo `hardened-container` elencato basta a eseguire gli scanner | `smentito` | V-07: trivy, semgrep e scancode non partono senza tmpfs e `HOME` |
+| 0004 | Presupposto: un plugin non root scrive in `/out` senza permessi dedicati | `smentito` | V-07: 755 di altro UID non è scrivibile, 777 sì |
+| 0004 | L'host legge i file che il plugin scrive in `/out` | `confermato` | V-07: file `nobody`, 644 |
+| 0004 | Il limite di PID è sufficiente per scancode | `confermato` | V-07: 256 con `-n 2` e `-n 4` |
+| 0004 | Il profilo vale anche con Podman e gVisor | `non verificabile` | Runtime assenti sulla macchina (R-02, R-05) |
+| 0005 | Firma con chiave e verifica senza log di trasparenza funzionano | `confermato` | V-06, cosign 3.1.4 |
+| 0005 | Firma assente o errata è rilevata prima dell'esecuzione | `confermato` | V-06: exit 10 e 1 |
+| 0005 | Si può verificare senza rete (Contesto) | `smentito` | V-06: serve il registry; senza, exit 1 |
+| 0005 | `--use-signing-config=false` è indispensabile | `non verificabile` | V-06 non l'ha provato (I-02) |
+| 0006 | trivy sincronizza database e regole senza workspace | `confermato` | V-05 |
+| 0006 | Lo scaricamento integrato di osv-scanner rispetta "senza workspace" | `smentito` | V-05: dipende dai file analizzati; serve il download diretto di `all.zip` |
+| 0006 | Entrambi gli scanner lavorano senza rete | `confermato` | V-05: osv-scanner solo con `--no-resolve` |
+| 0006 | trivy funziona con il database in sola lettura | `confermato` | V-05 |
+| 0006 | osv-scanner funziona con il database in sola lettura | `non verificabile` | V-05 lo afferma solo per trivy (P-03) |
+| 0006 | Gli snapshot hanno una firma propria | `non verificabile` | Voce aperta di V-05 |
+| 0006 | Presupposto: il database mancante si distingue dall'exit | `smentito` | V-05: exit 1 come per le vulnerabilità; va rilevato `could not load db` |
+| 0007 | scancode non produce SARIF | `confermato` | V-04 |
+| 0007 | osv-scanner in SARIF perde il CVSS | `confermato` | V-04: punteggio presente, vettore assente |
+| 0007 | osv-scanner in SARIF perde gli alias | `smentito` | V-04 e campione: `deprecatedIds` e testo di `message` |
+| 0007 | gitleaks espone il valore se non si oscura | `non verificabile` | V-04 ha usato solo `--redact` (P-07) |
+| 0007 | Gli scanner emettono una versione CycloneDX precedente alla 1.7 | `smentito` | V-03 e campioni: 1.7 |
+| 0007 | I SARIF sono 2.1.0 | `confermato` | V-04 e campioni: un solo `run` |
+| 0007 | Il formato nativo di trivy fornisce gli alias | `non verificabile` | Non campionato (P-04, T-08) |
+| 0009 | scancode è il plugin più lento | `non verificabile` | Misurato solo scancode (X-04) |
+| 0009 | scancode resta entro metà del budget sul pilota più grande | `confermato` | V-08: 249 s, 41,5% |
+| 0009 | Le severità per `sast` e `iac` sono disponibili | `confermato` | V-04: per semgrep è sulla regola |
+| 0009 | Il CVSS con versione è disponibile per le dipendenze | `confermato` | V-04: trivy v3 nel SARIF, osv-scanner solo nel JSON nativo |
+| 0012 | Il valore del segreto non lascia il container | `smentito` | V-04: bandit B105 in `message` e snippet; campione semgrep con snippet |
+| 0012 | Il controllo sul SARIF di gitleaks basta | `smentito` | V-04: va esteso a tutti i plugin; la CLI non conosce il valore |
+| 0012 | Presupposto: gitleaks legge la storia anche se il proprietario è diverso | `smentito` | V-07: exit 0 e zero risultati |
+| 0012 | Con `safe.directory` il segreto si trova | `confermato` | V-07 |
+| 0012 | Presupposto: il SARIF oscurato porta solo posizione e hash | `smentito` | Campione: `snippet: "REDACTED"`; `partialFingerprints` con autore, email e messaggio |
+| 0012 | La copertura ridotta su clone superficiale è segnalabile | `non verificabile` | Da provare in F-04 e P-07 |
+| 0015 | syft, osv-scanner, trivy, bandit: Apache-2.0 | `confermato` | V-02 |
+| 0015 | gitleaks: MIT | `confermato` | V-02 |
+| 0015 | scancode: Apache-2.0, dati CC-BY-4.0 | `confermato` | V-02: include componenti di terzi anche copyleft |
+| 0015 | Semgrep motore: LGPL-2.1 | `confermato` | V-02 |
+| 0015 | Le regole del registry hanno una licenza propria | `confermato` | V-02 |
+| 0015 | Quella licenza limita redistribuzione e SaaS | `non verificabile` | Testo non valutato (D-0015) |
+| 0015 | trufflehog: AGPL-3.0 | `confermato` | V-02 |
+
+Totale: 20 `confermato`, 11 `smentito`, 9 `non verificabile`.
+
+### ADR riaperti ed emendati
+
+Tutte le smentite sono già recepite negli ADR, quindi nessun task resta fermo per questo motivo.
+
+| ADR | Esito | Task del piano interessati |
+| --- | --- | --- |
+| 0012 | **Riaperto** e aggiornato: l'invariante si estende a tutti i plugin. Resta `Proposto` | F-02, K-10, P-07, P-08, P-09, P-10, T-06 |
+| 0004 | Emendato, resta `Accettato`: tmpfs, `HOME`, scrittura su `/out`. La scelta non è smentita | R-02, R-03, T-02, T-03, A-01 |
+| 0006 | Emendato, resta `Accettato`: download diretto, elenco fisso, esiti di osv-scanner. La scelta non è smentita | R-06, P-03, P-05 |
+| 0005 | Emendato, resta `Proposto`: comandi, accesso al registry, digest | R-04, I-02 |
+| 0007 | Emendato, resta `Proposto`: 1.7, JSON nativo, exit degli adattatori | K-03, P-02, P-04, P-06, P-08, P-10 |
+| 0009 | Nessuna modifica | X-04 misura l'insieme dei plugin |
+| 0015 | Nessuna modifica | I rilievi di licenza vanno in D-0015 |
+
+### Da portare alle decisioni dell'utente
+
+Nessuna decisione è stata presa qui.
+
+- **D-0005:** ogni scansione richiede l'accesso al registry per verificare la firma; l'uso air-gapped richiede un registry raggiungibile.
+- **D-0012:** il livello resta da decidere. Con la decisione si conferma anche la disattivazione di B105, B106 e B107, con il costo indicato in ADR-0012.
+- **D-0015:** scancode include componenti di terzi anche copyleft; il testo della licenza delle regole Semgrep non è stato valutato.
+
+### Voci ancora aperte
+
+- Firma degli snapshot (V-05).
+- osv-scanner con `/feeds` in sola lettura (P-03): se fallisse, torna all'utente perché tocca il montaggio di ADR-0006.
+- Differenza tra i conteggi di syft, osv-scanner e trivy su `bun.lock` (V-04): non indagata.
+- V-04 indica B105, B106 e B107 come "già coperte da gitleaks", ma la copertura non è stata misurata. Il testo di V-04 non cita gli snippet di semgrep, che risultano dal campione.

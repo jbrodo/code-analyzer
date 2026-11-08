@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "Cvss": {
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "vector": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Vector",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(?:2\\.0|3\\.0|3\\.1|4\\.0)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "vector",
+        "score"
+      ],
+      "title": "Cvss",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:plugin-sarif-properties:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "Chiavi note tipizzate; ogni altra chiave è ammessa e ignorata.\n\nUn `property bag` SARIF porta anche chiavi degli scanner (`security-severity`, `tags`):\nqui `extra=\"allow\"` è voluto, a differenza degli altri contratti.",
+  "properties": {
+    "aliases": {
+      "description": "Altri identificativi della stessa vulnerabilità (CVE, GHSA, ...).",
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "cvss": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Cvss"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "license_spdx": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Identificativo o espressione SPDX.",
+      "title": "License Spdx"
+    },
+    "purl": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "pattern": "^pkg:[a-z][a-z0-9.+-]*/\\S+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Purl"
+    },
+    "tool_severity": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Severità dichiarata dallo scanner, non normalizzata.",
+      "title": "Tool Severity"
+    }
+  },
+  "title": "PluginSarifProperties",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

@@ -1,0 +1,764 @@
+{
+  "$defs": {
+    "AppliedException": {
+      "additionalProperties": false,
+      "description": "Eccezione con fingerprint corrispondente e `expires` non superata (ADR-0014).",
+      "properties": {
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "expires": {
+          "format": "date",
+          "title": "Expires",
+          "type": "string"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fingerprint",
+        "reason",
+        "expires",
+        "approved_by"
+      ],
+      "title": "AppliedException",
+      "type": "object"
+    },
+    "Category": {
+      "enum": [
+        "quality",
+        "architecture",
+        "test",
+        "sast",
+        "dependency",
+        "license",
+        "secret",
+        "iac",
+        "health"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "FeedSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Origin",
+          "type": "string"
+        },
+        "sync_failed": {
+          "default": false,
+          "description": "Sincronizzazione fallita: usato lo snapshot precedente.",
+          "title": "Sync Failed",
+          "type": "boolean"
+        },
+        "synced_at": {
+          "format": "date-time",
+          "title": "Synced At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "synced_at"
+      ],
+      "title": "FeedSnapshot",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/Category"
+        },
+        "cve": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Cve",
+          "type": "array"
+        },
+        "cwe": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Cwe",
+          "type": "array"
+        },
+        "due_date": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Due Date"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "first_seen": {
+          "format": "date-time",
+          "title": "First Seen",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "impact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ImpactFactors"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "last_seen": {
+          "format": "date-time",
+          "title": "Last Seen",
+          "type": "string"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Level"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "level_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LevelSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "license_spdx": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Spdx"
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owner"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "default": "aperto"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "tools": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "fingerprint",
+        "category",
+        "rule_id",
+        "tool",
+        "tools",
+        "title",
+        "message",
+        "location",
+        "first_seen",
+        "last_seen"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Gate": {
+      "additionalProperties": false,
+      "description": "Configurazione di gate effettiva. IPOTESI D-0009-A: `effective_mode` va tolto con essa.\n\n`block_on` e `warn_on` sono quelli di `.code-analyzer.yml`, non risolti: il valore\npredefinito e la precedenza di `--fail-on` stanno nel gate (ADR-0009), mai nel report.",
+      "properties": {
+        "block_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block On"
+        },
+        "effective_mode": {
+          "$ref": "#/$defs/GateMode"
+        },
+        "mode": {
+          "$ref": "#/$defs/GateMode"
+        },
+        "warn_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Warn On"
+        }
+      },
+      "required": [
+        "mode",
+        "effective_mode"
+      ],
+      "title": "Gate",
+      "type": "object"
+    },
+    "GateMode": {
+      "description": "IPOTESI D-0009-A: in Fase 1 `new-findings-only` è valutato come `all`. Togliere con essa.",
+      "enum": [
+        "all",
+        "new-findings-only"
+      ],
+      "title": "GateMode",
+      "type": "string"
+    },
+    "HistoryCoverage": {
+      "enum": [
+        "full",
+        "shallow",
+        "absent"
+      ],
+      "title": "HistoryCoverage",
+      "type": "string"
+    },
+    "ImpactFactors": {
+      "additionalProperties": false,
+      "properties": {
+        "c": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "C",
+          "type": "number"
+        },
+        "e": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "E",
+          "type": "number"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "g": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "G",
+          "type": "number"
+        },
+        "p": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "P",
+          "type": "number"
+        },
+        "variant": {
+          "pattern": "^[AB]$",
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "g",
+        "p",
+        "e",
+        "c",
+        "variant"
+      ],
+      "title": "ImpactFactors",
+      "type": "object"
+    },
+    "InertSection": {
+      "description": "Sezioni di `.code-analyzer.yml` validate ma senza effetto in Fase 1 (ADR-0014).",
+      "enum": [
+        "service",
+        "scoring",
+        "agents"
+      ],
+      "title": "InertSection",
+      "type": "string"
+    },
+    "Isolation": {
+      "enum": [
+        "gvisor",
+        "hardened-container"
+      ],
+      "title": "Isolation",
+      "type": "string"
+    },
+    "Level": {
+      "enum": [
+        "critico",
+        "alto",
+        "medio",
+        "basso"
+      ],
+      "title": "Level",
+      "type": "string"
+    },
+    "LevelSource": {
+      "description": "IPOTESI D-0009-A: origine del livello provvisorio. Togliere con il campo `level_source`.",
+      "enum": [
+        "tool_severity",
+        "policy",
+        "default"
+      ],
+      "title": "LevelSource",
+      "type": "string"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "dependency_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependency Path",
+          "type": "array"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "purl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purl"
+        },
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "Outcome": {
+      "enum": [
+        "ok",
+        "failed"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "PluginRun": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "description": "Secondi.",
+          "minimum": 0,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure"
+        },
+        "feed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FeedSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "isolation": {
+          "$ref": "#/$defs/Isolation"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9-]{0,62}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/Outcome"
+        },
+        "signature": {
+          "$ref": "#/$defs/Signature"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "digest",
+        "signature",
+        "isolation",
+        "duration_seconds",
+        "outcome"
+      ],
+      "title": "PluginRun",
+      "type": "object"
+    },
+    "ReportStatus": {
+      "enum": [
+        "complete",
+        "partial"
+      ],
+      "title": "ReportStatus",
+      "type": "string"
+    },
+    "Repository": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "history": {
+          "$ref": "#/$defs/HistoryCoverage"
+        },
+        "name": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "history"
+      ],
+      "title": "Repository",
+      "type": "object"
+    },
+    "Signature": {
+      "description": "Firma assente o non valida non genera un report (exit 2, ADR-0005): resta `skipped`.",
+      "enum": [
+        "verified",
+        "skipped"
+      ],
+      "title": "Signature",
+      "type": "string"
+    },
+    "Status": {
+      "enum": [
+        "aperto",
+        "in_corso",
+        "accettato",
+        "falso_positivo",
+        "risolto"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "Warning_": {
+      "additionalProperties": false,
+      "description": "Avviso del motore, ad es. `exception-expired`, `new-findings-only-as-all`.",
+      "properties": {
+        "code": {
+          "pattern": "^[a-z][a-z0-9-]{0,63}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Warning_",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:scan-report:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "disabled_plugins": {
+      "description": "Disattivati da `plugins.disable`.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Disabled Plugins",
+      "type": "array"
+    },
+    "duration_seconds": {
+      "description": "Secondi.",
+      "minimum": 0,
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "exceptions": {
+      "items": {
+        "$ref": "#/$defs/AppliedException"
+      },
+      "title": "Exceptions",
+      "type": "array"
+    },
+    "exclusions": {
+      "description": "Glob effettivi: predefiniti più `paths.exclude`.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "gate": {
+      "$ref": "#/$defs/Gate"
+    },
+    "inert_sections": {
+      "items": {
+        "$ref": "#/$defs/InertSection"
+      },
+      "title": "Inert Sections",
+      "type": "array"
+    },
+    "plugins": {
+      "items": {
+        "$ref": "#/$defs/PluginRun"
+      },
+      "title": "Plugins",
+      "type": "array"
+    },
+    "repository": {
+      "$ref": "#/$defs/Repository"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ReportStatus"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "warnings": {
+      "items": {
+        "$ref": "#/$defs/Warning_"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "version",
+    "status",
+    "started_at",
+    "duration_seconds",
+    "repository",
+    "gate",
+    "plugins",
+    "findings"
+  ],
+  "title": "ScanReport",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

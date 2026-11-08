@@ -3,7 +3,10 @@ name = "ca-core"
 version = "0.0.0"
 description = "Modello dati e normalizzazione di Code Analyzer"
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.14,<3"]
+dependencies = [
+    "jsonschema>=4.26,<5",
+    "pydantic>=2.14,<3",
+]
 
 [build-system]
 requires = ["uv_build>=0.13,<0.14"]

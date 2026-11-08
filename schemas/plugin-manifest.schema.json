@@ -1,0 +1,443 @@
+{
+  "$defs": {
+    "Capability": {
+      "enum": [
+        "detect",
+        "fix",
+        "enrich"
+      ],
+      "title": "Capability",
+      "type": "string"
+    },
+    "Category": {
+      "enum": [
+        "quality",
+        "architecture",
+        "test",
+        "sast",
+        "dependency",
+        "license",
+        "secret",
+        "iac",
+        "health"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "FeedEcosystem": {
+      "description": "Elenco fisso (ADR-0006): mai ricavato dal repository analizzato. Fase 1: npm e PyPI.",
+      "enum": [
+        "npm",
+        "PyPI"
+      ],
+      "title": "FeedEcosystem",
+      "type": "string"
+    },
+    "Feeds": {
+      "additionalProperties": false,
+      "description": "Sincronizzazione del database di vulnerabilità (ADR-0006), in un container a parte.",
+      "properties": {
+        "ecosystems": {
+          "description": "Elenco fisso, non dal repo.",
+          "items": {
+            "$ref": "#/$defs/FeedEcosystem"
+          },
+          "title": "Ecosystems",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "mount": {
+          "const": "/feeds",
+          "default": "/feeds",
+          "description": "Snapshot montato in sola lettura durante la scansione.",
+          "title": "Mount",
+          "type": "string"
+        },
+        "sync_command": {
+          "description": "Argv eseguito nella stessa immagine firmata, senza workspace e senza shell.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sync Command",
+          "type": "array"
+        },
+        "sync_timeout": {
+          "pattern": "^[1-9][0-9]*s$",
+          "title": "Sync Timeout",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sync_command",
+        "sync_timeout"
+      ],
+      "title": "Feeds",
+      "type": "object"
+    },
+    "InputMode": {
+      "enum": [
+        "none",
+        "optional"
+      ],
+      "title": "InputMode",
+      "type": "string"
+    },
+    "Inputs": {
+      "additionalProperties": false,
+      "properties": {
+        "config": {
+          "$ref": "#/$defs/InputMode",
+          "default": "none",
+          "description": "`optional`: un solo file JSON regolare in /inputs/config.json, prodotto dall'host dalla sola parte di configurazione pertinente al plugin; mai il file del repository (ADR-0014).",
+          "x-mount-path": "/inputs/config.json"
+        },
+        "sbom": {
+          "$ref": "#/$defs/InputMode",
+          "default": "none",
+          "description": "`optional`: l'SBOM CycloneDX 1.7 del prodotto è montato in /inputs/sbom.cdx.json se disponibile (secondo stadio, ADR-0007); assente altrimenti.",
+          "x-mount-path": "/inputs/sbom.cdx.json"
+        },
+        "workspace": {
+          "const": "readonly",
+          "description": "Montato in sola lettura in /workspace.",
+          "title": "Workspace",
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspace"
+      ],
+      "title": "Inputs",
+      "type": "object"
+    },
+    "Outputs": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "sarif": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "sarif"
+          ]
+        },
+        {
+          "properties": {
+            "cyclonedx": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "cyclonedx"
+          ]
+        }
+      ],
+      "else": {
+        "properties": {
+          "cyclonedx_version": {
+            "type": "null"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "cyclonedx": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cyclonedx"
+        ]
+      },
+      "properties": {
+        "cyclonedx": {
+          "anyOf": [
+            {
+              "pattern": "^/out/[A-Za-z0-9_][A-Za-z0-9._-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cyclonedx"
+        },
+        "cyclonedx_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Versione CycloneDX emessa, tra quelle ammesse (ADR-0007).",
+          "enum": [
+            "1.7",
+            null
+          ],
+          "title": "Cyclonedx Version"
+        },
+        "max_bytes": {
+          "description": "Limite obbligatorio per ogni file di output (ADR-0004): oltre, il plugin è fallito. Il valore si fissa misurando le fixture.",
+          "minimum": 1,
+          "title": "Max Bytes",
+          "type": "integer"
+        },
+        "sarif": {
+          "anyOf": [
+            {
+              "pattern": "^/out/[A-Za-z0-9_][A-Za-z0-9._-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sarif"
+        }
+      },
+      "required": [
+        "max_bytes"
+      ],
+      "then": {
+        "properties": {
+          "cyclonedx_version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cyclonedx_version"
+        ]
+      },
+      "title": "Outputs",
+      "type": "object"
+    },
+    "PackagedPluginManifest": {
+      "allOf": [
+        {
+          "$ref": "#"
+        }
+      ],
+      "description": "Manifest impacchettato: come il sorgente, con `@sha256:` obbligatorio.",
+      "properties": {
+        "image": {
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[0-9]+)?(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*:[A-Za-z0-9_][A-Za-z0-9._-]{0,127}@sha256:[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "image"
+      ]
+    },
+    "Resources": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "pattern": "^(?:[1-9][0-9]*(?:\\.[0-9]+)?|0\\.[0-9]*[1-9][0-9]*)$",
+          "title": "Cpu",
+          "type": "string"
+        },
+        "memory": {
+          "pattern": "^[1-9][0-9]*(?:Mi|Gi)$",
+          "title": "Memory",
+          "type": "string"
+        },
+        "pids": {
+          "description": "Limite di PID del container (ADR-0004).",
+          "minimum": 1,
+          "title": "Pids",
+          "type": "integer"
+        },
+        "timeout": {
+          "pattern": "^[1-9][0-9]*s$",
+          "title": "Timeout",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cpu",
+        "memory",
+        "timeout",
+        "pids"
+      ],
+      "title": "Resources",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:plugin-manifest:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Manifest sorgente. `network` è solo `none` in Fase 1: `feeds-only` arriva con i mirror.",
+  "examples": [
+    {
+      "apiVersion": "code-analyzer/v1",
+      "capabilities": [
+        "detect"
+      ],
+      "categories": [
+        "sast"
+      ],
+      "image": "registry.invalid/ca-plugins/semgrep:1.0.0",
+      "inputs": {
+        "workspace": "readonly"
+      },
+      "languages": [
+        "python",
+        "javascript"
+      ],
+      "name": "semgrep",
+      "network": "none",
+      "outputs": {
+        "max_bytes": 52428800,
+        "sarif": "/out/results.sarif"
+      },
+      "resources": {
+        "cpu": "2",
+        "memory": "2Gi",
+        "pids": 256,
+        "timeout": "600s"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "apiVersion": "code-analyzer/v1",
+      "capabilities": [
+        "detect"
+      ],
+      "categories": [
+        "dependency"
+      ],
+      "feeds": {
+        "ecosystems": [
+          "npm",
+          "PyPI"
+        ],
+        "mount": "/feeds",
+        "sync_command": [
+          "osv-sync"
+        ],
+        "sync_timeout": "900s"
+      },
+      "image": "registry.invalid/ca-plugins/osv-scanner:1.0.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "inputs": {
+        "config": "none",
+        "sbom": "optional",
+        "workspace": "readonly"
+      },
+      "languages": [],
+      "name": "osv-scanner",
+      "network": "none",
+      "outputs": {
+        "cyclonedx": "/out/sbom.cdx.json",
+        "cyclonedx_version": "1.7",
+        "max_bytes": 52428800,
+        "sarif": "/out/results.sarif"
+      },
+      "resources": {
+        "cpu": "2",
+        "memory": "2Gi",
+        "pids": 256,
+        "timeout": "600s"
+      },
+      "version": "1.0.0"
+    }
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "code-analyzer/v1",
+      "title": "Apiversion",
+      "type": "string"
+    },
+    "capabilities": {
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "minItems": 1,
+      "title": "Capabilities",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "categories": {
+      "items": {
+        "$ref": "#/$defs/Category"
+      },
+      "minItems": 1,
+      "title": "Categories",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "feeds": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Feeds"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "image": {
+      "description": "`registro/percorso:tag`, con `@sha256:` facoltativo nel manifest sorgente.",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[0-9]+)?(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*:[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(?:@sha256:[0-9a-f]{64})?$",
+      "title": "Image",
+      "type": "string"
+    },
+    "inputs": {
+      "$ref": "#/$defs/Inputs"
+    },
+    "languages": {
+      "description": "Vuoto: il plugin non dipende dal linguaggio.",
+      "items": {
+        "pattern": "^[a-z][a-z0-9+#-]*$",
+        "type": "string"
+      },
+      "title": "Languages",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "name": {
+      "pattern": "^[a-z][a-z0-9-]{0,62}$",
+      "title": "Name",
+      "type": "string"
+    },
+    "network": {
+      "const": "none",
+      "title": "Network",
+      "type": "string"
+    },
+    "outputs": {
+      "$ref": "#/$defs/Outputs"
+    },
+    "resources": {
+      "$ref": "#/$defs/Resources"
+    },
+    "version": {
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "apiVersion",
+    "name",
+    "version",
+    "image",
+    "capabilities",
+    "languages",
+    "categories",
+    "inputs",
+    "outputs",
+    "resources",
+    "network"
+  ],
+  "title": "PluginManifest",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

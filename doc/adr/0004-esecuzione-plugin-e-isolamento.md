@@ -46,3 +46,27 @@ Modalità di avvio della CLI:
 - In CI e in locale l'isolamento è inferiore a quello di §2: la difesa è il confinamento del container, senza kernel intermedio. Il rischio residuo è un exploit del parser di uno scanner su contenuto ostile; va valutato dall'agente `security`.
 - Le CI senza daemon (es. GitLab su Kubernetes senza DinD) restano non supportate finché non si aggiunge un adattatore; da trattare con il componente GitLab in Fase 2.
 - §2 e §7 andranno precisati per dire che gVisor è obbligatorio solo su server.
+
+## Emendamento dopo V-09
+
+Data: 2026-11-08. Aggiunge requisiti misurati in V-07. La scelta (opzione 3) e i livelli di isolamento non cambiano.
+
+- Il profilo `hardened-container` comprende anche `--tmpfs /tmp:rw,noexec,nosuid` e `HOME=/tmp`. Senza, trivy, semgrep e scancode non partono. Il root file system resta in sola lettura: `/tmp` è un'area scrivibile non eseguibile che sparisce con il container. `HOME` è un valore fisso del runner, quindi resta valida la regola che nessuna variabile dell'host arriva al plugin.
+- Scrittura su `/out`: il plugin gira come `65534:65534`, diverso dal proprietario. Con permessi 755 non scrive, con 777 scrive e l'host legge i file creati (`nobody`, 644).
+  - Per ogni esecuzione l'host crea una directory privata con permessi 0700 e al suo interno `/out` con permessi 0777. La directory esterna impedisce agli altri utenti locali di raggiungere la 0777.
+  - Il plugin scrive in `/out` soltanto file regolari al primo livello: una sottodirectory creata da 65534 non sarebbe eliminabile dall'host.
+  - La directory 0700 non è stata misurata in V-07: la prova R-02. `security` valuta il permesso 0777 in S-01.
+- Un limite di 256 PID basta a scancode con `-n 2` e `-n 4`.
+- Podman e gVisor non sono stati provati, perché assenti sulla macchina di sviluppo: R-02 e R-05 restano la prima verifica su quei runtime.
+
+## Emendamento dopo A-01
+
+Data: 2026-11-08. Esito della revisione di `plugin-manifest` e delle porte. La scelta (opzione 3) e i livelli non cambiano.
+
+- `resources.pids` obbligatorio: confermato, è il limite di PID richiesto qui sopra.
+- `outputs.max_bytes` ha un tetto di 268.435.456 byte (256 MiB) nello schema. Il file viene letto interamente in memoria e un valore errato non deve poter esaurire la macchina. Il tetto è provvisorio: il limite di ciascun plugin si fissa misurando con X-04.
+- `sarif` e `cyclonedx` devono avere percorsi diversi: stesso percorso significa un file interpretato in due formati.
+- La porta `SourceReader` serve anche a leggere `/out`, con radice `output_dir` e limite `outputs.max_bytes`. Il contratto è lo stesso: file regolari sotto una radice, senza seguire symlink, con limite di dimensione. La lettura avviene dopo l'uscita del container, quindi nessuno scrive in contemporanea.
+- Il `SourceReader` non segue alcun symlink, nemmeno quelli che restano dentro la radice. È più stretto del "symlink che escono" di ADR-0008: un symlink riportato da uno scanner fa fallire il plugin in modo visibile nel report. Va rivisto se i repository pilota lo incontrano.
+- `SourceTooLarge`, sottoclasse di `SourceError`, distingue il file oltre il limite da un percorso non valido. Il primo produce un finding senza contesto (ADR-0008), il secondo fa fallire il plugin: un solo file grande non deve rendere parziale la scansione.
+- Il livello di isolamento si conosce prima di avviare i container: la porta `PluginExecutor` espone il livello disponibile, così `--min-isolation` esce con 2 senza eseguire alcun plugin.

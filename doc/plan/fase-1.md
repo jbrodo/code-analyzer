@@ -39,6 +39,8 @@ Definition of Done in Fase 1 (§17), con gli adattamenti richiesti:
 
 Prese dall'utente il 2026-11-08: D-CI (GitHub Actions), D-0004 (`hardened-container` fuori dal server), D-0006 (sincronizzazione separata), D-0009-B (scansione completa < 10 minuti, PR incrementale al Gate 2). Pilota scelti: `fastapi/full-stack-fastapi-template`, `excalidraw/excalidraw`, `saleor/saleor`. Resta da confermare la regola di misura proposta più sotto per D-0009-B (macchina di riferimento e snapshot dei feed). Il parere di `security` su D-0004 resta previsto in S-01.
 
+D-0012: l'utente ha confermato il livello `alto` il 2026-11-08. Ha confermato anche la disattivazione di B105, B106 e B107.
+
 Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle che fermano lavoro sul percorso critico o sulle verifiche continue.
 
 | Decisione | Oggetto e raccomandazione | Proprietario | Task bloccati direttamente | Bloccati indirettamente | Gate 1 |
@@ -49,7 +51,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0006** (decisa) | Sincronizzazione separata del database vulnerabilità | Utente | R-06, P-03, P-05, F-05, L-07, T-08, O-03, A-02 | X-02, I-04, O-02, X-04, X-05, X-06, X-07, I-06 | Blocca G1.a, G1.b e la parte CVE di G1.c |
 | **D-0009-A** | Livelli provvisori invece di anticipare la Variante A | Utente | A-02, A-03 | X-07 | Non blocca le tre condizioni; ne cambia il contenuto se respinta |
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
-| **D-0012** | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
+| **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
 | **D-0013** | Elenchi `forbidden` e `require_approval` (§18); `alto` per l'approvazione | Utente | X-03 | Nessuno sul gate (X-07 lo richiede solo se la decisione è presa) | Non blocca |
 | **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Persona designata dall'utente, non un agente | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
 
@@ -202,7 +204,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Agente: `architect`. Stato: `LIBERO`.
 - Percorsi: `doc/adr/`.
 - Dipende da: V-09.
-- Accettazione: 0002, 0003, 0007, 0008, 0010, 0011, 0014 passano ad `Accettato` o tornano in discussione con motivo. La revisione chiude le lacune di dettaglio emerse in pianificazione: manifest sorgente e impacchettato (C-02), percorso di `inputs.sbom` e `inputs.config` (C-02), schema delle proprietà SARIF non previsto da ADR-0003 (C-05), controllo strutturale del SARIF gitleaks (K-10), tmpfs nel profilo `hardened-container` (V-07), cartella `tests/contract/` non prevista da §3.
+- Accettazione: 0002, 0003, 0007, 0008, 0010, 0011, 0014 passano ad `Accettato` o tornano in discussione con motivo. La revisione chiude le lacune di dettaglio emerse in pianificazione: manifest sorgente e impacchettato (C-02), percorso di `inputs.sbom` e `inputs.config` (C-02), schema delle proprietà SARIF non previsto da ADR-0003 (C-05), cartella `tests/contract/` non prevista da §3.
 - Spec: §16 regola 1. ADR: tutti i citati.
 
 #### A-02 — Applicare a `doc/PROJECT.md` le modifiche di §4.1, §7.1, §7.2, §8
@@ -213,7 +215,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Spec: §4.1, §7.1, §7.2, §8. ADR: 0004, 0005, 0006, 0007, 0008, 0009, 0014.
 
 #### A-03 — Allineare le altre sezioni della specifica
-- Agente: `architect`. Stato: `BLOCCATO` da D-0009-A, D-0012.
+- Agente: `architect`. Stato: `BLOCCATO` da D-0009-A.
 - Percorsi: `doc/PROJECT.md`.
 - Dipende da: A-01.
 - Accettazione: §2 e §7 (gVisor obbligatorio solo su server), §3 (`pipeline/`, `ports.py`, feed fuori dal nucleo, `scan-report`, cartella di contratto, trufflehog), §5 (motore senza Temporal in Fase 1, requisito PR al Gate 2), §13 (significato del Gate 1), §14, §16 regola 5 (`pnpm` condizionato), §17 (telemetria e auto-analisi in Fase 1). §12.1 resta per la Fase 2.
@@ -285,7 +287,7 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/plugin-manifest.schema.json`.
 - Dipende da: M-05, V-09.
-- Accettazione: §7.1 più blocco opzionale `feeds`, versione CycloneDX emessa tra quelle ammesse, limite di byte obbligatorio. Definisce il percorso di montaggio di `inputs.sbom` e `inputs.config`, oggi non specificato. Stabilisce la distinzione tra manifest sorgente e impacchettato: `@sha256:` obbligatorio solo su quest'ultimo. Schema con esempi validi e non validi per ogni regola.
+- Accettazione: §7.1 più blocco opzionale `feeds`, versione CycloneDX emessa tra quelle ammesse, limite di byte obbligatorio. Definisce il percorso di montaggio di `inputs.sbom` e `inputs.config`, oggi non specificato. Stabilisce la distinzione tra manifest sorgente e impacchettato: `@sha256:` obbligatorio solo su quest'ultimo. Schema con esempi validi e non validi per ogni regola. Emendamenti dopo A-01: `sarif` e `cyclonedx` con percorsi diversi, tetto di `max_bytes`, `latest` vietato, `outputs.cyclonedx` incompatibile con `inputs.sbom: optional` (ADR-0004, 0005, 0007).
 - Spec: §7.1, §7.2. ADR: 0003, 0004, 0005, 0006, 0007.
 
 #### C-03 — Contratto `code-analyzer-config`
@@ -306,14 +308,14 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `schemas/plugin-sarif-properties.schema.json`.
 - Dipende da: M-05, V-09.
-- Accettazione: schema autonomo per `aliases`, `cvss`, `tool_severity`, `license_spdx`, `purl`. Serve perché gli adattatori nelle immagini non importano `ca-core`. ADR-0003 non lo elenca: confermato da `architect` in A-01.
+- Accettazione: schema autonomo e chiuso (`extra="forbid"`) per `aliases`, `cvss`, `tool_severity`, `license_spdx`, `purl`, `category`, `secret_sha256`. Serve perché gli adattatori nelle immagini non importano `ca-core`. Confermato da `architect` in A-01 (emendamenti di ADR-0003 e ADR-0007).
 - Spec: §7.1. ADR: 0003, 0007.
 
 #### C-06 — Porte del nucleo
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/ports.py`.
 - Dipende da: C-01, C-02.
-- Accettazione: `Protocol` tipizzati per `PluginExecutor`, `SourceReader`, `ArtifactSink`, `Clock`, con ingressi e uscite serializzabili. Fake in memoria usati dai test di `ca-core`. `mypy` verde.
+- Accettazione: `Protocol` tipizzati per `PluginExecutor`, `SourceReader`, `ArtifactSink`, `Clock`, con ingressi e uscite serializzabili. Fake in memoria usati dai test di `ca-core`. `mypy` verde. Emendamenti dopo A-01: `SourceTooLarge`, livello di isolamento noto prima dell'esecuzione, ingressi non dichiarati rifiutati (ADR-0004, 0014).
 - Spec: §5. ADR: 0001, 0002.
 
 #### C-07 — Test di contratto sugli schemi
@@ -338,7 +340,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `tests/fixtures/repos/python-app/`.
 - Dipende da: F-01, V-01.
-- Accettazione: lockfile con CVE note, problemi SAST per bandit e per le regole Semgrep, `Dockerfile` o Terraform per trivy, file con licenza riconoscibile, dipendenza con licenza soggetta a policy. `expected-findings.yaml` valido. Nessun progetto vulnerabile viene installato.
+- Accettazione: lockfile con CVE note, problemi SAST per bandit e per le regole Semgrep, `Dockerfile` o Terraform per trivy, file con licenza riconoscibile, dipendenza con licenza soggetta a policy. `expected-findings.yaml` valido, senza attesi su B105, B106 e B107 (ADR-0012). Nessun progetto vulnerabile viene installato.
 - Spec: §13, §16 regola 4. ADR: 0007, 0013, 0015.
 
 #### F-03 — Fixture JS/TS
@@ -375,21 +377,21 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `tests/unit/core/test_fingerprint.py`.
 - Dipende da: C-01.
-- Accettazione: casi attesi per i sei `kind` di ADR-0008 e proprietà hypothesis: spostamento di righe, CRLF, duplicati e occorrenze, alias CVE/GHSA, stesso segreto in più commit. Scritti prima di K-04 e inizialmente in errore.
+- Accettazione: casi attesi per i sei `kind` di ADR-0008 e proprietà hypothesis: spostamento di righe, CRLF, duplicati e occorrenze, alias CVE/GHSA, stesso segreto in più commit. Scritti prima di K-04 e inizialmente in errore. Adattamenti e vettori in ADR-0008, "Precisazioni per K-04".
 - Spec: §4.2, §14. ADR: 0008.
 
 #### T-02 — Plugin finto
 - Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `tests/fixtures/plugins/fake/`.
 - Dipende da: I-01, C-02.
-- Accettazione: immagine locale con comportamenti selezionabili: successo, exit non zero, SARIF non valido, output oltre il limite, symlink in `/out`, tentativo di rete, tentativo di scrittura nel workspace, timeout.
+- Accettazione: immagine locale con comportamenti selezionabili: successo, exit non zero, SARIF non valido, output oltre il limite, scrittura in `/tmp` e in `/out` con il profilo completo, symlink in `/out`, tentativo di rete, tentativo di scrittura nel workspace, timeout.
 - Spec: §7.2, §16 regola 4. ADR: 0004.
 
 #### T-03 — Test del confine host–plugin
 - Agente: `test`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `tests/integration/runner/`.
 - Dipende da: T-02, R-02, R-03, R-04, R-05, R-07, R-08.
-- Accettazione: ogni comportamento di T-02 produce l'esito di ADR-0004 e ADR-0005. Symlink, `..`, URI assoluti e file oltre il limite sono rifiutati. Firma assente o errata non fa partire alcun container ed esce con 2. Nessuna variabile d'ambiente dell'host arriva al plugin.
+- Accettazione: ogni comportamento di T-02 produce l'esito di ADR-0004 e ADR-0005. Symlink, `..`, URI assoluti e file oltre il limite sono rifiutati. Firma assente o errata non fa partire alcun container ed esce con 2. Nessuna variabile d'ambiente dell'host arriva al plugin. Con registry non raggiungibile esce con 2. Workspace di altro proprietario leggibile e `/out` scrivibile con UID `65534`.
 - Spec: §7.2, §15. ADR: 0004, 0005, 0008.
 
 #### T-04 — Harness di contratto dei plugin
@@ -400,17 +402,17 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §7.2, §14, §16 regola 4. ADR: 0003, 0007.
 
 #### T-05 — E2E di rilevamento senza CVE
-- Agente: `test`. Stato: `IPOTESI` (D-0005, D-0012, D-0015).
+- Agente: `test`. Stato: `IPOTESI` (D-0005, D-0015).
 - Percorsi: `tests/e2e/test_detection.py`.
 - Dipende da: L-04, F-02, F-03, F-04, P-01, P-04, P-06, P-07, P-08, P-10.
 - Accettazione: per segreti, SAST Python e JS/TS, IaC, licenze: nessun atteso mancante sulle tre fixture. Parte di G1.c. Nessuna chiamata di rete.
 - Spec: §13, §14. ADR: 0007, 0012, 0015.
 
 #### T-06 — Sentinella del segreto
-- Agente: `test`. Stato: `IPOTESI` (D-0012).
+- Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `tests/e2e/test_secret_sentinel.py`.
-- Dipende da: L-04, P-07, F-04.
-- Accettazione: il valore sentinella è assente da report, SARIF, stdout e log.
+- Dipende da: L-04, P-07, P-08, P-10, F-04.
+- Accettazione: il valore sentinella è assente da report, SARIF, stdout e log, anche quando compare in un'assegnazione Python che attiverebbe B105 e sulla riga trovata da una regola Semgrep con metavariabile nel messaggio.
 - Spec: §15. ADR: 0011, 0012.
 
 #### T-07 — Matrice E2E di `scan` e `gate`
@@ -447,21 +449,21 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/sbom/`.
 - Dipende da: K-02.
-- Accettazione: l'output è sempre 1.7 e valido contro lo schema fissato, senza perdita dei campi usati (componenti, purl, licenze). Se V-03 conferma che gli scanner emettono già 1.7, il task si riduce alla validazione.
+- Accettazione: l'output è sempre 1.7 e valido contro lo schema fissato, senza perdita dei campi usati (componenti, purl, licenze). V-03 ha confermato che syft e trivy emettono già 1.7, quindi il task si riduce alla validazione.
 - Spec: §1. ADR: 0007.
 
 #### K-04 — Fingerprint `fp1`
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/fingerprint.py`.
 - Dipende da: T-01, C-06.
-- Accettazione: T-01 interamente verde. Formato e tabella di ADR-0008. Per i segreti usa l'hash già calcolato nel container.
+- Accettazione: T-01 interamente verde. Formato, firma e vettori di ADR-0008, "Precisazioni per K-04", comprese `context_hash`, `normalize_purl` e `assign_occurrences`. Per i segreti usa l'hash già calcolato nel container.
 - Spec: §4.2. ADR: 0008.
 
 #### K-05 — Normalizzazione SARIF in `Finding`
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/normalize.py`.
 - Dipende da: K-01, K-04, C-06.
-- Accettazione: mappa i sei `kind`, usa `Clock` per le date e gestisce la cartella non git. URI assoluti, `..` e symlink che escono fanno fallire il plugin.
+- Accettazione: mappa i sei `kind`, usa `Clock` per le date e gestisce la cartella non git. URI assoluti, `..` e symlink fanno fallire il plugin. Assegna `occurrence` per ogni SARIF con `assign_occurrences`; `vuln_ids` è l'unione di `ruleId` e `aliases`; file oltre il limite o `result` senza `region` producono un finding senza contesto (ADR-0008, "Precisazioni per K-04").
 - Spec: §4.1, §5. ADR: 0002, 0007, 0008.
 
 #### K-06 — Licenze dichiarate da SBOM
@@ -475,7 +477,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/dedup.py`.
 - Dipende da: C-01.
-- Accettazione: fonde per fingerprint nella scansione, conservando tutti i `tools`, l'evidenza per tool e `occurrences`. Proprietà hypothesis: idempotenza e indipendenza dall'ordine. SAST di scanner diversi non si fondono.
+- Accettazione: `deduplicate` fonde per fingerprint nella scansione, conservando tutti i `tools`, l'evidenza per tool e `occurrences`, con le regole di ADR-0008, "Precisazioni per K-04" §7. Proprietà hypothesis: idempotenza e indipendenza dall'ordine. SAST di scanner diversi non si fondono.
 - Spec: §4.2, §14. ADR: 0008.
 
 #### K-08 — Filtro `paths.exclude`
@@ -492,15 +494,15 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Accettazione: eccezione con fingerprint e `expires` non superata imposta `accettato`. Eccezione scaduta ignorata con avviso. Confronto di data con `Clock`, casi di confine inclusi.
 - Spec: §8. ADR: 0014.
 
-#### K-10 — Controllo del SARIF di gitleaks
-- Agente: `backend`. Stato: `IPOTESI` (D-0012).
+#### K-10 — Controllo strutturale dei SARIF dei plugin
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/sarif/`.
 - Dipende da: K-01, C-05.
-- Accettazione: la CLI non conosce il valore del segreto, quindi il controllo è strutturale: `snippet` assente e `message` conforme al modello oscurato. Un SARIF con `snippet` fa fallire il plugin.
+- Accettazione: la CLI non conosce il valore del segreto, quindi il controllo è strutturale. Per ogni plugin, la chiave `snippet` a qualunque profondità fa fallire il plugin. Per gitleaks, anche `message` conforme al modello oscurato e `partialFingerprints` privo di `email`, `author` e `commitMessage`. Test con i campioni di V-04 di bandit, semgrep e gitleaks, che contengono `snippet` e devono essere rifiutati.
 - Spec: §15. ADR: 0012.
 
 #### K-11 — Livelli provvisori e ordinamento
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, D-0012).
+- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/levels.py`.
 - Dipende da: C-01.
 - Accettazione: tabella di ADR-0009 in dati e non nella logica, intervalli CVSS semiaperti verificati ai confini, `level_source` valorizzato, `impact` e `score` nulli. Ordinamento deterministico per livello, categoria, fingerprint.
@@ -542,7 +544,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §5, §7.2. ADR: 0002, 0007.
 
 #### K-17 — Passo `normalize`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, D-0012, D-0013).
+- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, D-0013).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-05, K-06, K-07, K-08, K-09, K-10, K-11, K-12.
 - Accettazione: composizione idempotente: dagli output dei plugin all'elenco ordinato, con esecuzione ripetuta identica.
@@ -568,21 +570,21 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`.
 - Dipende da: C-06, R-01, T-02, V-09.
-- Accettazione: Docker e Podman, argomenti come lista senza shell, profilo `hardened-container` completo con quanto emerso da V-07, nessuna variabile dell'host al plugin. Senza runtime OCI: exit 2, nessun ripiego. Verificato su T-02.
+- Accettazione: Docker e Podman, argomenti come lista senza shell, profilo `hardened-container` completo di `--tmpfs /tmp:rw,noexec,nosuid` e `HOME=/tmp` (emendamento di ADR-0004), `/out` con permessi 0777 dentro una directory 0700 per esecuzione e scrivibile dal plugin come `65534:65534`, nessuna variabile dell'host al plugin. Senza runtime OCI: exit 2, nessun ripiego. Verificato su T-02.
 - Spec: §7.2. ADR: 0002, 0004.
 
 #### R-03 — Lettura sicura di `/out`
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`.
 - Dipende da: R-02.
-- Accettazione: cartella nuova per plugin e per esecuzione, sola lettura di file regolari con `O_NOFOLLOW`, limite di byte dal manifest. Valori provvisori da V-04; valori finali in X-02.
+- Accettazione: cartella nuova per plugin e per esecuzione, sola lettura di file regolari al primo livello con `O_NOFOLLOW`, limite di byte dal manifest, directory rimossa a fine esecuzione. Valori provvisori da V-04; valori finali in X-02.
 - Spec: §7.2. ADR: 0004.
 
 #### R-04 — Verifica della firma
 - Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`, `packages/ca-plugins/src/ca_plugins/keys/`.
 - Dipende da: R-01, V-09.
-- Accettazione: verifica con il comando fissato in V-06, poi esecuzione dello stesso digest, mai di un tag. Firma assente o errata: exit 2 e nessun container. `CA_INSECURE_ALLOW_UNSIGNED=1` letta solo dall'ambiente e registrata come `signature: skipped`.
+- Accettazione: verifica con il comando fissato in V-06, poi esecuzione dello stesso digest, mai di un tag. Firma assente o errata, o registry non raggiungibile: exit 2 e nessun container. `CA_INSECURE_ALLOW_UNSIGNED=1` letta solo dall'ambiente e registrata come `signature: skipped`.
 - Spec: §7.2. ADR: 0005.
 
 #### R-05 — Livelli di isolamento
@@ -596,7 +598,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/feeds.py`.
 - Dipende da: R-02, R-04.
-- Accettazione: container con rete e senza workspace né dati derivati dal repository, snapshot in cache per utente, soglia di età, snapshot precedente con avviso, plugin fallito se nessuno snapshot. Un test verifica l'invariante "codice o rete, mai entrambi".
+- Accettazione: container con rete e senza workspace né dati derivati dal repository, scaricamento di osv-scanner dagli `all.zip` degli ecosistemi fissati nel manifest, mai con `--download-offline-databases` (emendamento di ADR-0006), snapshot in cache per utente, soglia di età, snapshot precedente con avviso, plugin fallito se nessuno snapshot. Un test verifica l'invariante "codice o rete, mai entrambi".
 - Spec: §7.2, §15. ADR: 0006.
 
 #### R-07 — Parallelismo, timeout, esiti
@@ -610,7 +612,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/source.py`.
 - Dipende da: C-06.
-- Accettazione: legge solo file regolari nel workspace. Symlink in uscita, `..` e percorsi assoluti rifiutati, con test.
+- Accettazione: legge solo file regolari sotto la radice, workspace o `/out`. Ogni symlink, `..` e percorsi assoluti rifiutati, con test. `SourceTooLarge` per il file oltre il limite (emendamento di ADR-0004).
 - Spec: §7.2. ADR: 0001, 0008.
 
 #### R-09 — Chiusura del runner
@@ -635,7 +637,7 @@ Nessuna pubblicazione senza approvazione esplicita dell'utente.
 - Agente: `devops`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `deploy/docker/`, `deploy/compose/`.
 - Dipende da: I-01.
-- Accettazione: Compose con registry locale, immagine costruita e firmata, verificabile con il comando di V-06. La chiave privata di test non è nel repository.
+- Accettazione: Compose con registry locale, immagine costruita e firmata con il digest letto dal registry dopo il push, verificabile con il comando di V-06. Accerta se `--use-signing-config=false` è indispensabile. La chiave privata di test non è nel repository.
 - Spec: §7.2, §13. ADR: 0005.
 
 #### I-03 — Immagine CLI
@@ -706,63 +708,63 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/osv_scanner/`.
 - Dipende da: P-01.
-- Accettazione: conversione verificata sui campioni di V-04: SARIF con alias, CVSS e purl, formato nativo se necessario. Lettura preferita dei lockfile. Non gestisce ancora il database.
+- Accettazione: conversione verificata sui campioni di V-04: SARIF con alias, CVSS e purl, con vettore CVSS e alias dal JSON nativo. Exit 1 con vulnerabilità trovate ed exit 128 senza pacchetti non sono fallimenti dell'adattatore. Lettura preferita dei lockfile. Non gestisce ancora il database. `uri` riscritti come relativi al workspace (emendamento di ADR-0007).
 - Spec: §7.3. ADR: 0007, 0008.
 
 #### P-03 — osv-scanner: database
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/osv_scanner/`.
 - Dipende da: P-02, R-06.
-- Accettazione: blocco `feeds` nel manifest, scansione con `network: none` sul database montato in `/feeds`, CVE di fixture rilevati.
+- Accettazione: blocco `feeds` nel manifest, scansione con `network: none`, `--offline-vulnerabilities` e `--no-resolve` sul database montato in `/feeds` in sola lettura, CVE di fixture rilevati. Se il log contiene `could not load db` il plugin è fallito, con test su un ecosistema mancante.
 - Spec: §7.2. ADR: 0006.
 
 #### P-04 — trivy: adattatore e IaC
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/trivy/`.
 - Dipende da: P-01.
-- Accettazione: solo workspace (dipendenze e configurazioni), nessuna scansione di immagini. Configurazione IaC rilevata senza rete. Conversione verificata sui campioni di V-04.
+- Accettazione: solo workspace (dipendenze e configurazioni), nessuna scansione di immagini. Configurazione IaC rilevata senza rete. Conversione verificata sui campioni di V-04. Accerta se il JSON nativo fornisce gli alias. `purl` e `category` per ogni risultato, `--scanners vuln,misconfig`, `uri` senza `uriBaseId` (emendamento di ADR-0007).
 - Spec: §7.3. ADR: 0007.
 
 #### P-05 — trivy: database
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/trivy/`.
 - Dipende da: P-04, R-06.
-- Accettazione: come P-03 per trivy.
+- Accettazione: come P-03 per trivy, con i comandi di V-05.
 - Spec: §7.2. ADR: 0006.
 
 #### P-06 — scancode
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/scancode/`.
 - Dipende da: P-01.
-- Accettazione: output nativo convertito in SARIF con `license_spdx`, un risultato per file con licenza rilevata. Durata registrata sulle fixture e confrontata con V-08.
+- Accettazione: output nativo convertito in SARIF con `license_spdx`, un risultato per file con licenza rilevata. L'immagine fissa con un lock `pluggy` < 1.7. Durata registrata sulle fixture e confrontata con V-08.
 - Spec: §7.3, §13. ADR: 0007, 0013, 0015.
 
 #### P-07 — gitleaks
-- Agente: `backend`. Stato: `IPOTESI` (D-0012, D-0015).
+- Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/gitleaks/`.
 - Dipende da: P-01, F-04.
-- Accettazione: output grezzo su percorso interno, in `/out` solo SARIF oscurato con l'hash. Storia completa, copertura ridotta segnalata per clone superficiale. `evidence.validity = "unverified"`. Test di contratto su output oscurato.
+- Accettazione: output grezzo su percorso interno, in `/out` solo SARIF oscurato con l'hash in `properties.secret_sha256`. Storia completa, copertura ridotta segnalata per clone superficiale. `evidence.validity = "unverified"`. Esecuzione senza `--redact` su percorso nel tmpfs interno; niente `snippet`, `email`, `author`, `commitMessage` in `/out`. `safe.directory` impostata su `/workspace`; `dubious ownership` nel log fa fallire il plugin. Test dedicato su workspace di altro proprietario: segreto trovato con l'impostazione, plugin fallito senza. Test di contratto su output oscurato.
 - Spec: §7.3, §15. ADR: 0007, 0008, 0012.
 
 #### P-08 — bandit
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/bandit/`.
 - Dipende da: P-01.
-- Accettazione: SARIF con `tool_severity`, problemi Python di F-02 rilevati.
+- Accettazione: immagine con `bandit[sarif]`, esecuzione con `--skip B105,B106,B107`, nessun `snippet` in `/out`. SARIF con `tool_severity`, `uri` relativi al workspace, problemi Python di F-02 rilevati.
 - Spec: §7.3. ADR: 0007, 0009.
 
 #### P-09 — Primo set di regole Semgrep
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/semgrep/rules/`.
 - Dipende da: F-02, F-03, V-02.
-- Accettazione: regole proprie per le classi di problemi di F-02 e F-03, necessarie perché con `network: none` non si accede al registry e per JS/TS non esiste altro SAST. Nessuna regola copiata dal registry. Ogni regola ha un caso positivo e uno negativo.
+- Accettazione: regole proprie per le classi di problemi di F-02 e F-03, necessarie perché con `network: none` non si accede al registry e per JS/TS non esiste altro SAST. Nessuna regola copiata dal registry. Nessuna metavariabile interpolata in `message`. Ogni regola ha un caso positivo e uno negativo.
 - Spec: §7.3, §13. ADR: 0015.
 
 #### P-10 — semgrep
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/semgrep/`.
 - Dipende da: P-01, P-09.
-- Accettazione: mai `--config auto` né registry. Regole incluse più `plugins.semgrep.rules` controllate per contenimento nel workspace. SARIF con `tool_severity`, tutti i SAST Semgrep di F-02 e F-03 rilevati.
+- Accettazione: mai `--config auto` né registry. Regole incluse più `plugins.semgrep.rules` controllate per contenimento nel workspace. SARIF con `tool_severity` ricavata da `defaultConfiguration.level`, nessun `snippet` in `/out`, `uri` relativi al workspace, `ruleId` uguale all'`id` del file YAML senza prefisso di percorso, tutti i SAST Semgrep di F-02 e F-03 rilevati.
 - Spec: §7.3, §8. ADR: 0007, 0014, 0015.
 
 ### L — CLI
@@ -803,7 +805,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1, §13. ADR: 0009, 0010.
 
 #### L-06 — Documentazione utente
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, D-0012).
+- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
 - Percorsi: `doc/utente/`.
 - Dipende da: L-02, L-03, L-04, L-05.
 - Accettazione: comandi, exit code, `.code-analyzer.yml`, requisiti (runtime OCI, `cosign`). Limiti dichiarati: livelli provvisori che cambieranno in Fase 2, isolamento inferiore fuori dal server, report da trattare come riservati, `approved_by` non autenticato, copertura SAST limitata.
@@ -828,7 +830,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.2, §15. ADR: 0004, 0005.
 
 #### S-02 — Altri rischi residui
-- Agente: `security`. Stato: `IPOTESI` (D-0012).
+- Agente: `security`. Stato: `LIBERO`.
 - Percorsi: lettura di `packages/`; esito in `doc/verifiche/sicurezza-fase-1.md`.
 - Dipende da: L-04, K-10, T-06.
 - Accettazione: finding su hash di segreti a bassa entropia e riservatezza dei report, snapshot avvelenato, indebolimento di gate ed eccezioni modificando `.code-analyzer.yml` nel branch, input ostile a SARIF e CycloneDX.

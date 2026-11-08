@@ -6,7 +6,15 @@ requires-python = ">=3.12"
 dependencies = ["ca-core", "ca-plugins", "ca-cli"]
 
 [dependency-groups]
-dev = ["import-linter>=2.16", "mypy>=2.4", "pytest>=8", "pytest-cov>=7.1", "ruff>=0.17"]
+dev = [
+    "hypothesis>=6.170.15",
+    "import-linter>=2.16",
+    "mypy>=2.4",
+    "pytest>=8",
+    "pytest-cov>=7.1",
+    "ruff>=0.17",
+    "types-jsonschema>=4.26.0.20261006",
+]
 
 [tool.uv]
 package = false

@@ -33,3 +33,20 @@ Opzione 3.
 - `cosign` a versione fissata è un prerequisito: incluso nell'immagine CLI, da installare per l'uso sull'host.
 - La rotazione della chiave richiede una nuova release della CLI; accettabile in Fase 1, da rivedere con il registry firmato di Fase 4.
 - Decisioni da prendere prima del primo rilascio: host del registry, spazio dei nomi, custodia della chiave. Fino ad allora la CI può usare il registry del repository con una chiave di test.
+
+## Emendamento dopo V-09
+
+Data: 2026-11-08. Fissa i comandi provati in V-06 con cosign 3.1.4. L'opzione raccomandata non cambia; registry e custodia della chiave restano in D-0005.
+
+- Firma: `cosign sign --yes --key k.key --tlog-upload=false --use-signing-config=false <immagine@digest>`.
+- Verifica: `cosign verify --key k.pub --insecure-ignore-tlog=true <immagine@digest>`.
+- `--allow-http-registry` serve solo al registry locale in HTTP dei test e non compare nei comandi di rilascio.
+- Non è stato provato se `--use-signing-config=false` sia indispensabile: I-02 lo accerta prima di fissare il comando di rilascio.
+- La verifica **richiede accesso al registry**: con registry non raggiungibile esce con 1. "Senza log di trasparenza" non significa "senza rete". Le firme non sono nell'immagine locale, quindi anche i test su immagini costruite in locale passano da un registry locale (I-02).
+- Ogni esito diverso da 0 (1 per chiave errata o registry non raggiungibile, 10 per immagine non firmata) porta a exit 2: non serve distinguerli.
+- Il digest si legge dal registry dopo il push. Quello di `RepoDigests` di un'immagine ritaggata ha fatto fallire la firma.
+- `--offline` (ADR-0006, ADR-0010) impedisce la sincronizzazione dei feed, non l'accesso al registry. Un uso air-gapped richiede un registry raggiungibile dalla macchina di scansione: è un dato in più per D-0005.
+
+## Emendamento dopo A-01
+
+Data: 2026-11-08. Il tag `latest` è vietato in `image`, nel manifest sorgente e in quello impacchettato: il digest fissa i byte, ma un tag mobile rende il manifest non tracciabile rispetto a `version`. La decisione su registry e chiave resta in D-0005.

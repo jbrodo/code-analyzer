@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://code-analyzer.invalid/tests/expected-findings.schema.json",
+  "title": "Attesi delle fixture (expected-findings.yaml, dopo il parsing)",
+  "description": "Elenco dei problemi noti di una fixture. Nessun fingerprint: gli attesi non dipendono dall'algoritmo di ADR-0008. Ogni voce indica regola o CVE, percorso, intervallo di righe e l'insieme dei tool che possono rilevarla: l'atteso e soddisfatto se almeno uno di essi la riporta.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "expected"],
+  "properties": {
+    "version": { "const": 1 },
+    "expected": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/expected_finding" }
+    }
+  },
+  "$defs": {
+    "expected_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "path", "tools"],
+      "anyOf": [{ "required": ["rule_id"] }, { "required": ["cve"] }],
+      "dependentRequired": { "end_line": ["start_line"] },
+      "properties": {
+        "category": {
+          "enum": [
+            "quality",
+            "architecture",
+            "test",
+            "sast",
+            "dependency",
+            "license",
+            "secret",
+            "iac",
+            "health"
+          ]
+        },
+        "rule_id": { "type": "string", "minLength": 1 },
+        "cve": { "type": "string", "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Percorso POSIX relativo alla radice della fixture.",
+          "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+        },
+        "start_line": { "type": "integer", "minimum": 1 },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Deve essere >= start_line; il confronto e fatto dal verificatore, JSON Schema non esprime la relazione."
+        },
+        "tools": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

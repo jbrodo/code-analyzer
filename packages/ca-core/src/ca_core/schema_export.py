@@ -4,12 +4,16 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
-from ca_core.models import CodeAnalyzerConfig, Finding
+from ca_core.models import CodeAnalyzerConfig, Finding, PluginManifest
+from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
+from ca_core.models.plugin_sarif import PluginSarifProperties
+from ca_core.models.scan_report import ScanReport
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SUFFIX = ".schema.json"
@@ -20,6 +24,9 @@ class Contract:
     name: str
     version: str  # "maggiore.minore": dentro una maggiore solo aggiunte compatibili
     model: type[BaseModel]
+    extra_defs: dict[str, Any] = field(
+        default_factory=dict
+    )  # definizioni non raggiunte dal modello
 
     @property
     def filename(self) -> str:
@@ -33,6 +40,8 @@ class Contract:
             "x-schema-version": self.version,
             **self.model.model_json_schema(),
         }
+        if self.extra_defs:
+            schema["$defs"] = {**schema.get("$defs", {}), **self.extra_defs}
         return json.dumps(schema, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
@@ -40,6 +49,9 @@ class Contract:
 CONTRACTS: tuple[Contract, ...] = (
     Contract("finding", "1.0", Finding),
     Contract("code-analyzer-config", "1.0", CodeAnalyzerConfig),
+    Contract("plugin-manifest", "1.0", PluginManifest, {PACKAGED_DEF_NAME: PACKAGED_DEF}),
+    Contract("plugin-sarif-properties", "1.0", PluginSarifProperties),
+    Contract("scan-report", "1.0", ScanReport),
 )
 
 

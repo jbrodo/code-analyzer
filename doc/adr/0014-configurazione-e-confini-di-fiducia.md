@@ -33,3 +33,12 @@ Il repository non può mai decidere: immagine, digest, verifica della firma, liv
 - In CI chi modifica il branch può indebolire gate ed eccezioni modificando il file: limite noto di Fase 1. Il report elenca sempre plugin disattivati, eccezioni ed esclusioni. Con `--fail-on` la CI fissa la soglia. In Fase 2 la modalità PR deve leggere la configurazione dal branch base.
 - `approved_by` è una dichiarazione finché non esiste un RBAC (lacuna 3, Fase 2).
 - §8 va integrato con `paths.exclude`; il monorepo avrà un proprio `.code-analyzer.yml` che esclude `tests/fixtures/` e `golden-set/`.
+
+## Emendamento dopo A-01
+
+Data: 2026-11-08. Esito della revisione di `inputs` nel manifest. La scelta non cambia.
+
+- `inputs.config` è un JSON generato dall'host con la sola parte pertinente al plugin, dopo la validazione: mai il file del repository, che contiene gate ed eccezioni non utili al plugin. Confermato.
+- Montaggi fissi `/inputs/sbom.cdx.json` e `/inputs/config.json`, in sola lettura e decisi dal contratto: confermati, il repository non può decidere i montaggi. `x-mount-path` nello schema è solo documentazione.
+- `inputs.*` ammette `none` o `optional`, e con `optional` il file può mancare: confermato. L'SBOM montato è una copia validata dall'host, mai il file in `/out` del plugin che l'ha prodotto.
+- Una richiesta di esecuzione con un ingresso che il manifest dichiara `none` è un errore, così un input non dichiarato non può arrivare al container.

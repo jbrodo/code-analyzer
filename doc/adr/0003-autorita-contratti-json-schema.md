@@ -33,3 +33,11 @@ Opzione 3, coerente con §2 (OpenAPI generata) e §4.1.
 - Una sola fonte per contratto e diff revisionabili.
 - Il rischio "contratto scritto dopo l'implementazione" si controlla con l'ordine dei task, non con lo strumento: il planner deve mettere modelli ed export per primi.
 - Modifiche proposte a §4.1 da ADR-0008 e ADR-0009 entrano nello schema `finding` fin dalla prima esportazione.
+
+## Emendamento dopo A-01
+
+Data: 2026-11-08. Esito della revisione dei contratti dei plugin. La scelta (opzione 3) non cambia.
+
+- `plugin-sarif-properties` è uno schema di Fase 1: serve perché gli adattatori nelle immagini non importano `ca-core` (C-05).
+- `extra="forbid"` vale anche per `PluginSarifProperties`, senza eccezioni (ADR-0007).
+- Un'invariante che JSON Schema non può esprimere, come due percorsi di `outputs` diversi tra loro, vive nel validatore del modello ed è descritta nella `description` dello schema. Si copre con un test sul modello: è l'unico caso in cui il test di contratto non basta.
