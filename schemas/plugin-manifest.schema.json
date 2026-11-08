@@ -135,6 +135,7 @@
           ]
         }
       ],
+      "description": "File di output del plugin, in `/out`.\n\nVincolo non espresso dallo schema: `sarif` e `cyclonedx`, se entrambi presenti, devono\nessere percorsi diversi (altrimenti due uscite sovrascriverebbero lo stesso file).",
       "else": {
         "properties": {
           "cyclonedx_version": {
@@ -185,6 +186,7 @@
         },
         "max_bytes": {
           "description": "Limite obbligatorio per ogni file di output (ADR-0004): oltre, il plugin è fallito. Il valore si fissa misurando le fixture.",
+          "maximum": 268435456,
           "minimum": 1,
           "title": "Max Bytes",
           "type": "integer"
@@ -273,7 +275,7 @@
   "$id": "urn:code-analyzer:schema:plugin-manifest:v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Manifest sorgente. `network` è solo `none` in Fase 1: `feeds-only` arriva con i mirror.",
+  "description": "Manifest sorgente. `network` è solo `none` in Fase 1: `feeds-only` arriva con i mirror.\n\nRegole non esprimibili in `pattern`: `image` non usa il tag `latest` (vale lo schema\ncon `not`); `outputs.cyclonedx` non è ammesso con `inputs.sbom: optional`.",
   "examples": [
     {
       "apiVersion": "code-analyzer/v1",
@@ -327,7 +329,7 @@
       "image": "registry.invalid/ca-plugins/osv-scanner:1.0.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
       "inputs": {
         "config": "none",
-        "sbom": "optional",
+        "sbom": "none",
         "workspace": "readonly"
       },
       "languages": [],
@@ -348,6 +350,23 @@
       "version": "1.0.0"
     }
   ],
+  "if": {
+    "properties": {
+      "outputs": {
+        "properties": {
+          "cyclonedx": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cyclonedx"
+        ]
+      }
+    },
+    "required": [
+      "outputs"
+    ]
+  },
   "properties": {
     "apiVersion": {
       "const": "code-analyzer/v1",
@@ -384,7 +403,10 @@
       "default": null
     },
     "image": {
-      "description": "`registro/percorso:tag`, con `@sha256:` facoltativo nel manifest sorgente.",
+      "description": "`registro/percorso:tag`, con `@sha256:` facoltativo nel manifest sorgente. Il tag `latest` è vietato.",
+      "not": {
+        "pattern": ":latest(?:@|$)"
+      },
       "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[0-9]+)?(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)*:[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(?:@sha256:[0-9a-f]{64})?$",
       "title": "Image",
       "type": "string"
@@ -437,6 +459,17 @@
     "resources",
     "network"
   ],
+  "then": {
+    "properties": {
+      "inputs": {
+        "properties": {
+          "sbom": {
+            "const": "none"
+          }
+        }
+      }
+    }
+  },
   "title": "PluginManifest",
   "type": "object",
   "x-schema-version": "1.0"

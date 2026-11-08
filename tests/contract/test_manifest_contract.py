@@ -49,9 +49,25 @@ SOURCE_VALID = {
     "sarif-and-cyclonedx": mutated(MINIMAL, _with(outputs={**MINIMAL["outputs"], **CDX_ONLY})),
     "version-prerelease-build": mutated(MINIMAL, _with(version="1.2.3-rc.1+build.5")),
     "cpu-fractional": mutated(MINIMAL, _in("resources", cpu="0.5")),
+    "image-latest-as-repository-part": mutated(MINIMAL, _with(image="r/latest:1.0")),
+    "image-latest-prefix-tag": mutated(MINIMAL, _with(image="r/x:latest-1")),
+    "max-bytes-at-cap": mutated(MINIMAL, _in("outputs", max_bytes=268435456)),
     "memory-mi": mutated(MINIMAL, _in("resources", memory="512Mi")),
 }
 SOURCE_INVALID = {
+    "image-latest": mutated(MINIMAL, _with(image="r/x:latest")),
+    "image-latest-with-digest": mutated(MINIMAL, _with(image="r/x:latest" + DIGEST)),
+    "outputs-max-bytes-over-cap": mutated(MINIMAL, _in("outputs", max_bytes=268435457)),
+    "cyclonedx-with-optional-sbom-input": mutated(
+        MINIMAL, _with(outputs=CDX_ONLY, inputs={"workspace": "readonly", "sbom": "optional"})
+    ),
+    "sarif-and-cyclonedx-with-optional-sbom-input": mutated(
+        MINIMAL,
+        _with(
+            outputs={**MINIMAL["outputs"], **CDX_ONLY},
+            inputs={"workspace": "readonly", "sbom": "optional"},
+        ),
+    ),
     **{
         f"missing-{k}": mutated(MINIMAL, _drop(k))
         for k in (

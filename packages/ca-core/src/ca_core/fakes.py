@@ -12,14 +12,15 @@ from ca_core.ports import (
     PluginRunResult,
     RunOutcome,
     SourceError,
+    SourceTooLarge,
 )
 
 
 def _relative(name: str) -> PurePosixPath:
-    path = PurePosixPath(name)
-    if not name or path.is_absolute() or ".." in path.parts or "." in path.parts:
+    # I segmenti si controllano sulla stringa: `PurePosixPath` normalizza `a/./b` e `a//b`.
+    if not name or name.startswith("/") or any(s in ("", ".", "..") for s in name.split("/")):
         raise ValueError(f"percorso non relativo o fuori dall'area: {name!r}")
-    return path
+    return PurePosixPath(name)
 
 
 class FixedClock:
@@ -53,7 +54,7 @@ class InMemorySourceReader:
         if key not in files:
             raise SourceError(f"file inesistente o non regolare: {path!r}")
         if len(files[key]) > max_bytes:
-            raise SourceError(f"{path!r} supera {max_bytes} byte")
+            raise SourceTooLarge(f"{path!r} supera {max_bytes} byte")
         return files[key]
 
 
@@ -75,7 +76,9 @@ class FakePluginExecutor:
         self,
         results: dict[str, PluginRunResult | Callable[[PluginRunRequest], PluginRunResult]]
         | None = None,
+        isolation: Isolation = Isolation.HARDENED_CONTAINER,
     ) -> None:
+        self._isolation = isolation
         self.results = results or {}
         self.runs: list[PluginRunRequest] = []
         self.syncs: list[FeedsSyncRequest] = []
@@ -90,6 +93,9 @@ class FakePluginExecutor:
             output_dir=output_dir,
         )
 
+    def isolation(self) -> Isolation:
+        return self._isolation
+
     def run(self, request: PluginRunRequest) -> PluginRunResult:
         self.runs.append(request)
         entry = self.results.get(request.manifest.name)
@@ -97,9 +103,9 @@ class FakePluginExecutor:
             return PluginRunResult(
                 outcome=RunOutcome.FAILED,
                 exit_code=None,
-                isolation=Isolation.HARDENED_CONTAINER,
+                isolation=self._isolation,
                 duration_seconds=0,
-                output_dir="",
+                output_dir=None,
                 detail="nessuna risposta configurata nel fake",
             )
         return entry(request) if callable(entry) else entry

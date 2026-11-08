@@ -1,5 +1,20 @@
 {
   "$defs": {
+    "Category": {
+      "enum": [
+        "quality",
+        "architecture",
+        "test",
+        "sast",
+        "dependency",
+        "license",
+        "secret",
+        "iac",
+        "health"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
     "Cvss": {
       "additionalProperties": false,
       "properties": {
@@ -32,8 +47,7 @@
   },
   "$id": "urn:code-analyzer:schema:plugin-sarif-properties:v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": true,
-  "description": "Chiavi note tipizzate; ogni altra chiave è ammessa e ignorata.\n\nUn `property bag` SARIF porta anche chiavi degli scanner (`security-severity`, `tags`):\nqui `extra=\"allow\"` è voluto, a differenza degli altri contratti.",
+  "additionalProperties": false,
   "properties": {
     "aliases": {
       "description": "Altri identificativi della stessa vulnerabilità (CVE, GHSA, ...).",
@@ -45,6 +59,18 @@
       "title": "Aliases",
       "type": "array",
       "uniqueItems": true
+    },
+    "category": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Category"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Categoria del finding. Obbligatoria se il manifest del plugin dichiara più categorie (oggi trivy): lo schema non lo esprime, lo controlla la normalizzazione."
     },
     "cvss": {
       "anyOf": [
@@ -85,6 +111,20 @@
       ],
       "default": null,
       "title": "Purl"
+    },
+    "secret_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "SHA-256 del valore del segreto (ADR-0008), per il fingerprint. Non va propagato al report.",
+      "title": "Secret Sha256"
     },
     "tool_severity": {
       "anyOf": [

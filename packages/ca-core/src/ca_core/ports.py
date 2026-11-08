@@ -7,11 +7,12 @@ invocabile come activity senza modifiche. I percorsi sono stringhe, mai oggetti 
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import Protocol, Self, runtime_checkable
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ca_core.models.plugin_manifest import PackagedPluginManifest
+from ca_core.models.plugin_manifest import InputMode, PackagedPluginManifest
+from ca_core.models.scan_report import Isolation  # unico enum, condiviso con il report
 
 
 class _Frozen(BaseModel):
@@ -22,15 +23,15 @@ class SourceError(Exception):
     """Lettura rifiutata: percorso fuori dalla radice, non regolare o troppo grande."""
 
 
+class SourceTooLarge(SourceError):
+    """Il file supera il limite di lettura: il chiamante può proseguire senza contesto
+    (ADR-0008); le altre `SourceError` fanno fallire il plugin."""
+
+
 class RunOutcome(StrEnum):
     OK = "ok"  # container terminato con exit 0
     FAILED = "failed"  # exit diverso da zero, o container non avviato
     TIMEOUT = "timeout"
-
-
-class Isolation(StrEnum):
-    GVISOR = "gvisor"
-    HARDENED_CONTAINER = "hardened-container"
 
 
 class PluginRunRequest(_Frozen):
@@ -40,6 +41,17 @@ class PluginRunRequest(_Frozen):
     config: str | None = None  # file da montare come `inputs.config`
     feeds_snapshot: str | None = None  # directory dello snapshot, in sola lettura
 
+    @model_validator(mode="after")
+    def _inputs_match_manifest(self) -> Self:
+        inputs = self.manifest.inputs
+        if self.sbom is not None and inputs.sbom is InputMode.NONE:
+            raise ValueError("sbom fornito ma il manifest dichiara inputs.sbom: none")
+        if self.config is not None and inputs.config is InputMode.NONE:
+            raise ValueError("config fornita ma il manifest dichiara inputs.config: none")
+        if self.feeds_snapshot is not None and self.manifest.feeds is None:
+            raise ValueError("feeds_snapshot fornito ma il manifest non ha feeds")
+        return self
+
 
 class FeedsSyncRequest(_Frozen):
     """Sincronizzazione: stessa immagine, né workspace né dati derivati dal repository."""
@@ -47,13 +59,19 @@ class FeedsSyncRequest(_Frozen):
     manifest: PackagedPluginManifest
     snapshot_dir: str
 
+    @model_validator(mode="after")
+    def _manifest_has_feeds(self) -> Self:
+        if self.manifest.feeds is None:
+            raise ValueError("il manifest non ha feeds: niente da sincronizzare")
+        return self
+
 
 class PluginRunResult(_Frozen):
     outcome: RunOutcome
     exit_code: int | None  # None se il container non è partito
     isolation: Isolation
     duration_seconds: float = Field(ge=0)
-    output_dir: str  # directory /out dell'esecuzione, da leggere con `SourceReader`
+    output_dir: str | None  # /out dell'esecuzione, da leggere con `SourceReader`; None se assente
     detail: str | None = None  # messaggio breve per il finding `health`; mai output dello scanner
 
 
@@ -67,6 +85,10 @@ class ArtifactRef(_Frozen):
 class PluginExecutor(Protocol):
     """Esegue le immagini dei plugin. Il parallelismo è affare dell'adattatore (ADR-0002)."""
 
+    def isolation(self) -> Isolation:
+        """Livello di isolamento che questo esecutore applica (ADR-0004), noto prima di `run`."""
+        ...
+
     def run(self, request: PluginRunRequest) -> PluginRunResult: ...
 
     def sync_feeds(self, request: FeedsSyncRequest) -> PluginRunResult: ...
@@ -74,15 +96,18 @@ class PluginExecutor(Protocol):
 
 @runtime_checkable
 class SourceReader(Protocol):
-    """Lettura confinata: file regolari sotto `root`, senza seguire symlink, con limite."""
+    """Lettura confinata: file regolari sotto `root`, senza seguire symlink, con limite.
+
+    Serve sia il workspace sia l'output confinato dei plugin (`/out`): `root` è l'una o l'altra.
+    """
 
     def list_files(self, root: str) -> list[str]:
         """Percorsi relativi ordinati dei file regolari sotto `root`."""
         ...
 
     def read_file(self, root: str, path: str, max_bytes: int) -> bytes:
-        """Contenuto di `root/path`; `SourceError` se esce da `root`, non è regolare o supera
-        `max_bytes`."""
+        """Contenuto di `root/path`. `SourceTooLarge` se supera `max_bytes`; `SourceError` se
+        esce da `root` o non è regolare."""
         ...
 
 
@@ -112,4 +137,5 @@ __all__ = [
     "RunOutcome",
     "SourceError",
     "SourceReader",
+    "SourceTooLarge",
 ]

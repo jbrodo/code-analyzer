@@ -10,7 +10,15 @@ from datetime import date
 from enum import StrEnum
 from typing import Annotated, Literal, Self
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    model_validator,
+)
 
 from ca_core.models.finding import FINGERPRINT_PATTERN, Level
 
@@ -43,8 +51,8 @@ class _Strict(BaseModel):
 
 class Service(_Strict):  # inerte in Fase 1
     catalog_id: str | None = None
-    tier: int | None = Field(default=None, ge=1)
-    internet_facing: bool | None = None
+    tier: StrictInt | None = Field(default=None, ge=1)
+    internet_facing: StrictBool | None = None
 
 
 class Scoring(_Strict):  # inerte in Fase 1
@@ -65,7 +73,7 @@ class Gate(_Strict):
 class Licenses(_Strict):
     forbidden: list[str] = Field(default_factory=list)  # identificatori SPDX
     require_approval: list[str] = Field(default_factory=list)
-    distributed_product: bool | None = None
+    distributed_product: StrictBool | None = None
 
 
 class SemgrepOptions(_Strict):
@@ -85,8 +93,8 @@ class ConfigException(_Strict):
 
 
 class Agents(_Strict):  # inerte in Fase 1
-    enabled: bool | None = None
-    max_phase: int | None = Field(default=None, ge=1, le=8)
+    enabled: StrictBool | None = None
+    max_phase: StrictInt | None = Field(default=None, ge=1, le=8)
     llm_provider: str | None = None
 
 

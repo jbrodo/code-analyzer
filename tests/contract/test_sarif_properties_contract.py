@@ -17,7 +17,9 @@ VALID = {
     "license": {"license_spdx": "MIT OR Apache-2.0"},
     "purl": {"purl": "pkg:pypi/requests@2.0"},
     "purl-null": {"purl": None},
-    "scanner-keys-are-ignored": {"security-severity": "7.5", "tags": ["x"], "anything": {"a": 1}},
+    "category": {"category": "dependency"},
+    "category-null": {"category": None},
+    "secret-sha256": {"secret_sha256": "a" * 64},
     "all": {
         "aliases": ["a"],
         "cvss": {"version": "3.0", "vector": "v", "score": 1.5},
@@ -27,6 +29,15 @@ VALID = {
     },
 }
 INVALID = {
+    "scanner-key-security-severity": {"security-severity": "7.5"},
+    "scanner-key-tags": {"tags": ["x"]},
+    "unknown-key": {"anything": {"a": 1}},
+    "category-unknown": {"category": "other"},
+    "category-not-string": {"category": 1},
+    "secret-sha256-uppercase": {"secret_sha256": "A" * 64},
+    "secret-sha256-short": {"secret_sha256": "a" * 63},
+    "secret-sha256-long": {"secret_sha256": "a" * 65},
+    "secret-sha256-not-hex": {"secret_sha256": "g" * 64},
     "aliases-duplicates": {"aliases": ["a", "a"]},
     "aliases-empty-string": {"aliases": [""]},
     "aliases-too-long": {"aliases": ["a" * 257]},

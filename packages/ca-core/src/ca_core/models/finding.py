@@ -3,7 +3,15 @@
 from enum import StrEnum
 from typing import Any, Self
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictFloat,
+    StrictInt,
+    model_validator,
+)
 
 FINGERPRINT_PATTERN = r"^sha256:[0-9a-f]{64}$"
 
@@ -52,8 +60,8 @@ class Location(_Strict):
     repository: str
     commit: str | None = None  # ADR-0008: cartella non git
     path: str | None = None
-    start_line: int | None = Field(default=None, ge=1)
-    end_line: int | None = Field(default=None, ge=1)
+    start_line: StrictInt | None = Field(default=None, ge=1)
+    end_line: StrictInt | None = Field(default=None, ge=1)
     purl: str | None = None  # per le librerie
     dependency_path: list[str] = Field(default_factory=list)  # catena transitiva
 
@@ -69,10 +77,10 @@ class Location(_Strict):
 
 
 class ImpactFactors(_Strict):
-    g: float = Field(ge=0, le=1)  # gravità
-    p: float = Field(ge=0, le=1)  # probabilità
-    e: float = Field(ge=0, le=1)  # esposizione
-    c: float = Field(ge=0, le=1)  # criticità
+    g: StrictFloat = Field(ge=0, le=1)  # gravità
+    p: StrictFloat = Field(ge=0, le=1)  # probabilità
+    e: StrictFloat = Field(ge=0, le=1)  # esposizione
+    c: StrictFloat = Field(ge=0, le=1)  # criticità
     variant: str = Field(pattern=r"^[AB]$")
     evidence: dict[str, Any] = Field(default_factory=dict)  # cvss, epss, kev, pagerank…
 
@@ -93,7 +101,7 @@ class Finding(_Strict):
     # Raggruppata per tool; ulteriori percorsi e versioni in `evidence.occurrences`.
     evidence: dict[str, Any] = Field(default_factory=dict)
     impact: ImpactFactors | None = None  # null in Fase 1
-    score: float | None = Field(default=None, ge=0, le=100)  # null in Fase 1
+    score: StrictFloat | None = Field(default=None, ge=0, le=100)  # null in Fase 1
     level: Level | None = None
     level_source: LevelSource | None = None  # IPOTESI D-0009-A
     status: Status = Status.OPEN

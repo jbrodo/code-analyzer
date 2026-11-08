@@ -12,7 +12,15 @@ from datetime import date
 from enum import StrEnum
 from typing import Annotated, Literal, Self
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    model_validator,
+)
 
 from ca_core.models.config import GateMode
 from ca_core.models.finding import FINGERPRINT_PATTERN, Finding, Level
@@ -85,7 +93,7 @@ class Gate(_Strict):
 class FeedSnapshot(_Strict):
     origin: _TEXT  # etichetta dell'origine della sincronizzazione, non un URL da seguire
     synced_at: AwareDatetime
-    sync_failed: bool = Field(
+    sync_failed: StrictBool = Field(
         default=False, description="Sincronizzazione fallita: usato lo snapshot precedente."
     )
 
@@ -96,7 +104,7 @@ class PluginRun(_Strict):
     digest: str = Field(pattern=DIGEST_PATTERN)  # quello eseguito, mai un tag (ADR-0005)
     signature: Signature
     isolation: Isolation
-    duration_seconds: float = _DURATION
+    duration_seconds: StrictFloat = _DURATION
     outcome: Outcome
     failure: _TEXT | None = None  # solo codice e causa generica, senza contenuto dell'output
     feed: FeedSnapshot | None = None  # solo per i plugin con `feeds` nel manifest
@@ -129,7 +137,7 @@ class ScanReport(_Strict):
     version: Literal[1]
     status: ReportStatus
     started_at: AwareDatetime  # `first_seen` e `last_seen` dei finding (ADR-0008)
-    duration_seconds: float = _DURATION
+    duration_seconds: StrictFloat = _DURATION
     repository: Repository
     gate: Gate
     plugins: list[PluginRun]

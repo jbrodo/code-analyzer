@@ -1,0 +1,52 @@
+# O-01: verifica su ogni PR. Esegue i comandi di AGENTS.md (§16).
+# I comandi `pnpm --dir web` si aggiungono quando web/ esiste.
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      # Unica fase con rete: installa le dipendenze dal lock.
+      - name: Installa le dipendenze
+        run: uv sync --frozen
+
+      # Da qui nessuna rete serve: uv non risolve né scarica nulla (--offline).
+      - name: ruff check
+        run: uv run --frozen --offline ruff check .
+
+      - name: ruff format
+        run: uv run --frozen --offline ruff format --check .
+
+      - name: mypy
+        run: uv run --frozen --offline mypy packages
+
+      - name: pytest
+        run: uv run --frozen --offline pytest -q
+
+      - name: lint-imports
+        run: uv run --frozen --offline lint-imports
+
+      - name: schema_export --check
+        run: uv run --frozen --offline python -m ca_core.schema_export --check

@@ -32,7 +32,7 @@ VALID: dict[str, Any] = {
                 {
                     "ruleId": "r",
                     "message": {"text": "m"},
-                    "properties": {"aliases": ["CVE-2024-1"], "tool_severity": "HIGH", "x": 1},
+                    "properties": {"aliases": ["CVE-2024-1"], "tool_severity": "HIGH"},
                 }
             ],
         }
@@ -67,12 +67,39 @@ def test_null_runs_is_valid_sarif(store: SchemaStore) -> None:
     assert parse(store, {"version": "2.1.0", "runs": None}).results == ()
 
 
-@pytest.mark.parametrize("sample", sorted(SAMPLES.glob("*.sarif")), ids=lambda p: p.name)
-def test_real_samples_are_read(store: SchemaStore, sample: Path) -> None:
-    parsed = read_sarif_file(sample, store)
+SAMPLE_PARAMS = pytest.mark.parametrize(
+    "sample", sorted(SAMPLES.glob("*.sarif")), ids=lambda p: p.name
+)
+RAW_WITH_FOREIGN_PROPERTIES = {"bandit.sarif", "gitleaks.sarif"}  # chiavi dello scanner
+
+
+def adapted(sample: Path) -> bytes:
+    """I campioni sono output grezzi, prima dell'adattatore: l'adattatore scrive in
+    `properties` solo le chiavi di C-05, quindi qui si tolgono quelle dello scanner."""
+    document = json.loads(sample.read_bytes())
+    for run in document["runs"]:
+        for result in run.get("results", []):
+            result.pop("properties", None)
+    return json.dumps(document).encode()
+
+
+@SAMPLE_PARAMS
+def test_real_samples_are_read_after_the_adapter(store: SchemaStore, sample: Path) -> None:
+    parsed = parse_sarif(adapted(sample), store)
 
     expected = sum(len(run.get("results", [])) for run in parsed.document["runs"])
     assert len(parsed.results) == expected > 0
+
+
+@SAMPLE_PARAMS
+def test_raw_samples_fail_only_for_scanner_properties(store: SchemaStore, sample: Path) -> None:
+    """Il SARIF grezzo con chiavi dello scanner in `properties` è rifiutato (C-05 è chiuso)."""
+    if sample.name in RAW_WITH_FOREIGN_PROPERTIES:
+        with pytest.raises(SarifError) as info:
+            read_sarif_file(sample, store)
+        assert info.value.code is SarifErrorCode.PROPERTIES
+    else:
+        assert read_sarif_file(sample, store).results
 
 
 def test_valid_document_exposes_typed_properties(store: SchemaStore) -> None:
@@ -127,7 +154,7 @@ def test_limits(store: SchemaStore) -> None:
 
 def test_real_samples_fit_default_depth_with_margin(store: SchemaStore) -> None:
     for sample in SAMPLES.glob("*.sarif"):
-        assert parse_sarif(sample.read_bytes(), store, SarifLimits(max_depth=32))
+        assert parse_sarif(adapted(sample), store, SarifLimits(max_depth=32))
 
 
 def test_invalid_properties_fail_without_leaking_values(store: SchemaStore) -> None:

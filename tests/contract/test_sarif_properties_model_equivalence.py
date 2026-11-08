@@ -15,21 +15,9 @@ from ca_core.models.plugin_sarif import PluginSarifProperties
 
 VALIDATOR = make_validator("plugin-sarif-properties")
 
-# DISCREPANZA NOTA modello/schema (segnalata a `backend`/`architect`): in modalità lax Pydantic
-# coerce la stringa "9" in float, lo schema la rifiuta (`type: number`). Il modello è più permissivo
-# del contratto che vedono gli adattatori. `strict=True`: quando il modello sarà corretto
-# (es. `Cvss.score: StrictFloat`) l'xfail diventa XPASS e fa fallire il test, da rimuovere.
-KNOWN_MODEL_GAPS = {
-    "cvss-score-string": "il modello coerce str->float, lo schema no",
-}
-_XFAIL = {
-    k: pytest.mark.xfail(strict=True, reason=r, raises=AssertionError)
-    for k, r in KNOWN_MODEL_GAPS.items()
-}
-
 
 def _params(cases: dict, prefix: str = ""):
-    return [pytest.param(v, id=f"{prefix}{k}", marks=_XFAIL.get(k, ())) for k, v in cases.items()]
+    return [pytest.param(v, id=f"{prefix}{k}") for k, v in cases.items()]
 
 
 def _model_accepts(instance: object) -> bool:

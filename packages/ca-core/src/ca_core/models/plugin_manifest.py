@@ -9,10 +9,18 @@ Due forme dello stesso contratto (ADR-0005):
 Il registry e la chiave di firma non compaiono nel contratto (D-0005 aperta).
 """
 
+import re
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 from pydantic.config import JsonDict
 
 from ca_core.formats import ADMITTED_CYCLONEDX_VERSIONS
@@ -39,6 +47,7 @@ _SEMVER = (
 _OUTPUT_PATH = rf"^{OUT_DIR}/[A-Za-z0-9_][A-Za-z0-9._-]*$"  # un file al primo livello (ADR-0004)
 _DURATION = r"^[1-9][0-9]*s$"
 _UNIQUE: JsonDict = {"uniqueItems": True}
+_LATEST = r":latest(?:@|$)"  # fuori da IMAGE_PATTERN: niente lookahead
 
 
 class Capability(StrEnum):
@@ -82,7 +91,16 @@ class Inputs(_Strict):
     )
 
 
+MAX_OUTPUT_BYTES = 268_435_456  # 256 MiB, tetto provvisorio da rivedere con X-04
+
+
 class Outputs(_Strict):
+    """File di output del plugin, in `/out`.
+
+    Vincolo non espresso dallo schema: `sarif` e `cyclonedx`, se entrambi presenti, devono
+    essere percorsi diversi (altrimenti due uscite sovrascriverebbero lo stesso file).
+    """
+
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra={
@@ -107,8 +125,9 @@ class Outputs(_Strict):
         description="Versione CycloneDX emessa, tra quelle ammesse (ADR-0007).",
         json_schema_extra={"enum": [*ADMITTED_CYCLONEDX_VERSIONS, None]},
     )
-    max_bytes: int = Field(
+    max_bytes: StrictInt = Field(
         ge=1,
+        le=MAX_OUTPUT_BYTES,
         description="Limite obbligatorio per ogni file di output (ADR-0004): oltre, il plugin "
         "è fallito. Il valore si fissa misurando le fixture.",
     )
@@ -117,6 +136,8 @@ class Outputs(_Strict):
     def _consistent(self) -> Self:
         if self.sarif is None and self.cyclonedx is None:
             raise ValueError("serve almeno un'uscita tra sarif e cyclonedx")
+        if self.sarif is not None and self.sarif == self.cyclonedx:
+            raise ValueError("sarif e cyclonedx devono essere file diversi")
         if self.cyclonedx is None and self.cyclonedx_version is not None:
             raise ValueError("cyclonedx_version senza cyclonedx")
         if self.cyclonedx is not None and self.cyclonedx_version not in (
@@ -130,7 +151,7 @@ class Resources(_Strict):
     cpu: str = Field(pattern=r"^(?:[1-9][0-9]*(?:\.[0-9]+)?|0\.[0-9]*[1-9][0-9]*)$")
     memory: str = Field(pattern=r"^[1-9][0-9]*(?:Mi|Gi)$")
     timeout: str = Field(pattern=_DURATION)
-    pids: int = Field(ge=1, description="Limite di PID del container (ADR-0004).")
+    pids: StrictInt = Field(ge=1, description="Limite di PID del container (ADR-0004).")
 
 
 class Feeds(_Strict):
@@ -175,7 +196,7 @@ _EXAMPLE_FULL: dict[str, Any] = {
     "image": f"registry.invalid/ca-plugins/osv-scanner:1.0.0@sha256:{'0' * 64}",
     "languages": [],
     "categories": ["dependency"],
-    "inputs": {"workspace": "readonly", "sbom": "optional", "config": "none"},
+    "inputs": {"workspace": "readonly", "sbom": "none", "config": "none"},
     "outputs": {
         "sarif": "/out/results.sarif",
         "cyclonedx": "/out/sbom.cdx.json",
@@ -191,11 +212,28 @@ _EXAMPLE_FULL: dict[str, Any] = {
 }
 
 
+_SBOM_RULE: dict[str, Any] = {
+    # Un plugin che emette un SBOM è del primo stadio e non può riceverne uno (ADR-0007).
+    "if": {
+        "properties": {
+            "outputs": {"properties": {"cyclonedx": {"type": "string"}}, "required": ["cyclonedx"]}
+        },
+        "required": ["outputs"],
+    },
+    "then": {"properties": {"inputs": {"properties": {"sbom": {"const": "none"}}}}},
+}
+
+
 class PluginManifest(_Strict):
-    """Manifest sorgente. `network` è solo `none` in Fase 1: `feeds-only` arriva con i mirror."""
+    """Manifest sorgente. `network` è solo `none` in Fase 1: `feeds-only` arriva con i mirror.
+
+    Regole non esprimibili in `pattern`: `image` non usa il tag `latest` (vale lo schema
+    con `not`); `outputs.cyclonedx` non è ammesso con `inputs.sbom: optional`.
+    """
 
     model_config = ConfigDict(
-        extra="forbid", json_schema_extra={"examples": [_EXAMPLE, _EXAMPLE_FULL]}
+        extra="forbid",
+        json_schema_extra={"examples": [_EXAMPLE, _EXAMPLE_FULL], **_SBOM_RULE},
     )
 
     apiVersion: Literal["code-analyzer/v1"]  # noqa: N815 - nome del campo nel contratto
@@ -203,7 +241,9 @@ class PluginManifest(_Strict):
     version: str = Field(pattern=_SEMVER)
     image: str = Field(
         pattern=IMAGE_PATTERN,
-        description="`registro/percorso:tag`, con `@sha256:` facoltativo nel manifest sorgente.",
+        description="`registro/percorso:tag`, con `@sha256:` facoltativo nel manifest sorgente. "
+        "Il tag `latest` è vietato.",
+        json_schema_extra={"not": {"pattern": _LATEST}},
     )
     capabilities: list[Capability] = Field(min_length=1, json_schema_extra=_UNIQUE)
     languages: list[Annotated[str, Field(pattern=r"^[a-z][a-z0-9+#-]*$")]] = Field(
@@ -215,6 +255,19 @@ class PluginManifest(_Strict):
     resources: Resources
     network: Literal["none"]
     feeds: Feeds | None = None
+
+    @field_validator("image")
+    @classmethod
+    def _not_latest(cls, value: str) -> str:
+        if re.search(_LATEST, value):
+            raise ValueError("il tag latest è vietato")
+        return value
+
+    @model_validator(mode="after")
+    def _cyclonedx_producer_takes_no_sbom(self) -> Self:
+        if self.outputs.cyclonedx is not None and self.inputs.sbom is not InputMode.NONE:
+            raise ValueError("outputs.cyclonedx è incompatibile con inputs.sbom: optional")
+        return self
 
     @field_validator("capabilities", "categories", "languages")
     @classmethod

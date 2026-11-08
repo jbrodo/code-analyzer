@@ -4,8 +4,7 @@ import pytest
 from conftest import SCHEMA_NAMES, load_schema
 from jsonschema import Draft202012Validator
 
-# Radici chiuse; plugin-sarif-properties è aperta di proposito (property bag SARIF, ADR-0007).
-CLOSED_ROOTS = ("finding", "code-analyzer-config", "plugin-manifest", "scan-report")
+CLOSED_ROOTS = tuple(SCHEMA_NAMES)
 
 
 @pytest.mark.parametrize("name", SCHEMA_NAMES)
@@ -32,15 +31,15 @@ def test_closed_root_rejects_unknown_property(name: str) -> None:
     assert load_schema(name)["additionalProperties"] is False
 
 
-def test_sarif_properties_root_is_open_by_design() -> None:
-    assert load_schema("plugin-sarif-properties")["additionalProperties"] is True
+# Nessuna eccezione: anche le proprietà SARIF dei plugin sono chiuse (ADR-0007).
+OPEN_BY_DESIGN: dict[str, set[str]] = {}
 
 
 @pytest.mark.parametrize("name", SCHEMA_NAMES)
 def test_every_object_def_is_closed_except_declared_open_ones(name: str) -> None:
-    """Ogni oggetto con `properties` è chiuso, salvo le eccezioni elencate qui."""
+    """Ogni oggetto con `properties` è chiuso, salvo le eccezioni elencate in `OPEN_BY_DESIGN`."""
     schema = load_schema(name)
-    open_by_design = {"plugin-sarif-properties": {"<root>"}}.get(name, set())
+    open_by_design = OPEN_BY_DESIGN.get(name, set())
     nodes = {"<root>": schema, **schema.get("$defs", {})}
     for key, node in nodes.items():
         if node.get("type") == "object" and "properties" in node and key not in open_by_design:
