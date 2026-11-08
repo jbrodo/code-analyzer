@@ -258,3 +258,22 @@ def test_fuzz_mutations_of_a_valid_document(store: SchemaStore, junk: Any, key: 
     }[key]
     target[key] = junk
     _only_typed(store, json.dumps(document, allow_nan=True).encode())
+
+
+def test_category_enum_is_accepted_but_types_stay_strict(store: SchemaStore) -> None:
+    def properties(**values: Any) -> dict[str, Any]:
+        document = copy.deepcopy(VALID)
+        document["runs"][0]["results"][0]["properties"] = values
+        return document
+
+    parsed = parse(store, properties(category="dependency", purl="pkg:npm/a"))
+    assert parsed.results[0].properties is not None
+    assert parsed.results[0].properties.category == "dependency"
+    for bad in (
+        {"category": "nope"},
+        {"cvss": {"version": "3.1", "vector": "v", "score": "9"}},
+        {"tool_severity": 1},
+    ):
+        with pytest.raises(SarifError) as info:
+            parse(store, properties(**bad))
+        assert info.value.code is SarifErrorCode.PROPERTIES

@@ -205,6 +205,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Percorsi: `doc/adr/`.
 - Dipende da: V-09.
 - Accettazione: 0002, 0003, 0007, 0008, 0010, 0011, 0014 passano ad `Accettato` o tornano in discussione con motivo. La revisione chiude le lacune di dettaglio emerse in pianificazione: manifest sorgente e impacchettato (C-02), percorso di `inputs.sbom` e `inputs.config` (C-02), schema delle proprietà SARIF non previsto da ADR-0003 (C-05), cartella `tests/contract/` non prevista da §3.
+- Esito (2026-11-08): ADR-0003 `Accettato`. Restano `Proposto` 0002, 0007, 0008, 0010, 0011, 0014: la decisione non è contestata e i task che la realizzano procedono; manca la prova nell'implementazione, e ogni ADR elenca in "Revisione A-01" i task che la portano. `tests/contract/` confermata (ADR-0003); §3 si aggiorna con A-03. Correzioni ai contratti: emendamenti di C-01..C-05 e C-07.
 - Spec: §16 regola 1. ADR: tutti i citati.
 
 #### A-02 — Applicare a `doc/PROJECT.md` le modifiche di §4.1, §7.1, §7.2, §8
@@ -280,35 +281,35 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Agente: `backend`. Stato: `IPOTESI` (D-0009-A, solo `level_source`).
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/finding.schema.json`.
 - Dipende da: M-05.
-- Accettazione: modello §4.1 rivisto secondo ADR-0008: `tools` accanto a `tool` (primo in ordine lessicografico), `evidence` per tool con `occurrences`, `Location.commit` opzionale, `id` uguale al fingerprint e date uguali all'ora della scansione in assenza di database. `level_source` da ADR-0009. `impact` e `score` ammessi a `null`. `extra="forbid"`. `--check` verde.
+- Accettazione: modello §4.1 rivisto secondo ADR-0008: `tools` accanto a `tool` (primo in ordine lessicografico), `evidence` per tool con `occurrences`, `Location.commit` opzionale, `id` uguale al fingerprint e date uguali all'ora della scansione in assenza di database. `level_source` da ADR-0009. `impact` e `score` ammessi a `null`. `extra="forbid"`. `--check` verde. Emendamenti dopo A-01: `tools` con `uniqueItems: true`; `description` su `tool` (primo di `tools`) e su `Location` (`end_line` non precede `start_line`), vincoli che lo schema non può esprimere (ADR-0003).
 - Spec: §4.1, §4.2. ADR: 0003, 0008, 0009.
 
 #### C-02 — Contratto `plugin-manifest`
 - Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/plugin-manifest.schema.json`.
 - Dipende da: M-05, V-09.
-- Accettazione: §7.1 più blocco opzionale `feeds`, versione CycloneDX emessa tra quelle ammesse, limite di byte obbligatorio. Definisce il percorso di montaggio di `inputs.sbom` e `inputs.config`, oggi non specificato. Stabilisce la distinzione tra manifest sorgente e impacchettato: `@sha256:` obbligatorio solo su quest'ultimo. Schema con esempi validi e non validi per ogni regola. Emendamenti dopo A-01: `sarif` e `cyclonedx` con percorsi diversi, tetto di `max_bytes`, `latest` vietato, `outputs.cyclonedx` incompatibile con `inputs.sbom: optional` (ADR-0004, 0005, 0007).
+- Accettazione: §7.1 più blocco opzionale `feeds`, versione CycloneDX emessa tra quelle ammesse, limite di byte obbligatorio. Definisce il percorso di montaggio di `inputs.sbom` e `inputs.config`, oggi non specificato. Stabilisce la distinzione tra manifest sorgente e impacchettato: `@sha256:` obbligatorio solo su quest'ultimo. Schema con esempi validi e non validi per ogni regola. Emendamenti dopo A-01: `sarif` e `cyclonedx` con percorsi diversi, tetto di `max_bytes`, `latest` vietato, `outputs.cyclonedx` incompatibile con `inputs.sbom: optional` (ADR-0004, 0005, 0007). Elementi di `feeds.sync_command` con `minLength: 1` nello schema, come `Annotated[str, Field(min_length=1)]` al posto del `field_validator` (ADR-0003).
 - Spec: §7.1, §7.2. ADR: 0003, 0004, 0005, 0006, 0007.
 
 #### C-03 — Contratto `code-analyzer-config`
 - Agente: `backend`. Stato: `IPOTESI` (D-0009-A per `gate.mode: all`).
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/code-analyzer-config.schema.json`.
 - Dipende da: M-05.
-- Accettazione: tutto §8 più `paths.exclude`. `service`, `scoring`, `agents` validati e inerti. `additionalProperties: false`, `version: 1`. Nessuna chiave per immagine, digest, firma, isolamento, rete, montaggi, comando o origine dei feed: un file con una di queste chiavi è rifiutato.
+- Accettazione: tutto §8 più `paths.exclude`. `service`, `scoring`, `agents` validati e inerti. `additionalProperties: false`, `version: 1`. Nessuna chiave per immagine, digest, firma, isolamento, rete, montaggi, comando o origine dei feed: un file con una di queste chiavi è rifiutato. Emendamenti dopo A-01 (ADR-0003, 0014): gli elementi di `paths.exclude` e `plugins.semgrep.rules` hanno nello schema `minLength: 1` e un `not` con `pattern` uguale a `^[/\\]|^[A-Za-z]:|(^|[/\\])\.\.([/\\]|$)`, equivalenti a `_relative_posix`, con `json_schema_extra` su `RelativePath`; `Gate` ha un `allOf` generato dall'enum `Level` che per ogni livello vieta la presenza in entrambe le liste (`not` su `block_on` e `warn_on` con `type: array` e `contains: {const: <livello>}`, `required` su tutte e due).
 - Spec: §8. ADR: 0003, 0009, 0014.
 
 #### C-04 — Contratto `scan-report`
 - Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/scan-report.schema.json`.
 - Dipende da: C-01, C-02.
-- Accettazione: campi di ADR-0010, inclusi stato `complete | partial`, `effective_mode`, durata totale e per plugin, e per plugin versione, digest, firma, isolamento, esito, snapshot del feed. Copertura ridotta della storia git, plugin disattivati, esclusioni ed eccezioni applicate.
+- Accettazione: campi di ADR-0010, inclusi stato `complete | partial`, `effective_mode`, durata totale e per plugin, e per plugin versione, digest, firma, isolamento, esito, snapshot del feed. Copertura ridotta della storia git, plugin disattivati, esclusioni ed eccezioni applicate. Emendamenti dopo A-01 (ADR-0003, 0010). `PluginRun`: `if` `outcome` è `failed` (`required: [outcome]`), `then` `failure` `type: string` e `required`, `else` `failure` `type: null`. `ScanReport`: `if` `plugins` `contains` un elemento con `outcome` `failed` (`required: [outcome]`, `required: [plugins]`), `then` `status` `const: partial`, in un solo verso. Entrambi con `json_schema_extra` nel `model_config`, come `Outputs`; i validatori del modello restano. `description` su `plugins` (nomi unici) e su `disabled_plugins` (disgiunti dai nomi di `plugins`), non esprimibili. La versione resta 1.0 (ADR-0003).
 - Spec: §9.1, §17. ADR: 0003, 0004, 0005, 0006, 0009, 0010, 0012, 0014.
 
 #### C-05 — Contratto delle proprietà SARIF dei plugin
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `schemas/plugin-sarif-properties.schema.json`.
 - Dipende da: M-05, V-09.
-- Accettazione: schema autonomo e chiuso (`extra="forbid"`) per `aliases`, `cvss`, `tool_severity`, `license_spdx`, `purl`, `category`, `secret_sha256`. Serve perché gli adattatori nelle immagini non importano `ca-core`. Confermato da `architect` in A-01 (emendamenti di ADR-0003 e ADR-0007).
+- Accettazione: schema autonomo e chiuso (`extra="forbid"`) per `aliases`, `cvss`, `tool_severity`, `license_spdx`, `purl`, `category`, `secret_sha256`. Serve perché gli adattatori nelle immagini non importano `ca-core`. Confermato da `architect` in A-01 (emendamenti di ADR-0003 e ADR-0007). Emendamento dopo A-01: `allOf` con due regole, valide solo se `category` è presente: `secret` richiede `secret_sha256` di tipo stringa, `dependency` richiede `purl` di tipo stringa; stesso controllo nel modello. Il caso valido `category` di `test_sarif_properties_contract.py` deve aggiungere `purl`. Senza `category` il controllo spetta a K-05.
 - Spec: §7.1. ADR: 0003, 0007.
 
 #### C-06 — Porte del nucleo
@@ -322,7 +323,7 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `tests/contract/`.
 - Dipende da: C-01, C-02, C-03, C-04, C-05.
-- Accettazione: istanze valide e non valide per i cinque schemi, validate contro i file in `schemas/` senza importare i modelli.
+- Accettazione: istanze valide e non valide per i cinque schemi, validate contro i file in `schemas/` senza importare i modelli. Emendamenti dopo A-01 (ADR-0003): `test_status_is_not_tied_to_plugin_outcome` si sostituisce con casi non validi per `complete` con plugin `failed`, e per `failed` senza `failure` o con `failure` nullo o `ok` con `failure`, tenendo valido `partial` senza plugin falliti. Casi non validi per ogni emendamento di C-01..C-05. Un test di equivalenza `test_*_model_equivalence.py` per ogni contratto (oggi solo le proprietà SARIF), con i casi che soltanto il modello rifiuta elencati per nome: un nuovo disallineamento fa fallire il test. Eccezione ammessa alla regola sui modelli.
 - Spec: §14, §16 regola 1. ADR: 0003.
 
 ### F — Fixture e attesi
@@ -519,7 +520,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: C-04, K-11.
-- Accettazione: funzione pura sul report con precedenza `--fail-on`, `gate.block_on`, `critico,alto`; eccezioni escluse; scansione parziale esce con 2 salvo `--allow-partial`.
+- Accettazione: funzione pura sul report con precedenza `--fail-on`, `gate.block_on`, `critico,alto`; eccezioni escluse; scansione parziale, o con un plugin `signature: skipped` (ADR-0005), esce con 2 salvo `--allow-partial`.
 - Spec: §8, §9.1. ADR: 0009, 0010.
 
 #### K-14 — SARIF aggregato
@@ -884,7 +885,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `architect`. Stato: `IPOTESI` (tutte le decisioni con effetto sulla fase).
 - Percorsi: `doc/plan/fase-1.md`, `doc/verifiche/gate-1.md`.
 - Dipende da: X-05, X-06, T-06, T-07, S-02, L-06, I-03, O-01, O-02, A-02, A-03.
-- Accettazione: voci di §13 e di §17 spuntate con evidenza, copertura ≥ 80% su `ca-core`, D-0013 e D-0015 riportate come chiuse o rinviate con il loro proprietario.
+- Accettazione: voci di §13 e di §17 spuntate con evidenza, copertura ≥ 80% su `ca-core`, D-0013 e D-0015 riportate come chiuse o rinviate con il loro proprietario. ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato` con le prove elencate in "Revisione A-01", o riaperti con motivo.
 - Spec: §13, §17. ADR: tutti.
 
 ## 7. Percorso critico

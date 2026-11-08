@@ -1,29 +1,30 @@
 # Architecture Decision Record
 
-Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `Proposto` significa che la decisione attende conferma: dove indicato serve l'utente, negli altri casi basta la revisione tecnica.
+Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `Proposto` significa che la decisione attende conferma: dove indicato serve l'utente, negli altri casi basta la revisione tecnica. Dopo A-01, un ADR senza decisione umana resta `Proposto` solo perché manca la prova nell'implementazione: la decisione non è contestata e i task che la realizzano procedono. La sezione "Revisione A-01" di ogni ADR elenca ciò che è confermato e i task che portano il resto.
 
 | ADR | Titolo | Stato | Decisione umana |
 | --- | --- | --- | --- |
 | [0001](0001-verso-dipendenze-pacchetti.md) | Verso delle dipendenze tra i pacchetti | Accettato | No |
-| [0002](0002-motore-scansione-senza-temporal.md) | Motore di scansione indipendente da Temporal | Proposto | No |
-| [0003](0003-autorita-contratti-json-schema.md) | Autorità dei contratti JSON Schema | Proposto | No |
+| [0002](0002-motore-scansione-senza-temporal.md) | Motore di scansione indipendente da Temporal | Proposto (prova: K-15..K-18, R-07) | No |
+| [0003](0003-autorita-contratti-json-schema.md) | Autorità dei contratti JSON Schema | Accettato | No |
 | [0004](0004-esecuzione-plugin-e-isolamento.md) | Esecuzione dei plugin e livelli di isolamento | Accettato | Presa il 2026-11-08 |
 | [0005](0005-firma-immagini-plugin.md) | Firma e verifica delle immagini dei plugin | Proposto | Sì |
 | [0006](0006-feed-vulnerabilita-offline.md) | Database delle vulnerabilità in Fase 1 | Accettato | Presa il 2026-11-08 |
-| [0007](0007-contratto-output-plugin.md) | Adattatori, ordine dei plugin, versioni dei formati | Proposto | No |
-| [0008](0008-fingerprint-e-dedup.md) | Algoritmo di fingerprint e deduplicazione | Proposto | No |
+| [0007](0007-contratto-output-plugin.md) | Adattatori, ordine dei plugin, versioni dei formati | Proposto (prova: P-01..P-10, K-16, K-17) | No |
+| [0008](0008-fingerprint-e-dedup.md) | Algoritmo di fingerprint e deduplicazione | Proposto (`fp1` confermato; prova: K-05, K-07) | No |
 | [0009](0009-livelli-e-gate-fase-1.md) | Livelli e gate senza scoring né baseline | Proposto (Gate 1 accettato) | Sì, per i livelli provvisori |
-| [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Proposto | No |
-| [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Proposto | No |
+| [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Proposto (report confermato; prova: K-13, L-02..L-05) | No |
+| [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Proposto (prova: K-14) | No |
 | [0012](0012-segreti-in-fase-1.md) | Rilevamento dei segreti in Fase 1 | Accettato | Presa il 2026-11-08 |
 | [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Proposto | Sì |
-| [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Proposto | No |
+| [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Proposto (schema confermato; prova: K-08, K-09, L-02, R-02, K-16) | No |
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Proposto | Sì |
 
 ## Aggiornamenti dopo la stesura
 
 - ADR-0008, sezione "Precisazioni per K-04": algoritmo esatto di `fp1`, firma di `ca_core.fingerprint`, vettori di prova.
 - Emendamenti "dopo A-01" in ADR-0003, 0004, 0005, 0006, 0007, 0014: revisione dei contratti dei plugin. Gli stati in tabella non cambiano.
+- Sezioni "Revisione A-01" in ADR-0002, 0003, 0007, 0008, 0010, 0011, 0014: esito della revisione e prove mancanti. ADR-0003 definisce dove vive un'invariante e conferma `tests/contract/`.
 
 ## Lacune rinviate
 

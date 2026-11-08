@@ -122,7 +122,9 @@ def _parse_properties(document: Mapping[str, Any]) -> tuple[SarifResult, ...]:
         properties = None
         if raw is not None:
             try:
-                properties = PluginSarifProperties.model_validate(raw, strict=True)
+                # Strict in modalità JSON: in modalità Python `strict` rifiuta il testo per un
+                # enum (`category`); il JSON resta stretto sui tipi (es. `"9"` per un numero).
+                properties = PluginSarifProperties.model_validate_json(json.dumps(raw), strict=True)
             except ValidationError as exc:
                 base = f"/runs/{run_index}/results/{index}/properties"
                 # `loc` e non `msg`: il messaggio può citare il valore ricevuto.

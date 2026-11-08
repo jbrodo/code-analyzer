@@ -1,6 +1,6 @@
 # ADR-0010: Contratto della CLI e artefatti di scansione
 
-- Stato: Proposto
+- Stato: Proposto; confermato il 2026-11-08 in revisione tecnica (A-01) il contenuto del report. I comandi non esistono ancora (K-13, L-02..L-05)
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §9.1, §12.1, §13; lacuna 9
@@ -37,3 +37,20 @@ Forma dell'Action in Fase 2 (§12.1 da correggere): `scan` e `gate` separati, co
 - Comando in più nelle pipeline: l'Action dovrà incapsulare i passi.
 - `schemas/` ottiene uno schema in più rispetto a §3.
 - I file di output vanno esclusi dalle scansioni (ADR-0014).
+
+## Revisione A-01
+
+Data: 2026-11-08. Resta `Proposto`: il contratto del report c'è, la CLI no (`ca_cli` contiene solo `__init__.py`).
+
+Confermato:
+
+- `schemas/scan-report.schema.json` e `ScanReport` contengono tutti i campi elencati sopra, con il limite corretto da C-04: lo schema non legava `status` e `failure` agli esiti dei plugin.
+
+Da provare:
+
+- Comandi, flag ed exit: K-13, L-02, L-03, L-04, L-05, con T-07.
+
+Precisazioni sul legame tra `status` e plugin:
+
+- Il vincolo è in un solo verso: un plugin `failed` impone `partial`. `partial` senza plugin falliti resta valido, così una causa futura è un'aggiunta compatibile.
+- ADR-0005 fa uscire il gate con 2 anche con `signature: skipped`, ma una firma saltata non è un plugin fallito e il report può essere `complete`. Lo gestisce il gate leggendo `plugins[].signature`, senza nuovi vincoli di schema (K-13).

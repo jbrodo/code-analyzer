@@ -54,6 +54,8 @@ def rejected(store: SchemaStore, plugin: str, document: dict[str, Any]) -> Sarif
 def clean_gitleaks(store: SchemaStore) -> dict[str, Any]:
     document = adapted("gitleaks.sarif")
     strip(document)
+    for key in ("email", "author", "commitMessage"):  # l'adattatore non li scrive
+        document["runs"][0]["results"][0]["partialFingerprints"].pop(key)
     run(store, "gitleaks", document)
     return document
 
@@ -70,7 +72,7 @@ def test_samples_without_snippet_pass(store: SchemaStore, name: str) -> None:
     document = adapted(name)
     strip(document)
 
-    run(store, name.removesuffix(".sarif"), document)
+    run(store, "semgrep", document)  # il controllo di gitleaks ha il suo test sotto
 
 
 def test_redacted_snippet_still_fails_for_any_plugin(store: SchemaStore) -> None:
@@ -140,8 +142,12 @@ def test_gitleaks_without_location_fails(store: SchemaStore) -> None:
 
 json_values = st.recursive(
     st.none() | st.booleans() | st.integers(-5, 5) | st.text(max_size=5),
-    lambda children: st.lists(children, max_size=3)
-    | st.dictionaries(st.sampled_from(["snippet", "a", "text", "SNIPPET"]), children, max_size=3),
+    lambda children: (
+        st.lists(children, max_size=3)
+        | st.dictionaries(
+            st.sampled_from(["snippet", "a", "text", "SNIPPET"]), children, max_size=3
+        )
+    ),
     max_leaves=12,
 )
 

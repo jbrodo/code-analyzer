@@ -1,6 +1,6 @@
 # ADR-0002: Motore di scansione indipendente da Temporal
 
-- Stato: Proposto
+- Stato: Proposto; confermate il 2026-11-08 in revisione tecnica (A-01) le porte e il verso delle dipendenze. I passi della pipeline non esistono ancora (K-15..K-18)
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §2, §3, §5, §13
@@ -45,3 +45,19 @@ Passi di §5 attivi in Fase 1:
 - Fase 1 non richiede Temporal, PostgreSQL né object storage; i test di integrazione di §14 basati su di essi partono in Fase 2.
 - In Fase 2 `ca-workflows` non contiene regole di dominio, solo orchestrazione e retry.
 - Se i passi crescono fino a rendere `ca-core` dipendente da troppe porte, si rivaluta `ca-engine` con un nuovo ADR.
+
+## Revisione A-01
+
+Data: 2026-11-08. Resta `Proposto`: la decisione non è contestata, ma il suo punto centrale non è ancora nel codice.
+
+Confermato:
+
+- `ca_core/ports.py` definisce le quattro porte di Fase 1, con ingressi e uscite Pydantic serializzabili; `ca_core/fakes.py` le implementa in memoria.
+- `lint-imports` rispetta i tre contratti, compreso `ca_core` senza framework, rete né processi.
+
+Da provare:
+
+- `ca_core/pipeline/` non esiste. Che ogni passo sia una funzione serializzabile, idempotente e invocabile da sola si vede con K-15, K-16, K-17, K-18.
+- Il parallelismo nell'adattatore `PluginExecutor`: R-07.
+
+Passa ad `Accettato` quando quei task sono verdi.

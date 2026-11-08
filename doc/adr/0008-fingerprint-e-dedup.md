@@ -1,6 +1,6 @@
 # ADR-0008: Algoritmo di fingerprint e deduplicazione
 
-- Stato: Proposto
+- Stato: Proposto; confermato il 2026-11-08 in revisione tecnica (A-01) l'algoritmo `fp1`. Deduplicazione e uso in normalizzazione non esistono ancora (K-05, K-07)
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §4.1, §4.2, §8
@@ -241,3 +241,19 @@ Da aggiungere, con `needs_k04`:
 - `normalize_purl` con la tabella sopra; `ValueError` su `a`.
 - `test_canonical_vuln_id`: `(["PYSEC-2022-190", "BIT-django-2022-28346"], "BIT-django-2022-28346")` e `(["CVE-2020-28500", "GHSA-29mw-wpgm-hmr9", "CVE-2020-28500"], "CVE-2020-28500")`; lista vuota `ValueError`.
 - Valori non validi: NUL in `rule_id`, `path` assoluto o con `..`, `value_sha256` in maiuscolo.
+
+## Revisione A-01
+
+Data: 2026-11-08. Resta `Proposto`: l'algoritmo è provato, la fusione no.
+
+Confermato sul working tree del 2026-11-08, con `ca_core/fingerprint.py` non ancora committato:
+
+- Formato, firma e regole §1-§6 e §8 delle "Precisazioni per K-04": `tests/unit/core/test_fingerprint.py` è verde, compresi i vettori di prova.
+- Modifiche al modello §4.1: `tools`, `Location.commit` opzionale, `impact` e `score` nulli.
+
+Da provare:
+
+- §7 "Deduplicazione": `ca_core.dedup` non esiste, e l'idempotenza è una proprietà da dimostrare (K-07).
+- Uso in normalizzazione: URI, `result` senza `region`, decodifica, `tool` uguale al nome del manifest (K-05).
+
+Passa ad `Accettato` con K-05 e K-07 verdi. Il modello non impone che `tools` sia ordinato: l'ordine lo garantisce K-07, e il contratto copre l'assenza di duplicati (emendamento di C-01).

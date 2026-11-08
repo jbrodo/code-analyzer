@@ -17,6 +17,9 @@ class SarifErrorCode(StrEnum):
     SCHEMA = "schema"  # non conforme a SARIF 2.1.0
     PROPERTIES = "properties"  # `properties` di un result non conformi a C-05
     CHECK = "check"  # rifiutato da un controllo aggiuntivo (K-10)
+    URI = "uri"  # `uri` assoluto, fuori dalla radice o non valido (K-05, ADR-0008)
+    SOURCE = "source"  # file del workspace non leggibile o fuori confine (K-05)
+    MAPPING = "mapping"  # il result non è normalizzabile in un `Finding` (K-05)
 
 
 class SarifError(Exception):

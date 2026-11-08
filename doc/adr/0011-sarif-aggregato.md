@@ -1,6 +1,6 @@
 # ADR-0011: Struttura del SARIF aggregato
 
-- Stato: Proposto
+- Stato: Proposto; rivisto il 2026-11-08 (A-01), nessuna contraddizione con i contratti. Il SARIF aggregato non esiste ancora (K-14)
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §5 passo 10, §12.1, §13
@@ -34,3 +34,7 @@ I vincoli attuali di GitHub Code Scanning su dimensioni, numero di risultati e r
 
 - Il dettaglio di origine resta nel report e nelle proprietà, non nel `run`.
 - Il layout è un contratto pubblico e deve avere test di contratto.
+
+## Revisione A-01
+
+Data: 2026-11-08. Resta `Proposto`: nessun codice scrive ancora il SARIF aggregato. Il testo non contraddice i contratti esistenti: `level`, `level_source`, `category`, `tools` e `status` esistono nel modello `Finding`. Passa ad `Accettato` con K-14 verde.

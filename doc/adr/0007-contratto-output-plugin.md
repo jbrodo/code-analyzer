@@ -1,6 +1,6 @@
 # ADR-0007: Adattatori nell'immagine, ordine dei plugin e versioni dei formati
 
-- Stato: Proposto
+- Stato: Proposto; confermati il 2026-11-08 in revisione tecnica (A-01) manifest e proprietà SARIF. Adattatori e due stadi non esistono ancora (P-01..P-10, K-16)
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §3, §5, §7.1, §7.2, §7.3
@@ -73,3 +73,21 @@ Il contratto vale per `results[].properties`. Le proprietà su `run` e sulle reg
 - Due stadi: un plugin con `outputs.cyclonedx` è del primo stadio e non può dichiarare `inputs.sbom: optional`, perché non riceverebbe mai l'SBOM. Lo schema lo vieta.
 - `cyclonedx_version` in `outputs`: confermato, è la dichiarazione richiesta dal punto 3.
 - `languages` vuoto significa "indipendente dal linguaggio", non "nessun linguaggio": confermato. L'errore costa un'esecuzione in più, mentre un plugin saltato è un falso negativo.
+
+## Revisione A-01
+
+Data: 2026-11-08. Resta `Proposto`: i contratti ci sono, gli adattatori no.
+
+Confermato:
+
+- `plugin-manifest`: `cyclonedx_version`, percorsi di output, `outputs.cyclonedx` incompatibile con `inputs.sbom: optional`, forma impacchettata con digest.
+- `plugin-sarif-properties`: oggetto chiuso con le proprietà degli emendamenti. `ca_core/formats.py` ammette in ingresso solo CycloneDX 1.7.
+- Gli esiti di V-09 riportati sopra.
+
+Da provare:
+
+- `ca_plugins/builtin/` non esiste: adattatore nell'immagine, riscrittura degli URI, `ruleId` stabile, exit (P-01..P-10, con T-04).
+- Due stadi e `inputs.sbom`: K-16.
+- Finding `health` `ca.scanner-not-run` e scansione parziale: K-16, K-17.
+
+`secret_sha256` per la categoria `secret` e `purl` per `dependency` sono obbligatori, ma oggi non li controlla né lo schema né il modello. Lo schema può esprimerli quando `category` è presente (emendamento di C-05). Se `category` manca perché il manifest ne dichiara una sola, il controllo spetta alla normalizzazione (K-05).
