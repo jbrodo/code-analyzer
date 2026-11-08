@@ -18,6 +18,21 @@ Monorepo con componenti Python (FastAPI, Temporal e PostgreSQL), interfaccia Rea
 
 Il repository contiene attualmente la specifica e il piano di implementazione; il software e i comandi descritti non sono ancora disponibili.
 
+## Hook pre-commit
+
+Per abilitare i controlli automatici prima di ogni commit:
+
+```bash
+uv tool install pre-commit
+pre-commit install
+```
+
+Il hook controlla la validità dei file JSON e YAML, i marker di conflitto, gli spazi finali e la fine dei file. Per eseguire i controlli manualmente su tutto il repository:
+
+```bash
+pre-commit run --all-files
+```
+
 ## Documentazione
 
 Per architettura, stack, modelli dati, pipeline e roadmap, consulta la [guida di implementazione](doc/PROJECT.md).
