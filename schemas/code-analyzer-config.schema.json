@@ -1,0 +1,363 @@
+{
+  "$defs": {
+    "Agents": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enabled"
+        },
+        "llm_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Provider"
+        },
+        "max_phase": {
+          "anyOf": [
+            {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Phase"
+        }
+      },
+      "title": "Agents",
+      "type": "object"
+    },
+    "ConfigException": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "expires": {
+          "format": "date",
+          "title": "Expires",
+          "type": "string"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fingerprint",
+        "reason",
+        "expires",
+        "approved_by"
+      ],
+      "title": "ConfigException",
+      "type": "object"
+    },
+    "Gate": {
+      "additionalProperties": false,
+      "properties": {
+        "block_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block On"
+        },
+        "mode": {
+          "$ref": "#/$defs/GateMode",
+          "default": "all"
+        },
+        "warn_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Warn On"
+        }
+      },
+      "title": "Gate",
+      "type": "object"
+    },
+    "GateMode": {
+      "description": "IPOTESI D-0009-A: in Fase 1 `new-findings-only` è valutato come `all`. Togliere con essa.",
+      "enum": [
+        "all",
+        "new-findings-only"
+      ],
+      "title": "GateMode",
+      "type": "string"
+    },
+    "Level": {
+      "enum": [
+        "critico",
+        "alto",
+        "medio",
+        "basso"
+      ],
+      "title": "Level",
+      "type": "string"
+    },
+    "Licenses": {
+      "additionalProperties": false,
+      "properties": {
+        "distributed_product": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distributed Product"
+        },
+        "forbidden": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "require_approval": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Require Approval",
+          "type": "array"
+        }
+      },
+      "title": "Licenses",
+      "type": "object"
+    },
+    "Paths": {
+      "additionalProperties": false,
+      "properties": {
+        "exclude": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude",
+          "type": "array"
+        }
+      },
+      "title": "Paths",
+      "type": "object"
+    },
+    "Plugins": {
+      "additionalProperties": false,
+      "properties": {
+        "disable": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Disable",
+          "type": "array"
+        },
+        "semgrep": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Plugins",
+      "type": "object"
+    },
+    "Scoring": {
+      "additionalProperties": false,
+      "properties": {
+        "variant": {
+          "default": "A",
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "title": "Scoring",
+      "type": "object"
+    },
+    "SemgrepOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rules",
+          "type": "array"
+        }
+      },
+      "title": "SemgrepOptions",
+      "type": "object"
+    },
+    "Service": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Catalog Id"
+        },
+        "internet_facing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Internet Facing"
+        },
+        "tier": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tier"
+        }
+      },
+      "title": "Service",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:code-analyzer-config:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "agents": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Agents"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "exceptions": {
+      "items": {
+        "$ref": "#/$defs/ConfigException"
+      },
+      "title": "Exceptions",
+      "type": "array"
+    },
+    "gate": {
+      "$ref": "#/$defs/Gate"
+    },
+    "languages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Languages",
+      "type": "array"
+    },
+    "licenses": {
+      "$ref": "#/$defs/Licenses"
+    },
+    "paths": {
+      "$ref": "#/$defs/Paths"
+    },
+    "plugins": {
+      "$ref": "#/$defs/Plugins"
+    },
+    "scoring": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Scoring"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "service": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Service"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "title": "CodeAnalyzerConfig",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

@@ -1,0 +1,358 @@
+{
+  "$defs": {
+    "Category": {
+      "enum": [
+        "quality",
+        "architecture",
+        "test",
+        "sast",
+        "dependency",
+        "license",
+        "secret",
+        "iac",
+        "health"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "ImpactFactors": {
+      "additionalProperties": false,
+      "properties": {
+        "c": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "C",
+          "type": "number"
+        },
+        "e": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "E",
+          "type": "number"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "title": "Evidence",
+          "type": "object"
+        },
+        "g": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "G",
+          "type": "number"
+        },
+        "p": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "P",
+          "type": "number"
+        },
+        "variant": {
+          "pattern": "^[AB]$",
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "g",
+        "p",
+        "e",
+        "c",
+        "variant"
+      ],
+      "title": "ImpactFactors",
+      "type": "object"
+    },
+    "Level": {
+      "enum": [
+        "critico",
+        "alto",
+        "medio",
+        "basso"
+      ],
+      "title": "Level",
+      "type": "string"
+    },
+    "LevelSource": {
+      "description": "IPOTESI D-0009-A: origine del livello provvisorio. Togliere con il campo `level_source`.",
+      "enum": [
+        "tool_severity",
+        "policy",
+        "default"
+      ],
+      "title": "LevelSource",
+      "type": "string"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "dependency_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependency Path",
+          "type": "array"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "purl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purl"
+        },
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        }
+      },
+      "required": [
+        "repository"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "Status": {
+      "enum": [
+        "aperto",
+        "in_corso",
+        "accettato",
+        "falso_positivo",
+        "risolto"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:finding:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "category": {
+      "$ref": "#/$defs/Category"
+    },
+    "cve": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Cve",
+      "type": "array"
+    },
+    "cwe": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Cwe",
+      "type": "array"
+    },
+    "due_date": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Due Date"
+    },
+    "evidence": {
+      "additionalProperties": true,
+      "title": "Evidence",
+      "type": "object"
+    },
+    "fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Fingerprint",
+      "type": "string"
+    },
+    "first_seen": {
+      "format": "date-time",
+      "title": "First Seen",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "impact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ImpactFactors"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "last_seen": {
+      "format": "date-time",
+      "title": "Last Seen",
+      "type": "string"
+    },
+    "level": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Level"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "level_source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LevelSource"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "license_spdx": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "License Spdx"
+    },
+    "location": {
+      "$ref": "#/$defs/Location"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner"
+    },
+    "rule_id": {
+      "title": "Rule Id",
+      "type": "string"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "status": {
+      "$ref": "#/$defs/Status",
+      "default": "aperto"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "tool": {
+      "title": "Tool",
+      "type": "string"
+    },
+    "tools": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Tools",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "fingerprint",
+    "category",
+    "rule_id",
+    "tool",
+    "tools",
+    "title",
+    "message",
+    "location",
+    "first_seen",
+    "last_seen"
+  ],
+  "title": "Finding",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

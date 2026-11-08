@@ -9,6 +9,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from ca_core.models import CodeAnalyzerConfig, Finding
+
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SUFFIX = ".schema.json"
 
@@ -35,7 +37,10 @@ class Contract:
 
 
 # I task C-01..C-05 registrano qui i contratti.
-CONTRACTS: tuple[Contract, ...] = ()
+CONTRACTS: tuple[Contract, ...] = (
+    Contract("finding", "1.0", Finding),
+    Contract("code-analyzer-config", "1.0", CodeAnalyzerConfig),
+)
 
 
 def export(contracts: Sequence[Contract], directory: Path) -> None:
