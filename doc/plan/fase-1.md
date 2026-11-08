@@ -88,6 +88,8 @@ Per D-0009-B il piano propone, senza deciderlo: misura sulla macchina di svilupp
 
 Temporal, testcontainers e i test di integrazione di §14 basati su di essi (ADR-0002). PostgreSQL, object storage, API REST, UI, OpenAPI. `ca-graph`, scoring A/B, EPSS/KEV, baseline, `--pr`, `--base`, `--variant`. Plugin ruff, eslint, checkov, hadolint, coverage. GitHub Action, componente GitLab e correzione di §12.1. `explain`, `plugin list|verify|run`, VEX. Adattatore Kubernetes con gVisor. Stack OpenTelemetry.
 
+Java/Kotlin resta in Fase 4 (§13). Decisione dell'utente del 2026-11-08: dopo il Gate 1 si fa una scansione di prova su un repository Java, fuori dalla misura del gate, solo per vedere cosa funziona già.
+
 Livelli di §14 attivi in Fase 1: Unit (senza scoring), Contratto, integrazione con daemon Docker reale e plugin finto, E2E della sola CLI.
 
 ## 5. Ordine e parallelismo
@@ -902,4 +904,4 @@ Senza alcuna decisione dell'utente e senza dipendenze aperte: V-01 e M-01. Subit
 
 In tutto sono 18 i task che non toccano e non ereditano alcuna decisione dell'utente: V-01..V-09, M-01..M-06, C-05, I-01, A-01.
 
-I task `IPOTESI` possono partire senza attendere l'utente, secondo le raccomandazioni degli ADR. I primi, C-01 e C-03, hanno un costo minimo se la raccomandazione cade: un campo da togliere da uno schema senza consumatori. Il rischio di rifacimento cresce da R-02 e P-01 (D-0004) e da P-02 e P-04 (D-0006): sono i punti entro cui conviene avere la risposta dell'utente.
+I task `IPOTESI` possono partire senza attendere l'utente, secondo le raccomandazioni degli ADR. I primi, C-01 e C-03, hanno un costo minimo se la raccomandazione cade: un campo da togliere da uno schema senza consumatori. D-0004 e D-0006 sono decise (sezione 3), quindi R-02, P-01, P-02 e P-04 non dipendono più da una risposta dell'utente.

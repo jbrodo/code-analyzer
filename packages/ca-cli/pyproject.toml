@@ -1,0 +1,14 @@
+[project]
+name = "ca-cli"
+version = "0.0.0"
+description = "Comando code-analyzer"
+requires-python = ">=3.12"
+dependencies = ["ca-core", "ca-plugins"]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ca-core = { workspace = true }
+ca-plugins = { workspace = true }

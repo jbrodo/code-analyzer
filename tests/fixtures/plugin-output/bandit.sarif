@@ -1,0 +1,265 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Bandit",
+          "organization": "PyCQA",
+          "rules": [
+            {
+              "id": "B404",
+              "name": "blacklist",
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-78"
+                ],
+                "precision": "high"
+              },
+              "helpUri": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess"
+            },
+            {
+              "id": "B602",
+              "name": "subprocess_popen_with_shell_equals_true",
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-78"
+                ],
+                "precision": "high"
+              },
+              "helpUri": "https://bandit.readthedocs.io/en/1.9.4/plugins/b602_subprocess_popen_with_shell_equals_true.html"
+            },
+            {
+              "id": "B324",
+              "name": "hashlib",
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-327"
+                ],
+                "precision": "high"
+              },
+              "helpUri": "https://bandit.readthedocs.io/en/1.9.4/plugins/b324_hashlib.html"
+            },
+            {
+              "id": "B105",
+              "name": "hardcoded_password_string",
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-259"
+                ],
+                "precision": "medium"
+              },
+              "helpUri": "https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html"
+            }
+          ],
+          "version": "1.9.4",
+          "semanticVersion": "1.9.4"
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "endTimeUtc": "2026-11-08T15:41:22Z"
+        }
+      ],
+      "properties": {
+        "metrics": {
+          "_totals": {
+            "loc": 4,
+            "nosec": 0,
+            "skipped_tests": 0,
+            "SEVERITY.UNDEFINED": 0,
+            "CONFIDENCE.UNDEFINED": 0,
+            "SEVERITY.LOW": 2,
+            "CONFIDENCE.LOW": 0,
+            "SEVERITY.MEDIUM": 0,
+            "CONFIDENCE.MEDIUM": 1,
+            "SEVERITY.HIGH": 2,
+            "CONFIDENCE.HIGH": 3
+          },
+          "/workspace/app.py": {
+            "loc": 3,
+            "nosec": 0,
+            "skipped_tests": 0,
+            "SEVERITY.UNDEFINED": 0,
+            "SEVERITY.LOW": 1,
+            "SEVERITY.MEDIUM": 0,
+            "SEVERITY.HIGH": 2,
+            "CONFIDENCE.UNDEFINED": 0,
+            "CONFIDENCE.LOW": 0,
+            "CONFIDENCE.MEDIUM": 0,
+            "CONFIDENCE.HIGH": 3
+          },
+          "/workspace/conf.py": {
+            "loc": 1,
+            "nosec": 0,
+            "skipped_tests": 0,
+            "SEVERITY.UNDEFINED": 0,
+            "SEVERITY.LOW": 1,
+            "SEVERITY.MEDIUM": 0,
+            "SEVERITY.HIGH": 0,
+            "CONFIDENCE.UNDEFINED": 0,
+            "CONFIDENCE.LOW": 0,
+            "CONFIDENCE.MEDIUM": 1,
+            "CONFIDENCE.HIGH": 0
+          }
+        }
+      },
+      "results": [
+        {
+          "message": {
+            "text": "Consider possible security implications associated with the subprocess module."
+          },
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "region": {
+                  "snippet": {
+                    "text": "import hashlib, subprocess\n"
+                  },
+                  "endColumn": 27,
+                  "endLine": 1,
+                  "startColumn": 1,
+                  "startLine": 1
+                },
+                "artifactLocation": {
+                  "uri": "file:///workspace/app.py"
+                },
+                "contextRegion": {
+                  "snippet": {
+                    "text": "import hashlib, subprocess\ndef run(c):\n    return subprocess.call(c, shell=True), hashlib.md5(c.encode()).hexdigest()\n"
+                  },
+                  "endLine": 3,
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "issue_confidence": "HIGH",
+            "issue_severity": "LOW"
+          },
+          "ruleId": "B404",
+          "ruleIndex": 0
+        },
+        {
+          "message": {
+            "text": "subprocess call with shell=True identified, security issue."
+          },
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "region": {
+                  "snippet": {
+                    "text": "    return subprocess.call(c, shell=True), hashlib.md5(c.encode()).hexdigest()\n"
+                  },
+                  "endColumn": 42,
+                  "endLine": 3,
+                  "startColumn": 12,
+                  "startLine": 3
+                },
+                "artifactLocation": {
+                  "uri": "file:///workspace/app.py"
+                },
+                "contextRegion": {
+                  "snippet": {
+                    "text": "def run(c):\n    return subprocess.call(c, shell=True), hashlib.md5(c.encode()).hexdigest()\n"
+                  },
+                  "endLine": 3,
+                  "startLine": 2
+                }
+              }
+            }
+          ],
+          "properties": {
+            "issue_confidence": "HIGH",
+            "issue_severity": "HIGH"
+          },
+          "ruleId": "B602",
+          "ruleIndex": 1
+        },
+        {
+          "message": {
+            "text": "Use of weak MD5 hash for security. Consider usedforsecurity=False"
+          },
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "region": {
+                  "snippet": {
+                    "text": "    return subprocess.call(c, shell=True), hashlib.md5(c.encode()).hexdigest()\n"
+                  },
+                  "endColumn": 67,
+                  "endLine": 3,
+                  "startColumn": 44,
+                  "startLine": 3
+                },
+                "artifactLocation": {
+                  "uri": "file:///workspace/app.py"
+                },
+                "contextRegion": {
+                  "snippet": {
+                    "text": "def run(c):\n    return subprocess.call(c, shell=True), hashlib.md5(c.encode()).hexdigest()\n"
+                  },
+                  "endLine": 3,
+                  "startLine": 2
+                }
+              }
+            }
+          ],
+          "properties": {
+            "issue_confidence": "HIGH",
+            "issue_severity": "HIGH"
+          },
+          "ruleId": "B324",
+          "ruleIndex": 2
+        },
+        {
+          "message": {
+            "text": "Possible hardcoded password: 'REDACTED-BY-FIXTURE'"
+          },
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "region": {
+                  "snippet": {
+                    "text": "GITHUB_TOKEN = \"REDACTED-BY-FIXTURE\"\n"
+                  },
+                  "endColumn": 58,
+                  "endLine": 1,
+                  "startColumn": 16,
+                  "startLine": 1
+                },
+                "artifactLocation": {
+                  "uri": "file:///workspace/conf.py"
+                },
+                "contextRegion": {
+                  "snippet": {
+                    "text": "GITHUB_TOKEN = \"REDACTED-BY-FIXTURE\"\n"
+                  },
+                  "endLine": 1,
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "issue_confidence": "MEDIUM",
+            "issue_severity": "LOW"
+          },
+          "ruleId": "B105",
+          "ruleIndex": 3
+        }
+      ]
+    }
+  ],
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json"
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:2598452d-cd6d-4745-9274-938a649c1c68",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-08T15:41:14+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "manufacturer": {
+            "name": "Aqua Security Software Ltd."
+          },
+          "group": "aquasecurity",
+          "name": "trivy",
+          "version": "0.76.2"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "6d3adbf8-6da0-4bf9-8a2c-08307fb9573d",
+      "type": "application",
+      "name": "/workspace",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:SchemaVersion",
+          "value": "2"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "ac3a7ae0-0e20-4a95-a9b8-365ecfbe23ec",
+      "type": "application",
+      "name": "package-lock.json",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "bom-ref": "e1d082f0-b934-4309-a0b4-5790b8d37c18",
+      "type": "application",
+      "name": "requirements.txt",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/lodash@4.17.15",
+      "type": "library",
+      "name": "lodash",
+      "version": "4.17.15",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:npm/lodash@4.17.15",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgID",
+          "value": "lodash@4.17.15"
+        },
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "npm"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/django@2.2.0",
+      "type": "library",
+      "name": "django",
+      "version": "2.2.0",
+      "purl": "pkg:pypi/django@2.2.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/flask@0.12",
+      "type": "library",
+      "name": "flask",
+      "version": "0.12",
+      "purl": "pkg:pypi/flask@0.12",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "6d3adbf8-6da0-4bf9-8a2c-08307fb9573d",
+      "dependsOn": [
+        "ac3a7ae0-0e20-4a95-a9b8-365ecfbe23ec",
+        "e1d082f0-b934-4309-a0b4-5790b8d37c18"
+      ]
+    },
+    {
+      "ref": "ac3a7ae0-0e20-4a95-a9b8-365ecfbe23ec",
+      "dependsOn": [
+        "pkg:npm/lodash@4.17.15"
+      ]
+    },
+    {
+      "ref": "e1d082f0-b934-4309-a0b4-5790b8d37c18",
+      "dependsOn": [
+        "pkg:pypi/django@2.2.0",
+        "pkg:pypi/flask@0.12"
+      ]
+    },
+    {
+      "ref": "pkg:npm/lodash@4.17.15",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/django@2.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/flask@0.12",
+      "dependsOn": []
+    }
+  ],
+  "vulnerabilities": []
+}

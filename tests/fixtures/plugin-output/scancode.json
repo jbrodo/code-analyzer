@@ -1,0 +1,220 @@
+{
+  "headers": [
+    {
+      "tool_name": "scancode-toolkit",
+      "tool_version": "32.5.0",
+      "options": {
+        "input": [
+          "/workspace"
+        ],
+        "--copyright": true,
+        "--json-pp": "scancode.json",
+        "--license": true,
+        "--processes": "2",
+        "--quiet": true
+      },
+      "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
+      "start_timestamp": "2026-11-08T154124.410616",
+      "end_timestamp": "2026-11-08T154126.530569",
+      "output_format_version": "4.1.0",
+      "duration": 2.119962453842163,
+      "message": null,
+      "errors": [],
+      "warnings": [],
+      "extra_data": {
+        "system_environment": {
+          "operating_system": "linux",
+          "cpu_architecture": "64",
+          "platform": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+          "platform_version": "#43-Ubuntu SMP PREEMPT_DYNAMIC Fri Oct 23 13:25:25 UTC 2026",
+          "python_version": "3.12.12 (main, Nov 19 2025, 22:46:53) [Clang 21.1.4 ]"
+        },
+        "spdx_license_list_version": "3.27",
+        "files_count": 6
+      }
+    }
+  ],
+  "license_detections": [
+    {
+      "identifier": "agpl_3_0-3e4cfc4d-0f7c-12ef-2390-91722108dc76",
+      "license_expression": "agpl-3.0",
+      "license_expression_spdx": "AGPL-3.0-only",
+      "detection_count": 1,
+      "reference_matches": [
+        {
+          "license_expression": "agpl-3.0",
+          "license_expression_spdx": "AGPL-3.0-only",
+          "from_file": "repo/a.js",
+          "start_line": 1,
+          "end_line": 1,
+          "matcher": "1-spdx-id",
+          "score": 100.0,
+          "matched_length": 7,
+          "match_coverage": 100.0,
+          "rule_relevance": 100,
+          "rule_identifier": "spdx-license-identifier-agpl_3_0-6cce8fdb9a8fd4752ab97045f9e1aca5ffdc8405",
+          "rule_url": null
+        }
+      ]
+    },
+    {
+      "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+      "license_expression": "mit",
+      "license_expression_spdx": "MIT",
+      "detection_count": 1,
+      "reference_matches": [
+        {
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT",
+          "from_file": "repo/package-lock.json",
+          "start_line": 1,
+          "end_line": 1,
+          "matcher": "2-aho",
+          "score": 100.0,
+          "matched_length": 2,
+          "match_coverage": 100.0,
+          "rule_relevance": 100,
+          "rule_identifier": "mit_30.RULE",
+          "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "repo",
+      "type": "directory",
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/a.js",
+      "type": "file",
+      "detected_license_expression": "agpl-3.0",
+      "detected_license_expression_spdx": "AGPL-3.0-only",
+      "license_detections": [
+        {
+          "license_expression": "agpl-3.0",
+          "license_expression_spdx": "AGPL-3.0-only",
+          "matches": [
+            {
+              "license_expression": "agpl-3.0",
+              "license_expression_spdx": "AGPL-3.0-only",
+              "from_file": "repo/a.js",
+              "start_line": 1,
+              "end_line": 1,
+              "matcher": "1-spdx-id",
+              "score": 100.0,
+              "matched_length": 7,
+              "match_coverage": 100.0,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-agpl_3_0-546c834115c830b98832e2beb26d5ad1a0720ecd",
+              "rule_url": null
+            }
+          ],
+          "identifier": "agpl_3_0-3e4cfc4d-0f7c-12ef-2390-91722108dc76"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 70.0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/app.py",
+      "type": "file",
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/conf.py",
+      "type": "file",
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/Dockerfile",
+      "type": "file",
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/package-lock.json",
+      "type": "file",
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT",
+              "from_file": "repo/package-lock.json",
+              "start_line": 1,
+              "end_line": 1,
+              "matcher": "2-aho",
+              "score": 100.0,
+              "matched_length": 2,
+              "match_coverage": 100.0,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 4.76,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    },
+    {
+      "path": "repo/requirements.txt",
+      "type": "file",
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "scan_errors": []
+    }
+  ]
+}
