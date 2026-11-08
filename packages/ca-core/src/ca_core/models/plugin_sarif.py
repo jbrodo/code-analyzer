@@ -8,9 +8,16 @@ L'oggetto è chiuso: l'adattatore scrive solo queste chiavi e scarta quelle dell
 (`security-severity`, `tags`, ...), che altrimenti arriverebbero non fidate alla CLI.
 """
 
-from typing import Annotated
+from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StrictFloat, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictFloat,
+    field_validator,
+    model_validator,
+)
 
 from ca_core.models.finding import Category
 
@@ -25,8 +32,23 @@ class Cvss(BaseModel):
     score: StrictFloat = Field(ge=0, le=10)  # stretto: lo schema rifiuta "9"
 
 
+def _required_if(category: Category, key: str) -> dict[str, Any]:
+    return {
+        "if": {"properties": {"category": {"const": category.value}}, "required": ["category"]},
+        "then": {"properties": {key: {"type": "string"}}, "required": [key]},
+    }
+
+
 class PluginSarifProperties(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "allOf": [
+                _required_if(Category.SECRET, "secret_sha256"),
+                _required_if(Category.DEPENDENCY, "purl"),
+            ]
+        },
+    )
 
     aliases: list[_SHORT] = Field(
         default_factory=list,
@@ -59,3 +81,11 @@ class PluginSarifProperties(BaseModel):
         if len(set(value)) != len(value):
             raise ValueError("alias duplicati")
         return value
+
+    @model_validator(mode="after")
+    def _category_requires_fields(self) -> Self:
+        if self.category is Category.SECRET and self.secret_sha256 is None:
+            raise ValueError("category secret richiede secret_sha256")
+        if self.category is Category.DEPENDENCY and self.purl is None:
+            raise ValueError("category dependency richiede purl")
+        return self

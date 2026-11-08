@@ -10,7 +10,7 @@ si registrano solo versione, digest, esito della verifica (`signature`) e isolam
 
 from datetime import date
 from enum import StrEnum
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 
 from pydantic import (
     AwareDatetime,
@@ -22,7 +22,7 @@ from pydantic import (
     model_validator,
 )
 
-from ca_core.models.config import GateMode
+from ca_core.models.config import GateMode, SchemaVersion1
 from ca_core.models.finding import FINGERPRINT_PATTERN, Finding, Level
 
 DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
@@ -99,6 +99,15 @@ class FeedSnapshot(_Strict):
 
 
 class PluginRun(_Strict):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "if": {"properties": {"outcome": {"const": "failed"}}, "required": ["outcome"]},
+            "then": {"properties": {"failure": {"type": "string"}}, "required": ["failure"]},
+            "else": {"properties": {"failure": {"type": "null"}}},
+        },
+    )
+
     name: str = Field(pattern=_PLUGIN_NAME)
     version: str = Field(min_length=1, max_length=128)
     digest: str = Field(pattern=DIGEST_PATTERN)  # quello eseguito, mai un tag (ADR-0005)
@@ -134,15 +143,43 @@ class Warning_(_Strict):  # noqa: N801 - `Warning` è un builtin
 
 
 class ScanReport(_Strict):
-    version: Literal[1]
+    """Un plugin `failed` rende `status` `partial` (un solo verso, anche nello schema).
+
+    Vincoli solo del modello: nomi in `plugins` unici e disgiunti da `disabled_plugins`.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "if": {
+                "properties": {
+                    "plugins": {
+                        "type": "array",
+                        "contains": {
+                            "properties": {"outcome": {"const": "failed"}},
+                            "required": ["outcome"],
+                        },
+                    }
+                },
+                "required": ["plugins"],
+            },
+            "then": {"properties": {"status": {"const": "partial"}}},
+        },
+    )
+
+    version: SchemaVersion1
     status: ReportStatus
     started_at: AwareDatetime  # `first_seen` e `last_seen` dei finding (ADR-0008)
     duration_seconds: StrictFloat = _DURATION
     repository: Repository
     gate: Gate
-    plugins: list[PluginRun]
+    plugins: list[PluginRun] = Field(
+        description="Nomi unici (vincolo del modello, non dello schema)."
+    )
     disabled_plugins: list[str] = Field(
-        default_factory=list, description="Disattivati da `plugins.disable`."
+        default_factory=list,
+        description="Disattivati da `plugins.disable`; disgiunti dai nomi in `plugins` "
+        "(vincolo del modello, non dello schema).",
     )
     exclusions: list[str] = Field(
         default_factory=list, description="Glob effettivi: predefiniti più `paths.exclude`."

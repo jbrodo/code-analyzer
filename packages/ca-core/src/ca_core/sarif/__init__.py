@@ -1,3 +1,4 @@
+from ca_core.sarif.aggregate import aggregate_sarif, build_aggregate
 from ca_core.sarif.checks import structural_checks
 from ca_core.sarif.errors import SarifError, SarifErrorCode
 from ca_core.sarif.reader import (
@@ -10,6 +11,8 @@ from ca_core.sarif.reader import (
 )
 
 __all__ = [
+    "aggregate_sarif",
+    "build_aggregate",
     "ParsedSarif",
     "SarifCheck",
     "SarifError",

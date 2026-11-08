@@ -30,10 +30,26 @@ FULL: Json = {
 }
 
 VALID = {
+    "gate-disjoint-levels": {
+        "version": 1,
+        "gate": {"block_on": ["critico", "alto"], "warn_on": ["medio", "basso"]},
+    },
+    "gate-only-block-on": {"version": 1, "gate": {"block_on": ["alto"], "warn_on": None}},
+    "paths-dotdot-inside-name": {
+        "version": 1,
+        "paths": {"exclude": ["a..b/**", "...", "x/.hidden"]},
+    },
+    "paths-glob-relative": {"version": 1, "paths": {"exclude": ["**/node_modules/**", "src/*.py"]}},
     "minimal": MINIMAL,
     "full": FULL,
     "empty-sections": {"version": 1, "paths": {}, "gate": {}, "plugins": {}, "licenses": {}},
-    "null-sections": {"version": 1, "service": None, "scoring": None, "agents": None},
+    "null-sections": {
+        "version": 1,
+        "service": None,
+        "scoring": None,
+        "agents": None,
+        "licenses": None,
+    },
     "agents-max-phase-lower": {"version": 1, "agents": {"max_phase": 1}},
     "plugins-semgrep-null": {"version": 1, "plugins": {"semgrep": None}},
 }
@@ -63,7 +79,40 @@ for key in FORBIDDEN_KEYS:
 FORBIDDEN["plugins-per-plugin-image"] = {"version": 1, "plugins": {"trivy": {"image": "x:1"}}}
 FORBIDDEN["plugins-enable"] = {"version": 1, "plugins": {"enable": ["x"]}}
 
+
+def _paths(key: str, value: str) -> Json:
+    return (
+        {"version": 1, "paths": {"exclude": [value]}}
+        if key == "paths"
+        else {"version": 1, "plugins": {"semgrep": {"rules": [value]}}}
+    )
+
+
+UNSAFE_PATHS = {
+    "absolute-posix": "/etc/x",
+    "traversal-middle": "a/../b",
+    "traversal-leading": "../a",
+    "traversal-trailing": "a/..",
+    "traversal-only": "..",
+    "empty": "",
+    "windows-backslash-absolute": "\\a\\b",
+    "windows-drive": "C:/x",
+    "windows-drive-backslash": "C:\\x",
+    "windows-traversal": "a\\..\\b",
+}
+for _key in ("paths", "semgrep-rules"):
+    for _name, _value in UNSAFE_PATHS.items():
+        FORBIDDEN[f"{_key}-{_name}"] = _paths("paths" if _key == "paths" else "rules", _value)
+
 INVALID = {
+    "gate-same-level-block-and-warn": {
+        "version": 1,
+        "gate": {"block_on": ["alto"], "warn_on": ["alto"]},
+    },
+    "gate-overlap-among-several": {
+        "version": 1,
+        "gate": {"block_on": ["critico", "alto"], "warn_on": ["medio", "alto"]},
+    },
     "missing-version": {},
     "version-2": {"version": 2},
     "version-string": {"version": "1"},

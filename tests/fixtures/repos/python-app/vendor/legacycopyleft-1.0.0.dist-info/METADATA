@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: legacycopyleft
+Version: 1.0.0
+Summary: Dipendenza finta con licenza copyleft (fixture, nessun codice)
+License-Expression: GPL-3.0-only

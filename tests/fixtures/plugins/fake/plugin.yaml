@@ -1,0 +1,13 @@
+{
+  "apiVersion": "code-analyzer/v1",
+  "name": "fake-plugin",
+  "version": "1.0.0",
+  "image": "localhost/ca-fake-plugin:1.0.0",
+  "capabilities": ["detect"],
+  "languages": [],
+  "categories": ["quality"],
+  "inputs": {"workspace": "readonly", "config": "optional", "sbom": "none"},
+  "outputs": {"sarif": "/out/results.sarif", "max_bytes": 1048576},
+  "resources": {"cpu": "1", "memory": "256Mi", "pids": 64, "timeout": "10s"},
+  "network": "none"
+}

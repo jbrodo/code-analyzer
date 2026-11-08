@@ -80,6 +80,116 @@
     },
     "Gate": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "critico"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "critico"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "alto"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "alto"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "medio"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "medio"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "basso"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "basso"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "block_on": {
           "anyOf": [
@@ -176,6 +286,10 @@
       "properties": {
         "exclude": {
           "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            },
             "type": "string"
           },
           "title": "Exclude",
@@ -231,6 +345,10 @@
       "properties": {
         "rules": {
           "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            },
             "type": "string"
           },
           "title": "Rules",
@@ -318,7 +436,15 @@
       "type": "array"
     },
     "licenses": {
-      "$ref": "#/$defs/Licenses"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Licenses"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "paths": {
       "$ref": "#/$defs/Paths"

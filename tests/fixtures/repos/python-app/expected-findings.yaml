@@ -1,0 +1,39 @@
+# Attesi della fixture F-02. Formato: ../../expected-findings.schema.json
+# Ogni voce e' stata osservata eseguendo direttamente lo scanner (bandit 1.9.4, osv-scanner 2.7.0,
+# trivy 0.76.2, scancode 32.5.0, syft 1.57.0) sulla fixture il 2026-11-08, con database offline.
+# Assenti di proposito:
+#  - B105, B106, B107 (disattivate, ADR-0012);
+#  - regole Semgrep: non esistono ancora (task P-09);
+#  - segreti: sono nella fixture secrets-history (F-04).
+version: 1
+expected:
+  # --- dipendenze: poetry.lock (osv-scanner e trivy riportano tutte e sei) ---
+  - {category: dependency, cve: CVE-2018-18074, path: poetry.lock, tools: [osv-scanner, trivy], note: "requests 2.19.1"}
+  - {category: dependency, cve: CVE-2023-32681, path: poetry.lock, tools: [osv-scanner, trivy], note: "requests 2.19.1"}
+  - {category: dependency, cve: CVE-2019-10906, path: poetry.lock, tools: [osv-scanner, trivy], note: "jinja2 2.10"}
+  - {category: dependency, cve: CVE-2020-28493, path: poetry.lock, tools: [osv-scanner, trivy], note: "jinja2 2.10"}
+  - {category: dependency, cve: CVE-2020-14343, path: poetry.lock, tools: [osv-scanner, trivy], note: "pyyaml 5.3.1"}
+  - {category: dependency, cve: CVE-2019-11324, path: poetry.lock, tools: [osv-scanner, trivy], note: "urllib3 1.24.1"}
+
+  # --- SAST: bandit ---
+  - {category: sast, rule_id: B602, path: app/handlers.py, start_line: 12, end_line: 12, tools: [bandit], note: "subprocess con shell=True"}
+  - {category: sast, rule_id: B301, path: app/handlers.py, start_line: 16, end_line: 16, tools: [bandit], note: "pickle.loads"}
+  - {category: sast, rule_id: B506, path: app/handlers.py, start_line: 20, end_line: 20, tools: [bandit], note: "yaml.load non sicuro"}
+  - {category: sast, rule_id: B324, path: app/handlers.py, start_line: 24, end_line: 24, tools: [bandit], note: "hashlib.md5"}
+  - {category: sast, rule_id: B501, path: app/handlers.py, start_line: 28, end_line: 28, tools: [bandit], note: "requests con verify=False"}
+  - {category: sast, rule_id: B307, path: app/handlers.py, start_line: 32, end_line: 32, tools: [bandit], note: "eval"}
+  - {category: sast, rule_id: B608, path: app/db.py, start_line: 5, end_line: 5, tools: [bandit], note: "query SQL costruita da stringa"}
+
+  # --- IaC: trivy (Dockerfile e Terraform) ---
+  - {category: iac, rule_id: DS-0001, path: Dockerfile, start_line: 1, end_line: 1, tools: [trivy], note: "tag latest"}
+  - {category: iac, rule_id: DS-0002, path: Dockerfile, tools: [trivy], note: "nessun USER non root; trivy riporta la riga 1"}
+  - {category: iac, rule_id: DS-0005, path: Dockerfile, start_line: 2, end_line: 2, tools: [trivy], note: "ADD al posto di COPY"}
+  - {category: iac, rule_id: DS-0026, path: Dockerfile, tools: [trivy], note: "nessun HEALTHCHECK; trivy riporta la riga 1"}
+  - {category: iac, rule_id: AWS-0107, path: infra/main.tf, start_line: 10, end_line: 10, tools: [trivy], note: "ingresso da 0.0.0.0/0"}
+  - {category: iac, rule_id: AWS-0086, path: infra/main.tf, start_line: 14, end_line: 16, tools: [trivy], note: "bucket senza blocco dell'accesso pubblico"}
+
+  # --- licenze: la policy e' ../license-policy.yml (AGPL-3.0-only vietata, GPL-3.0-only da approvare) ---
+  # rule_id "ca.license" (ADR-0008). La rilevazione di base e' di scancode/syft; la violazione di
+  # policy e' valutata da ca-core (ADR-0013), quindi l'atteso e' soddisfatto da uno qualsiasi.
+  - {category: license, rule_id: ca.license, path: third_party/copyleft_helper.py, start_line: 1, end_line: 1, tools: [scancode, ca-core], note: "AGPL-3.0-only (SPDX-License-Identifier), vietata dalla policy"}
+  - {category: license, rule_id: ca.license, path: vendor/legacycopyleft-1.0.0.dist-info/METADATA, tools: [syft, scancode, ca-core], note: "dipendenza pkg:pypi/legacycopyleft@1.0.0 con GPL-3.0-only, da approvare; scancode la rileva alla riga 5"}

@@ -136,6 +136,10 @@ SOURCE_INVALID = {
     "feeds-missing-sync-command": mutated(
         MINIMAL, _with(feeds={"ecosystems": [], "sync_timeout": "1s"})
     ),
+    "feeds-sync-command-empty-element": mutated(
+        MINIMAL, _with(feeds={**FEEDS, "sync_command": ["osv-sync", ""]})
+    ),
+    "feeds-sync-command-only-empty": mutated(MINIMAL, _with(feeds={**FEEDS, "sync_command": [""]})),
     "feeds-empty-sync-command": mutated(MINIMAL, _with(feeds={**FEEDS, "sync_command": []})),
     "feeds-bad-ecosystem": mutated(MINIMAL, _with(feeds={**FEEDS, "ecosystems": ["Maven"]})),
     "feeds-mount-elsewhere": mutated(MINIMAL, _with(feeds={**FEEDS, "mount": "/data"})),

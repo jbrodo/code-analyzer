@@ -56,6 +56,7 @@
         "sync_command": {
           "description": "Argv eseguito nella stessa immagine firmata, senza workspace e senza shell.",
           "items": {
+            "minLength": 1,
             "type": "string"
           },
           "minItems": 1,

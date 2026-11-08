@@ -61,7 +61,11 @@ class Location(_Strict):
     commit: str | None = None  # ADR-0008: cartella non git
     path: str | None = None
     start_line: StrictInt | None = Field(default=None, ge=1)
-    end_line: StrictInt | None = Field(default=None, ge=1)
+    end_line: StrictInt | None = Field(
+        default=None,
+        ge=1,
+        description="Non precedente a `start_line` (vincolo del modello, non dello schema).",
+    )
     purl: str | None = None  # per le librerie
     dependency_path: list[str] = Field(default_factory=list)  # catena transitiva
 
@@ -90,8 +94,15 @@ class Finding(_Strict):
     fingerprint: str = Field(pattern=FINGERPRINT_PATTERN)  # stabile tra scansioni
     category: Category
     rule_id: str
-    tool: str  # primo di `tools` in ordine lessicografico
-    tools: list[str] = Field(min_length=1)  # tutti i tool di origine
+    tool: str = Field(
+        description="Primo di `tools` in ordine lessicografico (vincolo del modello, non dello "
+        "schema)."
+    )
+    tools: list[str] = Field(
+        min_length=1,
+        json_schema_extra={"uniqueItems": True},
+        description="Tutti i tool di origine.",
+    )
     title: str
     message: str
     location: Location

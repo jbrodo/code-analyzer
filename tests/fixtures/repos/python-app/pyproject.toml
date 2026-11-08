@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "python-app-fixture"
+version = "0.0.0"
+description = "Fixture con dipendenze vulnerabili: non installare."
+authors = ["fixture <fixture@example.invalid>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "2.19.1"
+pyyaml = "5.3.1"
+jinja2 = "2.10"
+urllib3 = "1.24.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

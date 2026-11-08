@@ -1,0 +1,29 @@
+# Registry locale per build e firma di prova (I-02). ADR-0005, D-0005 aperta.
+# Solo loopback, HTTP, nessun volume: i dati spariscono con il container.
+# Non e' un registry di rilascio e non riceve mai immagini ufficiali.
+#
+#   docker compose -f deploy/compose/registry.yaml up -d --wait
+#   docker compose -f deploy/compose/registry.yaml down --volumes
+#
+# Porta: CA_REGISTRY_PORT (default 5055), sempre su 127.0.0.1.
+name: ca-registry-local
+
+services:
+  registry:
+    # registry:2 fissato per digest (indice OCI letto in locale il 2026-11-08).
+    image: registry:2@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373
+    ports:
+      - "127.0.0.1:${CA_REGISTRY_PORT:-5055}:5000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    tmpfs:
+      - /var/lib/registry
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "false"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5000/v2/"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

@@ -12,7 +12,7 @@ from typing import Protocol, Self, runtime_checkable
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ca_core.models.plugin_manifest import InputMode, PackagedPluginManifest
-from ca_core.models.scan_report import Isolation  # unico enum, condiviso con il report
+from ca_core.models.scan_report import Isolation, Signature  # enum condivisi con il report
 
 
 class _Frozen(BaseModel):
@@ -21,6 +21,14 @@ class _Frozen(BaseModel):
 
 class SourceError(Exception):
     """Lettura rifiutata: percorso fuori dalla radice, non regolare o troppo grande."""
+
+
+class ScanAborted(Exception):
+    """La scansione termina con exit 2 senza produrre un report (ADR-0005, ADR-0004): firma
+    assente o non valida, runtime OCI assente. Un esecutore la solleva da `run`; la pipeline non
+    la cattura, perché un `health` finding nasconderebbe una manomissione."""
+
+    exit_code = 2
 
 
 class SourceTooLarge(SourceError):
@@ -70,6 +78,9 @@ class PluginRunResult(_Frozen):
     outcome: RunOutcome
     exit_code: int | None  # None se il container non è partito
     isolation: Isolation
+    # Esito della verifica di firma di `image`. Predefinito `skipped` (lettura più severa: il
+    # gate esce con 2): solo l'esecutore che ha verificato la firma dichiara `verified`.
+    signature: Signature = Signature.SKIPPED
     duration_seconds: float = Field(ge=0)
     output_dir: str | None  # /out dell'esecuzione, da leggere con `SourceReader`; None se assente
     detail: str | None = None  # messaggio breve per il finding `health`; mai output dello scanner
@@ -135,6 +146,8 @@ __all__ = [
     "PluginRunRequest",
     "PluginRunResult",
     "RunOutcome",
+    "ScanAborted",
+    "Signature",
     "SourceError",
     "SourceReader",
     "SourceTooLarge",

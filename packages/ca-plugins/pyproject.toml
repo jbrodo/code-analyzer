@@ -3,7 +3,10 @@ name = "ca-plugins"
 version = "0.0.0"
 description = "Runner e adattatori degli scanner di Code Analyzer"
 requires-python = ">=3.12"
-dependencies = ["ca-core"]
+dependencies = [
+    "ca-core",
+    "pyyaml>=6",
+]
 
 [build-system]
 requires = ["uv_build>=0.13,<0.14"]

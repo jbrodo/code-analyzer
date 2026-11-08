@@ -11,6 +11,7 @@ from ca_core.ports import (
     PluginRunRequest,
     PluginRunResult,
     RunOutcome,
+    Signature,
     SourceError,
     SourceTooLarge,
 )
@@ -89,6 +90,7 @@ class FakePluginExecutor:
             outcome=RunOutcome.OK,
             exit_code=0,
             isolation=Isolation.HARDENED_CONTAINER,
+            signature=Signature.VERIFIED,
             duration_seconds=duration_seconds,
             output_dir=output_dir,
         )

@@ -157,7 +157,7 @@ class Resources(_Strict):
 class Feeds(_Strict):
     """Sincronizzazione del database di vulnerabilità (ADR-0006), in un container a parte."""
 
-    sync_command: list[str] = Field(
+    sync_command: list[Annotated[str, Field(min_length=1)]] = Field(
         min_length=1,
         description="Argv eseguito nella stessa immagine firmata, senza workspace e senza shell.",
     )
@@ -168,13 +168,6 @@ class Feeds(_Strict):
         default=FEEDS_MOUNT, description="Snapshot montato in sola lettura durante la scansione."
     )
     sync_timeout: str = Field(pattern=_DURATION)
-
-    @field_validator("sync_command")
-    @classmethod
-    def _no_empty_argument(cls, value: list[str]) -> list[str]:
-        if any(not argument for argument in value):
-            raise ValueError("argomento vuoto in sync_command")
-        return value
 
 
 _EXAMPLE: dict[str, Any] = {

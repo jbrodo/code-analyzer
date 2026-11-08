@@ -225,16 +225,19 @@
           "type": "string"
         },
         "tool": {
+          "description": "Primo di `tools` in ordine lessicografico (vincolo del modello, non dello schema).",
           "title": "Tool",
           "type": "string"
         },
         "tools": {
+          "description": "Tutti i tool di origine.",
           "items": {
             "type": "string"
           },
           "minItems": 1,
           "title": "Tools",
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [
@@ -438,6 +441,7 @@
             }
           ],
           "default": null,
+          "description": "Non precedente a `start_line` (vincolo del modello, non dello schema).",
           "title": "End Line"
         },
         "path": {
@@ -498,6 +502,23 @@
     },
     "PluginRun": {
       "additionalProperties": false,
+      "else": {
+        "properties": {
+          "failure": {
+            "type": "null"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "failed"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
       "properties": {
         "digest": {
           "pattern": "^sha256:[0-9a-f]{64}$",
@@ -565,6 +586,16 @@
         "duration_seconds",
         "outcome"
       ],
+      "then": {
+        "properties": {
+          "failure": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "failure"
+        ]
+      },
       "title": "PluginRun",
       "type": "object"
     },
@@ -670,9 +701,30 @@
   "$id": "urn:code-analyzer:schema:scan-report:v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "description": "Un plugin `failed` rende `status` `partial` (un solo verso, anche nello schema).\n\nVincoli solo del modello: nomi in `plugins` unici e disgiunti da `disabled_plugins`.",
+  "if": {
+    "properties": {
+      "plugins": {
+        "contains": {
+          "properties": {
+            "outcome": {
+              "const": "failed"
+            }
+          },
+          "required": [
+            "outcome"
+          ]
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "plugins"
+    ]
+  },
   "properties": {
     "disabled_plugins": {
-      "description": "Disattivati da `plugins.disable`.",
+      "description": "Disattivati da `plugins.disable`; disgiunti dai nomi in `plugins` (vincolo del modello, non dello schema).",
       "items": {
         "type": "string"
       },
@@ -718,6 +770,7 @@
       "type": "array"
     },
     "plugins": {
+      "description": "Nomi unici (vincolo del modello, non dello schema).",
       "items": {
         "$ref": "#/$defs/PluginRun"
       },
@@ -758,6 +811,13 @@
     "plugins",
     "findings"
   ],
+  "then": {
+    "properties": {
+      "status": {
+        "const": "partial"
+      }
+    }
+  },
   "title": "ScanReport",
   "type": "object",
   "x-schema-version": "1.0"

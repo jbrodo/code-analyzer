@@ -291,7 +291,9 @@ def test_dependency_requires_purl(store: SchemaStore) -> None:
 
     error = failure(store, [raw], plugin=manifest("osv-scanner", "dependency"))
 
-    assert error.code is SarifErrorCode.MAPPING and "properties/purl" in error.details[0]
+    assert error.code is SarifErrorCode.PROPERTIES
+    # il vincolo `category` -> `purl` è nello schema delle proprietà: l'errore punta all'oggetto
+    assert error.details[0].startswith("/runs/0/results/0/properties")
 
 
 def test_secret_uses_hash_only_and_never_copies_it_or_the_scanner_text(
@@ -320,7 +322,7 @@ def test_secret_needs_hash_and_path_only_syntactically(store: SchemaStore) -> No
     )
     assert finding.location.path == "gone.py"
     assert failure(store, [result("r", category="secret")], plugin=plugin).code is (
-        SarifErrorCode.MAPPING
+        SarifErrorCode.PROPERTIES
     )
 
 

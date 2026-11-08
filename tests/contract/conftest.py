@@ -66,3 +66,8 @@ def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(socket, "socket", refuse)
     monkeypatch.setattr(socket, "getaddrinfo", refuse)
+
+
+def case_params(cases: dict[str, Any], prefix: str = "") -> list[Any]:
+    """Casi con nome come parametri pytest (per i test di equivalenza modello/schema)."""
+    return [pytest.param(v, id=f"{prefix}{k}") for k, v in cases.items()]

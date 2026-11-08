@@ -1,0 +1,11 @@
+# Policy di licenze di prova per le fixture (ADR-0013: nessun elenco predefinito nel codice).
+# Sta FUORI da python-app/ e js-ts-app/ di proposito: scancode riconosce gli identificatori SPDX
+# anche in un file di configurazione, e la policy stessa diventerebbe un finding della fixture.
+# I test la passano alla scansione come configurazione, non la copiano nella fixture.
+version: 1
+licenses:
+  distributed_product: true
+  forbidden:
+    - AGPL-3.0-only
+  require_approval:
+    - GPL-3.0-only

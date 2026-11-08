@@ -61,6 +61,7 @@ def _plugin(**kv: object):
 PARTIAL = mutated(MINIMAL, _set(status="partial", plugins=[PLUGIN_OK, PLUGIN_FAILED]))
 
 VALID = {
+    "partial-without-failed-plugin": mutated(MINIMAL, _set(status="partial")),
     "minimal": MINIMAL,
     "with-finding": mutated(MINIMAL, _set(findings=[FINDING])),
     "partial-with-failed-plugin": PARTIAL,
@@ -105,6 +106,13 @@ VALID = {
     ),
 }
 INVALID = {
+    "complete-with-failed-plugin": mutated(MINIMAL, _set(plugins=[PLUGIN_OK, PLUGIN_FAILED])),
+    "failed-without-failure": mutated(PARTIAL, lambda i: i["plugins"][1].pop("failure")),
+    "failed-with-null-failure": mutated(PARTIAL, lambda i: i["plugins"][1].update(failure=None)),
+    "ok-with-failure": mutated(MINIMAL, _plugin(failure="boom")),
+    "finding-embedded-tools-duplicates": mutated(
+        MINIMAL, _set(findings=[{**FINDING, "tools": ["gitleaks", "gitleaks"]}])
+    ),
     **{
         f"missing-{k}": mutated(MINIMAL, _drop(k))
         for k in (
@@ -190,15 +198,10 @@ def test_plugin_outcome_only_admits_ok_and_failed() -> None:
     assert load_schema("scan-report")["$defs"]["Outcome"]["enum"] == ["ok", "failed"]
 
 
-def test_status_is_not_tied_to_plugin_outcome() -> None:
-    """Limite del contratto, documentato: lo schema non lega `status` agli esiti dei plugin.
+def test_complete_with_failed_plugin_is_rejected() -> None:
+    assert errors_of(VALIDATOR, mutated(MINIMAL, _set(plugins=[PLUGIN_FAILED]))) != []
 
-    Se un giorno lo schema esprimerà il vincolo, questi casi diventeranno non validi e il test
-    andrà aggiornato insieme a `architect`, non indebolito.
-    """
-    complete_with_failure = mutated(MINIMAL, _set(plugins=[PLUGIN_FAILED]))
-    partial_all_ok = mutated(MINIMAL, _set(status="partial"))
-    failed_without_reason = mutated(MINIMAL, _plugin(outcome="failed"))
-    assert errors_of(VALIDATOR, complete_with_failure) == []
-    assert errors_of(VALIDATOR, partial_all_ok) == []
-    assert errors_of(VALIDATOR, failed_without_reason) == []
+
+def test_partial_without_failed_plugin_stays_valid() -> None:
+    """Un solo verso: `failed` implica `partial`, non il contrario."""
+    assert errors_of(VALIDATOR, mutated(MINIMAL, _set(status="partial"))) == []

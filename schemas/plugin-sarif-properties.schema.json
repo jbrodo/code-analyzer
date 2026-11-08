@@ -48,6 +48,52 @@
   "$id": "urn:code-analyzer:schema:plugin-sarif-properties:v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "category": {
+            "const": "secret"
+          }
+        },
+        "required": [
+          "category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "secret_sha256": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret_sha256"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "category": {
+            "const": "dependency"
+          }
+        },
+        "required": [
+          "category"
+        ]
+      },
+      "then": {
+        "properties": {
+          "purl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "purl"
+        ]
+      }
+    }
+  ],
   "properties": {
     "aliases": {
       "description": "Altri identificativi della stessa vulnerabilità (CVE, GHSA, ...).",

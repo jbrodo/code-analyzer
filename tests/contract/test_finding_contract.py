@@ -106,6 +106,7 @@ INVALID = {
     "level-source-unknown": mutated(MINIMAL, _set("level_source", "magic")),
     "status-unknown": mutated(MINIMAL, _set("status", "closed")),
     "tools-empty": mutated(MINIMAL, _set("tools", [])),
+    "tools-duplicates": mutated(MINIMAL, _set("tools", ["bandit", "bandit"])),
     "score-below-0": mutated(MINIMAL, _set("score", -0.1)),
     "score-above-100": mutated(MINIMAL, _set("score", 100.1)),
     "location-without-repository": mutated(MINIMAL, _set("location", {"path": "a"})),

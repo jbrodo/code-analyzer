@@ -1,17 +1,17 @@
 """Caricamento dei manifest dei plugin (§7.1; ADR-0004, 0005, 0014).
 
-Il manifest è un dato del pacchetto CLI (`ca_plugins/manifests/<nome>.json`), mai del repository
-analizzato né di `.code-analyzer.yml`. Il formato è JSON, sottoinsieme di YAML: evita un parser in
-più (shortcut: se serve YAML, aggiungere PyYAML con `safe_load` e verifica di licenza).
+Il manifest è un dato del pacchetto CLI (`ca_plugins/builtin/<nome>/plugin.yaml`, con `_` al posto
+di `-` nel nome della cartella), mai del repository analizzato né di `.code-analyzer.yml`.
 Il rilascio inserisce il digest in `image` (ADR-0005); qui il manifest impacchettato senza digest
 è rifiutato, come uno senza `outputs.max_bytes` (obbligatorio nel modello).
+Parser: PyYAML con `safe_load` (nessun oggetto Python arbitrario); gli alias YAML sono rifiutati.
 """
 
-import json
 import re
 from importlib.resources import files
 from typing import Any
 
+import yaml
 from pydantic import ValidationError
 
 from ca_core.models import PackagedPluginManifest, PluginManifest
@@ -29,9 +29,13 @@ def parse_manifest(data: bytes, *, packaged: bool = True) -> PluginManifest:
     if len(data) > MAX_MANIFEST_BYTES:
         raise ManifestError("manifest troppo grande")
     try:
-        raw: Any = json.loads(data)
-    except (ValueError, RecursionError) as exc:
-        raise ManifestError("manifest non è JSON valido") from exc
+        if any(isinstance(e, yaml.AliasEvent) for e in yaml.parse(data, Loader=yaml.SafeLoader)):
+            raise ManifestError("alias YAML non ammessi")
+        raw: Any = yaml.safe_load(data)
+    except (yaml.YAMLError, RecursionError) as exc:
+        raise ManifestError("manifest non è YAML valido") from exc
+    if not isinstance(raw, dict):
+        raise ManifestError("il manifest deve essere una mappa")
     model = PackagedPluginManifest if packaged else PluginManifest
     try:
         return model.model_validate(raw, strict=False)
@@ -45,7 +49,7 @@ def load_packaged_manifest(name: str) -> PackagedPluginManifest:
     """Legge il manifest impacchettato del plugin `name` dai dati del pacchetto."""
     if not _NAME.fullmatch(name):
         raise ManifestError("nome plugin non valido")
-    resource = files("ca_plugins").joinpath("manifests", f"{name}.json")
+    resource = files("ca_plugins").joinpath("builtin", name.replace("-", "_"), "plugin.yaml")
     if not resource.is_file():
         raise ManifestError(f"manifest assente per il plugin {name!r}")
     with resource.open("rb") as handle:
@@ -58,8 +62,10 @@ def load_packaged_manifest(name: str) -> PackagedPluginManifest:
 
 
 def list_packaged_plugins() -> list[str]:
-    """Nomi dei plugin con manifest nel pacchetto, in ordine."""
-    root = files("ca_plugins").joinpath("manifests")
+    """Nomi dei plugin con `plugin.yaml` nel pacchetto, in ordine."""
+    root = files("ca_plugins").joinpath("builtin")
     if not root.is_dir():
         return []
-    return sorted(p.name.removesuffix(".json") for p in root.iterdir() if p.name.endswith(".json"))
+    return sorted(
+        p.name.replace("_", "-") for p in root.iterdir() if p.joinpath("plugin.yaml").is_file()
+    )

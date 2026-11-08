@@ -116,6 +116,7 @@
             }
           ],
           "default": null,
+          "description": "Non precedente a `start_line` (vincolo del modello, non dello schema).",
           "title": "End Line"
         },
         "path": {
@@ -327,16 +328,19 @@
       "type": "string"
     },
     "tool": {
+      "description": "Primo di `tools` in ordine lessicografico (vincolo del modello, non dello schema).",
       "title": "Tool",
       "type": "string"
     },
     "tools": {
+      "description": "Tutti i tool di origine.",
       "items": {
         "type": "string"
       },
       "minItems": 1,
       "title": "Tools",
-      "type": "array"
+      "type": "array",
+      "uniqueItems": true
     }
   },
   "required": [

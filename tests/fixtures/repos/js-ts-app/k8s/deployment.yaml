@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fixture-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fixture-app
+  template:
+    metadata:
+      labels:
+        app: fixture-app
+    spec:
+      containers:
+        - name: app
+          image: registry.invalid/fixture-app:1.0.0
+          securityContext:
+            privileged: true

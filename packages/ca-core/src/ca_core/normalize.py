@@ -385,3 +385,72 @@ def health_finding(
         first_seen=now,
         last_seen=now,
     )
+
+
+# --- K-06: licenze dichiarate da SBOM (ADR-0007, ADR-0013) -------------------------------------
+
+_LICENSE_REF_CHARS = re.compile(r"[^A-Za-z0-9.-]+")
+_MAX_LICENSE = 256
+
+
+@dataclass(frozen=True)
+class DeclaredLicense:
+    """Licenza dichiarata di un componente. `expression` è `None` se manca; `NOASSERTION` e
+    `LicenseRef-*` restano come dichiarati: li classifica la policy (K-12), non l'estrazione."""
+
+    name: str
+    purl: str | None
+    expression: str | None
+
+
+def _license_term(entry: Any) -> str | None:
+    if not isinstance(entry, Mapping):
+        return None
+    expression = entry.get("expression")
+    if isinstance(expression, str) and expression.strip():
+        return f"({expression.strip()})"
+    license_ = entry.get("license")
+    if not isinstance(license_, Mapping):
+        return None
+    spdx = license_.get("id")
+    if isinstance(spdx, str) and spdx.strip():
+        return spdx.strip()
+    name = license_.get("name")
+    if isinstance(name, str) and name.strip():
+        if name.strip() == "NOASSERTION":
+            return "NOASSERTION"
+        # nome libero, non SPDX: come dichiarazione personalizzata, quindi "da verificare"
+        return "LicenseRef-" + (_LICENSE_REF_CHARS.sub("-", name.strip()).strip("-") or "unnamed")
+    return None
+
+
+def declared_licenses(document: Mapping[str, Any]) -> list[DeclaredLicense]:
+    """Un elemento per componente (anche annidato), nell'ordine del documento.
+
+    Più voci in `licenses` si combinano con `AND`: la lettura più severa. Il documento deve
+    essere già validato (`parse_cyclonedx`).
+    """
+    found: list[DeclaredLicense] = []
+    stack = [iter(document.get("components") or ())]
+    while stack:
+        component = next(stack[-1], None)
+        if component is None:
+            stack.pop()
+            continue
+        if not isinstance(component, Mapping):
+            continue
+        terms = [t for e in component.get("licenses") or () if (t := _license_term(e))]
+        expression = " AND ".join(terms)[:_MAX_LICENSE] if terms else None
+        if len(terms) == 1 and terms[0].startswith("("):
+            expression = terms[0][1:-1][:_MAX_LICENSE]
+        purl = component.get("purl")
+        name = component.get("name")
+        found.append(
+            DeclaredLicense(
+                name=name if isinstance(name, str) else "",
+                purl=purl if isinstance(purl, str) and purl else None,
+                expression=expression,
+            )
+        )
+        stack.append(iter(component.get("components") or ()))
+    return found
