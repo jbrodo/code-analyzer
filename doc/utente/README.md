@@ -6,6 +6,7 @@ La CLI `code-analyzer` analizza una directory con scanner open source eseguiti i
 
 ## Requisiti
 
+- Python 3.14 o successivo per la CLI.
 - Runtime OCI: daemon Docker raggiungibile.
 - `cosign` v3.1.4, nel `PATH` o indicato da `COSIGN=/percorso/cosign`.
 - Chiave pubblica di verifica delle immagini in `CA_COSIGN_PUBLIC_KEY`. Senza chiave `scan` esce con 2.
