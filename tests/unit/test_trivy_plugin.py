@@ -294,7 +294,8 @@ def writing(document: dict[str, Any], status: int = 0) -> str:
 
 def test_run_passes_the_offline_arguments_and_writes_the_sarif(tmp_path: Path) -> None:
     args = tmp_path / "args"
-    code, out = run_adapter(tmp_path, f'echo "$@" > {args}\n' + writing(native()))
+    body = f'echo "$@" > {args}; pwd > {tmp_path}/cwd; printf "%s|" "$@" > {tmp_path}/exact\n'
+    code, out = run_adapter(tmp_path, body + writing(native()))
     assert code == 0
     argv = args.read_text().split()
     assert argv[:4] == ["fs", "--scanners", "vuln,misconfig", "--offline-scan"]
@@ -307,6 +308,9 @@ def test_run_passes_the_offline_arguments_and_writes_the_sarif(tmp_path: Path) -
     ):
         assert flag in argv
     assert argv[argv.index("--cache-dir") + 1] == "/feeds/trivy"
+    exact = (tmp_path / "exact").read_text().split("|")  # N-01: nessun file del repository
+    assert exact[exact.index("--config") + 1] == "" and exact[exact.index("--ignorefile") + 1] == ""
+    assert not (tmp_path / "cwd").read_text().strip().startswith(("/workspace", str(tmp_path)))
     assert argv[-1] == "/workspace" and argv[argv.index("--format") + 1] == "json"
     assert {
         r["properties"]["category"] for r in json.loads(out.read_text())["runs"][0]["results"]

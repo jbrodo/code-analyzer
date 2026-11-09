@@ -11,6 +11,7 @@ proprietario" senza `safe.directory`.
 
 import json
 import os
+import shutil
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
@@ -217,6 +218,28 @@ def test_hostile_gitleaks_toml_and_gitleaksignore_have_no_effect(
     code, report, _ = plugin(image_id, ws, tmp_path)  # stesso repository, sotto il plugin
     assert code == 0 and report is not None
     assert len(report["runs"][0]["results"]) == len(leaks)
+
+
+def test_gitleaksignore_in_dir_mode_fails_the_plugin_instead_of_hiding_secrets(
+    image_id: str, tmp_path: Path
+) -> None:
+    """N-07: `gitleaks dir` legge `<target>/.gitleaksignore` anche con `--gitleaks-ignore-path`."""
+    ws = new_repo(tmp_path).path
+    shutil.rmtree(ws / ".git")  # senza `.git` il plugin usa `gitleaks dir`
+    dir_cmd = ["dir", "/workspace", "--no-banner", "--report-format", "json"]
+    native(image_id, ws, tmp_path, *dir_cmd, "--report-path", "/out/dir.json",
+           entrypoint="gitleaks")  # fmt: skip
+    leaks = json.loads((tmp_path / "out/dir.json").read_text())
+    assert len(leaks) >= 1
+    code, report, _ = plugin(image_id, ws, tmp_path)  # pulito: la modalita' dir funziona
+    assert code == 0 and report is not None and len(report["runs"][0]["results"]) == len(leaks)
+    (ws / ".gitleaksignore").write_text("\n".join(leak["Fingerprint"] for leak in leaks) + "\n")
+    native(image_id, ws, tmp_path, *dir_cmd, "--report-path", "/out/dir2.json",
+           entrypoint="gitleaks")  # fmt: skip
+    assert json.loads((tmp_path / "out/dir2.json").read_text()) == []  # controllo positivo
+    (tmp_path / "out/results.sarif").unlink()  # quello della prova pulita
+    code, report, _ = plugin(image_id, ws, tmp_path)
+    assert code == 6 and report is None  # un fallimento visibile, non un risultato vuoto
 
 
 def test_workspace_of_another_owner_is_read_without_safe_directory(

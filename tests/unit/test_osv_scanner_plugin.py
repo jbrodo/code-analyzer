@@ -297,13 +297,30 @@ def writing(document: dict[str, Any], status: int, log: str = "") -> str:
 def test_run_passes_the_fixed_arguments_and_the_feeds_directory(tmp_path: Path) -> None:
     args = tmp_path / "args"
     body = f'echo "$@" > {args}; echo "$OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" > {tmp_path}/env\n'
+    body += f'pwd > {tmp_path}/cwd; wc -c < "$8" > {tmp_path}/size\n'
     body += writing(native(), 1)
     code, out = run_adapter(tmp_path, body)
     assert code == 0  # exit 1 = vulnerabilita' trovate: non e' un fallimento
-    assert args.read_text().split() == [
-        "scan", "source", "--offline-vulnerabilities", "--no-resolve", "-r", "--format", "json",
-        "--output-file", str(tmp_path / "raw.json"), "/workspace",
-    ]  # fmt: skip
+    argv = args.read_text().split()
+    config = argv[7]  # `--config` su un file vuoto e cwd propria: `osv-scanner.toml` no (N-01)
+    assert argv[:7] == [
+        "scan",
+        "source",
+        "--offline-vulnerabilities",
+        "--no-resolve",
+        "-r",
+        "--no-ignore",
+        "--config",
+    ]
+    assert argv[8:] == [
+        "--format",
+        "json",
+        "--output-file",
+        str(tmp_path / "raw.json"),
+        "/workspace",
+    ]
+    assert (tmp_path / "size").read_text().strip() == "0"
+    assert (tmp_path / "cwd").read_text().strip() == str(Path(config).parent)
     assert (tmp_path / "env").read_text().strip() == "/feeds-under-test"
     assert json.loads(out.read_text())["runs"][0]["results"][0]["ruleId"] == "CVE-2021-23337"
 
@@ -332,6 +349,16 @@ def test_run_could_not_load_db_fails_the_plugin_whatever_the_exit(
     )
     code, out = run_adapter(tmp_path, writing(native(), status, log))
     assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)  # niente risultati parziali
+
+
+@pytest.mark.parametrize("status", [0, 1, 128])
+def test_run_extraction_error_fails_the_plugin_whatever_the_exit(
+    tmp_path: Path, status: int
+) -> None:
+    log = "Error during extraction: (extracting as javascript/packagelockjson) x: could not extract"
+    body = f"echo '{log}'; echo 'No package sources found'\n" + writing(native(), status)
+    code, out = run_adapter(tmp_path, body)
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)  # mai un esito vuoto
 
 
 @pytest.mark.parametrize("status", [2, 127, 137])

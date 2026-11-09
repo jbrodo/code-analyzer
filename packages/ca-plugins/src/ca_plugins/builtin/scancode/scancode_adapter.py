@@ -121,7 +121,7 @@ def adapt(raw: bytes) -> bytes:
 def command(scancode: str, workspace: str, raw_file: str, nproc: int) -> list[str]:
     return [
         scancode, "--license", "--only-findings", "--strip-root", "--quiet",
-        "--ignore", "*.git/*", "-n", str(nproc), "--timeout", str(FILE_TIMEOUT),
+        "--ignore", ".git/*", "-n", str(nproc), "--timeout", str(FILE_TIMEOUT),
         "--json", raw_file, workspace,
     ]  # fmt: skip
 

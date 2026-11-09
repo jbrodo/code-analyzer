@@ -9,8 +9,10 @@ in `/tmp` una git dir ombra con una `config` scritta da lui, `HEAD` copiato e co
 ai soli dati (`objects`, `refs`, `packed-refs`, `shallow`, `reftable`), e la passa a `gitleaks git`
 con un ambiente `GIT_*` ridotto. Niente `safe.directory` e niente `--log-opts`. La configurazione di
 gitleaks e' quella predefinita del tag, passata con `--config`, e `--gitleaks-ignore-path` punta a
-una cartella vuota: `.gitleaks.toml` e `.gitleaksignore` del repository non hanno effetto. Senza
-`.git` si scansionano i file con `gitleaks dir` (nessuna storia). Mai `--redact`: il valore serve
+una cartella vuota: `.gitleaks.toml` e, in modalita' `git`, `.gitleaksignore` del repository non
+hanno effetto. Senza `.git` si scansionano i file con `gitleaks dir` (nessuna storia), ma `dir`
+legge sempre `<target>/.gitleaksignore` e non ha un'opzione per evitarlo (N-07, 8.30.1): con quel
+file presente il plugin fallisce (uscita 6), mai un risultato vuoto. Mai `--redact`: il valore serve
 per l'hash di `properties.secret_sha256` (ADR-0008) e sta solo nel file grezzo in `/tmp`.
 
 In `/out` esce un SARIF che contiene per ogni risultato `ruleId`, regione, `uri` relativo, il
@@ -19,7 +21,7 @@ In `/out` esce un SARIF che contiene per ogni risultato `ruleId`, regione, `uri`
 
 Uscite: 0 ok; 3 gitleaks fallito, senza output o con un errore `[git]` o `dubious ownership` nel
 log; 5 SARIF non conforme; 6 `.git` non ammesso (non e' una directory, `HEAD`, `config` o formato
-non ammessi).
+non ammessi) oppure `.gitleaksignore` nella radice senza `.git`.
 """
 
 import hashlib
@@ -223,6 +225,8 @@ def run(
             mode, target = "git", str(shadow)
             notes = (SHALLOW_NOTE,) if shallow else ()
         else:
+            if os.path.lexists(Path(workspace, ".gitleaksignore")):
+                raise UnsupportedRepo(".gitleaksignore in modalita' dir")  # N-07
             mode, target, notes = "dir", workspace, (NO_HISTORY_NOTE,)
     except UnsupportedRepo:
         return EXIT_REPO
@@ -231,6 +235,7 @@ def run(
     argv = [
         gitleaks, mode, target, "--config", config,
         "--gitleaks-ignore-path", str(scratch / "empty"),
+        "--ignore-gitleaks-allow",
         "--report-format", "sarif", "--report-path", str(raw_file),
         "--no-banner", "--no-color", "--log-level", "info",
     ]  # fmt: skip

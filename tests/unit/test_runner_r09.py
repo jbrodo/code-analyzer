@@ -20,7 +20,7 @@ import pytest
 
 from ca_core.models import PackagedPluginManifest
 from ca_core.models.plugin_manifest import Outputs
-from ca_core.ports import Isolation, PluginRunRequest, RunOutcome
+from ca_core.ports import Isolation, PluginRunRequest, RunOutcome, Signature
 from ca_plugins import runner
 from ca_plugins.runner import (
     FEEDS_MAX_ENTRIES,
@@ -345,6 +345,10 @@ def test_guard_reasons_are_fixed_texts(tmp_path: Path, monkeypatch: pytest.Monke
     monkeypatch.setattr(runner, "FEEDS_MIN_FREE_BYTES", 1 << 62)
     assert feeds_guard(tmp_path, 10**9)() == "spazio libero insufficiente per i feed"
     assert FEEDS_MAX_ENTRIES == 200_000 and runner.FEEDS_POLL_SECONDS == 1
+    monkeypatch.setattr(runner, "FEEDS_MIN_FREE_BYTES", 0)  # N-03: inode, come i byte
+    assert feeds_guard(tmp_path, 10**9)() is None  # controllo positivo: sotto la soglia vera
+    monkeypatch.setattr(runner, "FEEDS_MIN_FREE_INODES", 1 << 62)
+    assert feeds_guard(tmp_path, 10**9)() == "inode liberi insufficienti per i feed"
 
 
 def feeds_manifest() -> PackagedPluginManifest:
@@ -551,3 +555,89 @@ def test_purge_never_raises(tmp_path: Path) -> None:
 
     with executor(tmp_path, rc={"create": 1}) as ex:
         ex.purge_feeds(FeedsPurgeRequest(manifest=feeds_manifest(), snapshot_dir="/no/such"))
+
+
+# --- segnale durante pull o preparazione (N-02 di S-01) ---------------------------------------
+
+
+class AbortingExecutor(OciExecutor):
+    """Chiama `abort()` mentre il client esegue l'`occurrence`-esima chiamata a `verb`."""
+
+    def __init__(self, verb: str, occurrence: int, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.trigger = (verb, occurrence)
+        self.seen: dict[str, int] = {}
+        self.fired = False
+
+    def _cli(self, *args: str, **kwargs: Any) -> Any:
+        verb = args[0] if args[0] != "volume" else f"volume {args[1]}"
+        index = self.seen.get(verb, 0)
+        self.seen[verb] = index + 1
+        if not self.fired and (verb, index) == self.trigger:
+            self.fired = True
+            self.abort()
+        return super()._cli(*args, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("verb", "occurrence", "creates", "starts"),
+    [
+        ("pull", 0, 0, 0),
+        ("volume create", 0, 0, 0),  # prima della custodia
+        ("create", 0, 1, 0),  # custodia creata, mai avviata
+        ("start", 0, 1, 1),  # custodia avviata, il plugin non viene creato
+        ("create", 1, 2, 1),  # plugin creato, mai avviato
+        ("start", 1, 2, 2),  # plugin avviato: kill subito, nessun wait
+    ],
+)
+def test_abort_during_pull_or_preparation_never_leaves_the_plugin_running(
+    tmp_path: Path, verb: str, occurrence: int, creates: int, starts: int
+) -> None:
+    tar = build_tar(tmp_path, [("results.sarif", REG, b"{}")])
+    runtime = fake_cli(tmp_path, out={"inspect": "0 false"}, tar=str(tar))
+    with AbortingExecutor(
+        verb,
+        occurrence,
+        runtime=runtime,
+        work_dir=str(tmp_path),
+        image_ref=lambda _: "img",
+        verifier=lambda _m, _i: Signature.VERIFIED,
+    ) as ex:
+        ex.isolation()
+        result = ex.run(request(tmp_path))
+    v = verbs(tmp_path)
+    assert (result.outcome, result.detail) == (RunOutcome.FAILED, "interrotto")
+    assert (v.count("create"), v.count("start")) == (creates, starts)
+    assert "wait" not in v and "cp" not in v
+    assert v[-5:] == ["kill", "rm", "kill", "rm", "volume rm"]  # nessun residuo
+    if (verb, occurrence) == ("start", 1):  # kill del plugin anche dopo lo start
+        assert v.count("kill") >= 3
+
+
+def test_expiry_labels_start_after_the_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """B-08: un pull lungo non accorcia la vita dei container, che non sono ancora creati."""
+    clock = {"now": 1_000_000.0}
+    monkeypatch.setattr(runner.time, "time", lambda: clock["now"])
+
+    class SlowPull(OciExecutor):
+        def _cli(self, *args: str, **kwargs: Any) -> Any:
+            if args[0] == "pull":
+                clock["now"] += 800
+            return super()._cli(*args, **kwargs)
+
+    tar = build_tar(tmp_path, [("results.sarif", REG, b"{}")])
+    runtime = fake_cli(tmp_path, out={"inspect": "0 false"}, tar=str(tar))
+    with SlowPull(
+        runtime=runtime,
+        work_dir=str(tmp_path),
+        image_ref=lambda _: "img",
+        verifier=lambda _m, _i: Signature.VERIFIED,
+    ) as ex:
+        ex.isolation()
+        ex.run(request(tmp_path))
+    labels = {
+        x for c in calls(tmp_path) if c[0] in ("create", "volume") for x in c if "expires=" in x
+    }
+    assert labels == {f"code-analyzer.expires={1_000_000 + 800 + 30 + 900}"}

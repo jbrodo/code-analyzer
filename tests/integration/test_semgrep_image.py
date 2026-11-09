@@ -194,3 +194,31 @@ def test_signed_digest_is_verified_pulled_and_run(
     with signed_image(PLUGIN, "5062", "ca-p10-test", keys) as signed:
         raw = run_signed(PLUGIN, signed, REPOS / "js-ts-app", work)
     assert findings(raw) == expected("js-ts-app")
+
+
+def test_a_file_over_one_megabyte_is_still_analyzed(image_id: str, tmp_path: Path) -> None:
+    """N-11: semgrep salta i file oltre 1 MB; il riempimento non deve nascondere i finding."""
+    ws = tmp_path / "ws"
+    (ws / "app").mkdir(parents=True)
+    source = (REPOS / "python-app/app/handlers.py").read_text()
+    (ws / "app/handlers.py").write_text(source + "\n# " + "x" * 1_500_000 + "\n")
+    (ws / "small.py").write_text(source)
+    out = tmp_path / "direct"
+    out.mkdir()
+    out.chmod(0o777)
+    cmd = [
+        "docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
+        "--user", "65534:65534", "--tmpfs", "/tmp:rw,noexec,nosuid", "--env", "HOME=/tmp",
+        "--workdir", "/tmp", "--mount", f"type=bind,src={ws},dst=/workspace,readonly",
+        "--mount", f"type=bind,src={out},dst=/out", "--entrypoint", "/opt/venv/bin/semgrep",
+        image_id, "scan", "--config", "/opt/ca-plugin/rules", "--metrics=off",
+        "--disable-version-check", "--quiet", "--no-git-ignore", "--sarif",
+        "--sarif-output=/out/native.sarif", "/workspace",
+    ]  # fmt: skip
+    subprocess.run(cmd, capture_output=True, check=False, timeout=600)  # noqa: S603
+    direct = json.loads((out / "native.sarif").read_text())["runs"][0]["results"]
+    paths = {r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for r in direct}
+    assert not any(p.endswith("app/handlers.py") for p in paths)  # controllo positivo: saltato
+    assert any(p.endswith("small.py") for p in paths)
+    raw = run_ok(PLUGIN, TAG, image_id, ws, tmp_path / "w")["results.sarif"]
+    assert {path for _, path, _, _ in findings(raw)} == {"app/handlers.py", "small.py"}

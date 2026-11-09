@@ -210,7 +210,7 @@ def test_run_passes_the_fixed_arguments_and_accepts_exit_0_and_1(
     assert code == 0
     assert args.read_text().split() == [
         "-r", "/workspace", "-f", "sarif", "-o", f"{tmp_path}/bandit.sarif",
-        "--skip", "B105,B106,B107", "--ini", f"{tmp_path}/bandit.ini", "-q",
+        "--skip", "B105,B106,B107", "--ini", f"{tmp_path}/bandit.ini", "--ignore-nosec", "-q",
     ]  # fmt: skip
     assert (tmp_path / "bandit.ini").read_text() == "[bandit]\n"  # ignora la config del repo
     assert json.loads(out.read_text())["runs"][0]["results"][0]["ruleId"] == "B602"

@@ -109,19 +109,32 @@ def _lstat_mode(path: Path) -> int:
 
 
 def _validate_tree(root: Path, max_bytes: int) -> bool:
-    """Soli file regolari e directory, nessun symlink, almeno un file, entro `max_bytes`."""
+    """Soli file regolari e directory, nessun symlink, almeno un file, entro `max_bytes`.
+
+    Qualunque errore di attraversamento (directory illeggibile, voce sparita) è un rifiuto: un
+    sottoalbero che l'host non legge non si può controllare, quindi non si pubblica (M-02, N-03).
+    """
     files = total = 0
-    for current, dirs, names in os.walk(root, followlinks=False):
-        for entry in [*dirs, *names]:
-            mode = (Path(current) / entry).lstat().st_mode
-            if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):  # symlink compresi
+    failed = False
+
+    def onerror(_: OSError) -> None:
+        nonlocal failed
+        failed = True
+
+    try:
+        for current, dirs, names in os.walk(root, followlinks=False, onerror=onerror):
+            for entry in [*dirs, *names]:
+                mode = (Path(current) / entry).lstat().st_mode
+                if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):  # symlink compresi
+                    return False
+            for name in names:
+                files += 1
+                total += (Path(current) / name).lstat().st_size
+            if total > max_bytes:
                 return False
-        for name in names:
-            files += 1
-            total += (Path(current) / name).lstat().st_size
-        if total > max_bytes:
-            return False
-    return files > 0
+    except OSError:
+        return False
+    return files > 0 and not failed
 
 
 def _publish(plugin_dir: Path, pointer: _Pointer) -> None:
@@ -161,7 +174,11 @@ def _prune(
     kept = {keep, previous}
     for entry in plugin_dir.iterdir():
         if _SNAP.fullmatch(entry.name) and entry.name not in kept:
-            _discard(entry, manifest, executor)
+            if stat.S_ISLNK(_lstat_mode(entry)):  # B-07: mai seguire un link, nemmeno per purgare
+                with contextlib.suppress(OSError):
+                    entry.unlink()
+            else:
+                _discard(entry, manifest, executor)
 
 
 def _warning(code: str, message: str, subject: str) -> Warning_:

@@ -107,3 +107,7 @@ Prova, `tests/integration/test_gitleaks_hostile_repo.py`, sull'immagine reale co
 - `.gitleaks.toml` e `.gitleaksignore` ostili nel repository senza effetto;
 - workspace di altro proprietario: segreto trovato senza `safe.directory`;
 - clone parziale: plugin fallito.
+
+## Emendamento: soppressioni in linea (N-04)
+
+Data: 2026-11-09. Decisione dell'utente, valida per ora: i commenti in linea non nascondono finding. gitleaks gira con `--ignore-gitleaks-allow`, bandit con `--ignore-nosec`, semgrep con `--disable-nosem`. Le eccezioni passano da `.code-analyzer.yml`, che lascia traccia nel report. Il costo è più rumore per chi usa quei commenti in buona fede. Da rivedere se il rumore risulta eccessivo sui repository pilota.

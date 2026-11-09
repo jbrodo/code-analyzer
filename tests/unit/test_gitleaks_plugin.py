@@ -365,6 +365,7 @@ def test_run_git_mode_uses_the_shadow_and_the_hardened_arguments_and_environment
     assert argv[:2] == ["git", str(work / "shadow")]
     assert argv[argv.index("--config") + 1] == "/opt/ca-plugin/gitleaks.toml"
     assert argv[argv.index("--gitleaks-ignore-path") + 1] == str(work / "empty")
+    assert "--ignore-gitleaks-allow" in argv
     assert not list((work / "empty").iterdir())
     for banned in ("--redact", "--log-opts", "safe.directory", "--no-git", "--exit-code"):
         assert banned not in argv
@@ -389,6 +390,16 @@ def test_run_without_git_scans_the_files_and_says_there_is_no_history(tmp_path: 
     assert code == 0 and args.read_text().split()[:2] == ["dir", str(ws)]
     notes = json.loads(out.read_text())["runs"][0]["invocations"][0]["toolExecutionNotifications"]
     assert notes[0]["message"]["text"] == adapter.NO_HISTORY_NOTE
+
+
+def test_run_without_git_fails_when_a_gitleaksignore_is_present(tmp_path: Path) -> None:
+    """N-07: `gitleaks dir` la legge sempre; un fallimento e' visibile, un risultato vuoto no."""
+    ws = tmp_path / "plain"
+    ws.mkdir()
+    (ws / ".gitleaksignore").write_text("anything\n")
+    ran = tmp_path / "ran"
+    code, out = run_adapter(tmp_path, f"touch {ran}\n" + write_report(raw_sarif()), ws)
+    assert (code, out.exists(), ran.exists()) == (adapter.EXIT_REPO, False, False)
 
 
 def test_run_reports_a_shallow_clone(repo: Path, tmp_path: Path) -> None:

@@ -182,4 +182,90 @@ def _count_dir(
     return count
 
 
-__all__ = ["LocalSourceReader", "count_unreadable", "plugin_can_read"]
+# Nomi di lockfile (npm e PyPI: osv-scanner, trivy) ed estensioni dei sorgenti che semgrep e bandit
+# analizzano. Un symlink con uno di questi nomi non viene analizzato dagli scanner (N-10).
+LOCKFILE_NAMES = frozenset(
+    {
+        "package-lock.json",
+        "npm-shrinkwrap.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "poetry.lock",
+        "pipfile.lock",
+        "uv.lock",
+        "pdm.lock",
+        "requirements.txt",
+    }
+)
+SOURCE_EXTENSIONS = frozenset(
+    {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".py", ".pyi"}
+)
+
+
+def _is_analyzed_name(name: str) -> bool:
+    lower = name.lower()
+    return lower in LOCKFILE_NAMES or os.path.splitext(lower)[1] in SOURCE_EXTENSIONS
+
+
+def count_skipped_symlinks(root: str, excluded: Sequence[str]) -> int:
+    """Symlink sotto `root` con nome di lockfile o estensione sorgente analizzata (N-10, N-10b).
+
+    Gli scanner non seguono questi collegamenti: il file che indicano non e' analizzato e il
+    risultato sarebbe vuoto senza traccia. Non si seguono link; i percorsi esclusi non si contano
+    ne' si visitano. Mai nomi: solo il numero. `SourceError` oltre `MAX_FILES` e `MAX_DEPTH`.
+    """
+    root_fd = _open_dir(root)
+    try:
+        return _count_links(root_fd, "", 0, excluded, [1])
+    finally:
+        os.close(root_fd)
+
+
+def _count_links(
+    dir_fd: int, prefix: str, depth: int, excluded: Sequence[str], seen: list[int]
+) -> int:
+    if depth > MAX_DEPTH:
+        raise SourceError("directory annidate oltre il limite")
+    try:
+        with os.scandir(dir_fd) as it:
+            entries = list(it)
+    except OSError:
+        return 0
+    count = 0
+    subdirs: list[str] = []
+    for entry in entries:
+        rel = prefix + entry.name
+        try:
+            if is_excluded(rel, excluded):
+                continue
+            link = entry.is_symlink()
+            is_dir = not link and entry.is_dir(follow_symlinks=False)
+        except OSError:
+            continue
+        seen[0] += 1
+        if seen[0] > MAX_FILES:
+            raise SourceError("troppi file nella radice")
+        if link:
+            count += int(_is_analyzed_name(entry.name))
+        elif is_dir:
+            subdirs.append(entry.name)
+    for name in subdirs:
+        try:
+            child = os.open(name, _DIR_FLAGS, dir_fd=dir_fd)
+        except OSError:
+            continue  # gia' contata da `count_unreadable`
+        try:
+            count += _count_links(child, f"{prefix}{name}/", depth + 1, excluded, seen)
+        finally:
+            os.close(child)
+    return count
+
+
+__all__ = [
+    "LOCKFILE_NAMES",
+    "SOURCE_EXTENSIONS",
+    "LocalSourceReader",
+    "count_skipped_symlinks",
+    "count_unreadable",
+    "plugin_can_read",
+]

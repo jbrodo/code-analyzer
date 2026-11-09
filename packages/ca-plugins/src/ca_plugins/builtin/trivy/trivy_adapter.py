@@ -36,6 +36,9 @@ TMP_FILE = "/tmp/trivy.json"  # noqa: S108 - tmpfs del profilo, mai un percorso 
 EXIT_TRIVY, EXIT_SYNC, EXIT_INVALID = 3, 4, 5
 _LEVELS = {"CRITICAL": "error", "HIGH": "error", "MEDIUM": "warning", "LOW": "note"}
 _COMMON = ["--skip-version-check", "--disable-telemetry", "--quiet"]
+# Stringa vuota: lettura disattivata (`--help` 0.76.2). `trivy.yaml` e `.trivyignore*` del
+# repository non hanno effetto, nemmeno se trivy li cercasse nella directory corrente (N-01).
+_NO_REPO_CONFIG = ["--config", "", "--ignorefile", ""]
 _MAX_TEXT = 300
 _SOURCE_ORDER = ("nvd", "ghsa", "redhat")  # dopo `SeveritySource`, poi gli altri in ordine
 
@@ -168,10 +171,11 @@ def _env() -> dict[str, str]:
     }
 
 
-def _call(argv: list[str]) -> int:
+def _call(argv: list[str], cwd: str | None = None) -> int:
     try:
         return subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
             argv,
+            cwd=cwd,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -193,9 +197,11 @@ def run(
     Path(tmp_file).unlink(missing_ok=True)
     argv = [trivy, "fs", "--scanners", "vuln,misconfig"]
     argv += ["--offline-scan", "--skip-db-update", "--skip-check-update", *_COMMON]
-    argv += ["--cache-dir", cache_dir, "--format", "json", "--output", tmp_file, workspace]
-    if _call(argv) != 0:
-        return EXIT_TRIVY
+    argv += [*_NO_REPO_CONFIG, "--cache-dir", cache_dir, "--format", "json"]
+    argv += ["--output", tmp_file, workspace]
+    with tempfile.TemporaryDirectory() as empty:  # cwd vuota: niente file del repository
+        if _call(argv, empty) != 0:
+            return EXIT_TRIVY
     try:
         raw = Path(tmp_file).read_bytes()
     except OSError:

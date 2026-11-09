@@ -92,6 +92,18 @@ def test_git_directory_is_not_scanned(image_id: str, tmp_path: Path) -> None:
     assert found(run_ok(PLUGIN, TAG, image_id, ws, tmp_path / "w")["results.sarif"]) == set()
 
 
+def test_only_the_git_component_is_excluded_not_names_ending_in_git(
+    image_id: str, tmp_path: Path
+) -> None:
+    """N-08: `third_party.git` non e` `.git`; `.git` e `a/.git` restano esclusi."""
+    ws = tmp_path / "ws"
+    for d in (".git", "a/.git", "third_party.git", "x.git.y"):
+        (ws / d).mkdir(parents=True)
+        (ws / d / "f.txt").write_text("SPDX-License-Identifier: GPL-2.0-only\n")
+    raw = run_ok(PLUGIN, TAG, image_id, ws, tmp_path / "w")["results.sarif"]
+    assert {p for p, _ in found(raw)} == {"third_party.git/f.txt", "x.git.y/f.txt"}
+
+
 def test_pluggy_in_the_image_is_below_1_7_and_scancode_starts(image_id: str) -> None:
     code = "import importlib.metadata as m; print(m.version('pluggy'))"
     version = run(

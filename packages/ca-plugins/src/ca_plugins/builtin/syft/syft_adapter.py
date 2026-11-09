@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -97,14 +98,21 @@ def run(
     }
     Path(tmp_file).unlink(missing_ok=True)
     try:
-        done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
-            [syft, "scan", f"dir:{workspace}", "-q", "-o", f"cyclonedx-json@1.7={tmp_file}"],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            env=env,
-            check=False,
-        )
+        # cwd vuota e `-c` su un file vuoto: `.syft.yaml` del repository non ha effetto (N-01)
+        with tempfile.TemporaryDirectory() as empty:
+            config = Path(empty, "syft.yaml")
+            config.touch()
+            argv = [syft, "scan", f"dir:{workspace}", "-q", "-c", str(config)]
+            argv += ["-o", f"cyclonedx-json@1.7={tmp_file}"]
+            done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
+                argv,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=empty,
+                env=env,
+                check=False,
+            )
         if done.returncode != 0:
             return EXIT_SYFT
         raw = Path(tmp_file).read_bytes()

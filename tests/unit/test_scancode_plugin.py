@@ -184,7 +184,7 @@ def test_command_runs_only_the_license_detection_with_the_documented_flags() -> 
     assert argv[:3] == ["/s", "--license", "--only-findings"]
     assert {"--strip-root", "--quiet"} <= set(argv) and "--copyright" not in argv
     assert argv[argv.index("-n") + 1] == "3" and argv[argv.index("--timeout") + 1] == "120"
-    assert argv[argv.index("--ignore") + 1] == "*.git/*" and argv[-3:] == [
+    assert argv[argv.index("--ignore") + 1] == ".git/*" and argv[-3:] == [
         "--json", "/tmp/r.json", "/workspace",
     ]  # fmt: skip
 

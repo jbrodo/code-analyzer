@@ -75,6 +75,7 @@ _HOLD_EXTRA: Final = 300
 EXPIRES_LABEL: Final = "code-analyzer.expires"
 OUT_MARGIN_MIN: Final = 16 * 1024**2  # provvisorio, da confermare in X-04
 FEEDS_MIN_FREE_BYTES: Final = 2 * 1024**3  # provvisorio, da confermare in X-04 (ADR-0006)
+FEEDS_MIN_FREE_INODES: Final = 100_000  # provvisorio, da confermare in X-04 (N-03 di S-01)
 FEEDS_MAX_ENTRIES: Final = 200_000
 FEEDS_POLL_SECONDS: Final = 1
 _SAFE_NAME: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,200}")
@@ -311,8 +312,9 @@ def feeds_usage(root: Path, max_bytes: int, max_entries: int) -> tuple[int, int,
 def feeds_guard(path: Path, max_bytes: int) -> Callable[[], str | None]:
     """Guardia della sincronizzazione (ADR-0006): motivo fisso se si deve fermare, altrimenti None.
 
-    Spazio libero sotto `FEEDS_MIN_FREE_BYTES` (anche prima dello start), byte oltre `max_bytes`,
-    voci oltre `FEEDS_MAX_ENTRIES`.
+    Spazio libero sotto `FEEDS_MIN_FREE_BYTES` o inode sotto `FEEDS_MIN_FREE_INODES` (anche prima
+    dello start: file vuoti sotto una directory 000 non si vedono, ma consumano inode), byte
+    oltre `max_bytes`, voci oltre `FEEDS_MAX_ENTRIES`.
     """
 
     def guard() -> str | None:
@@ -322,6 +324,8 @@ def feeds_guard(path: Path, max_bytes: int) -> Callable[[], str | None]:
             return "spazio libero dei feed non verificabile"
         if fs.f_bavail * fs.f_frsize < FEEDS_MIN_FREE_BYTES:
             return "spazio libero insufficiente per i feed"
+        if fs.f_files and fs.f_favail < FEEDS_MIN_FREE_INODES:  # f_files 0: fs senza inode fissi
+            return "inode liberi insufficienti per i feed"
         _, _, over = feeds_usage(path, max_bytes, FEEDS_MAX_ENTRIES)
         if over:
             return "sincronizzazione dei feed oltre i limiti di byte o di voci"
@@ -800,7 +804,9 @@ class OciExecutor:
             try:
                 if self._stopping.is_set() or self._cli(*args, timeout=_CREATE_TIMEOUT).returncode:
                     return
-                if self._cli("start", name).returncode == 0:
+                if self._stopping.is_set():
+                    return
+                if self._cli("start", name).returncode == 0 and not self._stopping.is_set():
                     self._cli("wait", name, timeout=_PURGE_TIMEOUT)
             finally:
                 with contextlib.suppress(Exception):
@@ -833,25 +839,11 @@ class OciExecutor:
         image = self._image_ref(manifest.image)
         token = uuid.uuid4().hex[:16]
         name, volume, holder = f"ca-{manifest.name}-{token}", f"ca-out-{token}", f"ca-hold-{token}"
-        expires = int(time.time()) + timeout + _EXPIRES_GRACE
         plugin_mounts = list(mounts)
         tmpfs = 0
         if out is not None:
             tmpfs = out_tmpfs_bytes(manifest.outputs)
             plugin_mounts.append(volume_mount(volume, OUT_DIR))
-        args = container_args(
-            name=name,
-            image=image,
-            manifest=manifest,
-            mounts=plugin_mounts,
-            isolation=isolation,
-            network=network,
-            entrypoint=entrypoint,
-            command=command,
-            extra_memory=tmpfs,
-            file_size_limit=file_size_limit,
-            expires=expires,
-        )
         started = time.monotonic()
 
         def finish(
@@ -867,11 +859,17 @@ class OciExecutor:
                 signature,
             )
 
+        def stopped() -> PluginRunResult | None:
+            """Segnale ricevuto (N-02): si ricontrolla prima di ogni create e start."""
+            return (
+                finish(RunOutcome.FAILED, None, "interrotto") if self._stopping.is_set() else None
+            )
+
         try:
             self._sweep_orphans()
             self._register(name, holder)
-            if self._stopping.is_set():
-                return finish(RunOutcome.FAILED, None, "interrotto")
+            if (halt := stopped()) is not None:
+                return halt
             if self._verifier is not None:  # stesso digest verificato, mai un tag
                 try:
                     pulled = self._cli("pull", "--quiet", image, timeout=_PULL_TIMEOUT)
@@ -879,6 +877,23 @@ class OciExecutor:
                     return finish(RunOutcome.FAILED, None, "pull oltre il tempo massimo")
                 if pulled.returncode != 0:
                     return finish(RunOutcome.FAILED, None, f"pull fallito: {_brief(pulled.stderr)}")
+            if (halt := stopped()) is not None:
+                return halt
+            # B-08: la scadenza parte dopo il pull, che può durare quanto `_PULL_TIMEOUT`.
+            expires = int(time.time()) + timeout + _EXPIRES_GRACE
+            args = container_args(
+                name=name,
+                image=image,
+                manifest=manifest,
+                mounts=plugin_mounts,
+                isolation=isolation,
+                network=network,
+                entrypoint=entrypoint,
+                command=command,
+                extra_memory=tmpfs,
+                file_size_limit=file_size_limit,
+                expires=expires,
+            )
             if out is not None:  # fallimento chiuso: nessun ripiego su bind mount
                 made = self._cli(*out_volume_args(volume, tmpfs, expires), timeout=_CREATE_TIMEOUT)
                 if made.returncode != 0:
@@ -891,18 +906,29 @@ class OciExecutor:
                     sleep_seconds=timeout + _HOLD_EXTRA,
                     expires=expires,
                 )
+                if (halt := stopped()) is not None:
+                    return halt
                 if self._cli(*hold, timeout=_CREATE_TIMEOUT).returncode != 0:
                     return finish(RunOutcome.FAILED, None, "custodia di output non creata")
+                if (halt := stopped()) is not None:
+                    return halt
                 if self._cli("start", holder).returncode != 0:
                     return finish(RunOutcome.FAILED, None, "custodia di output non avviata")
             if guard is not None and (reason := guard()) is not None:
                 return finish(RunOutcome.FAILED, None, reason)
+            if (halt := stopped()) is not None:
+                return halt
             created = self._cli(*args, timeout=_CREATE_TIMEOUT)
             if created.returncode != 0:
                 return finish(RunOutcome.FAILED, None, f"create fallito: {_brief(created.stderr)}")
+            if (halt := stopped()) is not None:
+                return halt
             started = time.monotonic()  # il timeout del manifest vale dall'avvio
             if (s := self._cli("start", name)).returncode != 0:
                 return finish(RunOutcome.FAILED, None, f"start fallito: {_brief(s.stderr)}")
+            if (halt := stopped()) is not None:  # `abort` può aver ucciso prima dello start
+                self._cli("kill", name)
+                return halt
             try:
                 waited = self._wait(name, timeout, guard)
             except subprocess.TimeoutExpired:

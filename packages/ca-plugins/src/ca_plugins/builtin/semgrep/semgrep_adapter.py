@@ -160,6 +160,7 @@ def command(semgrep: str, rules: list[str], workspace: str, raw_file: str, njobs
     return [
         semgrep, "scan", *configs,
         "--metrics=off", "--disable-version-check", "--quiet",
+        "--disable-nosem", "--max-target-bytes=0", "--timeout=0",
         "--no-git-ignore", "--x-ignore-semgrepignore-files", "--no-rewrite-rule-ids",
         "--sarif", f"--sarif-output={raw_file}", f"--jobs={njobs}",
         workspace,

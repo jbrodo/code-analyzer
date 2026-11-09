@@ -64,3 +64,83 @@ Decisioni dell'utente del 2026-11-09:
 - Runner persistenti condivisi: non accettati senza gVisor.
 - M-01 e M-03 inclusi in R-09.
 - `/out` su tmpfs con dimensione massima; il valore del limite si fissa misurando in X-04.
+
+## S-01 — Riverifica dopo R-09
+
+Revisione in sola lettura di `security`, 2026-11-09, sul codice dopo R-09. Test con Docker reale: 206 passati, 1 fallito una volta (`test_subdirectory_in_out_is_invisible_to_the_reader[mode-000]`, passato alla ripetizione, causa non determinata, con gli E2E in parallelo).
+
+**R-09 non è chiudibile:** servono correzione e riverifica di N-01 e N-02, correzione o accettazione esplicita di N-03, e una decisione su N-04.
+
+| Finding | Esito |
+| --- | --- |
+| A-01 `/out` | Risolto: tetto del volume provato con Docker reale, 12 flussi tar ostili rifiutati |
+| A-01 `/feeds` | Parzialmente risolto: byte controllati, inode no (N-03) |
+| A-02 | Risolto |
+| M-01 | Risolto |
+| M-03 | Parzialmente risolto (N-02) |
+| M-08 | Risolto: i vettori di esecuzione provati sono bloccati sull'immagine reale |
+
+### Finding nuovi
+
+| ID | Gravità | Problema | Correzione | Blocca R-09 |
+| --- | --- | --- | --- | --- |
+| N-01 | Alto | File di configurazione del repository spengono gli scanner senza traccia: con i binari fissati, `.trivyignore` e `trivy.yaml` portano trivy da 25 vulnerabilità a 0, `.syft.yaml` porta syft da 7 componenti a 0. `osv-scanner.toml` non riprodotto | `cwd` vuoto in `/tmp` e opzioni esplicite (trivy `--config "" --ignorefile ""`, syft `-c` su file vuoto, osv `--config` su file vuoto), con controllo positivo | Sì |
+| N-02 | Medio | `_stopping` controllato una sola volta prima di `pull`: un segnale durante `pull` o preparazione lascia partire il plugin (riprodotto con client finto) | Ricontrollare prima di ogni `create` e `start`, e rifare il `kill` dopo `start` | Sì |
+| N-03 | Medio | Inode non controllati in `/feeds`: file vuoti sotto una directory 000 sfuggono a guardia e validazione (riprodotto con 50 file) | Soglia su `f_favail` e `onerror` che fa fallire `_validate_tree` (anche M-02) | Sì, salvo accettazione |
+| N-04 | Medio | Soppressioni in linea senza traccia: `gitleaks:allow` da 1 a 0 risultati, `# nosec` nasconde B307, `nosem` attivo in semgrep | Disattivarle o dichiararle nel report | Decisione dell'utente |
+| N-05 | Medio | gitleaks non legge la working tree quando c'è `.git`: un segreto non committato non è analizzato, verificato sul codice | Aggiungere `gitleaks dir` o dichiarare il limite | No |
+
+N-04, decisione dell'utente del 2026-11-09, valida per ora: le soppressioni in linea sono ignorate (ADR-0012).
+
+Bassi: B-07 (`_prune` senza `lstat`, un symlink `snap-*` porta `purge_feeds` a montare la destinazione), B-08 (`expires` calcolato prima del pull), B-09 (B103 scrive un nome di file preso dal codice nel `message`), B-10 (`apt-get` senza versione in gitleaks e scancode).
+
+Rischio residuo: le decisioni del 2026-11-09 restano valide. R-2 va riletto: l'accettazione presupponeva un plugin compromesso, mentre N-01 e N-04 permettono di nascondere risultati senza compromettere nulla. Nuovo residuo: con SIGKILL il plugin continua fino alla scansione successiva sullo stesso daemon.
+
+Non verificabile: gVisor, Podman, `userns-remap`, Docker rootless; SIGKILL del client; soglia di spazio libero contro una scrittura veloce reale; `osv-scanner.toml`.
+
+## S-01 — Seconda riverifica (N-01, N-02, N-03)
+
+Revisione in sola lettura di `security`, 2026-11-09. Test con Docker reale e feed congelati: 192 passati. Le modifiche a bandit, gitleaks e semgrep notate durante la revisione sono l'applicazione di N-04.
+
+| Finding | Esito |
+| --- | --- |
+| N-01 | Parzialmente risolto: risolto per trivy, syft, semgrep, bandit e `.gitleaks.toml`; restano N-06 e N-07 |
+| N-02 | Risolto (15 `abort` su Docker reale, nessun residuo) |
+| N-03 | Parzialmente risolto: pubblicazione bloccata e soglia corretta, ma il controllo ogni secondo non è un tetto rigido (misurati 298.000 file vuoti al secondo su tmpfs) |
+| M-02, B-07, metà di B-08 | Risolti |
+
+| ID | Gravità | Problema | Correzione | Blocca R-09 |
+| --- | --- | --- | --- | --- |
+| N-06 | Alto | Un `.gitignore` con il lockfile fa uscire osv-scanner con 128: l'adattatore lo trasforma in SARIF vuoto, esito OK (da 33 risultati a 0) | `--no-ignore`, con vettore nel test ostile | Sì |
+| N-07 | Alto | In modalità `dir` gitleaks legge `<target>/.gitleaksignore` nonostante `--gitleaks-ignore-path`: da 2 risultati a 0 | Se il file esiste in modalità `dir`, far fallire il plugin o dichiararlo nel report; alternativa da provare | Sì |
+| N-08 | Medio | `--ignore "*.git/*"` di scancode esclude ogni directory che finisce in `.git`: rinominare `third_party` in `third_party.git` nasconde una licenza | Limitare il pattern al componente `.git` | No |
+| N-09 | Basso | `# trivy:ignore:*` riduce i risultati Dockerfile da 4 a 2; rientra nella decisione N-04 | Da valutare | No |
+
+R-09 non è chiudibile finché N-06 e N-07 non sono corretti e riverificati, e finché l'utente non accetta o fa correggere il residuo di N-03.
+
+Decisioni dell'utente del 2026-11-09: residuo di N-03 accettato per la Fase 1, soglia da rivedere in X-04; N-09 accettato, `# trivy:ignore:*` resta attivo sui Dockerfile perché trivy 0.76.2 non offre un'opzione per disattivarlo, e il limite va dichiarato nella documentazione utente (L-06).
+
+## S-01 — Terza riverifica e controllo di classe
+
+Revisione in sola lettura di `security`, 2026-11-09, sulle immagini ricostruite dagli adattatori attuali. Test mirati con Docker reale: 159 passati. N-06, N-07 e N-08 sono risolti.
+
+Domanda esaminata: in quali condizioni controllabili dal repository il plugin esce con successo con un risultato vuoto o ridotto senza traccia nel report. Criterio di blocco: il file resta usabile, i risultati spariscono in blocco, non c'è traccia e nessun altro scanner della stessa categoria li riporta.
+
+| ID | Scanner | Condizione | Gravità | Prova | Blocca R-09 |
+| --- | --- | --- | --- | --- | --- |
+| N-10 | osv-scanner, trivy | Lockfile come symlink verso un file con altro nome | Alto | npm: osv 33→0, trivy 34→0; Poetry 25→0 e 25→0 | Sì |
+| N-10b | semgrep | Sorgente JS come symlink verso un file con altra estensione | Alto per JS/TS | 1→0, semgrep è l'unico SAST per JS/TS | Sì |
+| N-11 | semgrep | File oltre 1 MB (`--max-target-bytes`): basta un commento di riempimento | Alto per JS/TS | JS 1→0, Python 2→0 (bandit mantiene i 2 di Python) | Sì |
+| N-12 | osv, trivy, syft | Lockfile corrotto o vuoto | Medio | osv 33→0, trivy 34→0, syft 7→0 | No |
+| N-13 | gitleaks | Allowlist del `gitleaks.toml` predefinito (`*.png`, `*.bin`, `package-lock.json`, `node_modules/` e altri) | Medio | 1→0 | Decisione dell'utente |
+| N-14 | gitleaks | Byte NUL nel file in modalità `git` | Medio | 1→0; in modalità `dir` il segreto è trovato | Decisione dell'utente |
+| N-15 | bandit | Errore di sintassi, NUL, `coding` inesistente: il file è saltato, l'avviso è scartato dall'adattatore | Medio | 2→0; semgrep trova ancora quei casi | No |
+| N-16 | bandit | `.tox`, `.eggs`, `__pycache__`, `CVS`, `.hg`, `.svn` esclusi di default | Basso | 2→0; semgrep li vede | No |
+
+Altri limiti bassi da dichiarare: `"dev": true` nel lockfile (trivy 34→0, syft 7→2, osv resta 33); lockfile in `node_modules/` o rinominato; script senza estensione; per scancode directory VCS, `.gitignore`, `.gitattributes` e testo UTF-16.
+
+Esiti negativi: `.gitattributes` con `-diff` o `binary`, `vendor`, `test`, `dist`, `build`, directory nascoste e 40 livelli di profondità non riducono i risultati di osv, trivy e syft; 10 MB di riempimento sui lockfile non riducono nulla.
+
+Vincolo: `ca_core` non legge `invocations` del SARIF dei plugin, quindi le note degli adattatori non arrivano al report; ogni traccia va emessa da `report.warnings`.
+
+Non verificato: timeout per regola di semgrep; lockfile corrotto insieme a uno valido in osv; ecosistemi diversi da npm e PyPI.

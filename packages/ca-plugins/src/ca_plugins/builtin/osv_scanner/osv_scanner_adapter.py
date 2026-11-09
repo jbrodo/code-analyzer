@@ -13,7 +13,8 @@ Due modi, nella stessa immagine firmata (ADR-0006):
 Il repository e l'output di osv-scanner sono dati non fidati: si leggono come JSON, non si
 interpretano e non si riportano in stdout o stderr. Nessun `snippet` in uscita (ADR-0012).
 
-Uscite: 0 ok; 3 osv-scanner fallito (exit inatteso, `could not load db`, nessun output); 4 sync
+Uscite: 0 ok; 3 osv-scanner fallito (exit inatteso, `could not load db`, `Error during
+extraction`, nessun output); 4 sync
 fallita; 5 output non conforme. Exit 1 (vulnerabilita' trovate) ed exit 128 con `No package sources
 found` (nessun pacchetto) non sono fallimenti: nel secondo caso il SARIF ha zero risultati.
 """
@@ -24,6 +25,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -197,20 +199,37 @@ def run(
         "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY": feeds,
     }
     Path(tmp_file).unlink(missing_ok=True)
-    argv = [scanner, "scan", "source", "--offline-vulnerabilities", "--no-resolve", "-r"]
-    argv += ["--format", "json", "--output-file", tmp_file, workspace]
     try:
-        done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
-            argv,
-            stdin=subprocess.DEVNULL,
-            capture_output=True,
-            env=env,
-            check=False,
-        )
+        # `--config` su un file vuoto sovrascrive ogni `osv-scanner.toml` del repository, anche
+        # quelli accanto ai lockfile nei sottoalberi (N-01); cwd vuota. `--no-ignore`: un
+        # `.gitignore` del repository non nasconde i lockfile (N-06: exit 128, SARIF vuoto).
+        with tempfile.TemporaryDirectory() as empty:
+            config = Path(empty, "osv-scanner.toml")
+            config.touch()
+            argv = [scanner, "scan", "source", "--offline-vulnerabilities", "--no-resolve", "-r"]
+            argv += [
+                "--no-ignore",
+                "--config",
+                str(config),
+                "--format",
+                "json",
+                "--output-file",
+                tmp_file,
+            ]
+            done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
+                [*argv, workspace],
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                cwd=empty,
+                env=env,
+                check=False,
+            )
     except OSError:
         return EXIT_SCANNER
     log = (done.stdout + done.stderr).lower()
     if b"could not load db" in log:  # exit 1 o 127 con risultati parziali: plugin fallito (V-05)
+        return EXIT_SCANNER
+    if b"error during extraction" in log:  # lockfile non estraibile: mai un esito vuoto (N-12)
         return EXIT_SCANNER
     if done.returncode == 128 and b"no package sources found" in log:
         raw = b'{"results":[]}'

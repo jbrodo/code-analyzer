@@ -169,16 +169,16 @@ def run_adapter(tmp_path: Path, body: str) -> tuple[int, Path]:
 def test_run_passes_the_fixed_arguments_and_writes_the_adapted_file(tmp_path: Path) -> None:
     raw = json.dumps(bom())
     args = tmp_path / "args"
-    body = f'echo "$@" > {args}\ncat > "${{5#cyclonedx-json@1.7=}}" <<\'EOF\'\n{raw}\nEOF'
+    body = f'echo "$@" > {args}; pwd > {tmp_path}/cwd; wc -c < "$5" > {tmp_path}/size\n'
+    body += f"cat > \"${{7#cyclonedx-json@1.7=}}\" <<'EOF'\n{raw}\nEOF"
     code, out = run_adapter(tmp_path, body)
     assert code == 0
-    assert args.read_text().split() == [
-        "scan",
-        "dir:/workspace",
-        "-q",
-        "-o",
-        f"cyclonedx-json@1.7={tmp_path}/raw.json",
-    ]
+    argv = args.read_text().split()
+    config = argv[4]  # `-c` su un file vuoto e cwd propria: `.syft.yaml` del repository no (N-01)
+    assert argv[:4] == ["scan", "dir:/workspace", "-q", "-c"]
+    assert argv[5:] == ["-o", f"cyclonedx-json@1.7={tmp_path}/raw.json"]
+    assert (tmp_path / "size").read_text().strip() == "0"
+    assert (tmp_path / "cwd").read_text().strip() == str(Path(config).parent)
     assert json.loads(out.read_text())["metadata"]["component"]["name"] == "."
 
 
@@ -197,7 +197,7 @@ def test_run_missing_binary_is_exit_3(tmp_path: Path) -> None:
 
 
 def test_run_nonconforming_output_is_exit_5_and_writes_nothing(tmp_path: Path) -> None:
-    body = 'echo "{}" > "${5#cyclonedx-json@1.7=}"'
+    body = 'echo "{}" > "${7#cyclonedx-json@1.7=}"'
     code, out = run_adapter(tmp_path, body)
     assert (code, out.exists()) == (adapter.EXIT_INVALID, False)
 

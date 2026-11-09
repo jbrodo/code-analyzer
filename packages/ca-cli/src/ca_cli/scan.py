@@ -64,7 +64,7 @@ from ca_core.ports import (
 )
 from ca_plugins.feeds import FeedsError, FeedsOutcome, default_cache_dir, ensure_snapshot
 from ca_plugins.runner import require_isolation
-from ca_plugins.source import count_unreadable
+from ca_plugins.source import count_skipped_symlinks, count_unreadable
 
 REPORT_FILE = publish_step.REPORT_NAME  # alias (ADR-0010): `gate.DEFAULT_REPORT` non cambia
 _COMMIT = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
@@ -231,12 +231,17 @@ def handle(args: argparse.Namespace, context: Context) -> int:
 
     # A-02: ciò che il plugin (65534) non legge non è analizzato; mai nomi, solo il numero.
     try:
-        unreadable = count_unreadable(root, coverage_exclusions(config.paths.exclude))
+        excluded = coverage_exclusions(config.paths.exclude)
+        unreadable = count_unreadable(root, excluded)
+        links = count_skipped_symlinks(root, excluded)  # N-10: lockfile e sorgenti come symlink
     except SourceError as exc:
         raise ScanError("workspace non esaminabile") from exc
     unreadable_text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
     if unreadable:
         print(f"avviso: {unreadable_text}", file=sys.stderr)
+    links_text = f"{links} collegamenti simbolici a lockfile o sorgenti non analizzati"
+    if links:
+        print(f"avviso: {links_text}: analisi incompleta", file=sys.stderr)
 
     commit, history = _git_state(root, context.source)
     name = Path(root).name or "workspace"
@@ -289,6 +294,11 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     status = normalized.status
     if unreadable:
         warnings.append(Warning_(code="workspace-unreadable", message=unreadable_text))
+        status = ReportStatus.PARTIAL
+    if links:
+        warnings.append(
+            Warning_(code="workspace-symlinks", message=f"{links_text}: analisi incompleta")
+        )
         status = ReportStatus.PARTIAL
     if not executions:
         warnings.append(Warning_(code="no-plugin-run", message="nessun plugin eseguito"))

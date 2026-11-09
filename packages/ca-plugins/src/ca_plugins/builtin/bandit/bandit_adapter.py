@@ -111,7 +111,7 @@ def run(
     try:
         done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
             [bandit, "-r", workspace, "-f", "sarif", "-o", str(raw_file), "--skip", SKIP]
-            + ["--ini", str(ini), "-q"],
+            + ["--ini", str(ini), "--ignore-nosec", "-q"],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

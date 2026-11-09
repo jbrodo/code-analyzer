@@ -59,6 +59,8 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 
 Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
 
+Decisioni dell'utente del 2026-11-09 sulla riverifica di S-01: soppressioni in linea ignorate per ora (N-04, ADR-0012); residuo di N-03 accettato per la Fase 1; N-09 accettato e da dichiarare in L-06.
+
 Blocchi non legati a un ADR da confermare con l'utente, senza effetto sul percorso critico:
 
 - `sbom --format spdx` è in §9.1 ma non in §13. ADR-0010 lo omette e il piano lo lascia fuori. Se deve rientrare, serve un task in più in `ca_core/sbom/` e in L-03.

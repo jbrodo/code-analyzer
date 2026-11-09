@@ -21,7 +21,7 @@ from ca_core.ports import (
     ScanAborted,
     Signature,
 )
-from ca_plugins.feeds import POINTER, FeedsError, ensure_snapshot
+from ca_plugins.feeds import POINTER, FeedsError, _validate_tree, ensure_snapshot
 from ca_plugins.runner import OciExecutor
 
 MANIFEST = PackagedPluginManifest.model_validate(_EXAMPLE_FULL)
@@ -299,3 +299,61 @@ def test_interruption_or_abort_never_purges(cache: Path) -> None:
 
 def test_fake_and_real_executors_implement_purge_feeds() -> None:
     assert callable(FakePluginExecutor().purge_feeds) and callable(OciExecutor.purge_feeds)
+
+
+# --- N-03 / M-02 / B-07 di S-01 -------------------------------------------------------------
+
+
+def hide(snap: Path) -> None:
+    """File nascosti sotto una directory 000 (come un plugin 65534 ostile)."""
+    (snap / "hidden" / "deeper").mkdir(parents=True)
+    for i in range(5):
+        (snap / "hidden" / "deeper" / f"empty-{i}").touch()
+    (snap / "hidden").chmod(0o000)
+
+
+def hidden_tree(snap: Path) -> None:
+    good(snap)  # un feed valido accanto al sottoalbero nascosto
+    hide(snap)
+
+
+def test_tree_with_an_unreadable_subtree_is_never_published(cache: Path) -> None:
+    ex = PurgingStub(hidden_tree)
+    out = ensure_snapshot(MANIFEST, ex, cache, FixedClock())
+    assert out.snapshot_dir is None and out.failure is not None
+    assert not (cache / "osv-scanner" / POINTER).exists() and snaps(cache) == []
+    assert len(ex.purges) == 1  # la cartella scartata è rimossa chiedendo all'esecutore
+
+
+def test_unreadable_subtree_keeps_the_previous_snapshot(cache: Path) -> None:
+    clock = FixedClock()
+    first = ensure_snapshot(MANIFEST, SyncStub(good), cache, clock)
+    clock.advance(2 * 86400)
+    out = ensure_snapshot(MANIFEST, PurgingStub(hidden_tree), cache, clock)
+    assert out.snapshot_dir == first.snapshot_dir and out.feed and out.feed.sync_failed
+
+
+def test_validate_tree_accepts_a_readable_tree_and_rejects_unreadable_or_vanished(
+    tmp_path: Path,
+) -> None:
+    good(tmp_path)
+    assert _validate_tree(tmp_path, 10**6)  # controllo positivo
+    hide(tmp_path)
+    try:
+        assert not _validate_tree(tmp_path, 10**6)
+    finally:
+        (tmp_path / "hidden").chmod(0o700)
+
+
+def test_prune_never_follows_a_snap_symlink(cache: Path, tmp_path: Path) -> None:
+    clock = FixedClock()
+    ex = PurgingStub(good)
+    ensure_snapshot(MANIFEST, ex, cache, clock)
+    target = tmp_path / "elsewhere"
+    target.mkdir()
+    (target / "keep").write_text("x")
+    (cache / "osv-scanner" / "snap-AAAAAAAA").symlink_to(target)
+    clock.advance(2 * 86400)
+    ensure_snapshot(MANIFEST, ex, cache, clock)
+    assert ex.purges == [] and (target / "keep").exists()  # nessun montaggio della destinazione
+    assert not (cache / "osv-scanner" / "snap-AAAAAAAA").is_symlink()

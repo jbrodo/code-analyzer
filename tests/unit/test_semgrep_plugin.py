@@ -273,7 +273,14 @@ def test_command_uses_only_the_project_rules_and_the_safe_flags() -> None:
     assert argv.count("--config") == 2
     assert argv[argv.index("--config") + 1] == "/opt/ca-plugin/rules"
     assert {"--metrics=off", "--disable-version-check", "--no-git-ignore"} <= set(argv)
-    assert {"--x-ignore-semgrepignore-files", "--no-rewrite-rule-ids", "--sarif"} <= set(argv)
+    assert {
+        "--disable-nosem",
+        "--max-target-bytes=0",  # N-11: nessun tetto di dimensione per file
+        "--timeout=0",  # nessun tetto per regola: il tetto e' `resources.timeout`
+        "--x-ignore-semgrepignore-files",
+        "--no-rewrite-rule-ids",
+        "--sarif",
+    } <= set(argv)
     assert not any("auto" in a or "semgrep.dev" in a or a.startswith("p/") for a in argv)
     assert argv[-1] == "/workspace" and "--jobs=2" in argv
 
