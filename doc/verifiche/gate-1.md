@@ -157,3 +157,20 @@ Per la build del 2026-11-09 sono registrati i suffissi degli ID immagine sotto; 
 | semgrep | `d9dbc7a73986` |
 | syft | `717ca48a3130` |
 | trivy | `2d5a97fcee8d` |
+
+## Esito del Gate 1 (X-06)
+
+2026-11-09. **Gate 1 superato**, con due scostamenti confermati dall'utente (§13: i valori sono da confermare dopo il pilota).
+
+| Condizione | Valore misurato | Esito |
+| --- | --- | --- |
+| G1.a: 3 pilota scansionati | 3 report `complete`, schema valido, gate valutato | Superata, con lo scostamento 1 |
+| G1.b: scansione completa < 10 minuti | Massimo 247,7 s (saleor) | Superata |
+| G1.c: problemi noti delle fixture rilevati | E2E verdi; 2 attesi di licenza trovati per percorso e regola, senza la riga | Superata, con lo scostamento 2 |
+
+Scostamenti:
+
+1. I report sono `complete` grazie a `paths.exclude` su 6 symlink verificati come innocui; senza, 2 pilota su 3 darebbero `partial` per la regola `workspace-symlinks`.
+2. Il finding di licenza su un file indica il percorso ma non la riga (ADR-0013), mentre l'atteso chiede la riga: i 2 test restano `xfail`.
+
+L'auto-analisi (X-05) non è una condizione del Gate 1: non è superata, e blocca X-07.

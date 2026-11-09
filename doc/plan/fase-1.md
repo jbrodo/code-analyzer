@@ -13,6 +13,7 @@ Stato di ogni task:
 | `LIBERO` | Presuppone al più ADR tecnici. Non attende alcuna decisione dell'utente |
 | `IPOTESI` | Presuppone la raccomandazione di un ADR che richiede l'utente. Può partire: la sezione 3 indica cosa si rifà se la raccomandazione viene respinta |
 | `BLOCCATO` | Non può partire o chiudersi finché la decisione indicata non è presa |
+| `RINVIATO` | Spostato a una fase successiva per decisione dell'utente |
 
 Lo stato riguarda il task in sé. Un blocco si propaga lungo le dipendenze: la sezione 3 elenca anche i task bloccati indirettamente.
 
@@ -64,6 +65,8 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 - D-0005: registry GHCR del repository e chiave di test fino al primo rilascio. La scelta definitiva si fa prima del rilascio: I-06 resta bloccato.
 - D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
+
+Decisione dell'utente del 2026-11-09: I-03 (immagine CLI) passa all'inizio della Fase 2. In Fase 1 il caso di riferimento è la CLI installata; il progetto rivisto da `security` è in ADR-0004.
 
 Decisioni dell'utente del 2026-11-09 sull'auto-analisi (X-05, `doc/verifiche/gate-1.md`): 19 falsi positivi di licenza con eccezioni attive, approvate da Riccardo Roveda, scadenza 2027-05-09; per i 6 finding che indicano licenze effettive, Riccardo Roveda è il responsabile di D-0015 e la valutazione resta da completare. X-05 non è superata e X-07 resta bloccato.
 
@@ -664,7 +667,7 @@ Nessuna pubblicazione senza approvazione esplicita dell'utente.
 - Spec: §7.2, §13. ADR: 0005.
 
 #### I-03 — Immagine CLI
-- Agente: `devops`. Stato: `IPOTESI` (D-0005).
+- Agente: `devops`. Stato: `RINVIATO` alla Fase 2, decisione dell'utente del 2026-11-09. Progetto rivisto in ADR-0004 (M-11).
 - Percorsi: `deploy/docker/cli/`.
 - Dipende da: L-04.
 - Accettazione: orchestra i plugin come container fratelli con `CA_HOST_WORKSPACE` e `CA_HOST_OUTPUT`, contiene `cosign` a versione fissata, senza plugin al suo interno. Il socket non raggiunge i plugin. Privilegio del socket documentato.
@@ -906,7 +909,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 #### X-07 — Chiusura della Fase 1
 - Agente: `architect`. Stato: `BLOCCATO` da X-05 (valutazione D-0015 dei 6 finding di licenza effettiva).
 - Percorsi: `doc/plan/fase-1.md`, `doc/verifiche/gate-1.md`.
-- Dipende da: X-05, X-06, T-06, T-07, S-02, L-06, I-03, O-01, O-02, A-02, A-03.
+- Dipende da: X-05, X-06, T-06, T-07, S-02, L-06, O-01, O-02, A-02, A-03.
 - Accettazione: voci di §13 e di §17 spuntate con evidenza, copertura ≥ 80% su `ca-core`, D-0013 e D-0015 riportate come chiuse o rinviate con il loro proprietario. ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato` con le prove elencate in "Revisione A-01", o riaperti con motivo.
 - Spec: §13, §17. ADR: tutti.
 

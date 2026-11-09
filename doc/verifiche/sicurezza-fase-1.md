@@ -239,3 +239,18 @@ Non verificato: un `trivy.db` valido ma vuoto; `sync` fallita online; sentinella
 Rischio residuo da sottoporre all'utente: chi modifica il branch può indebolire gate, esclusioni ed eccezioni (N-30); report o log CI con fingerprint di segreti permettono di recuperare segreti deboli (N-27); uno snapshot alterato o vecchio dà falsi negativi senza effetto sul gate (N-28, N-29); repository ostili possono rallentare l'host per decine di minuti, serve un timeout del job CI (N-31, N-23).
 
 Decisioni dell'utente del 2026-11-09 su S-02: rischi accettati per la Fase 1 N-30 (indebolimento dal branch), N-28 e N-29 (feed), N-31 e N-23 (tempi sull'host). N-27 corretto: artefatti con permessi 0600, `gate` non stampa il fingerprint dei segreti; il fingerprint nel report resta forzabile offline su valori deboli. Correzione con test unitari, non riverificata da `security`.
+
+## M-11 — Revisione del progetto della modalità immagine CLI
+
+Revisione in sola lettura di `security`, 2026-11-09, sull'emendamento di ADR-0004. Esito: servono modifiche, recepite nell'emendamento. Nulla è implementato.
+
+| ID | Problema | Gravità | Prova |
+| --- | --- | --- | --- |
+| N-32 | Il socket non è protetto da una mappatura sbagliata: un `CA_HOST_*` che contiene `/var/run` lo espone ai plugin | Alto | Un socket in una directory montata in sola lettura accetta `connect` da un container `--user 65534`, `--read-only`, `--cap-drop ALL`, `--network none` |
+| N-33 | Prefisso non controllato per tipo: `sub -> /ca/cache` monta la cache in `/workspace` | Alto | Da lettura del codice |
+| N-34 | `st_ino` e `st_mtime_ns` non bastano: falsi allarmi con scansioni concorrenti, identità debole | Alto | `mkdtemp` in una radice ne cambia subito l'mtime; `st_dev` uguale tra host e container |
+| N-35 | `work_dir` non cablato, HOME non gestito | Medio | `composition.py` crea `OciExecutor` senza `work_dir` |
+| N-36 | Proprietà e permessi di cache e radice di lavoro | Medio | `_private_dir` esige proprietario uguale all'uid della CLI |
+| N-37 | La prova di identità deve precedere anche `sync_feeds` | Basso | Da lettura del codice |
+| N-38 | `CA_HOST_OUTPUT` non è un sorgente di `bind_mount` | Basso | Da lettura del codice |
+| N-39 | Con SIGKILL `ca-oci-*` resta sull'host | Basso | Da lettura del codice |

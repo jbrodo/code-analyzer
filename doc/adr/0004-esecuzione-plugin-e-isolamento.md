@@ -225,18 +225,20 @@ Residuo: con SIGKILL del client il plugin continua fino alla scansione successiv
 
 ## Emendamento per I-03: modalità immagine CLI (M-11)
 
-Data: 2026-11-09. Stato: **proposto, da rivedere con `security` prima di costruire l'immagine.** Il caso di riferimento resta la CLI installata sull'host.
+Data: 2026-11-09. Stato: **progetto rivisto da `security` (N-32..N-39), non implementato.** Il caso di riferimento resta la CLI installata sull'host.
 
-Problema. Con la CLI in un container e il socket del daemon montato, i plugin sono container fratelli: i sorgenti dei `--mount` li risolve il daemon sull'host, non la CLI. Un percorso visto dalla CLI, passato tal quale, monterebbe una directory diversa o inesistente (M-11). Riguarda workspace, `/inputs` (sotto la radice di lavoro) e snapshot dei feed. `/out` no: è un volume letto con `docker cp` dal client.
+Problema. Con la CLI in un container e il socket del daemon montato, i plugin sono container fratelli: i sorgenti dei `--mount` li risolve il daemon sull'host, non la CLI. Un percorso visto dalla CLI, passato tal quale, monterebbe una directory diversa o inesistente (M-11). Riguarda workspace, `/inputs` (sotto la radice di lavoro) e snapshot dei feed, in lettura e in scrittura. `/out` no: è un volume letto con `docker cp` dal client.
 
-Decisione proposta:
+Progetto:
 
-1. **Quattro variabili, tutte o nessuna.** `CA_HOST_WORKSPACE`, `CA_HOST_OUTPUT`, `CA_HOST_WORK`, `CA_HOST_CACHE` danno il percorso host di quattro montaggi con destinazione fissa nell'immagine: `/ca/workspace` in sola lettura, `/ca/output`, `/ca/work`, `/ca/cache`. Valgono solo dall'ambiente, mai da `.code-analyzer.yml` (ADR-0014). Se ne manca una: exit 2. Senza alcuna variabile il comportamento non cambia.
-2. **Traduzione che fallisce chiusa.** Una sola funzione, chiamata per ogni sorgente di `bind_mount`, risolve il percorso con `realpath` e sostituisce il prefisso confrontando i componenti. Un percorso fuori dai quattro prefissi è `ScanAborted`: nessun ripiego sul percorso originale.
-3. **Prova di identità prima del primo plugin.** Un container di prova, con il profilo `hardened-container`, immagine già verificata, nessuna rete e i percorsi tradotti in sola lettura, riporta `st_ino` e `st_mtime_ns` delle quattro radici. Se non coincidono con ciò che vede la CLI: `ScanAborted`. Così una mappatura sbagliata non porta dati errati nel plugin.
-4. **Il socket resta alla sola CLI.** La lista dei montaggi dei plugin è costruita dal runner e non contiene mai il socket; un test lo verifica sugli argomenti di `create`. Il privilegio equivale a root sull'host e va dichiarato nella documentazione utente.
-5. **Contenuto dell'immagine** (`deploy/docker/cli/`): CLI e `cosign` a versione e SHA-256 fissati, nessun plugin, utente non root con il gruppo del socket passato da `--group-add`. La chiave pubblica si monta dall'esterno.
+1. **Tre variabili, tutte o nessuna.** `CA_HOST_WORKSPACE`, `CA_HOST_WORK` e `CA_HOST_CACHE` danno il percorso host di tre montaggi con destinazione fissa nell'immagine: `/ca/workspace` in sola lettura, `/ca/work`, `/ca/cache`. Valgono solo dall'ambiente, mai da `.code-analyzer.yml` (ADR-0014). Se ne manca una: exit 2. `CA_HOST_OUTPUT` non serve: `/ca/output` è scritta solo dalla CLI e non è un sorgente di `bind_mount` (N-38).
+2. **Traduzione per tipo, che fallisce chiusa (N-33).** `translate(kind, path)` con tipi chiusi: `workspace` solo sotto `/ca/workspace`, `inputs` solo sotto `/ca/work`, `snapshot` solo sotto `/ca/cache`. Usa `realpath(strict=True)` e `Path.is_relative_to`; un percorso fuori prefisso è `ScanAborted`, senza ripiego. Il traduttore si inietta nei cinque punti che chiamano `bind_mount`; il `guard` di `sync_feeds` resta sul percorso visto dalla CLI.
+3. **Percorsi rifiutati all'avvio (N-32).** Exit 2 se un percorso host è uguale o antenato di `/`, `/run`, `/var/run`, `/proc`, `/sys`, DockerRootDir o del percorso reale del socket, se due radici coincidono o sono annidate, se `/ca/*` non risultano montaggi in `/proc/self/mountinfo`. `realpath(/ca/x)` deve essere `/ca/x`.
+4. **Prova di identità (N-34, N-37).** Una sola volta, dopo la prima verifica di firma e prima di qualunque esecuzione con montaggi, compresi `sync_feeds` e `purge_feeds`. Su `/ca/work` e `/ca/cache`: nonce casuale a 128 bit in un file creato dalla CLI, letto da un container con l'uid della CLI, senza capability né rete. Su `/ca/workspace`: `st_dev`, `st_ino`, `st_mtime_ns` e hash dei nomi di primo livello. Fallisce se una radice contiene un socket. Output limitato in byte.
+5. **Il socket resta alla sola CLI (N-32).** Un test controlla tutti gli argomenti dei comandi verso il runtime: mai il socket, il valore di `DOCKER_HOST`, `--volumes-from`, `--privileged`, `--pid`, `--ipc`. Il privilegio equivale a root sull'host e va dichiarato nella documentazione utente.
+6. **Cablaggio e profilo (N-35, N-36, N-39).** In modalità immagine la radice di composizione imposta `work_dir=/ca/work`, `feeds_cache=/ca/cache`, `HOME`, `XDG_CACHE_HOME`, `DOCKER_CONFIG` e `--output-dir` sotto `/ca/output`. La CLI gira con `--user "$(id -u):$(id -g)"`, `--group-add` numerico del socket, `--cap-drop ALL`, `--read-only`, `no-new-privileges` e tmpfs su `/tmp`; uid 65534 rifiutato. All'avvio si rimuovono i soli `ca-oci-*` scaduti.
+7. **Contenuto dell'immagine** (`deploy/docker/cli/`): CLI e `cosign` a versione e SHA-256 fissati, nessun plugin. La chiave pubblica si monta dall'esterno.
 
 Fuori ambito: `DOCKER_HOST` remoto, dove la prova di identità fallisce e la scansione si annulla; Podman, ancora `UNPROVEN`.
 
-Punti per la revisione: se `st_ino` e `st_mtime_ns` bastano come prova di identità; symlink nei prefissi; proprietà dei file della cache, che oggi appartengono all'utente del container; il costo del container di prova.
+Non verificato: snapshot LVM, ZFS o btrfs rispetto alla prova; Docker Desktop; daemon rootless o userns-remap; il costo del container di prova.
