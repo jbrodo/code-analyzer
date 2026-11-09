@@ -607,16 +607,18 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 
 ### Fase 1 — MVP: inventario (Python, JS/TS)
 
-- [ ] Monorepo, CI del progetto, immagini Docker base
-- [ ] `ca-core`: modello Finding, fingerprint, dedup, SARIF/CycloneDX I/O
-- [ ] Runner plugin in sandbox + manifest + verifica firma
-- [ ] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit
-- [ ] Policy licenze da `.code-analyzer.yml`
-- [ ] CLI `scan`, `sbom`, `gate`, `config validate`
-- [ ] Output SARIF aggregato
-- [ ] Fixture repo Python e JS/TS con problemi noti
+- [ ] Monorepo, CI del progetto, immagini Docker base — fatti monorepo, immagine base dei plugin e CI delle verifiche (`verify.yml`); mancano build, firma ed E2E in CI (O-02), job dello snapshot dei feed (O-03) e immagine CLI (I-03).
+- [x] `ca-core`: modello Finding, fingerprint, dedup, SARIF/CycloneDX I/O
+- [x] Runner plugin in sandbox + manifest + verifica firma — R-09 chiuso il 2026-11-09 (`doc/verifiche/sicurezza-fase-1.md`). Firma provata con chiave di test: registry e chiave definitivi attendono D-0005.
+- [x] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit — provati su immagini firmate localmente. La verifica legale per la distribuzione resta in D-0015.
+- [x] Policy licenze da `.code-analyzer.yml`
+- [ ] CLI `scan`, `sbom`, `gate`, `config validate` — comandi implementati e provati con il laboratorio E2E (`tests/e2e/scan_local.py`); il pacchetto non è eseguibile da solo finché I-04 non produce manifest con digest.
+- [x] Output SARIF aggregato
+- [x] Fixture repo Python e JS/TS con problemi noti
 
 **Gate 1:** 3 repository pilota scansionati; scansione < 10 minuti; tutti i problemi noti delle fixture rilevati.
+
+Stato del Gate 1 al 2026-11-09: non superato. Pilota scelti ma non ancora scansionati con il prodotto, quindi durata da misurare (X-04, X-06). Problemi noti delle fixture rilevati dagli E2E; i 2 attesi di licenza sono trovati per percorso e regola, senza la riga.
 
 ### Fase 2 — Qualità e impatto
 
