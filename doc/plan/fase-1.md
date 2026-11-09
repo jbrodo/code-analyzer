@@ -66,6 +66,10 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 - D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 
+Decisione dell'utente del 2026-11-09: in Fase 1 non si distribuisce nulla; X-05 chiusa come scostamento, la valutazione completa di D-0015 diventa condizione vincolante per I-06. semgrep classificato `LGPL-2.1-only`.
+
+Decisione dell'utente del 2026-11-09: licenza del prodotto GPL-3.0-only (`LICENSE`). Copre il codice del progetto, non i componenti di terze parti nelle immagini; A-04 resta aperto per l'esito sui motori.
+
 Decisione dell'utente del 2026-11-09: I-03 (immagine CLI) passa all'inizio della Fase 2. In Fase 1 il caso di riferimento è la CLI installata; il progetto rivisto da `security` è in ADR-0004.
 
 Decisioni dell'utente del 2026-11-09 sull'auto-analisi (X-05, `doc/verifiche/gate-1.md`): 19 falsi positivi di licenza con eccezioni attive, approvate da Riccardo Roveda, scadenza 2027-05-09; per i 6 finding che indicano licenze effettive, Riccardo Roveda è il responsabile di D-0015 e la valutazione resta da completare. X-05 non è superata e X-07 resta bloccato.
@@ -688,7 +692,7 @@ Nessuna pubblicazione senza approvazione esplicita dell'utente.
 - Spec: §7.3, §15. ADR: 0015.
 
 #### I-06 — Primo rilascio ufficiale
-- Agente: `devops`. Stato: `BLOCCATO` da D-0005, D-0015.
+- Agente: `devops`. Stato: `BLOCCATO` dalla valutazione completa di D-0015 e dall'approvazione esplicita della pubblicazione.
 - Percorsi: `deploy/docker/`, `.github/`.
 - Dipende da: I-04, O-02, R-09, A-04.
 - Accettazione: immagini pubblicate sul registry definitivo con la chiave definitiva, dopo approvazione esplicita dell'utente. Non serve per il Gate 1.
@@ -907,7 +911,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §13. ADR: 0009.
 
 #### X-07 — Chiusura della Fase 1
-- Agente: `architect`. Stato: `BLOCCATO` da X-05 (valutazione D-0015 dei 6 finding di licenza effettiva).
+- Agente: `architect`. Stato: `LIBERO`; X-05 chiusa come scostamento confermato dall'utente il 2026-11-09 (`doc/verifiche/gate-1.md`). Resta la prima esecuzione della CI (O-02, O-03).
 - Percorsi: `doc/plan/fase-1.md`, `doc/verifiche/gate-1.md`.
 - Dipende da: X-05, X-06, T-06, T-07, S-02, L-06, O-01, O-02, A-02, A-03.
 - Accettazione: voci di §13 e di §17 spuntate con evidenza, copertura ≥ 80% su `ca-core`, D-0013 e D-0015 riportate come chiuse o rinviate con il loro proprietario. ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato` con le prove elencate in "Revisione A-01", o riaperti con motivo.

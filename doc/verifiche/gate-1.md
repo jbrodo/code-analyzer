@@ -174,3 +174,23 @@ Scostamenti:
 2. Il finding di licenza su un file indica il percorso ma non la riga (ADR-0013), mentre l'atteso chiede la riga: i 2 test restano `xfail`.
 
 L'auto-analisi (X-05) non è una condizione del Gate 1: non è superata, e blocca X-07.
+
+## Decisioni del 2026-11-09 su licenze e chiusura
+
+Licenza del prodotto: GPL-3.0-only, confermata dall'utente (`LICENSE`).
+
+L'aggiunta di `LICENSE` ha fatto comparire 5 finding su file invariati: scancode attribuisce loro la licenza del progetto. Sono coperti da eccezioni con `approved_by: Riccardo Roveda` e scadenza 2027-05-09.
+
+| Fingerprint | File | Motivazione |
+| --- | --- | --- |
+| `sha256:f64935e9020d0320f949cff2ae1807785e323a725d588d85c792efe677ca2aa8` | `LICENSE` | Testo della licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only). |
+| `sha256:37702b4c664627db904b72d0215e5210cf05afe720534dce16a437dc202c602e` | `packages/ca-core/src/ca_core/normalize.py` | Codice del progetto, senza citazioni di GPL: scancode gli attribuisce la licenza del progetto dopo l'aggiunta di LICENSE. |
+| `sha256:34ad11f35998a0d4d0a21b9a85a5d355b5431239e3a9133bf4d929c59cb37fd7` | `packages/ca-plugins/src/ca_plugins/builtin/osv_scanner/licenses/THIRD-PARTY-NOTICES.md` | Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode. |
+| `sha256:3a69785665770a9e542bae7dcda86fb16a571d23c6b90ac8eeeef0077457f78c` | `packages/ca-plugins/src/ca_plugins/builtin/syft/licenses/THIRD-PARTY-NOTICES.md` | Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode. |
+| `sha256:dcbc2e54ada6869387b6bd6c1f18861a3f05341ccfd7886456769b47c4db7776` | `packages/ca-plugins/src/ca_plugins/builtin/bandit/licenses/THIRD-PARTY-NOTICES.md` | Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode. |
+
+Per lo stesso motivo sono cambiati i fingerprint di due finding reali, che restano aperti: `semgrep` `sha256:34b2cabe48f609a22174cb3e2969a5aac68baedb2687c1ffd23cb3b2e2b604e9`, `gitleaks` `sha256:598f9caa0662863f332253f30976ef5f08f2fb2b29f020e37ad949ac4d05f1e2`.
+
+semgrep 1.184.0 è classificato `LGPL-2.1-only`, lettura prudenziale: si ignora `or-later` dei metadati della wheel.
+
+**X-05 chiusa come scostamento confermato dall'utente:** in Fase 1 non si distribuisce nulla. I 6 finding di licenza effettiva restano aperti e `gate --fail-on critico,alto` esce con 1. La valutazione completa di D-0015 (semgrep, `git`, `libgomp1`, `unrar`, base Debian) è condizione vincolante per I-06, insieme all'approvazione esplicita della pubblicazione.

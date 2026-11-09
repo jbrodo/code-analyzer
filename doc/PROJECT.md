@@ -639,7 +639,7 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 
 **Gate 1:** 3 repository pilota scansionati; scansione completa < 10 minuti (ADR-0009); tutti i problemi noti delle fixture rilevati.
 
-Stato del Gate 1 al 2026-11-09: superato, con due scostamenti confermati dall'utente (`doc/verifiche/gate-1.md`). 3 pilota `complete` sotto i 10 minuti, 247,7 s il più lento; problemi noti delle fixture rilevati dagli E2E. La chiusura della Fase 1 (X-07) resta bloccata dalla valutazione D-0015.
+Stato del Gate 1 al 2026-11-09: superato, con due scostamenti confermati dall'utente (`doc/verifiche/gate-1.md`). 3 pilota `complete` sotto i 10 minuti, 247,7 s il più lento; problemi noti delle fixture rilevati dagli E2E. La valutazione D-0015 è condizione per il primo rilascio (I-06), non per la chiusura della Fase 1.
 
 ### Fase 2 — Qualità e impatto
 

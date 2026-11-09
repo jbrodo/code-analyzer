@@ -100,3 +100,23 @@ exceptions:
     reason: "Falso positivo: tests/unit/test_semgrep_plugin.py cita la licenza senza dichiararla. Asserzione sul testo degli avvisi (riga 406)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:f64935e9020d0320f949cff2ae1807785e323a725d588d85c792efe677ca2aa8"
+    reason: "Testo della licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only)."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:37702b4c664627db904b72d0215e5210cf05afe720534dce16a437dc202c602e"
+    reason: "Codice del progetto, senza citazioni di GPL: scancode gli attribuisce la licenza del progetto dopo l'aggiunta di LICENSE."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:34ad11f35998a0d4d0a21b9a85a5d355b5431239e3a9133bf4d929c59cb37fd7"
+    reason: "Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:3a69785665770a9e542bae7dcda86fb16a571d23c6b90ac8eeeef0077457f78c"
+    reason: "Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:dcbc2e54ada6869387b6bd6c1f18861a3f05341ccfd7886456769b47c4db7776"
+    reason: "Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
