@@ -2,8 +2,9 @@
 
 Il report è un file non fidato: dimensione limitata, validazione con il modello di `ca_core`, e
 messaggi senza valori del file. Sono stampati solo fingerprint, livello e categoria dei finding
-bloccanti (campi validati), mai testi che vengono dagli scanner. Exit: quello di `evaluate_gate`
-(0 superato, 1 fallito, 2 errore o scansione parziale senza `--allow-partial`).
+bloccanti (campi validati), mai testi che vengono dagli scanner. Per i segreti il fingerprint si
+omette: nei log CI permetterebbe di forzare offline un valore debole (N-27). Exit: quello di
+`evaluate_gate` (0 superato, 1 fallito, 2 errore o scansione parziale senza `--allow-partial`).
 Nessun `--pr` né `--base`. `--fail-on ""` è una scelta esplicita: nulla blocca.
 """
 
@@ -15,7 +16,7 @@ from pydantic import ValidationError
 
 from ca_cli.composition import Context
 from ca_cli.scan import REPORT_FILE, ScanError
-from ca_core.models.finding import Level
+from ca_core.models.finding import Category, Level
 from ca_core.models.scan_report import ScanReport
 from ca_core.pipeline.gate import evaluate_gate
 
@@ -56,7 +57,8 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     )
     for finding in result.blocking:
         level = finding.level.value if finding.level else "-"
-        print(f"bloccante {finding.fingerprint} {level} {finding.category.value}")
+        shown = "-" if finding.category is Category.SECRET else finding.fingerprint
+        print(f"bloccante {shown} {level} {finding.category.value}")
     print(f"avvisi: {len(result.warned)}")
     for reason in result.reasons:
         print(f"motivo: {reason}", file=sys.stderr)

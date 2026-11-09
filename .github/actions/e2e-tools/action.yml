@@ -1,0 +1,25 @@
+# Strumenti degli E2E a versione e SHA-256 fissati (doc/verifiche/scanner-fase-1.md).
+name: Strumenti E2E
+description: Scarica cosign e syft verificandone lo SHA-256 ed esporta COSIGN e SYFT
+
+runs:
+  using: composite
+  steps:
+    - name: Scarica e verifica cosign e syft
+      shell: bash
+      run: |
+        set -euo pipefail
+        bin="$RUNNER_TEMP/e2e-tools"
+        mkdir -p "$bin"
+        curl -fsSL -o "$bin/cosign" \
+          https://github.com/sigstore/cosign/releases/download/v3.1.4/cosign-linux-amd64
+        echo "424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa  $bin/cosign" | sha256sum -c -
+        curl -fsSL -o "$bin/syft.tar.gz" \
+          https://github.com/anchore/syft/releases/download/v1.57.0/syft_1.57.0_linux_amd64.tar.gz
+        echo "9c077a7d43029b3b13e98a8db720661e700c4d58db6352153a06395ae4a2a704  $bin/syft.tar.gz" | sha256sum -c -
+        tar -xzf "$bin/syft.tar.gz" -C "$bin" syft
+        chmod +x "$bin/cosign" "$bin/syft"
+        {
+          echo "COSIGN=$bin/cosign"
+          echo "SYFT=$bin/syft"
+        } >> "$GITHUB_ENV"

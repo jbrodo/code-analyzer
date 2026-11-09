@@ -74,7 +74,7 @@ _EXPIRES_GRACE: Final = 900  # secondi oltre il timeout dell'esecuzione (ADR-000
 _HOLD_EXTRA: Final = 300
 EXPIRES_LABEL: Final = "code-analyzer.expires"
 OUT_MARGIN_MIN: Final = 16 * 1024**2  # provvisorio, da confermare in X-04
-FEEDS_MIN_FREE_BYTES: Final = 2 * 1024**3  # provvisorio, da confermare in X-04 (ADR-0006)
+FEEDS_MIN_FREE_BYTES: Final = 2 * 1024**3  # confermato in X-04 (ADR-0006)
 FEEDS_MIN_FREE_INODES: Final = 100_000  # provvisorio, da confermare in X-04 (N-03 di S-01)
 FEEDS_MAX_ENTRIES: Final = 200_000
 FEEDS_POLL_SECONDS: Final = 1
@@ -726,7 +726,10 @@ class OciExecutor:
         if failed is not None:
             for f in futures:
                 f.cancel()
-            raise failed.exception()  # type: ignore[misc]
+            exception = failed.exception()
+            if exception is None:
+                raise RuntimeError("future failed without an exception")
+            raise exception
         return [f.result() for f in futures]
 
     def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:

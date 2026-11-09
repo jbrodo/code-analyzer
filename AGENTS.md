@@ -19,7 +19,7 @@ Il verso delle dipendenze tra i pacchetti è definito da ADR-0001 e imposto da `
 ```
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy packages
+uv run ty check packages --error-on-warning
 uv run pytest -q
 uv run lint-imports
 uv run python -m ca_core.schema_export --check

@@ -1,6 +1,6 @@
 # ADR-0009: Livelli e gate in Fase 1 senza scoring né baseline
 
-- Stato: Proposto; accettata il 2026-11-08 la parte sul Gate 1 (scansione completa < 10 minuti, PR incrementale al Gate 2), livelli provvisori in attesa
+- Stato: Accettato: il 2026-11-08 la parte sul Gate 1 (scansione completa < 10 minuti, PR incrementale al Gate 2), il 2026-11-09 i livelli provvisori. La Variante A resta in Fase 2
 - Data: 2026-11-08
 - Decisione umana richiesta: sì (ambito di Fase 1, severità, significato del Gate 1)
 - Riferimenti: §5, §6, §8, §9.1, §13

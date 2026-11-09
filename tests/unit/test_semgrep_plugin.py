@@ -269,8 +269,8 @@ def test_jobs_follow_the_cgroup_quota(tmp_path: Path) -> None:
 
 
 def test_command_uses_only_the_project_rules_and_the_safe_flags() -> None:
-    argv = adapter.command("/s", ["/workspace/mine.yaml"], "/workspace", "/tmp/r.sarif", 2)
-    assert argv.count("--config") == 2
+    argv = adapter.command("/s", [adapter.RULES], "/workspace", "/tmp/r.sarif", 2)
+    assert argv.count("--config") == 1
     assert argv[argv.index("--config") + 1] == "/opt/ca-plugin/rules"
     assert {"--metrics=off", "--disable-version-check", "--no-git-ignore"} <= set(argv)
     assert {
@@ -328,6 +328,58 @@ def test_run_passes_the_user_rules_to_semgrep(tmp_path: Path) -> None:
         tmp_path, f"echo started > {args}", write_config(tmp_path, {"rules": ["../x"]})
     )
     assert code == adapter.EXIT_CONFIG and not args.exists()
+
+
+def two_runs(tmp_path: Path, builtin_id: str, repo_id: str) -> tuple[int, Path, list[str]]:
+    """Fake per `--config`: esito e configurazioni di ogni avvio."""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "r.yaml").write_text("rules: []\n")
+
+    def document(name: str, rule_id: str) -> Path:
+        doc = raw_sarif(f"{ws}/src/a.py")
+        doc["runs"][0]["tool"]["driver"]["rules"] = [{"id": rule_id}]
+        doc["runs"][0]["results"][0]["ruleId"] = rule_id
+        path = tmp_path / name
+        path.write_text(json.dumps(doc))
+        return path
+
+    builtin, repo = document("builtin.json", builtin_id), document("repo.json", repo_id)
+    log = tmp_path / "log"
+    body = "\n".join(
+        [
+            'for a in "$@"; do case $a in --sarif-output=*) f=${a#--sarif-output=};; esac; done',
+            f'echo "$2 $3" >> {log}',
+            f'if [ "$3" = "{adapter.RULES}" ]; then cp {builtin} "$f"; else cp {repo} "$f"; fi',
+        ]
+    )
+    out = tmp_path / "results.sarif"
+    code = adapter.run(
+        semgrep=fake_semgrep(tmp_path, body),
+        workspace=str(ws),
+        config_file=write_config(tmp_path, {"rules": ["r.yaml"]}),
+        out_file=str(out),
+        tmp_dir=str(tmp_path),
+        njobs=1,
+    )
+    return code, out, log.read_text().splitlines()
+
+
+def test_repository_rules_run_apart_and_results_are_merged(tmp_path: Path) -> None:
+    code, out, calls = two_runs(tmp_path, "ca-py-x", "repo-x")
+    assert code == 0
+    assert calls == [
+        f"--config {adapter.RULES}",
+        f"--config {tmp_path.resolve()}/ws/r.yaml",
+    ]  # N-26
+    run = json.loads(out.read_text())["runs"][0]
+    assert [r["ruleId"] for r in run["results"]] == ["ca-py-x", "repo-x"]
+    assert [r["id"] for r in run["tool"]["driver"]["rules"]] == ["ca-py-x", "repo-x"]
+
+
+def test_repository_rule_with_a_builtin_id_fails_the_plugin(tmp_path: Path) -> None:
+    code, out, _ = two_runs(tmp_path, "ca-py-x", "ca-py-x")
+    assert code == adapter.EXIT_CONFIG and not out.exists()
 
 
 def test_run_tool_error_is_exit_3_and_writes_nothing(tmp_path: Path) -> None:

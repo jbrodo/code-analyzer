@@ -14,7 +14,7 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # X-02 (provvisorio, da confermare con X-04): 4 MiB. Massimo misurato su trivy 0.76.2: 22,9 KB
+  # X-02, confermato da X-04 (2026-11-09): 4 MiB. Massimo misurato su trivy 0.76.2: 22,9 KB
   # sulle fixture, 215,2 KB sul pilota excalidraw (12,6 KB fastapi, 2,9 KB saleor), cioe' circa 19
   # volte di margine sul massimo reale. Il SARIF cresce con le vulnerabilita': un repository molto
   # piu' grande dei pilota resta sotto il limite, uno ostile viene fermato qui e non in ca-core.

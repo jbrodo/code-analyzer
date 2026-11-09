@@ -12,7 +12,7 @@ import contextlib
 import signal
 import sys
 import threading
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from types import FrameType
 
 from ca_cli import config_validate, gate, sbom, scan
@@ -75,7 +75,7 @@ _SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
 
 @contextlib.contextmanager
-def _interruptible() -> Iterator[None]:
+def _interruptible() -> Generator[None, None, None]:
     """Gestore unico per SIGINT, SIGTERM e SIGHUP (ADR-0004, M-03), solo nel thread principale.
 
     Alla prima consegna ignora i tre segnali, così un secondo non interrompe la pulizia, poi

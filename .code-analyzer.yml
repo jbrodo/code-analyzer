@@ -1,0 +1,102 @@
+# X-03: policy di licenze decisa in D-0013, usata anche per i repository pilota.
+# Il file stesso e' escluso: scancode riconosce gli identificatori SPDX elencati qui sotto.
+# Eccezioni: falsi positivi confermati, triage in doc/verifiche/gate-1.md.
+version: 1
+paths:
+  exclude:
+    - .code-analyzer.yml
+    - tests/fixtures/**
+    - tests/integration/semgrep_rule_cases/**
+    - packages/ca-plugins/src/ca_plugins/builtin/*/fixtures/**
+licenses:
+  distributed_product: true
+  forbidden:
+    - AGPL-3.0-only
+    - AGPL-3.0-or-later
+    - SSPL-1.0
+  require_approval:
+    - GPL-2.0-only
+    - GPL-2.0-or-later
+    - GPL-3.0-only
+    - GPL-3.0-or-later
+    - LGPL-2.1-only
+    - LGPL-2.1-or-later
+    - LGPL-3.0-only
+    - LGPL-3.0-or-later
+exceptions:
+  - fingerprint: "sha256:98c725c476c7274fe354f272dcbfbc19fcd9998d86f871d864981ea4e500a980"
+    reason: "Falso positivo: doc/PROJECT.md cita la licenza senza dichiararla. Esempio della policy nella specifica (§8, riga 390)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:a1511fcb7c11535de172ad702038cff1b3e69fe425f4319b31677d0e1162d010"
+    reason: "Falso positivo: doc/adr/0008-fingerprint-e-dedup.md cita la licenza senza dichiararla. Vettore di prova del fingerprint (riga 208)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:1ca704571efca0d5d46ff30f63a98ec9a8c466481b522ee05af9022ae93e2a51"
+    reason: "Falso positivo: doc/adr/0012-segreti-in-fase-1.md cita la licenza senza dichiararla. Cita la licenza di trufflehog, non incluso in Fase 1"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:b216698e6fd6eaa482489127bebd7f520b5b22e1f670f6790d11a529cb7a34e3"
+    reason: "Falso positivo: doc/adr/0013-policy-licenze.md cita la licenza senza dichiararla. Testo della policy D-0013"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:c91ebc962d3cefef01df5e14e9d7701ddb47526a01cbb9857e979c1654a75ab5"
+    reason: "Falso positivo: doc/adr/0015-regole-semgrep-e-licenze-motori.md cita la licenza senza dichiararla. Tabella dei motori: la riga AGPL è trufflehog, non incluso in Fase 1"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:5ef93d70ce83cb60260eeb7a86c1c20cecc4e4aa427896c763ee6f2864a974e2"
+    reason: "Falso positivo: doc/plan/fase-1.md cita la licenza senza dichiararla. Testo di D-0013 e nota su trufflehog"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:94a3ef4e814878c3f2048f5fb45dfb38f396af140ab1c175751ea1409ab2d901"
+    reason: "Falso positivo: doc/utente/README.md cita la licenza senza dichiararla. Esempio di configurazione (riga 78)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:08f526f996ec18048e139cc689c8734a4f3097c3f48417a046bcaa6cd4301d1b"
+    reason: "Falso positivo: doc/verifiche/scanner-fase-1.md cita la licenza senza dichiararla. Tabella delle licenze degli strumenti: la riga AGPL è trufflehog, non incluso in Fase 1"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:085ea34c3a6cc68acc999d15282fe0c48e46eef1c5cf71eccf0580ed35f50e77"
+    reason: "Falso positivo: packages/ca-core/src/ca_core/policy/licenses.py cita la licenza senza dichiararla. Docstring del motore della policy (riga 5)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:7c235f43b02457fed9c774ef81d5a0d7c914f22b856b323f79799526b367df7c"
+    reason: "Falso positivo: tests/contract/test_config_contract.py cita la licenza senza dichiararla. Dato di prova del contratto (riga 21)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:0e50968091f36c426f20470ff8d32d686fff9fc527deafc869509689b7a86e23"
+    reason: "Falso positivo: tests/e2e/test_detection.py cita la licenza senza dichiararla. Valore atteso in un'asserzione (riga 81)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:92ba68132cbaf93befa534627db59805be3a0e7616e7d9cdcf772d9a9eb90a8b"
+    reason: "Falso positivo: tests/integration/test_scancode_image.py cita la licenza senza dichiararla. Stringhe scritte in file temporanei dal test (righe 78-102)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:f0ba277dcdead77b4c5962e1248048a09f96c53f21c0353cbe6b3c0a8a11074d"
+    reason: "Falso positivo: tests/unit/core/test_fingerprint.py cita la licenza senza dichiararla. Dati di prova del fingerprint"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:e1b227eb03b9ac1700ab04a5020ad3e211422eb23b7761e77e0fdae7655c2574"
+    reason: "Falso positivo: tests/unit/test_config_validate.py cita la licenza senza dichiararla. Configurazioni di prova"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:be53f715d7de2a9951eda32b14c5676895b3b285a7e81133d2062087163f7581"
+    reason: "Falso positivo: tests/unit/test_license_policy.py cita la licenza senza dichiararla. Dati di prova del motore della policy"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:90317ec063e7c58e6697b2b4d3e786c1097dc61f70825521639f67ea5e00e2fb"
+    reason: "Falso positivo: tests/unit/test_models.py cita la licenza senza dichiararla. Dati di prova del modello"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:95036e554dc13e86d8732259efc638b97c4a7ab2b19ea1b364dc52d530d271bb"
+    reason: "Falso positivo: tests/unit/test_pipeline_plugins.py cita la licenza senza dichiararla. Dati di prova della pipeline"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:5d614f7644e99ba60b52da52b21339aab693a43c22ed5322d439804e8b44f598"
+    reason: "Falso positivo: tests/unit/test_scancode_plugin.py cita la licenza senza dichiararla. Dati di prova dell'adattatore"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:733fef3ac4c9e19ffd235748b786c875ae4729813433255c41a04904169bbd47"
+    reason: "Falso positivo: tests/unit/test_semgrep_plugin.py cita la licenza senza dichiararla. Asserzione sul testo degli avvisi (riga 406)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"

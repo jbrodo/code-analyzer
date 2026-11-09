@@ -28,7 +28,11 @@ from ca_core.models.finding import Category, Finding
 from ca_core.models.scan_report import AppliedException, Outcome, PluginRun, ReportStatus, Warning_
 from ca_core.normalize import DeclaredLicense, declared_licenses, health_finding, normalize_sarif
 from ca_core.pipeline.exceptions import apply_exceptions
-from ca_core.pipeline.exclusions import apply_exclusions, effective_exclusions
+from ca_core.pipeline.exclusions import (
+    apply_exclusions,
+    component_excluded,
+    effective_exclusions,
+)
 from ca_core.pipeline.run_plugins import PluginExecution, output_name
 from ca_core.policy.licenses import evaluate_licenses
 from ca_core.ports import Clock, SourceError, SourceReader
@@ -121,7 +125,9 @@ def normalize(
                 run = run.model_copy(update={"outcome": Outcome.FAILED, "failure": str(exc)})
             else:
                 findings += got
-                declared += licenses
+                declared += [
+                    d for d in licenses if not component_excluded(d.locations, config.paths.exclude)
+                ]
         plugins.append(run)
         if run.outcome is Outcome.FAILED:
             findings.append(

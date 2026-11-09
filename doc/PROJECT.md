@@ -34,7 +34,7 @@ Ambito MVP: **Python e JavaScript/TypeScript**. Fasi successive: Java/Kotlin, Go
 | Database | PostgreSQL 16 + pgvector | Migrazioni con Alembic |
 | Object storage | S3 / MinIO | SARIF, SBOM, report grezzi |
 | Parsing codice | tree-sitter (py-tree-sitter) | Grammatiche Python, JS, TS, TSX |
-| Isolamento plugin | Container con gVisor (runsc) o Firecracker | Rete disattivata per default |
+| Isolamento plugin | Sul server gVisor (runsc) o Firecracker; in CI e in locale `hardened-container` (ADR-0004) | Rete disattivata per default |
 | Deploy | Kubernetes + Helm; immagine CLI unica | Stesso motore in CI, server e locale |
 | Osservabilità (interna) | OpenTelemetry → Collector → Tempo / Loki / Prometheus → Grafana | |
 | Modello decisionale | Laya (Apache 2.0) dietro interfaccia astratta | Alternative: jevos (CPU), Jev (API) |
@@ -52,6 +52,9 @@ code-analyzer/
 │   ├── ca-core/                   # modello dati, scoring, normalizzazione
 │   │   └── src/ca_core/
 │   │       ├── models/            # Finding, Component, Graph, Scan (Pydantic)
+│   │       ├── pipeline/          # passi della scansione (Fase 1, senza Temporal)
+│   │       ├── policy/            # licenze
+│   │       ├── ports.py           # interfacce verso esecutore, sorgenti, artefatti
 │   │       ├── sarif/             # parser/serializer SARIF 2.1.0
 │   │       ├── sbom/              # CycloneDX 1.7, SPDX 3.0
 │   │       ├── fingerprint.py
@@ -63,7 +66,7 @@ code-analyzer/
 │   │           ├── variant_a.py   # G·P·E·C generico
 │   │           ├── variant_b.py   # G·P·E·C basato sulle pubblicazioni
 │   │           ├── levels.py      # soglie e override
-│   │           └── feeds/         # EPSS, KEV, OSV
+│   │           └── feeds/         # EPSS, KEV (Fase 2)
 │   ├── ca-graph/                  # grafo del codice e dell'architettura
 │   │   └── src/ca_graph/
 │   │       ├── treesitter/        # estrattori per linguaggio
@@ -75,9 +78,10 @@ code-analyzer/
 │   │   └── src/ca_plugins/
 │   │       ├── sdk.py             # contratto plugin (§7)
 │   │       ├── runner.py          # esecuzione in sandbox
+│   │       ├── feeds.py           # database offline di osv-scanner e trivy (ADR-0006)
 │   │       └── builtin/
 │   │           ├── syft/  osv_scanner/  trivy/  scancode/
-│   │           ├── semgrep/  bandit/  gitleaks/  trufflehog/
+│   │           ├── semgrep/  bandit/  gitleaks/   # trufflehog fuori da Fase 1 (ADR-0012)
 │   │           ├── ruff/  eslint/  checkov/  hadolint/
 │   │           └── coverage/      # import LCOV / Cobertura
 │   ├── ca-decision/               # motore decisionale (§10)
@@ -110,6 +114,9 @@ code-analyzer/
 │   ├── finding.schema.json
 │   ├── plugin-manifest.schema.json
 │   ├── code-analyzer-config.schema.json
+│   ├── scan-report.schema.json
+│   ├── plugin-sarif-properties.schema.json
+│   ├── vendor/                    # SARIF e CycloneDX fissati
 │   └── phases/*.schema.json
 ├── golden-set/                    # finding annotati per valutazione e training
 └── tests/
@@ -155,7 +162,7 @@ class Status(StrEnum):
 
 class Location(BaseModel):
     repository: str
-    commit: str
+    commit: str | None = None                # assente fuori da un repository git
     path: str | None = None
     start_line: int | None = None
     end_line: int | None = None
@@ -176,6 +183,7 @@ class Finding(BaseModel):
     category: Category
     rule_id: str
     tool: str                                # es. "semgrep", "osv-scanner", "ca-graph"
+    tools: list[str]                         # tutti i tool che lo riportano, dopo la dedup
     title: str
     message: str
     location: Location
@@ -186,12 +194,15 @@ class Finding(BaseModel):
     impact: ImpactFactors | None = None
     score: float | None = None               # 0–100
     level: Level | None = None
+    level_source: LevelSource | None = None  # tool_severity | policy | default; in Fase 2 anche score | override
     status: Status = Status.OPEN
     owner: str | None = None
     due_date: datetime | None = None
     first_seen: datetime
     last_seen: datetime
 ```
+
+In Fase 1 non c'è un database: `id` coincide con `fingerprint`, `first_seen` e `last_seen` con l'istante della scansione. `impact` e `score` restano `null` (ADR-0009). La fonte dello schema è il modello in `ca_core` (ADR-0003).
 
 ### 4.2 Fingerprint
 
@@ -232,7 +243,7 @@ Multi-tenancy SaaS: uno schema PostgreSQL per tenant + bucket separato.
 
 ## 5. Pipeline di scansione
 
-Workflow Temporal `ScanWorkflow`:
+In Fase 1 i passi 1, 3, 5 e 10 sono funzioni del nucleo chiamate in sequenza dalla CLI, senza Temporal (ADR-0002). Dalla Fase 2 il workflow Temporal `ScanWorkflow`:
 
 ```
 1. prepare_workspace     clone (shallow per PR, full per notturna), rilevamento linguaggi
@@ -250,7 +261,7 @@ Workflow Temporal `ScanWorkflow`:
 
 Requisiti non funzionali:
 
-- Scansione PR incrementale **< 10 minuti** sui repository pilota (Gate 1).
+- Scansione completa **< 10 minuti** sui repository pilota (Gate 1); scansione PR incrementale **< 10 minuti** (Gate 2, ADR-0009).
 - Ogni activity idempotente; un plugin che fallisce non blocca gli altri e produce un finding di tipo `health` ("scanner non eseguito").
 - Timeout per plugin configurabile (default 10 min).
 
@@ -334,20 +345,28 @@ inputs:
 outputs:
   sarif: /out/results.sarif
   cyclonedx: null
+  cyclonedx_version: null       # obbligatorio se c'è `cyclonedx`
+  max_bytes: 16777216           # limite di lettura dell'output
 resources:
   cpu: "2"
   memory: 2Gi
   timeout: 600s
-network: none                   # none | feeds-only
+network: none                   # sempre none: i feed si sincronizzano a parte (ADR-0006)
+# feeds:                        # solo per i plugin con database offline
+#   sync_command: [python, /opt/ca-plugin/adapter.py, sync, npm, PyPI]
+#   ecosystems: [npm, PyPI]
+#   mount: /feeds
+#   sync_timeout: 900s
 ```
 
 ### 7.2 Regole di esecuzione
 
 - Workspace montato in sola lettura in `/workspace`; output in `/out`.
-- Nessuna rete salvo `feeds-only` (mirror interni di OSV/EPSS/KEV).
-- Immagine firmata (cosign) e verificata prima dell'esecuzione.
+- Nessuna rete durante l'analisi. I feed si scaricano in un'esecuzione separata e si montano in sola lettura (ADR-0006).
+- Isolamento: `gvisor` obbligatorio sul server; `hardened-container` ammesso in CI e in locale (ADR-0004).
+- Immagine indicata per digest, firmata con cosign e verificata prima dell'esecuzione (ADR-0005).
 - Exit code ≠ 0 → scansione marcata parziale, finding `health` generato.
-- Output validato contro lo schema SARIF 2.1.0 / CycloneDX 1.7; output non valido = plugin fallito.
+- Output validato contro lo schema SARIF 2.1.0 o CycloneDX nella versione dichiarata dal manifest, oggi solo 1.7; output non valido o oltre `max_bytes` = plugin fallito.
 
 ### 7.3 Plugin built-in per l'MVP
 
@@ -380,10 +399,12 @@ service:
   catalog_id: payments-api          # per C ed E dal catalogo servizi
   tier: 1
   internet_facing: true
+paths:
+  exclude: ["tests/fixtures/**"]    # glob relativi; predefiniti per node_modules, .venv, dist, .git
 scoring:
   variant: A                        # A | B
 gate:
-  mode: new-findings-only           # valuta solo i finding nuovi rispetto alla baseline
+  mode: all                         # all | new-findings-only; in Fase 1 si valuta sempre all
   block_on: [critico, alto]
   warn_on: [medio]
 licenses:
@@ -607,16 +628,18 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 
 ### Fase 1 — MVP: inventario (Python, JS/TS)
 
-- [ ] Monorepo, CI del progetto, immagini Docker base
-- [ ] `ca-core`: modello Finding, fingerprint, dedup, SARIF/CycloneDX I/O
-- [ ] Runner plugin in sandbox + manifest + verifica firma
-- [ ] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit
-- [ ] Policy licenze da `.code-analyzer.yml`
-- [ ] CLI `scan`, `sbom`, `gate`, `config validate`
-- [ ] Output SARIF aggregato
-- [ ] Fixture repo Python e JS/TS con problemi noti
+- [ ] Monorepo, CI del progetto, immagini Docker base — fatti monorepo, immagine base dei plugin e CI delle verifiche (`verify.yml`); build, firma ed E2E in CI (O-02) e job dello snapshot dei feed (O-03) sono scritti ma mai eseguiti. Immagine CLI (I-03) rinviata alla Fase 2.
+- [x] `ca-core`: modello Finding, fingerprint, dedup, SARIF/CycloneDX I/O
+- [x] Runner plugin in sandbox + manifest + verifica firma — R-09 chiuso il 2026-11-09 (`doc/verifiche/sicurezza-fase-1.md`). Firma provata con chiave di test: registry e chiave definitivi attendono D-0005.
+- [x] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit — provati su immagini firmate localmente. La verifica legale per la distribuzione resta in D-0015.
+- [x] Policy licenze da `.code-analyzer.yml`
+- [x] CLI `scan`, `sbom`, `gate`, `config validate` — pacchetto provato con registry locale e chiave di test (I-04); pubblicazione sul registry alla decisione di rilascio (D-0005).
+- [x] Output SARIF aggregato
+- [x] Fixture repo Python e JS/TS con problemi noti
 
-**Gate 1:** 3 repository pilota scansionati; scansione < 10 minuti; tutti i problemi noti delle fixture rilevati.
+**Gate 1:** 3 repository pilota scansionati; scansione completa < 10 minuti (ADR-0009); tutti i problemi noti delle fixture rilevati.
+
+Stato del Gate 1 al 2026-11-09: superato, con due scostamenti confermati dall'utente (`doc/verifiche/gate-1.md`). 3 pilota `complete` sotto i 10 minuti, 247,7 s il più lento; problemi noti delle fixture rilevati dagli E2E. La chiusura della Fase 1 (X-07) resta bloccata dalla valutazione D-0015.
 
 ### Fase 2 — Qualità e impatto
 
@@ -665,7 +688,7 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 | --- | --- | --- |
 | Unit | Fingerprint, dedup, scoring A/B, livelli, parser SARIF/CycloneDX | pytest, hypothesis |
 | Contratto | Output plugin vs JSON Schema; contratti di fase agenti | jsonschema |
-| Integrazione | Workflow Temporal end-to-end su fixture | Temporal test server, testcontainers (Postgres, MinIO) |
+| Integrazione | Fase 1: plugin su immagini reali e CLI su fixture. Dalla Fase 2: workflow Temporal end-to-end | Docker; Temporal test server, testcontainers (Postgres, MinIO) |
 | Regressione scoring | Tabella di casi con punteggio e livello attesi | pytest parametrizzato |
 | Valutazione decisionale | Accuratezza e calibrazione per `question_id` sul golden set | script in `golden-set/eval/` |
 | Valutazione agenti | Patch: build verde, finding chiuso, nessun finding nuovo, approvazione | harness offline con fake LLM in CI |
@@ -694,9 +717,11 @@ Regola: nessun test in CI chiama LLM a pagamento; si usano fake deterministici.
 5. Comandi di verifica prima di ogni PR:
    ```
    uv run ruff check . && uv run ruff format --check .
-   uv run mypy packages
+   uv run ty check packages --error-on-warning
    uv run pytest -q
-   pnpm --dir web lint && pnpm --dir web test
+   uv run lint-imports
+   uv run python -m ca_core.schema_export --check
+   pnpm --dir web lint && pnpm --dir web test   # quando web/ esiste
    ```
 6. Messaggi di commit: Conventional Commits.
 7. Nessuna chiamata a servizi esterni nei test.
@@ -710,8 +735,8 @@ Una funzionalità è completa quando:
 - [ ] Test unitari e di contratto verdi; copertura ≥ 80% sul codice nuovo di `ca-core`
 - [ ] Schemi JSON aggiornati e validati
 - [ ] Documentazione utente aggiornata
-- [ ] Telemetria aggiunta per le operazioni lunghe
-- [ ] Nessun nuovo finding Critico/Alto quando Code Analyzer analizza se stesso
+- [ ] Telemetria aggiunta per le operazioni lunghe (in Fase 1: durate nel report, ADR-0010)
+- [ ] Nessun nuovo finding Critico/Alto quando Code Analyzer analizza se stesso (in Fase 1 sull'intero repository, ADR-0009)
 
 ---
 

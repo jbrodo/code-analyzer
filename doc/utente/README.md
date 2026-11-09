@@ -2,7 +2,7 @@
 
 La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate.
 
-**Stato.** Non esiste ancora un rilascio: i manifest dei plugin puntano a un registry provvisorio e le immagini vanno costruite e firmate localmente (D-0005).
+**Stato.** Non esiste ancora un rilascio: il pacchetto si costruisce con `deploy/docker/package-cli.sh`, che firma le immagini con una chiave di prova su un registry locale (D-0005).
 
 ## Requisiti
 
@@ -101,9 +101,13 @@ Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi d
 
 **Isolamento.** Fuori da un server i plugin girano in container rafforzati, con isolamento inferiore a gVisor. Il rischio residuo è accettato per CI effimere e uso locale, non per runner persistenti condivisi senza gVisor.
 
-**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati.
+**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati. I file sono scritti con permessi 0600. Da un fingerprint di segreto presente nel report si può risalire per forza bruta a un segreto debole: limita l'accesso; `gate` non stampa il fingerprint dei segreti.
 
-**`approved_by` non è autenticato.** È una dichiarazione testuale. Chi modifica il branch può anche indebolire gate, esclusioni ed eccezioni modificando `.code-analyzer.yml`; il report elenca sempre plugin disattivati, esclusioni ed eccezioni applicate.
+**Feed.** Uno snapshot dei feed alterato o molto vecchio riduce i risultati senza effetto sul gate: non condividere la cache con job meno fidati.
+
+**Tempi.** Un repository ostile può far lavorare l'host per decine di minuti: imposta un timeout sul job CI.
+
+**`approved_by` non è autenticato.** È una dichiarazione testuale. Chi modifica il branch può anche indebolire gate, esclusioni ed eccezioni modificando `.code-analyzer.yml`, e `--fail-on` protegge solo la soglia. Il report elenca sempre plugin disattivati, esclusioni ed eccezioni applicate: controllalo.
 
 **Soppressioni in linea.** I commenti `gitleaks:allow`, `nosec` e `nosem` vengono ignorati: per accettare un finding si usa `exceptions`.
 

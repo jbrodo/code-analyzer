@@ -12,7 +12,7 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su scancode 32.5.0: circa
+  # X-02, confermato da X-04 (2026-11-09): 16 MiB. Massimo misurato su scancode 32.5.0: circa
   # 1 KB sulle fixture, 8,8 KB sul pilota excalidraw (167 MB, 3 file con licenza rilevata), cioe'
   # circa 1900 volte di margine. Il SARIF ha un risultato (circa 300 byte) per file con licenza
   # rilevata: 16 MiB bastano per oltre 50 mila file; un repository ostile viene fermato qui e non in

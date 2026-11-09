@@ -1,0 +1,73 @@
+# O-03: scarica i feed con il prodotto, li congela e li salva come cache della CI. Unico job che
+# raggiunge i feed. Un nuovo snapshot si salva solo se T-08 resta verde (tests/fixtures/feeds).
+name: feeds-snapshot
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: feeds-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      CA_TEST_DOCKER: "1"
+      CA_REGISTRY_PORT: "5055"
+      CA_TEST_OSV_FEEDS: ${{ github.workspace }}/../feeds-snapshot
+      CA_TEST_TRIVY_FEEDS: ${{ github.workspace }}/../feeds-snapshot
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - uses: ./.github/actions/e2e-tools
+
+      - name: Installa le dipendenze
+        run: uv sync --frozen
+
+      - name: Costruisci il pacchetto con registry locale e chiave di prova
+        env:
+          CA_KEY_DIR: ${{ runner.temp }}/keys
+        run: |
+          docker compose -f deploy/compose/registry.yaml up -d --wait
+          deploy/docker/package-cli.sh "$RUNNER_TEMP/package"
+
+      - name: Sincronizza i feed con il prodotto
+        env:
+          CA_COSIGN_PUBLIC_KEY: ${{ runner.temp }}/package/cosign.pub
+          XDG_CACHE_HOME: ${{ runner.temp }}/xdg
+        run: |
+          mkdir "$RUNNER_TEMP/tiny"
+          echo 'print(1)' > "$RUNNER_TEMP/tiny/a.py"
+          "$RUNNER_TEMP/package/venv/bin/code-analyzer" scan "$RUNNER_TEMP/tiny" \
+            --format json --output-dir "$RUNNER_TEMP/tiny-out" > /dev/null
+
+      # I file della cache appartengono all'utente del container dei plugin.
+      - name: Congela lo snapshot
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/xdg"
+          chmod -R u+rwX "$RUNNER_TEMP/xdg"
+          uv run --frozen --offline python tests/fixtures/feeds/snapshot.py freeze \
+            --from-cache "$RUNNER_TEMP/xdg/code-analyzer/feeds" --dest "$CA_TEST_OSV_FEEDS"
+
+      - name: Rilevamento dei CVE con il nuovo snapshot (T-08)
+        run: uv run --frozen --offline pytest -q --no-cov tests/e2e/test_detection_cve.py
+
+      - name: Salva lo snapshot
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.CA_TEST_OSV_FEEDS }}
+          key: feeds-snapshot-${{ github.run_id }}

@@ -53,7 +53,7 @@ def _walk_refs(node: Any) -> Iterator[str]:
             yield from _walk_refs(item)
 
 
-def check_refs(schema: Mapping[str, Any], registry: "Registry[Any]") -> None:
+def check_refs(schema: Mapping[str, Any], registry: Registry) -> None:
     """Rifiuta ogni `$ref` che non sia un frammento locale o un documento del catalogo."""
     base = _doc_id(schema)
     if base:
@@ -68,7 +68,7 @@ def check_refs(schema: Mapping[str, Any], registry: "Registry[Any]") -> None:
             raise SchemaRefusedError(f"$ref non ammesso: {ref!r}") from exc
 
 
-def _refuse_retrieval(uri: str) -> Resource[Any]:
+def _refuse_retrieval(uri: str) -> Resource:
     raise SchemaRefusedError(f"risoluzione esterna rifiutata: {uri!r}")
 
 
@@ -92,7 +92,7 @@ class SchemaStore:
             if not _doc_id(schema):
                 raise SchemaRefusedError(f"{name}: senza $id")
             documents[_doc_id(schema)] = schema
-        self._registry: Registry[Any] = Registry(retrieve=_refuse_retrieval)  # type: ignore[call-arg]
+        self._registry: Registry = Registry(retrieve=_refuse_retrieval)  # type: ignore[call-arg]
         for uri, schema in documents.items():
             spec = DRAFT4 if "draft-04" in str(schema.get("$schema")) else DRAFT7
             self._registry = self._registry.with_resource(uri, spec.create_resource(schema))

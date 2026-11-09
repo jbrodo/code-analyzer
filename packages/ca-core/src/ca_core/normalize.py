@@ -393,6 +393,9 @@ _LICENSE_REF_CHARS = re.compile(r"[^A-Za-z0-9.-]+")
 _MAX_LICENSE = 256
 
 
+_LOCATION_PROPERTY = re.compile(r"syft:location:\d+:path")
+
+
 @dataclass(frozen=True)
 class DeclaredLicense:
     """Licenza dichiarata di un componente. `expression` è `None` se manca; `NOASSERTION` e
@@ -401,6 +404,7 @@ class DeclaredLicense:
     name: str
     purl: str | None
     expression: str | None
+    locations: tuple[str, ...] = ()  # file da cui proviene il componente, se noti
 
 
 def _license_term(entry: Any) -> str | None:
@@ -422,6 +426,17 @@ def _license_term(entry: Any) -> str | None:
         # nome libero, non SPDX: come dichiarazione personalizzata, quindi "da verificare"
         return "LicenseRef-" + (_LICENSE_REF_CHARS.sub("-", name.strip()).strip("-") or "unnamed")
     return None
+
+
+def _component_locations(component: Mapping[str, Any]) -> tuple[str, ...]:
+    return tuple(
+        p["value"]
+        for p in component.get("properties") or ()
+        if isinstance(p, Mapping)
+        and isinstance(p.get("name"), str)
+        and _LOCATION_PROPERTY.fullmatch(p["name"])
+        and isinstance(p.get("value"), str)
+    )
 
 
 def declared_licenses(document: Mapping[str, Any]) -> list[DeclaredLicense]:
@@ -450,6 +465,7 @@ def declared_licenses(document: Mapping[str, Any]) -> list[DeclaredLicense]:
                 name=name if isinstance(name, str) else "",
                 purl=purl if isinstance(purl, str) and purl else None,
                 expression=expression,
+                locations=_component_locations(component),
             )
         )
         stack.append(iter(component.get("components") or ()))

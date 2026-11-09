@@ -6,6 +6,9 @@ Gira nell'immagine con il profilo `hardened-container` (ADR-0004): `/workspace` 
 in `/inputs/config.json` come `{"rules": ["percorso/relativo", ...]}` e che qui si ricontrollano per
 contenimento nel workspace. Mai `--config auto` ne registry, mai metriche.
 
+Le regole del repository girano in un'esecuzione separata: nella stessa, una regola con lo stesso
+`id` sovrascriverebbe quella integrata (N-26). Un `id` uguale a uno integrato fa fallire il plugin.
+
 Il repository e' un dato non fidato: `--no-git-ignore` evita che semgrep esegua `git` (una
 `.git/config` ostile puo' lanciare un comando con `core.fsmonitor`), e
 `--x-ignore-semgrepignore-files` ignora il `.semgrepignore` del repository e quello predefinito, che
@@ -155,8 +158,23 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
     return json.dumps(adapted, separators=(",", ":")).encode()
 
 
+def merge(builtin: bytes, repository: bytes) -> bytes:
+    """Un solo run con i risultati delle due esecuzioni, o `InvalidConfig` se un `id` coincide."""
+    base, extra = json.loads(builtin), json.loads(repository)
+    base_run, extra_run = base["runs"][0], extra["runs"][0]
+    base_rules, extra_rules = (
+        base_run["tool"]["driver"]["rules"],
+        extra_run["tool"]["driver"]["rules"],
+    )
+    if {r["id"] for r in base_rules} & {r["id"] for r in extra_rules}:
+        raise InvalidConfig("una regola del repository ha lo stesso id di una integrata")
+    base_rules.extend(extra_rules)
+    base_run["results"].extend(extra_run["results"])
+    return json.dumps(base, separators=(",", ":")).encode()
+
+
 def command(semgrep: str, rules: list[str], workspace: str, raw_file: str, njobs: int) -> list[str]:
-    configs = [arg for path in [RULES, *rules] for arg in ("--config", path)]
+    configs = [arg for path in rules for arg in ("--config", path)]
     return [
         semgrep, "scan", *configs,
         "--metrics=off", "--disable-version-check", "--quiet",
@@ -186,27 +204,33 @@ def run(
         "SEMGREP_SEND_METRICS": "off",
         "SEMGREP_ENABLE_VERSION_CHECK": "0",
     }
-    raw_file = Path(tmp_dir, "semgrep.sarif")
-    raw_file.unlink(missing_ok=True)
-    try:
-        done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
-            command(semgrep, rules, workspace, str(raw_file), njobs or jobs()),
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            cwd=tmp_dir,
-            env=env,
-            check=False,
-        )
-        if done.returncode != 0:
+    outputs = []
+    for configs in ([RULES], rules) if rules else ([RULES],):
+        raw_file = Path(tmp_dir, "semgrep.sarif")
+        raw_file.unlink(missing_ok=True)
+        try:
+            done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
+                command(semgrep, configs, workspace, str(raw_file), njobs or jobs()),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=tmp_dir,
+                env=env,
+                check=False,
+            )
+            if done.returncode != 0:
+                return EXIT_TOOL
+            outputs.append(raw_file.read_bytes())
+        except OSError:
             return EXIT_TOOL
-        raw = raw_file.read_bytes()
-    except OSError:
-        return EXIT_TOOL
     try:
-        adapted = adapt(raw, workspace)
+        adapted = adapt(outputs[0], workspace)
+        if rules:
+            adapted = merge(adapted, adapt(outputs[1], workspace))
     except InvalidOutput:
         return EXIT_INVALID
+    except InvalidConfig:
+        return EXIT_CONFIG
     Path(out_file).write_bytes(adapted)
     return 0
 

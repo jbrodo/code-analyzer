@@ -12,7 +12,7 @@ from ca_plugins.runner import OciExecutor
 from ca_plugins.signature import COSIGN_VERSION, CosignVerifier
 
 DIGEST = "sha256:" + "ab" * 32
-REF = f"127.0.0.1:5055/ca/demo@{DIGEST}"
+REF = f"ghcr.io/ca/demo@{DIGEST}"
 MANIFEST = PackagedPluginManifest.model_validate(
     {
         "apiVersion": "code-analyzer/v1",
@@ -65,6 +65,23 @@ def test_http_registry_flag_only_when_wired(tmp_path: Path, key: str) -> None:
     v = CosignVerifier(public_key=key, cosign=fake_cosign(tmp_path), allow_http_registry=True)
     v(MANIFEST, REF)
     assert "--allow-http-registry" in (tmp_path / "args").read_text().split()
+
+
+@pytest.mark.parametrize(
+    ("registry", "http"),
+    [
+        ("127.0.0.1:5055", True),
+        ("localhost:5055", True),
+        ("127.0.0.1.evil.example", False),
+        ("ghcr.io", False),
+    ],
+)
+def test_http_is_used_only_for_loopback_references(
+    tmp_path: Path, key: str, registry: str, http: bool
+) -> None:
+    v = CosignVerifier(public_key=key, cosign=fake_cosign(tmp_path))
+    assert v(MANIFEST, f"{registry}/ca/demo@{DIGEST}") is Signature.VERIFIED
+    assert ("--allow-http-registry" in (tmp_path / "args").read_text().split()) is http
 
 
 def test_environment_is_an_allowlist(
