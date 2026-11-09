@@ -726,7 +726,10 @@ class OciExecutor:
         if failed is not None:
             for f in futures:
                 f.cancel()
-            raise failed.exception()  # type: ignore[misc]
+            exception = failed.exception()
+            if exception is None:
+                raise RuntimeError("future failed without an exception")
+            raise exception
         return [f.result() for f in futures]
 
     def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:

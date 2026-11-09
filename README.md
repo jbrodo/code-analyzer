@@ -1,6 +1,6 @@
 # Code Analyzer
 
-Code Analyzer è un progetto in fase di progettazione per analizzare repository e presentare i problemi in un elenco unico, ordinato per impatto e accompagnato da indicazioni per la correzione.
+Code Analyzer è un progetto in fase di sviluppo per analizzare repository e presentare i problemi in un elenco unico, ordinato per impatto e accompagnato da indicazioni per la correzione.
 
 ## Cosa prevede
 
@@ -16,7 +16,11 @@ Monorepo con componenti Python (FastAPI, Temporal e PostgreSQL), interfaccia Rea
 
 ## Stato
 
-Il repository contiene attualmente la specifica e il piano di implementazione; il software e i comandi descritti non sono ancora disponibili.
+Il progetto è in Fase 1 (MVP per Python e JavaScript/TypeScript) e non ha ancora un rilascio. Sono implementati il nucleo, il runner dei plugin in sandbox, i sette scanner e i comandi `scan`, `sbom`, `gate` e `config validate`. API, dashboard, agenti AI e integrazioni CI sono previsti nelle fasi successive.
+
+Il pacchetto non è ancora eseguibile da solo, perché i manifest dei plugin non hanno immagini pubblicate. Per provare una scansione servono le immagini firmate localmente da `tests/e2e/scan_local.py`, con Docker, `cosign`, `syft` e uno snapshot dei feed.
+
+Comandi, configurazione e limiti sono nella [guida della CLI](doc/utente/README.md); l'avanzamento è in [`doc/PROJECT.md` §13](doc/PROJECT.md).
 
 ## Hook pre-commit
 
@@ -27,7 +31,10 @@ uv tool install pre-commit
 pre-commit install
 ```
 
-Il hook controlla la validità dei file JSON e YAML, i marker di conflitto, gli spazi finali e la fine dei file. Per eseguire i controlli manualmente su tutto il repository:
+Gli hook validano JSON, YAML e TOML, rilevano chiavi private e marker di conflitto,
+correggono spazi finali e formattazione, ed eseguono Ruff, ty e il controllo del lock
+`uv`. Ruff e ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su
+tutto il repository:
 
 ```bash
 pre-commit run --all-files

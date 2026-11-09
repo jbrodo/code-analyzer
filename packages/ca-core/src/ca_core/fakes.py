@@ -113,7 +113,9 @@ class FakePluginExecutor:
                 output_dir=None,
                 detail="nessuna risposta configurata nel fake",
             )
-        return entry(request) if callable(entry) else entry
+        if isinstance(entry, PluginRunResult):
+            return entry
+        return entry(request)
 
     def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
         return [self.run(r) for r in requests]

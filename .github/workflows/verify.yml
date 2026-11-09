@@ -39,8 +39,8 @@ jobs:
       - name: ruff format
         run: uv run --frozen --offline ruff format --check .
 
-      - name: mypy
-        run: uv run --frozen --offline mypy packages
+      - name: ty check
+        run: uv run --frozen --offline ty check packages --error-on-warning
 
       - name: pytest
         run: uv run --frozen --offline pytest -q
