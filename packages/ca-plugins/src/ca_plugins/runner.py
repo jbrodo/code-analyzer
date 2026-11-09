@@ -195,6 +195,12 @@ def bind_mount(src: Path, dst: str, *, readonly: bool) -> list[str]:
     return ["--mount", spec]
 
 
+def _cpu_limit(requested: str) -> str:
+    """Tetto `--cpus` entro le CPU della macchina: oltre, il daemon rifiuta il container."""
+    available = os.cpu_count()
+    return str(available) if available and float(requested) > available else requested
+
+
 def container_args(
     *,
     name: str,
@@ -234,7 +240,7 @@ def container_args(
         "--user", PLUGIN_USER,
         "--tmpfs", "/tmp:rw,noexec,nosuid",
         "--env", "HOME=/tmp",
-        "--cpus", res.cpu,
+        "--cpus", _cpu_limit(res.cpu),
         "--memory", memory,
         "--memory-swap", memory,
         "--pids-limit", str(res.pids),

@@ -11,6 +11,7 @@ from ca_plugins.runner import (
     OciExecutor,
     OutputReader,
     RuntimeUnavailable,
+    _cpu_limit,
     bind_mount,
     container_args,
     digest_ref,
@@ -353,3 +354,14 @@ def test_preparation_oserror_is_a_failed_result(
     assert result.outcome.value == "failed"
     assert (result.detail or "").startswith("errore di preparazione")
     assert not list(tmp_path.glob("ca-oci-*/run-*"))
+
+
+@pytest.mark.parametrize(
+    ("requested", "available", "expected"),
+    [("4", 2, "2"), ("2", 2, "2"), ("1.5", 8, "1.5"), ("4", None, "4")],
+)
+def test_cpu_limit_never_exceeds_the_machine(
+    monkeypatch: pytest.MonkeyPatch, requested: str, available: int | None, expected: str
+) -> None:
+    monkeypatch.setattr("ca_plugins.runner.os.cpu_count", lambda: available)
+    assert _cpu_limit(requested) == expected
