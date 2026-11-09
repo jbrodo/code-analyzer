@@ -101,9 +101,13 @@ Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi d
 
 **Isolamento.** Fuori da un server i plugin girano in container rafforzati, con isolamento inferiore a gVisor. Il rischio residuo è accettato per CI effimere e uso locale, non per runner persistenti condivisi senza gVisor.
 
-**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati.
+**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati. Da un fingerprint di segreto, che `gate` stampa anche nei log CI, si può risalire per forza bruta a un segreto debole: limita l'accesso a report e log.
 
-**`approved_by` non è autenticato.** È una dichiarazione testuale. Chi modifica il branch può anche indebolire gate, esclusioni ed eccezioni modificando `.code-analyzer.yml`; il report elenca sempre plugin disattivati, esclusioni ed eccezioni applicate.
+**Feed.** Uno snapshot dei feed alterato o molto vecchio riduce i risultati senza effetto sul gate: non condividere la cache con job meno fidati.
+
+**Tempi.** Un repository ostile può far lavorare l'host per decine di minuti: imposta un timeout sul job CI.
+
+**`approved_by` non è autenticato.** È una dichiarazione testuale. Chi modifica il branch può anche indebolire gate, esclusioni ed eccezioni modificando `.code-analyzer.yml`, e `--fail-on` protegge solo la soglia. Il report elenca sempre plugin disattivati, esclusioni ed eccezioni applicate: controllalo.
 
 **Soppressioni in linea.** I commenti `gitleaks:allow`, `nosec` e `nosem` vengono ignorati: per accettare un finding si usa `exceptions`.
 

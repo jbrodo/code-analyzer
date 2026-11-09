@@ -218,3 +218,22 @@ Non verificato: il limite reale di `MAX_FILES`; `stat` e `realpath` su mount aut
 **R-09 chiuso il 2026-11-09 su richiesta dell'utente.** Finding critici e alti di S-01 risolti e riverificati da `security`: N-10 (con N-17 e N-18), N-10b, N-11, N-17, N-18, N-20. Restano aperti, non bloccanti: N-12 parziale su osv-scanner e non corretto su trivy e syft, N-15, N-16, N-19 (dichiarati in L-06), N-23, N-24.
 
 Dopo la chiusura, 2026-11-09: N-23 corretto: `stat` applica il limite di 40 livelli del kernel prima di `realpath`, oltre il limite il link conta come non analizzato; test unitario, non riverificato da `security`.
+
+## S-02 — Altri rischi residui
+
+Revisione in sola lettura di `security`, 2026-11-09, commit 45a5709 e 9657717.
+
+| ID | Tema | Gravità | Prova | Blocca la chiusura |
+| --- | --- | --- | --- | --- |
+| N-26 | Regole del repository con lo stesso `id` delle integrate le sovrascrivono | Alto | Da 6 finding SAST a 0, `complete`, nessun avviso; per JS/TS semgrep è l'unico SAST | Corretto: esecuzioni separate di semgrep, `id` uguale fa fallire il plugin. Non riverificato da `security` |
+| N-27 | Fingerprint dei segreti forzabile offline: SHA-256 senza sale del valore | Medio | Da un report recuperati 3 valori deboli su 3 con una lista di parole; `gate` stampa i fingerprint nei log; report con permessi 0644 | No |
+| N-28 | Snapshot dei feed alterato non rilevato | Medio | `all.zip` sostituito: 33→0, `complete`, `gate` da 1 a 0; serve poter scrivere nella cache | No |
+| N-29 | Snapshot vecchio o legato a un altro digest senza effetto sul gate | Medio | `synced_at` del 2020: solo `feeds-stale`, `complete` | No |
+| N-30 | `--fail-on` non protegge da `paths.exclude`, `exceptions`, `plugins.disable` nel branch | Medio | `paths.exclude: ["**"]` o eccezioni su tutto: `gate` 0 anche con `--fail-on`; il report lo traccia, `gate` non lo stampa | No |
+| N-31 | Costo sull'host senza limite di tempo con output ostile | Medio | `uniqueItems` quadratico: 8000 componenti 29,95 s; `package-lock.json` da 6000 pacchetti 35,7 s | No |
+
+Esiti negativi: JSON patologico rifiutato sotto 0,1 s; `syft:location` non forgiabile dal repository; `_plugin_configs` scrive solo `{"rules": ...}` in una cartella privata.
+
+Non verificato: un `trivy.db` valido ma vuoto; `sync` fallita online; sentinella dei segreti su bandit, scancode e trivy (non rilanciata in questa revisione); tempo totale di N-31, estrapolato.
+
+Rischio residuo da sottoporre all'utente: chi modifica il branch può indebolire gate, esclusioni ed eccezioni (N-30); report o log CI con fingerprint di segreti permettono di recuperare segreti deboli (N-27); uno snapshot alterato o vecchio dà falsi negativi senza effetto sul gate (N-28, N-29); repository ostili possono rallentare l'host per decine di minuti, serve un timeout del job CI (N-31, N-23).

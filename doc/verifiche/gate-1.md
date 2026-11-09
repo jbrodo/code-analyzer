@@ -78,7 +78,7 @@ Le voci della prima tabella sono **proposte, non attive**: `.code-analyzer.yml` 
 
 ### Falsi positivi confermati (19): citazioni, nessuna dichiarazione di licenza nel file
 
-Decisione dell'utente del 2026-11-09: scadenza 2027-05-09; approvatore da designare; le eccezioni restano proposte e non attive. L'utente ha confermato che i 19 finding sono falsi positivi; la conferma non attiva le eccezioni.
+Decisione dell'utente del 2026-11-09: scadenza 2027-05-09; approvatore da designare; le eccezioni restano proposte e non attive. L'utente ha riesaminato le 19 voci una per una e confermato che sono falsi positivi; la conferma non attiva le eccezioni.
 
 | Fingerprint | Livello | File | Licenze rilevate | Motivazione |
 | --- | --- | --- | --- | --- |
