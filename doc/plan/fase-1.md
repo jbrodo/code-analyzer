@@ -66,9 +66,9 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 - D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 
-Decisione dell'utente del 2026-11-09: in Fase 1 non si distribuisce nulla; X-05 chiusa come scostamento, la valutazione completa di D-0015 diventa condizione vincolante per I-06. semgrep classificato `LGPL-2.1-only`.
+Decisione dell'utente del 2026-11-09: in Fase 1 non si distribuisce nulla; X-05 chiusa come scostamento, la valutazione completa di D-0015 diventa condizione vincolante per I-06. Classificazione di semgrep in `doc/verifiche/gate-1.md`.
 
-Decisione dell'utente del 2026-11-09: licenza del prodotto GPL-3.0-only (`LICENSE`). Copre il codice del progetto, non i componenti di terze parti nelle immagini; A-04 resta aperto per l'esito sui motori.
+Decisione dell'utente del 2026-11-09: licenza del prodotto nel file `LICENSE`. Copre il codice del progetto, non i componenti di terze parti nelle immagini; A-04 resta aperto per l'esito sui motori.
 
 Decisione dell'utente del 2026-11-09: I-03 (immagine CLI) passa all'inizio della Fase 2. In Fase 1 il caso di riferimento è la CLI installata; il progetto rivisto da `security` è in ADR-0004.
 
