@@ -7,9 +7,10 @@ trasparenza pubblico. Ogni esito diverso da 0 (firma assente o errata, registry 
 cosign assente o di versione diversa, timeout) è `ScanAborted`: exit 2, nessun container, e un
 solo messaggio che non distingue i casi. Lo stderr di cosign non viene riportato (dato non fidato).
 
-`allow_http_registry` lo decide solo chi cabla, per un registry locale; `allow_unsigned` solo la
-variabile d'ambiente `CA_INSECURE_ALLOW_UNSIGNED=1` letta dalla radice di composizione: mai
-`.code-analyzer.yml`. D-0005 è aperta: nessuna chiave pubblica nel pacchetto.
+Un riferimento su loopback usa sempre HTTP (registry locale di prova, I-04): il riferimento viene
+dal manifest del pacchetto, mai dal repository analizzato. `allow_http_registry` lo decide solo chi
+cabla; `allow_unsigned` solo la variabile d'ambiente `CA_INSECURE_ALLOW_UNSIGNED=1` letta dalla
+radice di composizione: mai `.code-analyzer.yml`. Nessuna chiave pubblica nel pacchetto (D-0005).
 """
 
 import os
@@ -28,6 +29,7 @@ COSIGN_VERSION: Final = "v3.1.4"
 ENV_ALLOW_UNSIGNED: Final = "CA_INSECURE_ALLOW_UNSIGNED"
 _ENV_ALLOWLIST: Final = ("PATH", "HOME", "USER", "DOCKER_CONFIG", "SSL_CERT_FILE", "SSL_CERT_DIR")
 _REF: Final = re.compile(r"[a-z0-9][^\s@]*@sha256:[0-9a-f]{64}")
+_LOOPBACK: Final = re.compile(r"(?:127\.0\.0\.1|localhost)(?::\d+)?/")
 _DEFAULT_TIMEOUT: Final = 60.0
 
 
@@ -108,7 +110,7 @@ class CosignVerifier:
                 "l'immagine del plugin non è indicata per digest: scansione annullata"
             )
         args = [self._binary(), "verify", "--key", self._key, "--insecure-ignore-tlog=true"]
-        if self._http:
+        if self._http or _LOOPBACK.match(ref):
             args.append("--allow-http-registry")
         if self._run([*args, ref]).returncode != 0:
             raise ScanAborted(
