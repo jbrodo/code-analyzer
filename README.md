@@ -39,6 +39,10 @@ repository:
 uv run pre-commit run --all-files
 ```
 
+## Licenza
+
+Il codice del progetto è distribuito sotto [GPL-3.0-only](LICENSE). I componenti di terze parti, comprese le immagini dei plugin, restano sotto le proprie licenze.
+
 ## Documentazione
 
 Per architettura, stack, modelli dati, pipeline e roadmap, consulta la [guida di implementazione](doc/PROJECT.md).
