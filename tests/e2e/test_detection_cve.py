@@ -61,7 +61,8 @@ def test_feed_plugins_ran_offline_on_the_frozen_snapshot(
         assert run["feed"]["sync_failed"] is False and run["feed"]["origin"] == "public"
     codes = {w["code"] for w in scan.report["warnings"]}
     assert "feeds-sync-failed" not in codes
-    assert scan.report["status"] == "complete"
+    failed = [(n, r["failure"]) for n, r in runs.items() if r["outcome"] != "ok"]
+    assert scan.report["status"] == "complete", (failed, sorted(codes))
 
 
 def test_offline_without_any_snapshot_fails_the_feed_plugins_without_starting_them(
