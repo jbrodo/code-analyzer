@@ -79,29 +79,21 @@ def test_vendor_schema_store_uses_the_packaged_store_never_a_tree_search() -> No
 def test_built_wheel_installed_outside_the_repository_opens_the_packaged_store(
     tmp_path: Path,
 ) -> None:
-    dist = tmp_path / "dist"
+    venv = (
+        tmp_path / "venv"
+    )  # installazione dal lock: funziona offline anche con la sola cache di `uv sync`
     subprocess.run(
-        ["uv", "build", "--wheel", "--package", "ca-core", "--out-dir", str(dist)],
+        [
+            "uv", "sync", "--frozen", "--offline", "--no-dev", "--no-editable",
+            "--package", "ca-core", "--python", sys.executable,
+        ],
         cwd=ROOT,
+        env={**os.environ, "UV_PROJECT_ENVIRONMENT": str(venv)},
         check=True,
         capture_output=True,
         timeout=300,
-    )
-    (wheel,) = dist.glob("ca_core-*.whl")
-    venv = tmp_path / "venv"
-    subprocess.run(
-        ["uv", "venv", "--python", sys.executable, str(venv)],
-        check=True,
-        capture_output=True,
-        timeout=120,
-    )
+    )  # fmt: skip
     python = venv / "bin" / "python"
-    subprocess.run(
-        ["uv", "pip", "install", "--python", str(python), "--offline", str(wheel)],
-        check=True,
-        capture_output=True,
-        timeout=300,
-    )
     work = tmp_path / "elsewhere"  # fuori dal repository: nessun `schemas/vendor` da risalire
     work.mkdir()
     script = (

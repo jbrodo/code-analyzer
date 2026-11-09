@@ -55,8 +55,7 @@ for package in ca-core ca-plugins ca-cli; do
 done
 
 log "installazione pulita"
-uv venv --quiet "$OUT/venv"
-uv pip install --quiet --python "$OUT/venv/bin/python" "$OUT"/dist/*.whl
+(cd "$WORK" && UV_PROJECT_ENVIRONMENT="$OUT/venv" uv sync --quiet --frozen --no-dev --no-editable --package ca-cli)
 cp "$CA_KEY_DIR/cosign.pub" "$OUT/cosign.pub"
 
 # I manifest installati devono superare la forma impacchettata (digest obbligatorio): -I, fuori dal repo.

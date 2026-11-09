@@ -124,7 +124,7 @@ def test_result_without_properties(store: SchemaStore) -> None:
         (b"\xff\xfe", SarifErrorCode.NOT_JSON),
         (b'{"version": NaN}', SarifErrorCode.NOT_JSON),
         (b"9" * 10_000, SarifErrorCode.NOT_JSON),
-        (b"[" * 100_000, SarifErrorCode.TOO_DEEP),
+        (b"[" * 100_000 + b"]" * 100_000, SarifErrorCode.TOO_DEEP),
         (b'{"version":"2.0.0","runs":[]}', SarifErrorCode.SCHEMA),
         (b"[]", SarifErrorCode.SCHEMA),
     ],

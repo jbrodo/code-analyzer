@@ -78,7 +78,7 @@ def test_non_conforming_document_fails_without_values(store: SchemaStore) -> Non
     [
         (b"", SbomErrorCode.NOT_JSON),
         (b'{"specVersion": NaN}', SbomErrorCode.NOT_JSON),
-        (b"[" * 100_000, SbomErrorCode.TOO_DEEP),
+        (b"[" * 100_000 + b"]" * 100_000, SbomErrorCode.TOO_DEEP),
         (b"[]", SbomErrorCode.VERSION_MISMATCH),
         (b'{"specVersion":"1.7"}', SbomErrorCode.SCHEMA),
     ],
