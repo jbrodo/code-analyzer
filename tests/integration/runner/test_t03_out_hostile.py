@@ -13,7 +13,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -76,7 +76,7 @@ def fill_work(request: pytest.FixtureRequest, lab: Lab, tmp_path: Path) -> Itera
 
 
 def test_fill_out_never_reaches_the_host_disk(
-    lab: Lab, fill_work: Path, tmp_path: Path, record_property: pytest.RecordProperty
+    lab: Lab, fill_work: Path, tmp_path: Path, record_property: Callable[[str, object], None]
 ) -> None:
     """256 MiB chiesti con `max_bytes` di 1 MiB: il tmpfs ferma il plugin (ENOSPC), l'host non vede
     un solo byte durante l'esecuzione, e dopo il timeout non resta nulla."""
