@@ -80,6 +80,8 @@ licenses:                     # se la sezione manca, le licenze non sono valutat
   distributed_product: true
 plugins:
   disable: [scancode]
+  semgrep:
+    rules: [regole/semgrep.yaml]   # regole aggiuntive, percorsi relativi al repository
 exceptions:
   - fingerprint: "<fingerprint riportato nel report>"
     reason: "Motivo dell'accettazione"
@@ -90,8 +92,6 @@ exceptions:
 Sono esclusi per impostazione predefinita `node_modules`, `.venv`, `dist`, `.git` (non per gitleaks) e gli artefatti di output.
 
 `service`, `scoring` e `agents` vengono validati ma non hanno effetto in Fase 1; il report li elenca come sezioni inerti.
-
-`plugins.semgrep.rules` è accettata ma oggi non arriva a semgrep: le regole del repository non vengono eseguite, e il report non lo segnala.
 
 Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi dei plugin o origine dei feed.
 

@@ -11,10 +11,8 @@ Il valore (e un suo frammento) deve mancare da report, SARIF, stdout, stderr e d
 scritto, con tutti e tre i formati di stdout e anche dopo `gate`. Ogni prova controlla prima che i
 tre rilevatori abbiano davvero visto la riga: altrimenti l'assenza non proverebbe nulla.
 
-La regola Semgrep del repository arriva al plugin solo se `inputs.config` e' cablato; `run_plugins`
-non lo fa ancora (lacuna nota): le prove con la regola usano l'iniezione di `_cli_child.py` che lo
-emula, e `test_repository_semgrep_rule_runs_through_the_real_cli` documenta la lacuna con un
-`xfail(strict=True)`.
+`test_repository_semgrep_rule_runs_through_the_real_cli` prova il cablaggio vero di `inputs.config`;
+le altre prove con la regola usano l'iniezione di `_cli_child.py`.
 """
 
 import json
@@ -159,12 +157,6 @@ def test_gitleaks_output_keeps_the_location_but_not_the_value(
     assert sentinel.leaks_in(done.all_text()) == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="difetto del prodotto: `run_plugins` non cabla `inputs.config`, quindi "
-    "`plugins.semgrep.rules` di `.code-analyzer.yml` non arriva a semgrep (scan.py: "
-    "'inputs.config dei plugin non e' cablato'). Senza iniezione la regola non gira.",
-)
 def test_repository_semgrep_rule_runs_through_the_real_cli(
     fleet: Fleet, repo: Path, tmp_path: Path
 ) -> None:
