@@ -1,0 +1,53 @@
+# O-02: build, firma ed E2E con registry locale e chiave generata al momento. Nessun segreto, nessuna
+# pubblicazione (D-0005: GHCR solo alla decisione di rilascio). I feed vengono dalla cache prodotta
+# da feeds-snapshot.yml: questo job non li scarica.
+name: e2e
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      CA_TEST_DOCKER: "1"
+      CA_TEST_OSV_FEEDS: ${{ github.workspace }}/../feeds-snapshot
+      CA_TEST_TRIVY_FEEDS: ${{ github.workspace }}/../feeds-snapshot
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+
+      - uses: ./.github/actions/e2e-tools
+
+      - name: Installa le dipendenze
+        run: uv sync --frozen
+
+      - name: Ripristina lo snapshot dei feed
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.CA_TEST_OSV_FEEDS }}
+          key: feeds-snapshot-none
+          restore-keys: feeds-snapshot-
+
+      # Senza snapshot gli E2E si salterebbero con esito verde: qui deve fallire.
+      - name: Verifica lo snapshot dei feed
+        run: uv run --frozen --offline python tests/fixtures/feeds/snapshot.py verify "$CA_TEST_OSV_FEEDS"
+
+      - name: E2E e integrazione con Docker
+        run: uv run --frozen --offline pytest -q --no-cov tests/e2e tests/integration

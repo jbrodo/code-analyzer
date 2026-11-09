@@ -15,7 +15,7 @@ inputs:
 outputs:
   cyclonedx: /out/sbom.cdx.json
   cyclonedx_version: "1.7"
-  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su syft 1.57.0: 6,5 KB
+  # X-02, confermato da X-04 (2026-11-09): 16 MiB. Massimo misurato su syft 1.57.0: 6,5 KB
   # sulle fixture, 1,86 MB sul pilota excalidraw (0,73 e 0,76 MB gli altri due), cioe' circa 9 volte
   # di margine sul massimo reale. L'SBOM cresce con i componenti: un repository molto piu' grande
   # dei pilota resta sotto il limite, uno ostile viene fermato qui e non in ca-core.

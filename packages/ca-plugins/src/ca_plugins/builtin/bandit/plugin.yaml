@@ -14,7 +14,7 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # X-02 (provvisorio, da confermare con X-04): 64 MiB. Massimo misurato su bandit 1.9.4: 3,6 KB
+  # X-02, confermato da X-04 (2026-11-09): 64 MiB. Massimo misurato su bandit 1.9.4: 3,6 KB
   # sulle fixture, 19,2 MB sul pilota saleor (47 mila risultati, quasi tutti B101 `assert` nei
   # test), cioe' circa 3,5 volte di margine. Il SARIF cresce con i risultati e non e' limitato dal
   # numero di file: un repository ostile viene fermato qui e non in ca-core.

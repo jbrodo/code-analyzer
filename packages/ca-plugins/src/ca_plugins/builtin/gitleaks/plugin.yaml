@@ -12,7 +12,7 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su gitleaks 8.30.1: circa
+  # X-02, confermato da X-04 (2026-11-09): 16 MiB. Massimo misurato su gitleaks 8.30.1: circa
   # 1,2 KB sulla storia di prova, 38 KB sul pilota saleor (28.855 commit, 82 risultati), cioe' circa
   # 400 volte di margine. Un risultato pesa circa 460 byte (nessuno snippet, nessun dato personale).
   max_bytes: 16777216

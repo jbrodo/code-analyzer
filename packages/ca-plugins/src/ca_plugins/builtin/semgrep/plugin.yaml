@@ -15,7 +15,7 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su semgrep 1.184.0 con le
+  # X-02, confermato da X-04 (2026-11-09): 16 MiB. Massimo misurato su semgrep 1.184.0 con le
   # sole regole del progetto: 2,7 KB sulle fixture, 4,1 KB sul pilota saleor (circa 4000 volte di
   # margine). Il valore e' largo perche' le regole di `plugins.semgrep.rules` non sono sotto il nostro
   # controllo; un output ostile viene fermato qui e non in ca-core.
