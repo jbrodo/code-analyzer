@@ -2,7 +2,7 @@
 
 La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate.
 
-**Stato.** Non esiste ancora un rilascio: i manifest dei plugin puntano a un registry provvisorio e le immagini vanno costruite e firmate localmente (D-0005). Il comando `sbom` non è ancora disponibile (L-03).
+**Stato.** Non esiste ancora un rilascio: i manifest dei plugin puntano a un registry provvisorio e le immagini vanno costruite e firmate localmente (D-0005).
 
 ## Requisiti
 
@@ -22,7 +22,7 @@ La CLI `code-analyzer` analizza una directory con scanner open source eseguiti i
 | `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
 | `gate [--report FILE] [--fail-on LIVELLI] [--allow-partial]` | Decide dal report | 0 superato; 1 fallito; 2 errore o scansione non valutabile |
 | `config validate [PATH]` | Controlla `.code-analyzer.yml` offline: schema, espressioni SPDX, date, percorsi | 0 valido; 2 non valido |
-| `sbom` | Non ancora disponibile | 2 |
+| `sbom [PATH] [--format cyclonedx] [--output FILE]` | Genera con syft l'SBOM CycloneDX 1.7 di `PATH`, su stdout o in `FILE` | 0 SBOM prodotto; 2 errore |
 
 `scan` non esce mai con 1: a decidere è solo `gate`. Un'interruzione o un errore inatteso danno sempre 2.
 
@@ -41,6 +41,10 @@ Il report è `partial`, e quindi non supera il gate, quando:
 - ci sono collegamenti simbolici il cui contenuto non viene analizzato (`workspace-symlinks`): quelli a file e quelli a directory che escono dalla directory scansionata o finiscono in un percorso escluso. Vale qualunque sia il nome, anche se il link è innocuo: se è atteso, escludilo con `paths.exclude`. Analizzando una sottodirectory di un monorepo, un link come `shared -> ../../shared` rende quindi parziale la scansione.
 
 Scanner eseguiti: syft, osv-scanner, trivy, scancode, gitleaks, bandit (Python) e semgrep (Python, JavaScript, TypeScript). Un plugin il cui linguaggio non è presente viene saltato con l'avviso `plugin-skipped`.
+
+### `sbom`
+
+Scrive solo l'SBOM, validato contro lo schema CycloneDX 1.7: nessun report. Tiene conto di `.code-analyzer.yml`, ma non di `plugins.disable`. Percorsi non leggibili e collegamenti simbolici non analizzati producono un avviso su stderr, e l'exit resta 0: l'SBOM è incompleto.
 
 ### `gate`
 

@@ -1,8 +1,7 @@
 """Comando `code-analyzer` (L-01, ADR-0010): scheletro, exit code e gestione degli errori.
 
-Solo `scan`, `sbom`, `gate`, `config validate`. I gestori sono ancora da scrivere (L-03 e
-successivi): finché mancano rispondono con exit 2, mai con un risultato finto. Libreria: `argparse`
-della libreria standard, nessuna dipendenza (quattro comandi, nessun completamento automatico).
+Solo `scan`, `sbom`, `gate`, `config validate`. Libreria: `argparse` della libreria standard,
+nessuna dipendenza (quattro comandi, nessun completamento automatico).
 
 Exit code: 0 riuscito, 1 gate fallito (solo `gate`), 2 errore. Un'eccezione non prevista è
 sempre 2, con un messaggio breve su stderr e senza traceback (i dati analizzati sono ostili).
@@ -16,7 +15,7 @@ import threading
 from collections.abc import Callable, Iterator, Sequence
 from types import FrameType
 
-from ca_cli import config_validate, gate, scan
+from ca_cli import config_validate, gate, sbom, scan
 from ca_cli.composition import Context, build_context
 from ca_core.models.scan_report import Isolation
 
@@ -24,16 +23,10 @@ PROG = "code-analyzer"
 Handler = Callable[[argparse.Namespace, Context], int]
 
 
-def _not_implemented(args: argparse.Namespace, context: Context) -> int:
-    name = " ".join(filter(None, [args.command, getattr(args, "config_command", None)]))
-    print(f"{PROG}: il comando '{name}' non è ancora disponibile", file=sys.stderr)
-    return 2
-
-
-# Il gestore di ogni comando si registra qui (L-02 e successivi).
+# Il gestore di ogni comando si registra qui.
 HANDLERS: dict[tuple[str, str | None], Handler] = {
     ("scan", None): scan.handle,
-    ("sbom", None): _not_implemented,
+    ("sbom", None): sbom.handle,
     ("gate", None): gate.handle,
     ("config", "validate"): config_validate.handle,
 }
@@ -57,7 +50,10 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument(
         "--offline", action="store_true", help="non sincronizzare i feed: usa lo snapshot esistente"
     )
-    commands.add_parser("sbom", help="genera l'SBOM CycloneDX")
+    sbom_parser = commands.add_parser("sbom", help="genera l'SBOM CycloneDX")
+    sbom_parser.add_argument("path", nargs="?", default=".", help="directory (predefinito: .)")
+    sbom_parser.add_argument("--format", choices=["cyclonedx"], default="cyclonedx")
+    sbom_parser.add_argument("--output", help="file di uscita (predefinito: stdout)")
     gate_parser = commands.add_parser(
         "gate", help="decide dal report se la scansione supera il gate"
     )

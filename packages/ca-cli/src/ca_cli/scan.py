@@ -77,7 +77,7 @@ class ScanError(Exception):
     exit_code = 2
 
 
-def _load_config(root: str, source: SourceReader, context: Context) -> CodeAnalyzerConfig:
+def load_config(root: str, source: SourceReader, context: Context) -> CodeAnalyzerConfig:
     if not os.path.lexists(Path(root) / CONFIG_NAME):
         return CodeAnalyzerConfig(version=1)
     try:
@@ -94,6 +94,26 @@ def _load_config(root: str, source: SourceReader, context: Context) -> CodeAnaly
     if errors:
         raise ScanError(f"{CONFIG_NAME}: {'; '.join(errors)}")
     return config
+
+
+def coverage_warnings(root: str, exclude: Sequence[str]) -> list[Warning_]:
+    """Avvisi su cio' che i plugin non analizzano, anche su stderr. Mai nomi, solo il numero."""
+    try:
+        excluded = coverage_exclusions(exclude)
+        unreadable = count_unreadable(root, excluded)  # A-02: il plugin gira come 65534
+        links = count_skipped_symlinks(root, excluded)  # N-10, N-17, N-18, N-20
+    except SourceError as exc:
+        raise ScanError("workspace non esaminabile") from exc
+    found: list[Warning_] = []
+    if unreadable:
+        text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
+        found.append(Warning_(code="workspace-unreadable", message=text))
+    if links:
+        text = f"{links} collegamenti simbolici con contenuto non analizzato: analisi incompleta"
+        found.append(Warning_(code="workspace-symlinks", message=text))
+    for warning in found:
+        print(f"avviso: {warning.message}", file=sys.stderr)
+    return found
 
 
 def _git_state(root: str, source: SourceReader) -> tuple[str | None, HistoryCoverage]:
@@ -211,7 +231,7 @@ def _table(report: ScanReport, refs: Sequence[ArtifactRef]) -> str:
 def handle(args: argparse.Namespace, context: Context) -> int:
     started = context.clock.now()
     root = str(Path(args.path).resolve())
-    config = _load_config(root, context.source, context)
+    config = load_config(root, context.source, context)
     try:
         workspace = prepare_workspace(
             PrepareWorkspaceRequest(
@@ -229,19 +249,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     except (OSError, ValueError) as exc:
         raise ScanError("schemi fissati non utilizzabili") from exc
 
-    # A-02: ciò che il plugin (65534) non legge non è analizzato; mai nomi, solo il numero.
-    try:
-        excluded = coverage_exclusions(config.paths.exclude)
-        unreadable = count_unreadable(root, excluded)
-        links = count_skipped_symlinks(root, excluded)  # N-10, N-17, N-18, N-20
-    except SourceError as exc:
-        raise ScanError("workspace non esaminabile") from exc
-    unreadable_text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
-    if unreadable:
-        print(f"avviso: {unreadable_text}", file=sys.stderr)
-    links_text = f"{links} collegamenti simbolici con contenuto non analizzato"
-    if links:
-        print(f"avviso: {links_text}: analisi incompleta", file=sys.stderr)
+    coverage = coverage_warnings(root, config.paths.exclude)
 
     commit, history = _git_state(root, context.source)
     name = Path(root).name or "workspace"
@@ -292,13 +300,8 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         for n in ran.skipped_by_language
     ]
     status = normalized.status
-    if unreadable:
-        warnings.append(Warning_(code="workspace-unreadable", message=unreadable_text))
-        status = ReportStatus.PARTIAL
-    if links:
-        warnings.append(
-            Warning_(code="workspace-symlinks", message=f"{links_text}: analisi incompleta")
-        )
+    if coverage:
+        warnings += coverage
         status = ReportStatus.PARTIAL
     if not executions:
         warnings.append(Warning_(code="no-plugin-run", message="nessun plugin eseguito"))

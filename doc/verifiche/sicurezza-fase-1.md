@@ -216,3 +216,5 @@ Esiti negativi: catene miste con componenti intermedi, radice raggiunta tramite 
 Non verificato: il limite reale di `MAX_FILES`; `stat` e `realpath` su mount automatici o NFS bloccati; se npm, bun, pip, Docker e Terraform usano davvero i symlink.
 
 **R-09 chiuso il 2026-11-09 su richiesta dell'utente.** Finding critici e alti di S-01 risolti e riverificati da `security`: N-10 (con N-17 e N-18), N-10b, N-11, N-17, N-18, N-20. Restano aperti, non bloccanti: N-12 parziale su osv-scanner e non corretto su trivy e syft, N-15, N-16, N-19 (dichiarati in L-06), N-23, N-24.
+
+Dopo la chiusura, 2026-11-09: N-23 corretto: `stat` applica il limite di 40 livelli del kernel prima di `realpath`, oltre il limite il link conta come non analizzato; test unitario, non riverificato da `security`.

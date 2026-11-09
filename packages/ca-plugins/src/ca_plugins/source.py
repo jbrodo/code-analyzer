@@ -14,6 +14,7 @@ questo lettore. Una scrittura concorrente nello stesso file può troncarne o all
 la lettura non va mai oltre `max_bytes`.
 """
 
+import errno
 import os
 from collections.abc import Sequence
 
@@ -188,9 +189,16 @@ def _link_loses_content(
     """Vero se cio' che il symlink indica non e' analizzato al suo posto (N-20, N-21, N-22).
 
     Un link che esce dalla radice conta prima di guardare il tipo della destinazione, cosi' il
-    numero non dice nulla dell'host. Rotto o in ciclo conta come file.
+    numero non dice nulla dell'host. Rotto o in ciclo conta come file. Prima di `realpath`, che non
+    ha limiti e su una catena lunga costa il quadrato (N-23), `stat` applica il limite del kernel.
     """
-    target = os.path.realpath(os.path.join(real_root, rel))
+    path = os.path.join(real_root, rel)
+    try:
+        os.stat(path)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            return True
+    target = os.path.realpath(path)
     if os.path.commonpath([real_root, target]) != real_root:
         return True
     # `.git` non e' tra le esclusioni di copertura (gitleaks), ma i finding li' si scartano (N-25)

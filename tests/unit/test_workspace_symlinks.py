@@ -4,6 +4,7 @@
 """
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -99,6 +100,20 @@ def test_link_to_the_root_or_to_an_analyzed_directory_does_not_count(tmp_path: P
     (tmp_path / "a/b").mkdir(parents=True)
     (tmp_path / "a/up").symlink_to("..")
     assert count_skipped_symlinks(str(tmp_path), EXCLUDES) == 0
+
+
+def test_long_chains_stop_at_the_kernel_limit_before_realpath(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "real").mkdir()
+    (tmp_path / "l0").symlink_to("real")
+    for i in range(1, 45):
+        (tmp_path / f"l{i}").symlink_to(f"l{i - 1}")
+    resolved: list[str] = []
+    real = os.path.realpath
+    monkeypatch.setattr(os.path, "realpath", lambda p: resolved.append(p) or real(p))  # N-23
+    assert count_skipped_symlinks(str(tmp_path), EXCLUDES) == 5  # oltre 40 livelli
+    assert len(resolved) == 41  # la radice e i 40 link risolti dal kernel
 
 
 def test_links_are_not_followed_and_limits_are_source_errors(

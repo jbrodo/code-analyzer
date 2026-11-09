@@ -20,11 +20,6 @@ def test_only_the_four_commands_exist() -> None:
         assert err.value.code == 2
 
 
-def test_unimplemented_command_exits_2_never_1(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["sbom"]) == 2
-    assert "non è ancora disponibile" in capsys.readouterr().err
-
-
 def test_syntax_error_exits_2() -> None:
     with pytest.raises(SystemExit) as err:
         main(["scan", "--min-isolation", "nessuno"])
