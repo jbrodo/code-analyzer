@@ -106,7 +106,7 @@ Decisione dell'utente del 2026-11-09: riesaminate le 19 voci una per una e confe
 
 ### Non eccepibili come falsi positivi (6): componenti reali nelle immagini
 
-Decisione dell'utente del 2026-11-09: restano aperti. Riguardano D-0015, con responsabile da designare e valutazione da concordare. Finché non sono valutati, X-05 non è superata e X-07 resta bloccato.
+Decisione dell'utente del 2026-11-09: restano aperti e riguardano D-0015, di cui Riccardo Roveda è il responsabile. La valutazione è ancora da completare; finché non sono valutati, X-05 non è superata e X-07 resta bloccato.
 
 | Fingerprint | Livello | File | Licenze rilevate | Cosa indica |
 | --- | --- | --- | --- | --- |
@@ -116,3 +116,44 @@ Decisione dell'utente del 2026-11-09: restano aperti. Riguardano D-0015, con res
 | `sha256:d82671dc1118d84f6508ea4521848c515fb8d2aa963740d7ab56efd7dce151e9` | alto | `packages/ca-plugins/src/ca_plugins/builtin/semgrep/Dockerfile` | LGPL-2.1-only | Commento alla riga 41 sul testo LGPL-2.1; il file non è LGPL, ma si riferisce al motore realmente installato |
 | `sha256:60d5407fa3f6160171470b9d0a78209364afde530c01c10ed0b41fc58ae8af6b` | alto | `packages/ca-plugins/src/ca_plugins/builtin/semgrep/licenses/THIRD-PARTY-NOTICES.md` | LGPL-2.1-only, LGPL-2.1-or-later | Dichiara semgrep 1.184.0 sotto LGPL-2.1; i metadati della wheel dicono `LGPL-2.1-or-later` |
 | `sha256:751669cbd33d79596c3763ea463028146c821c6d5b78a797efc3fe3a0bdbed80` | alto | `packages/ca-plugins/src/ca_plugins/builtin/semgrep/licenses/semgrep/LICENSE` | LGPL-2.1-only | Testo integrale LGPL-2.1 del motore semgrep, incluso nell'immagine |
+
+## D-0015: materiale per la valutazione
+
+Stato al 2026-11-09: **valutazione da completare.** Quanto segue è un'analisi preliminare e un inventario di fatti, non un parere legale né un'approvazione. I 6 finding restano aperti, X-05 non è superata e X-07 resta bloccato finché non c'è la valutazione umana della distribuzione.
+
+### Analisi preliminare
+
+| Immagine | Analisi | Da chiarire |
+| --- | --- | --- |
+| semgrep | Classificazione prudenziale `LGPL-2.1-only`: il COPYRIGHT del tag v1.184.0 indica la versione 2.1, i metadati della wheel `LGPL-2.1-or-later`. L'adattatore avvia semgrep come processo separato. | Gli obblighi di redistribuzione del motore e delle sue dipendenze. `or later` non si approva senza chiarimento del titolare |
+| gitleaks | `git` è installato da Debian e invocato separatamente: la sua presenza non implica da sola che il prodotto debba adottare la GPL. | La redistribuzione di `git` deve rispettare la GPLv2, compresi i requisiti sul sorgente, per il pacchetto concreto |
+| scancode | L'eccezione GCC non è una deroga generale: riguarda specifici file runtime. L'SBOM segnala anche componenti con espressioni alternative o composte, tra cui `typecode-libmagic`, `extractcode-7z` e `intbitset`. | L'inventario dei binari e delle loro licenze, dai `.ABOUT` e dall'SBOM dell'immagine costruita; chiarire `unrar` nella dichiarazione di `extractcode-7z` |
+
+### Inventario dell'immagine costruita
+
+Dagli SBOM di `deploy/docker/package-cli.sh`, build del 2026-11-09. `git` e `libgomp1` non sono fissati nei Dockerfile: i valori valgono solo per questa build, e una valutazione deve riferirsi all'SBOM di un'immagine concreta.
+
+| Immagine | Componente | Versione | Licenza dichiarata nell'SBOM |
+| --- | --- | --- | --- |
+| gitleaks | `git`, `git-man` | `1:2.47.3-0+deb13u1` | Apache-2.0, BSD-3-Clause, GPL-1.0-or-later, GPL-2.0-only, GPL-2.0-or-later, ISC |
+| scancode | `libgomp1` | `14.2.0-19` | Non leggibile: l'SBOM riporta un hash al posto della licenza |
+| scancode | `typecode-libmagic` | `5.39.210531` | Composta, comprende `bsd-new OR gpl-1.0-plus` |
+| scancode | `extractcode-libarchive` | `3.5.1.210531` | apache-2.0 AND bsd-simplified |
+| scancode | `extractcode-7z` | `16.5.210531` | apache-2.0 AND lgpl-2.1 and unrar and brian-gladman-3-clause |
+| scancode | `intbitset` | `4.1.2` | LGPL-3.0-or-later |
+| scancode | `gemfileparser2` | `0.9.4` | GPL-3.0-or-later OR MIT |
+| semgrep | `semgrep` | `1.184.0` | LGPL-2.1-or-later (metadati della wheel) |
+
+Oltre i 6 finding, gli SBOM riportano espressioni di licenza contenenti riferimenti GPL per 72 pacchetti Debian comuni alla base di tutte e 7 le immagini; gitleaks ne aggiunge 20 (92 in totale). Scancode riporta inoltre 2 pacchetti Python e semgrep 1. La policy di `.code-analyzer.yml` valuta il repository, non le immagini, quindi non li segnala. Questi conteggi descrivono dichiarazioni nei metadati SBOM, anche con espressioni alternative: non determinano da soli quali termini si applichino né se un insieme sia un'opera combinata o un'aggregazione. `unrar` compare nell'espressione di `extractcode-7z`, ma non negli avvisi di terze parti di scancode esaminati e resta da identificare e verificare.
+
+Per la build del 2026-11-09 sono registrati i suffissi degli ID immagine sotto; i file SBOM originali erano in `/tmp` e non sono conservati qui. Per le prossime build di rilascio, usare una cartella di output persistente e conservare insieme immagini, digest e SBOM: `package-cli.sh` produce gli SBOM in `<cartella-di-uscita>/sbom/`. Le versioni APT non vengono fissate da questa decisione; l'evidenza va associata a ciascun rilascio concreto.
+
+| Immagine | SBOM (suffisso del digest) |
+| --- | --- |
+| bandit | `fdbae26d8255` |
+| gitleaks | `66d77d7804ca` |
+| osv-scanner | `80074b915189` |
+| scancode | `197b23dae5b5` |
+| semgrep | `d9dbc7a73986` |
+| syft | `717ca48a3130` |
+| trivy | `2d5a97fcee8d` |

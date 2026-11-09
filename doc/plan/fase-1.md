@@ -55,7 +55,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
 | **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
 | **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
-| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Persona designata dall'utente, non un agente | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
+| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Riccardo Roveda (responsabile; non un agente) | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
 
 Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
 
@@ -65,7 +65,7 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 - D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 
-Decisioni dell'utente del 2026-11-09 sull'auto-analisi (X-05, `doc/verifiche/gate-1.md`): 19 falsi positivi di licenza con eccezioni attive, approvate da Riccardo Roveda, scadenza 2027-05-09; 6 finding che indicano licenze effettive restano aperti, responsabile di D-0015 da designare e valutazione da concordare. X-07 resta bloccato.
+Decisioni dell'utente del 2026-11-09 sull'auto-analisi (X-05, `doc/verifiche/gate-1.md`): 19 falsi positivi di licenza con eccezioni attive, approvate da Riccardo Roveda, scadenza 2027-05-09; per i 6 finding che indicano licenze effettive, Riccardo Roveda è il responsabile di D-0015 e la valutazione resta da completare. X-05 non è superata e X-07 resta bloccato.
 
 Decisioni dell'utente del 2026-11-09 sulla riverifica di S-01: soppressioni in linea ignorate per ora (N-04, ADR-0012); residuo di N-03 accettato per la Fase 1; N-09 accettato e da dichiarare in L-06.
 

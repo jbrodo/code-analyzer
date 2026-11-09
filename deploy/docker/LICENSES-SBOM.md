@@ -27,6 +27,11 @@ dell'immagine nell'immagine stessa). Il legame e' l'ID dell'immagine nel nome e
 `metadata.component` del documento. Pubblicarlo o allegarlo al registry (e
 firmarlo) spetta a I-04/I-06.
 
+Per ogni rilascio, conservare immagini, digest e SBOM nella cartella persistente
+di output di `package-cli.sh` (`<cartella-di-uscita>/sbom/`), non in `/tmp`.
+Le versioni dei pacchetti APT non sono fissate dalla build: l'SBOM documenta i
+componenti effettivamente inclusi in quel rilascio.
+
 ## Licenze nell'immagine
 - `/licenses/THIRD-PARTY-NOTICES.md` (non vuoto): componenti di terzi e dove
   stanno i testi. Obbligatorio in ogni immagine.

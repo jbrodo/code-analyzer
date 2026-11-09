@@ -222,3 +222,21 @@ In `OciExecutor`:
 - Rimozione degli orfani: `_sweep_orphans()`, una sola volta per istanza, dopo il rilevamento del runtime e prima del primo `create`, quindi non da `isolation()`. `ps -a --filter label=code-analyzer.executor=1 --format '{{.Names}}\t{{.Label "code-analyzer.expires"}}'`; si rimuovono quelli con etichetta scaduta, assente o non numerica, con `rm --force --volumes`. Poi lo stesso con `volume ls`, e `volume rm`, che rifiuta un volume in uso. Migliore sforzo: un errore non ferma la scansione.
 
 Residuo: con SIGKILL del client il plugin continua fino alla scansione successiva sullo stesso daemon; la custodia termina da sola. Sui runner CI effimeri sparisce con la macchina, e i runner persistenti condivisi senza gVisor non sono ammessi (decisione del 2026-11-09).
+
+## Emendamento per I-03: modalità immagine CLI (M-11)
+
+Data: 2026-11-09. Stato: **proposto, da rivedere con `security` prima di costruire l'immagine.** Il caso di riferimento resta la CLI installata sull'host.
+
+Problema. Con la CLI in un container e il socket del daemon montato, i plugin sono container fratelli: i sorgenti dei `--mount` li risolve il daemon sull'host, non la CLI. Un percorso visto dalla CLI, passato tal quale, monterebbe una directory diversa o inesistente (M-11). Riguarda workspace, `/inputs` (sotto la radice di lavoro) e snapshot dei feed. `/out` no: è un volume letto con `docker cp` dal client.
+
+Decisione proposta:
+
+1. **Quattro variabili, tutte o nessuna.** `CA_HOST_WORKSPACE`, `CA_HOST_OUTPUT`, `CA_HOST_WORK`, `CA_HOST_CACHE` danno il percorso host di quattro montaggi con destinazione fissa nell'immagine: `/ca/workspace` in sola lettura, `/ca/output`, `/ca/work`, `/ca/cache`. Valgono solo dall'ambiente, mai da `.code-analyzer.yml` (ADR-0014). Se ne manca una: exit 2. Senza alcuna variabile il comportamento non cambia.
+2. **Traduzione che fallisce chiusa.** Una sola funzione, chiamata per ogni sorgente di `bind_mount`, risolve il percorso con `realpath` e sostituisce il prefisso confrontando i componenti. Un percorso fuori dai quattro prefissi è `ScanAborted`: nessun ripiego sul percorso originale.
+3. **Prova di identità prima del primo plugin.** Un container di prova, con il profilo `hardened-container`, immagine già verificata, nessuna rete e i percorsi tradotti in sola lettura, riporta `st_ino` e `st_mtime_ns` delle quattro radici. Se non coincidono con ciò che vede la CLI: `ScanAborted`. Così una mappatura sbagliata non porta dati errati nel plugin.
+4. **Il socket resta alla sola CLI.** La lista dei montaggi dei plugin è costruita dal runner e non contiene mai il socket; un test lo verifica sugli argomenti di `create`. Il privilegio equivale a root sull'host e va dichiarato nella documentazione utente.
+5. **Contenuto dell'immagine** (`deploy/docker/cli/`): CLI e `cosign` a versione e SHA-256 fissati, nessun plugin, utente non root con il gruppo del socket passato da `--group-add`. La chiave pubblica si monta dall'esterno.
+
+Fuori ambito: `DOCKER_HOST` remoto, dove la prova di identità fallisce e la scansione si annulla; Podman, ancora `UNPROVEN`.
+
+Punti per la revisione: se `st_ino` e `st_mtime_ns` bastano come prova di identità; symlink nei prefissi; proprietà dei file della cache, che oggi appartengono all'utente del container; il costo del container di prova.
