@@ -101,7 +101,7 @@ Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi d
 
 **Isolamento.** Fuori da un server i plugin girano in container rafforzati, con isolamento inferiore a gVisor. Il rischio residuo è accettato per CI effimere e uso locale, non per runner persistenti condivisi senza gVisor.
 
-**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati. Da un fingerprint di segreto, che `gate` stampa anche nei log CI, si può risalire per forza bruta a un segreto debole: limita l'accesso a report e log.
+**Report riservati.** Report e SARIF descrivono debolezze e percorsi del repository: trattali come dati riservati. I file sono scritti con permessi 0600. Da un fingerprint di segreto presente nel report si può risalire per forza bruta a un segreto debole: limita l'accesso; `gate` non stampa il fingerprint dei segreti.
 
 **Feed.** Uno snapshot dei feed alterato o molto vecchio riduce i risultati senza effetto sul gate: non condividere la cache con job meno fidati.
 

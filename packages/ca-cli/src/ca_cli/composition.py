@@ -37,7 +37,8 @@ class DirectoryArtifactSink:
 
     `base` è scelta dall'utente (`--output-dir`); i nomi vengono dalla pipeline, ma restano
     validati. Ogni componente si apre con `O_NOFOLLOW` relativo al precedente; il file con
-    `O_TRUNC` (un rilancio sovrascrive i propri artefatti, ADR-0010).
+    `O_TRUNC` (un rilancio sovrascrive i propri artefatti, ADR-0010). Permessi 0600 anche su un
+    file gia' esistente: gli artefatti sono riservati (N-27).
     """
 
     _DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -61,12 +62,13 @@ class DirectoryArtifactSink:
             fd = os.open(
                 parts[-1],
                 os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW | os.O_CLOEXEC,
-                0o644,
+                0o600,
                 dir_fd=fds[-1],
             )
             with os.fdopen(fd, "wb") as target:
                 if not stat.S_ISREG(os.fstat(target.fileno()).st_mode):
                     raise ValueError(f"non è un file regolare: {name!r}")
+                os.fchmod(target.fileno(), 0o600)
                 target.write(content)
         except OSError as exc:
             raise ValueError(f"scrittura rifiutata: {name!r}") from exc

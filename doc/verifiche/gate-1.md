@@ -70,15 +70,17 @@ Limiti confermati dalla misura, senza alcun `invalid_output` né tmpfs esaurito 
 
 2026-11-09, clone pulito del commit `f01a7276a95fe6f5df56ea3c71f7085685a9b5a2`. Stato `complete`, 41,0 s, tutti i plugin `ok`, 2.241 finding. **Non superata:** `gate --fail-on critico,alto` esce con 1 per 25 finding (14 critici, 11 alti), tutti `ca.license`: 19 sono citazioni e 6 indicano licenze effettive di componenti nelle immagini (triage sotto). Fixture e casi vulnerabili sono esclusi da `.code-analyzer.yml`.
 
+Riesecuzione del 2026-11-09 con le 19 eccezioni attive, su clone pulito: `complete`, 50,4 s, 19 finding `accettato`. **Ancora non superata:** `gate --fail-on critico,alto` esce con 1 per i 6 finding di licenza effettiva, in attesa di D-0015.
+
 ## Triage dei finding di licenza dell'auto-analisi
 
 2026-11-09. Ogni occorrenza è stata letta. Fingerprint del commit `f01a7276a95fe6f5df56ea3c71f7085685a9b5a2`.
 
-Le voci della prima tabella sono **proposte, non attive**: `.code-analyzer.yml` non le contiene perché `approved_by` deve indicare chi approva davvero. Il fingerprint dipende da percorso e licenze rilevate nel file: se queste cambiano, l'eccezione smette di valere e il finding torna, che è il comportamento voluto.
+Il fingerprint dipende da percorso e licenze rilevate nel file: se queste cambiano, l'eccezione smette di valere e il finding torna, che è il comportamento voluto.
 
 ### Falsi positivi confermati (19): citazioni, nessuna dichiarazione di licenza nel file
 
-Decisione dell'utente del 2026-11-09: scadenza 2027-05-09; approvatore da designare; le eccezioni restano proposte e non attive. L'utente ha riesaminato le 19 voci una per una e confermato che sono falsi positivi; la conferma non attiva le eccezioni.
+Decisione dell'utente del 2026-11-09: riesaminate le 19 voci una per una e confermate come falsi positivi; eccezioni attive in `.code-analyzer.yml` con `approved_by: Riccardo Roveda` e scadenza 2027-05-09.
 
 | Fingerprint | Livello | File | Licenze rilevate | Motivazione |
 | --- | --- | --- | --- | --- |

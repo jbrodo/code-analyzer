@@ -11,7 +11,7 @@ from ca_core.fakes import FakePluginExecutor
 from ca_core.normalize import declared_licenses
 from ca_core.pipeline.exclusions import component_excluded
 
-GPL = {"license": {"id": "GPL-3.0-only"}}
+DECLARED = {"license": {"id": "MIT"}}
 
 
 def component(*paths: str) -> dict[str, Any]:
@@ -20,7 +20,7 @@ def component(*paths: str) -> dict[str, Any]:
         "name": "lib",
         "version": "1",
         "purl": "pkg:pypi/lib@1",
-        "licenses": [GPL],
+        "licenses": [DECLARED],
         "properties": [
             {"name": f"syft:location:{i}:path", "value": path} for i, path in enumerate(paths)
         ],
@@ -55,7 +55,7 @@ def test_scan_applies_exclusions_to_license_findings(
     env = Env(tmp_path)
     (env.repo / ".code-analyzer.yml").write_text(
         f'version: 1\npaths:\n  exclude: ["{exclude}"]\n'
-        "licenses:\n  forbidden: []\n  require_approval: [GPL-3.0-only]\n"
+        "licenses:\n  forbidden: []\n  require_approval: [MIT]\n"
     )
     bom = {
         "bomFormat": "CycloneDX",

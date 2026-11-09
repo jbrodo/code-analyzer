@@ -237,3 +237,5 @@ Esiti negativi: JSON patologico rifiutato sotto 0,1 s; `syft:location` non forgi
 Non verificato: un `trivy.db` valido ma vuoto; `sync` fallita online; sentinella dei segreti su bandit, scancode e trivy (non rilanciata in questa revisione); tempo totale di N-31, estrapolato.
 
 Rischio residuo da sottoporre all'utente: chi modifica il branch può indebolire gate, esclusioni ed eccezioni (N-30); report o log CI con fingerprint di segreti permettono di recuperare segreti deboli (N-27); uno snapshot alterato o vecchio dà falsi negativi senza effetto sul gate (N-28, N-29); repository ostili possono rallentare l'host per decine di minuti, serve un timeout del job CI (N-31, N-23).
+
+Decisioni dell'utente del 2026-11-09 su S-02: rischi accettati per la Fase 1 N-30 (indebolimento dal branch), N-28 e N-29 (feed), N-31 e N-23 (tempi sull'host). N-27 corretto: artefatti con permessi 0600, `gate` non stampa il fingerprint dei segreti; il fingerprint nel report resta forzabile offline su valori deboli. Correzione con test unitari, non riverificata da `security`.
