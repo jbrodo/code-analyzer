@@ -43,6 +43,10 @@ MAX_ZIP_BYTES = 1024**3  # npm 210 MB, PyPI 36 MB (V-05)
 EXIT_SCANNER, EXIT_SYNC, EXIT_INVALID = 3, 4, 5
 _LEVELS = {"CRITICAL": "error", "HIGH": "error", "MODERATE": "warning", "MEDIUM": "warning"}
 _MAX_TEXT = 300
+# `vulnmatch/osvlocal` e' il confronto con i feed: con uno snapshot vuoto e senza pacchetti non
+# e' un fallimento (lo e' `could not load db` quando i pacchetti ci sono). Gli altri estrattori
+# (lockfile) che falliscono si': un file corrotto non e' piu' usabile.
+_EXTRACTION_ERROR = re.compile(rb"error during extraction: \(extracting as (?!vulnmatch/)")
 
 
 class InvalidOutput(ValueError):
@@ -229,7 +233,7 @@ def run(
     log = (done.stdout + done.stderr).lower()
     if b"could not load db" in log:  # exit 1 o 127 con risultati parziali: plugin fallito (V-05)
         return EXIT_SCANNER
-    if b"error during extraction" in log:  # lockfile non estraibile: mai un esito vuoto (N-12)
+    if _EXTRACTION_ERROR.search(log):  # lockfile non estraibile: mai un esito vuoto (N-12)
         return EXIT_SCANNER
     if done.returncode == 128 and b"no package sources found" in log:
         raw = b'{"results":[]}'

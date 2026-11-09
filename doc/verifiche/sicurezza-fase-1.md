@@ -144,3 +144,5 @@ Esiti negativi: `.gitattributes` con `-diff` o `binary`, `vendor`, `test`, `dist
 Vincolo: `ca_core` non legge `invocations` del SARIF dei plugin, quindi le note degli adattatori non arrivano al report; ogni traccia va emessa da `report.warnings`.
 
 Non verificato: timeout per regola di semgrep; lockfile corrotto insieme a uno valido in osv; ecosistemi diversi da npm e PyPI.
+
+Decisione dell'utente del 2026-11-09: N-13 e N-14 accettati e da dichiarare nella documentazione utente (L-06).
