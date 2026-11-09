@@ -9,6 +9,7 @@ dependencies = ["ca-core", "ca-plugins", "ca-cli"]
 dev = [
     "hypothesis>=6.170.15",
     "import-linter>=2.16",
+    "pre-commit>=4.7.0",
     "pytest>=8",
     "pytest-cov>=7.1",
     "ruff>=0.17",

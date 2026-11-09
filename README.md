@@ -27,8 +27,7 @@ Comandi, configurazione e limiti sono nella [guida della CLI](doc/utente/README.
 Per abilitare i controlli automatici prima di ogni commit:
 
 ```bash
-uv tool install pre-commit
-pre-commit install
+uv run pre-commit install
 ```
 
 Gli hook validano JSON, YAML e TOML, rilevano chiavi private e marker di conflitto,
@@ -37,7 +36,7 @@ ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su tutto il
 repository:
 
 ```bash
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Documentazione

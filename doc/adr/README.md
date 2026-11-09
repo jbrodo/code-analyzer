@@ -8,11 +8,11 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 | [0002](0002-motore-scansione-senza-temporal.md) | Motore di scansione indipendente da Temporal | Proposto (prova: K-15..K-18, R-07) | No |
 | [0003](0003-autorita-contratti-json-schema.md) | Autorità dei contratti JSON Schema | Accettato | No |
 | [0004](0004-esecuzione-plugin-e-isolamento.md) | Esecuzione dei plugin e livelli di isolamento | Accettato | Presa il 2026-11-08 |
-| [0005](0005-firma-immagini-plugin.md) | Firma e verifica delle immagini dei plugin | Proposto | Sì |
+| [0005](0005-firma-immagini-plugin.md) | Firma e verifica delle immagini dei plugin | Proposto (deciso fino al primo rilascio) | Sì |
 | [0006](0006-feed-vulnerabilita-offline.md) | Database delle vulnerabilità in Fase 1 | Accettato | Presa il 2026-11-08 |
 | [0007](0007-contratto-output-plugin.md) | Adattatori, ordine dei plugin, versioni dei formati | Proposto (prova: P-01..P-10, K-16, K-17) | No |
 | [0008](0008-fingerprint-e-dedup.md) | Algoritmo di fingerprint e deduplicazione | Proposto (`fp1` confermato; prova: K-05, K-07) | No |
-| [0009](0009-livelli-e-gate-fase-1.md) | Livelli e gate senza scoring né baseline | Proposto (Gate 1 accettato) | Sì, per i livelli provvisori |
+| [0009](0009-livelli-e-gate-fase-1.md) | Livelli e gate senza scoring né baseline | Accettato | Sì, per i livelli provvisori |
 | [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Proposto (report confermato; prova: K-13, L-02..L-05) | No |
 | [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Proposto (prova: K-14) | No |
 | [0012](0012-segreti-in-fase-1.md) | Rilevamento dei segreti in Fase 1 | Accettato | Presa il 2026-11-08 |

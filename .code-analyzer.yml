@@ -1,0 +1,22 @@
+# X-03: policy di licenze decisa in D-0013, usata anche per i repository pilota.
+# Il file stesso e' escluso: scancode riconosce gli identificatori SPDX elencati qui sotto.
+version: 1
+paths:
+  exclude:
+    - .code-analyzer.yml
+    - tests/fixtures/**
+licenses:
+  distributed_product: true
+  forbidden:
+    - AGPL-3.0-only
+    - AGPL-3.0-or-later
+    - SSPL-1.0
+  require_approval:
+    - GPL-2.0-only
+    - GPL-2.0-or-later
+    - GPL-3.0-only
+    - GPL-3.0-or-later
+    - LGPL-2.1-only
+    - LGPL-2.1-or-later
+    - LGPL-3.0-only
+    - LGPL-3.0-or-later

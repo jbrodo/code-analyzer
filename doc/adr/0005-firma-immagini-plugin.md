@@ -1,6 +1,6 @@
 # ADR-0005: Firma e verifica delle immagini dei plugin
 
-- Stato: Proposto
+- Stato: Proposto; deciso il 2026-11-09 fino al primo rilascio: registry GHCR del repository e chiave di test. La scelta definitiva si fa prima del rilascio
 - Data: 2026-11-08
 - Decisione umana richiesta: sì (registry definitivo e custodia della chiave)
 - Riferimenti: §7.1, §7.2, §15

@@ -49,15 +49,21 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | --- | --- | --- | --- | --- | --- |
 | **D-CI** (decisa) | CI del progetto. Raccomandata GitHub Actions (origin è su GitHub; nessuna CI esiste) | Utente | O-01, O-02, O-03 | I-06, X-07 | Non blocca G1.a/b/c, blocca la chiusura fase |
 | **D-0004** (decisa) | Accettare `hardened-container` fuori dal server | Utente, con parere `security` | R-09, A-02, A-03 | X-04, X-06, X-07, I-06 | Blocca G1.a e G1.b |
-| **D-0005** | Host del registry, namespace, custodia chiave. Nel frattempo registry del repository e chiave di test | Utente | I-06, A-02 | X-07 tramite A-02; nessuno sul gate | Non blocca |
+| **D-0005** (decisa fino al primo rilascio) | Host del registry, namespace, custodia chiave. Nel frattempo registry del repository e chiave di test | Utente | I-06, A-02 | X-07 tramite A-02; nessuno sul gate | Non blocca |
 | **D-0006** (decisa) | Sincronizzazione separata del database vulnerabilità | Utente | R-06, P-03, P-05, F-05, L-07, T-08, O-03, A-02 | X-02, I-04, O-02, X-04, X-05, X-06, X-07, I-06 | Blocca G1.a, G1.b e la parte CVE di G1.c |
-| **D-0009-A** | Livelli provvisori invece di anticipare la Variante A | Utente | A-02, A-03 | X-07 | Non blocca le tre condizioni; ne cambia il contenuto se respinta |
+| **D-0009-A** (decisa) | Livelli provvisori invece di anticipare la Variante A | Utente | A-02, A-03 | X-07 | Non blocca le tre condizioni; ne cambia il contenuto se respinta |
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
 | **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
 | **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
 | **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Persona designata dall'utente, non un agente | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
 
 Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
+
+Decisioni dell'utente del 2026-11-09 sul Gate 1:
+
+- D-0005: registry GHCR del repository e chiave di test fino al primo rilascio. La scelta definitiva si fa prima del rilascio: I-06 resta bloccato.
+- D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
+- D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 
 Decisioni dell'utente del 2026-11-09 sulla riverifica di S-01: soppressioni in linea ignorate per ora (N-04, ADR-0012); residuo di N-03 accettato per la Fase 1; N-09 accettato e da dichiarare in L-06.
 
@@ -90,7 +96,7 @@ Blocchi non legati a un ADR da confermare con l'utente, senza effetto sul percor
 | D-0015 | Semgrep escluso | Per JS/TS non resta SAST: G1.c non è raggiungibile con le fixture di F-03, serve un altro motore e un nuovo ADR |
 | D-0015 | Regole terze ammesse (opzione 3) | P-09 si amplia. La copertura sui pilota migliora, le fixture non cambiano |
 
-Per D-0009-B il piano propone, senza deciderlo: misura sulla macchina di sviluppo attuale con snapshot dei feed già presente, tempo di sincronizzazione riportato a parte. §13 precisa che i valori sono da confermare dopo il pilota.
+Per D-0009-B l'utente ha deciso il 2026-11-09: misura sulla propria macchina, snapshot fissato prima della misura, tempo di sincronizzazione riportato a parte. §13 precisa che i valori sono da confermare dopo il pilota.
 
 ## 4. Fuori ambito (Fase 2 e successive)
 
@@ -215,14 +221,14 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Spec: §16 regola 1. ADR: tutti i citati.
 
 #### A-02 — Applicare a `doc/PROJECT.md` le modifiche di §4.1, §7.1, §7.2, §8
-- Agente: `architect`. Stato: `BLOCCATO` da D-0005, D-0009-A.
+- Agente: `architect`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `doc/PROJECT.md`.
 - Dipende da: A-01.
 - Accettazione: §4.1 con `tools`, `level_source`, `Location.commit` opzionale, `id` e date senza database; §7.1 con `feeds` e versione CycloneDX; §7.2 con versioni ammesse in ingresso, livelli di isolamento e firma; §8 con `paths.exclude` e `gate.mode: all`. Nessuno scarto tra testo e schemi esportati.
 - Spec: §4.1, §7.1, §7.2, §8. ADR: 0004, 0005, 0006, 0007, 0008, 0009, 0014.
 
 #### A-03 — Allineare le altre sezioni della specifica
-- Agente: `architect`. Stato: `BLOCCATO` da D-0009-A.
+- Agente: `architect`. Stato: `LIBERO`.
 - Percorsi: `doc/PROJECT.md`.
 - Dipende da: A-01.
 - Accettazione: §2 e §7 (gVisor obbligatorio solo su server), §3 (`pipeline/`, `ports.py`, feed fuori dal nucleo, `scan-report`, cartella di contratto, trufflehog), §5 (motore senza Temporal in Fase 1, requisito PR al Gate 2), §13 (significato del Gate 1), §14, §16 regola 5 (`pnpm` condizionato), §17 (telemetria e auto-analisi in Fase 1). §12.1 resta per la Fase 2.
@@ -284,7 +290,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 Precedono ogni implementazione che li consuma. Modello e schema esportato stanno nella stessa modifica; la revisione di `architect` parte dal diff dello schema.
 
 #### C-01 — Contratto `finding`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A, solo `level_source`).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/finding.schema.json`.
 - Dipende da: M-05.
 - Accettazione: modello §4.1 rivisto secondo ADR-0008: `tools` accanto a `tool` (primo in ordine lessicografico), `evidence` per tool con `occurrences`, `Location.commit` opzionale, `id` uguale al fingerprint e date uguali all'ora della scansione in assenza di database. `level_source` da ADR-0009. `impact` e `score` ammessi a `null`. `extra="forbid"`. `--check` verde. Emendamenti dopo A-01: `tools` con `uniqueItems: true`; `description` su `tool` (primo di `tools`) e su `Location` (`end_line` non precede `start_line`), vincoli che lo schema non può esprimere (ADR-0003).
@@ -298,7 +304,7 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Spec: §7.1, §7.2. ADR: 0003, 0004, 0005, 0006, 0007.
 
 #### C-03 — Contratto `code-analyzer-config`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A per `gate.mode: all`).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/models/`, `schemas/code-analyzer-config.schema.json`.
 - Dipende da: M-05.
 - Accettazione: tutto §8 più `paths.exclude`. `service`, `scoring`, `agents` validati e inerti. `additionalProperties: false`, `version: 1`. Nessuna chiave per immagine, digest, firma, isolamento, rete, montaggi, comando o origine dei feed: un file con una di queste chiavi è rifiutato. Emendamenti dopo A-01 (ADR-0003, 0014): gli elementi di `paths.exclude` e `plugins.semgrep.rules` hanno nello schema `minLength: 1` e un `not` con `pattern` uguale a `^[/\\]|^[A-Za-z]:|(^|[/\\])\.\.([/\\]|$)`, equivalenti a `_relative_posix`, con `json_schema_extra` su `RelativePath`; `Gate` ha un `allOf` generato dall'enum `Level` che per ogni livello vieta la presenza in entrambe le liste (`not` su `block_on` e `warn_on` con `type: array` e `contains: {const: <livello>}`, `required` su tutte e due).
@@ -423,7 +429,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §15. ADR: 0011, 0012.
 
 #### T-07 — Matrice E2E di `scan` e `gate`
-- Agente: `test`. Stato: `IPOTESI` (D-0005, D-0009-A).
+- Agente: `test`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `tests/e2e/test_gate.py`.
 - Dipende da: L-04, L-05, T-02.
 - Accettazione: exit 0, 1, 2 per scan completa e parziale, con e senza `--allow-partial`, immagine non firmata, `--fail-on`, `new-findings-only` trattato come `all` con avviso, eccezioni attive e scadute.
@@ -509,7 +515,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §15. ADR: 0012.
 
 #### K-11 — Livelli provvisori e ordinamento
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/levels.py`.
 - Dipende da: C-01.
 - Accettazione: tabella di ADR-0009 in dati e non nella logica, intervalli CVSS semiaperti verificati ai confini, `level_source` valorizzato, `impact` e `score` nulli. Ordinamento deterministico per livello, categoria, fingerprint.
@@ -523,7 +529,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §8, §13, §16 regola 2. ADR: 0013.
 
 #### K-13 — Valutazione del gate
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: C-04, K-11.
 - Accettazione: funzione pura sul report con precedenza `--fail-on`, `gate.block_on`, `critico,alto`; eccezioni escluse; scansione parziale, o con un plugin `signature: skipped` (ADR-0005), esce con 2 salvo `--allow-partial`.
@@ -551,7 +557,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §5, §7.2. ADR: 0002, 0004, 0007.
 
 #### K-17 — Passo `normalize`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-05, K-06, K-07, K-08, K-09, K-10, K-11, K-12.
 - Accettazione: composizione idempotente: dagli output dei plugin all'elenco ordinato, con esecuzione ripetuta identica.
@@ -806,21 +812,21 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1. ADR: 0007, 0010.
 
 #### L-04 — `scan`
-- Agente: `backend`. Stato: `IPOTESI` (D-0005, D-0009-A).
+- Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: L-01, C-04, K-15, K-16, K-17, K-18, R-03, R-04, R-05, R-07, R-08.
 - Accettazione: scrive sempre `code-analyzer.report.json` e `code-analyzer.sarif`. `--format` governa solo lo stdout. Exit 0 anche se parziale, 2 senza report valido, mai 1. `--min-isolation` attivo.
 - Spec: §5, §9.1, §13. ADR: 0002, 0004, 0010.
 
 #### L-05 — `gate`
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: L-01, K-13, C-04.
 - Accettazione: legge il report, `--fail-on`, `--allow-partial`. Exit 0, 1, 2 secondo ADR-0010. Nessun `--pr` né `--base`.
 - Spec: §9.1, §13. ADR: 0009, 0010.
 
 #### L-06 — Documentazione utente
-- Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `doc/utente/`.
 - Dipende da: L-02, L-03, L-04, L-05.
 - Accettazione: comandi, exit code, `.code-analyzer.yml`, requisiti (runtime OCI, `cosign`). Limiti dichiarati: livelli provvisori che cambieranno in Fase 2, isolamento inferiore fuori dal server, report da trattare come riservati, `approved_by` non autenticato, copertura SAST limitata.
@@ -854,7 +860,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 ### X — Misura e chiusura
 
 #### X-01 — Registrare i 3 repository pilota
-- Agente: `architect`, su scelta dell'utente. Stato: `IPOTESI` (regola di misura proposta per D-0009-B).
+- Agente: `architect`, su scelta dell'utente. Stato: `LIBERO`.
 - Percorsi: `doc/verifiche/gate-1.md`.
 - Dipende da: nessuno.
 - Accettazione: i 3 pilota `fastapi/full-stack-fastapi-template`, `excalidraw/excalidraw`, `saleor/saleor`, ciascuno con SHA di commit fissato, clone completo, dimensione e linguaggi; macchina di riferimento, regola di misura.
@@ -882,7 +888,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §13. ADR: 0004, 0009, 0010.
 
 #### X-05 — Auto-analisi
-- Agente: `test`. Stato: `IPOTESI` (D-0009-A).
+- Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `doc/verifiche/gate-1.md`.
 - Dipende da: F-06, L-05, L-07, T-08.
 - Accettazione: Code Analyzer sul proprio monorepo non produce finding Critici o Alti con `--fail-on critico,alto`. Fixture e `golden-set/` esclusi con `paths.exclude`.
