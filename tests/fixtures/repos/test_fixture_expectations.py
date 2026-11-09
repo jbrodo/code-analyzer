@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator
 
 REPOS = Path(__file__).resolve().parent
 SCHEMA = REPOS.parent / "expected-findings.schema.json"
+RULES = REPOS.parents[2] / "packages/ca-plugins/src/ca_plugins/builtin/semgrep/rules"
 FIXTURES = ("python-app", "js-ts-app")
 DISABLED_BANDIT_RULES = {"B105", "B106", "B107"}  # ADR-0012
 
@@ -63,9 +64,14 @@ def test_expected_entries_are_unique(fixture: str) -> None:
 
 
 @pytest.mark.parametrize("fixture", FIXTURES)
-def test_semgrep_is_not_expected_until_project_rules_exist(fixture: str) -> None:
-    """P-09 non ha ancora prodotto regole: nessun atteso puo' dipendere da semgrep."""
-    assert all("semgrep" not in e["tools"] for e in load(fixture)["expected"])
+def test_semgrep_expectations_use_project_rules_only(fixture: str) -> None:
+    """P-09: ogni atteso di semgrep ha il `rule_id` di una regola del progetto (ADR-0015)."""
+    rules = set()
+    for rule_file in RULES.glob("*.yaml"):
+        rules |= {r["id"] for r in yaml.safe_load(rule_file.read_text(encoding="utf-8"))["rules"]}
+    semgrep = [e for e in load(fixture)["expected"] if "semgrep" in e["tools"]]
+    assert semgrep and {e["rule_id"] for e in semgrep} <= rules
+    assert all(e["category"] == "sast" and e["tools"] == ["semgrep"] for e in semgrep)
 
 
 @pytest.mark.parametrize("fixture", FIXTURES)

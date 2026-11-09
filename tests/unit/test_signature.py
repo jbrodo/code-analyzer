@@ -140,7 +140,7 @@ def fake_runtime(tmp: Path) -> str:
         f'''echo "$1" >> "{tmp}/calls"
 case "$1" in
   info) echo '{json.dumps({"runc": {}})}' ;;
-  pull|create|start|kill|rm) exit 0 ;;
+  pull|create|start|kill|rm|ps|volume) exit 0 ;;
   wait) echo 0 ;;
   inspect) echo "0 false" ;;
 esac
@@ -156,7 +156,11 @@ def request(tmp: Path) -> PluginRunRequest:
 
 def calls(tmp: Path) -> list[str]:
     f = tmp / "calls"
-    return [c for c in f.read_text().split() if c != "info"] if f.exists() else []
+    return (
+        [c for c in f.read_text().split() if c not in {"info", "ps", "volume"}]
+        if f.exists()
+        else []
+    )
 
 
 def test_verify_then_pull_then_create_and_signature_verified(tmp_path: Path, key: str) -> None:
@@ -166,7 +170,7 @@ def test_verify_then_pull_then_create_and_signature_verified(tmp_path: Path, key
     (tmp_path / "w").mkdir()
     with OciExecutor(runtime=fake_runtime(rt), work_dir=str(tmp_path / "w"), verifier=v) as ex:
         result = ex.run(request(tmp_path))
-    assert result.outcome is RunOutcome.FAILED  # il finto non scrive /out: non importa qui
+    assert result.outcome is RunOutcome.INVALID_OUTPUT  # il finto non scrive /out: non importa qui
     assert result.signature is Signature.VERIFIED
     assert calls(rt)[:2] == ["pull", "create"]
 
@@ -182,3 +186,102 @@ def test_failed_verification_runs_nothing(tmp_path: Path, key: str) -> None:
         with pytest.raises(ScanAborted):
             ex.run_many([request(tmp_path)])
     assert calls(rt) == []
+
+
+# --- lotti, abort, timeout del client, esito reale (emendamenti ADR-0002/0005) -----------------
+
+
+def named(name: str) -> PackagedPluginManifest:
+    return MANIFEST.model_copy(update={"name": name})
+
+
+def batch(tmp: Path, *names: str) -> list[PluginRunRequest]:
+    ws = tmp / "ws"
+    ws.mkdir(exist_ok=True)
+    return [PluginRunRequest(manifest=named(n), workspace=str(ws)) for n in names]
+
+
+def test_denied_signature_in_a_batch_runs_no_create(tmp_path: Path) -> None:
+    seen: list[str] = []
+
+    def verifier(m: PackagedPluginManifest, _ref: str) -> Signature:
+        seen.append(m.name)
+        if m.name == "c":
+            raise ScanAborted("firma")
+        return Signature.VERIFIED
+
+    rt = tmp_path / "rt"
+    rt.mkdir()
+    (tmp_path / "w").mkdir()
+    with OciExecutor(
+        runtime=fake_runtime(rt), work_dir=str(tmp_path / "w"), verifier=verifier, max_parallel=1
+    ) as ex:
+        with pytest.raises(ScanAborted):
+            ex.run_many(batch(tmp_path, "a", "b", "c", "d"))
+    assert calls(rt) == []  # nessun pull né create
+    assert sorted(seen) == sorted(set(seen))  # una sola verifica per richiesta
+
+
+def test_later_abort_does_not_wait_for_earlier_and_cancels_unstarted(tmp_path: Path) -> None:
+    import threading
+
+    go = threading.Event()
+    threading.Timer(0.7, go.set).start()  # rilascia i bloccati: solo dopo l'annullamento
+    started: list[str] = []
+
+    def execute(manifest: PackagedPluginManifest, *_a: object, **_k: object) -> object:
+        started.append(manifest.name)
+        if manifest.name == "r1":
+            raise ScanAborted("firma")
+        go.wait(10)
+        raise AssertionError("non deve completare")
+
+    ex = OciExecutor(runtime=fake_runtime(tmp_path), work_dir=str(tmp_path), max_parallel=2)
+    ex._execute = execute  # type: ignore[method-assign,assignment]  # noqa: SLF001
+    with pytest.raises((ScanAborted, AssertionError)):
+        ex.run_many(batch(tmp_path, *[f"r{i}" for i in range(6)]))
+    assert not {"r3", "r4", "r5"} & set(started)  # annullati prima di partire
+    ex.close()
+
+
+def test_create_timeout_is_a_failed_result_and_cleans_up(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ca_plugins import runner
+
+    monkeypatch.setattr(runner, "_CREATE_TIMEOUT", 0.5)
+    rt = tmp_path / "rt"
+    rt.mkdir()
+    sleepy = script(
+        rt / "docker",
+        f'''echo "$1" >> "{rt}/calls"
+case "$1" in
+  info) echo '{json.dumps({"runc": {}})}' ;;
+  create) exec sleep 5 ;;
+esac
+''',
+    )
+    (tmp_path / "w").mkdir()
+    with OciExecutor(runtime=sleepy, work_dir=str(tmp_path / "w")) as ex:
+        result = ex.run(batch(tmp_path, "a")[0])
+    assert result.outcome is RunOutcome.FAILED and result.exit_code is None
+    assert {"kill", "rm"} <= set(calls(rt))
+
+
+def test_preparation_error_reports_the_real_signature(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(*_a: object, **_k: object) -> list[list[str]]:
+        raise OSError("disco pieno")
+
+    monkeypatch.setattr(OciExecutor, "_prepare", staticmethod(broken))
+    rt = tmp_path / "rt"
+    rt.mkdir()
+    (tmp_path / "w").mkdir()
+    with OciExecutor(
+        runtime=fake_runtime(rt),
+        work_dir=str(tmp_path / "w"),
+        verifier=lambda _m, _r: Signature.VERIFIED,
+    ) as ex:
+        result = ex.run(batch(tmp_path, "a")[0])
+    assert result.outcome is RunOutcome.FAILED and result.signature is Signature.VERIFIED

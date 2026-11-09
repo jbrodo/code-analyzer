@@ -61,3 +61,38 @@ Da provare:
 - Il parallelismo nell'adattatore `PluginExecutor`: R-07.
 
 Passa ad `Accettato` quando quei task sono verdi.
+
+## Emendamento: parallelismo nella porta
+
+Data: 2026-11-08. La regola "il parallelismo è dell'adattatore" resta, ma il passo non poteva chiederlo: `run_many` esiste solo su `OciExecutor` e `run_plugins` chiama `run` in sequenza, mentre §5 e §7.1 vogliono i plugin in parallelo e G1.b chiede meno di 10 minuti.
+
+Opzioni:
+
+1. Esecuzione a lotti nella porta.
+2. Thread nel passo, sopra `run()`. `lint-imports` non lo vieta, ma il limite di concorrenza diventerebbe un dato del nucleo, un adattatore Kubernetes non potrebbe usare le proprie quote e il passo non potrebbe verificare le firme di un lotto prima del primo container (ADR-0005).
+
+Decisione: opzione 1. In `PluginExecutor`, con `Sequence` da `collections.abc`:
+
+```python
+def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]: ...
+```
+
+Contratto:
+
+- Un risultato per richiesta, nell'ordine delle richieste; lotto vuoto, lista vuota.
+- Un plugin non riuscito è un risultato, mai un'eccezione. Vale anche per timeout ed errori del client del runtime su `create`, `start`, `inspect`.
+- Escono come eccezione solo le condizioni che annullano la scansione: `ScanAborted` e runtime assente. Alla prima eccezione le esecuzioni non avviate si annullano subito, senza attendere quelle che precedono nell'ordine. Quelle in corso terminano entro il proprio timeout e rimuovono il container, poi l'eccezione si propaga.
+- `run` resta nella porta: serve a `sbom`, che esegue solo syft (ADR-0010).
+
+Nel passo:
+
+- `run_plugins` chiama `run_many` una volta per stadio, in sequenza e senza catturare eccezioni. Il secondo stadio parte solo a primo finito, perché l'SBOM è un suo ingresso (ADR-0007).
+- La lettura dell'SBOM resta sequenziale e per nome: "il primo per nome" non dipende da quale container finisce prima.
+
+Limite di concorrenza:
+
+- Vive in `OciExecutor(max_parallel=...)` e lo fissa la radice di composizione con `min(DEFAULT_MAX_PARALLEL, os.cpu_count() or 1)`. Non sta nella porta, nel passo né in `.code-analyzer.yml` (ADR-0014). Nessun nuovo flag (ADR-0010).
+- Gli stadi sono sequenziali e la CLI fa una scansione per processo, quindi il limite di ogni chiamata è il tetto del processo. Due processi sulla stessa macchina non si coordinano: fuori dalla Fase 1.
+- Il tetto conta i container. Ogni container è limitato dalle proprie `resources`, ma la loro somma no. I manifest built-in non esistono ancora, quindi manca il dato: X-04 misura il picco. Se la somma non sta nella macchina, si passa a un budget sulle `resources` dentro l'adattatore, senza toccare la porta.
+
+Conseguenze: `ca-core` resta senza thread né concetti di infrastruttura; la porta è un'interfaccia Python nello stesso build, quindi non serve un artefatto di contratto separato; il fake esegue il lotto in ordine e i test del passo restano deterministici.

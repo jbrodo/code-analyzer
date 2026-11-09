@@ -74,7 +74,9 @@ def test_executor_without_configured_answer_fails_like_a_broken_plugin() -> None
 
 
 def test_requests_are_serializable() -> None:
-    request = FeedsSyncRequest(manifest=manifest(feeds=FEEDS), snapshot_dir="/cache/s")
+    request = FeedsSyncRequest(
+        manifest=manifest(feeds=FEEDS), snapshot_dir="/cache/s", max_bytes=1000
+    )
 
     assert FeedsSyncRequest.model_validate_json(request.model_dump_json()) == request
     assert FakePluginExecutor().sync_feeds(request).output_dir == "/cache/s"
@@ -144,4 +146,4 @@ def test_request_inputs_must_match_the_manifest() -> None:
 
 def test_feeds_sync_requires_feeds_in_the_manifest() -> None:
     with pytest.raises(ValidationError, match="feeds"):
-        FeedsSyncRequest(manifest=MANIFEST, snapshot_dir="/s")
+        FeedsSyncRequest(manifest=MANIFEST, snapshot_dir="/s", max_bytes=1)

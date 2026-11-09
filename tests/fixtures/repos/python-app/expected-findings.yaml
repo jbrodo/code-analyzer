@@ -3,7 +3,7 @@
 # trivy 0.76.2, scancode 32.5.0, syft 1.57.0) sulla fixture il 2026-11-08, con database offline.
 # Assenti di proposito:
 #  - B105, B106, B107 (disattivate, ADR-0012);
-#  - regole Semgrep: non esistono ancora (task P-09);
+#  - Semgrep: solo le regole del progetto (P-09), osservate con semgrep 1.184.0 il 2026-11-08;
 #  - segreti: sono nella fixture secrets-history (F-04).
 version: 1
 expected:
@@ -23,6 +23,15 @@ expected:
   - {category: sast, rule_id: B501, path: app/handlers.py, start_line: 28, end_line: 28, tools: [bandit], note: "requests con verify=False"}
   - {category: sast, rule_id: B307, path: app/handlers.py, start_line: 32, end_line: 32, tools: [bandit], note: "eval"}
   - {category: sast, rule_id: B608, path: app/db.py, start_line: 5, end_line: 5, tools: [bandit], note: "query SQL costruita da stringa"}
+
+  # --- SAST: regole Semgrep del progetto (builtin/semgrep/rules/python.yaml) ---
+  - {category: sast, rule_id: ca-py-subprocess-shell, path: app/handlers.py, start_line: 12, end_line: 12, tools: [semgrep], note: "subprocess con shell=True"}
+  - {category: sast, rule_id: ca-py-pickle-load, path: app/handlers.py, start_line: 16, end_line: 16, tools: [semgrep], note: "pickle.loads"}
+  - {category: sast, rule_id: ca-py-yaml-unsafe-load, path: app/handlers.py, start_line: 20, end_line: 20, tools: [semgrep], note: "yaml.load non sicuro"}
+  - {category: sast, rule_id: ca-py-weak-hash, path: app/handlers.py, start_line: 24, end_line: 24, tools: [semgrep], note: "hashlib.md5"}
+  - {category: sast, rule_id: ca-py-tls-verify-disabled, path: app/handlers.py, start_line: 28, end_line: 28, tools: [semgrep], note: "requests con verify=False"}
+  - {category: sast, rule_id: ca-py-eval-dynamic, path: app/handlers.py, start_line: 32, end_line: 32, tools: [semgrep], note: "eval"}
+  - {category: sast, rule_id: ca-py-sql-string-building, path: app/db.py, start_line: 6, end_line: 6, tools: [semgrep], note: "execute su query costruita da f-string; segnala la chiamata (riga 6), bandit la costruzione (riga 5)"}
 
   # --- IaC: trivy (Dockerfile e Terraform) ---
   - {category: iac, rule_id: DS-0001, path: Dockerfile, start_line: 1, end_line: 1, tools: [trivy], note: "tag latest"}

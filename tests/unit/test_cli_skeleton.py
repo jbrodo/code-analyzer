@@ -21,14 +21,13 @@ def test_only_the_four_commands_exist() -> None:
 
 
 def test_unimplemented_command_exits_2_never_1(capsys: pytest.CaptureFixture[str]) -> None:
-    for argv in (["scan"], ["sbom"], ["gate"], ["config", "validate"]):
-        assert main(argv) == 2
+    assert main(["sbom"]) == 2
     assert "non è ancora disponibile" in capsys.readouterr().err
 
 
 def test_syntax_error_exits_2() -> None:
     with pytest.raises(SystemExit) as err:
-        main(["scan", "--min-isolation", "gvisor"])  # opzione di L-04: non anticipata
+        main(["scan", "--min-isolation", "nessuno"])
     assert err.value.code == 2
 
 

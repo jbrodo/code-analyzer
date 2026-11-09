@@ -43,7 +43,8 @@ def docker(*args: str) -> str:
 
 
 def leftovers() -> list[str]:
-    return docker("ps", "-aq", "--filter", "label=code-analyzer.executor=1").split()
+    """Container (plugin e custodie) di questa immagine: lo stesso daemon serve altri processi."""
+    return docker("ps", "-aq", "--filter", f"ancestor={TAG}").split()
 
 
 @pytest.fixture(scope="module")
@@ -96,7 +97,8 @@ def test_success_output_is_readable_and_released(
     assert result.output_dir is not None
     run_dir = Path(result.output_dir).parent
     assert oct(run_dir.stat().st_mode & 0o777) == "0o700"
-    assert oct(Path(result.output_dir).stat().st_mode & 0o777) == "0o777"
+    assert oct(Path(result.output_dir).stat().st_mode & 0o777) == "0o700"  # copie dell'host
+    assert oct((Path(result.output_dir) / "results.sarif").stat().st_mode & 0o777) == "0o600"
     data = OutputReader().read_file(result.output_dir, "results.sarif", 1_048_576)
     assert b'"version"' in data
     executor.release(result.output_dir)
@@ -108,8 +110,9 @@ def test_plugin_writes_as_nobody_in_out_and_tmp(
 ) -> None:
     result = executor.run(request(image_id, tmp_path, "write-out"))
     assert result.outcome is RunOutcome.OK and result.output_dir
-    assert OutputReader().list_files(result.output_dir) == ["extra.txt", "results.sarif"]
-    assert (Path(result.output_dir) / "extra.txt").stat().st_uid == 65534
+    # extra.txt esiste nel volume ma non è dichiarato: mai copiato sull'host (ADR-0004, R-09)
+    assert OutputReader().list_files(result.output_dir) == ["results.sarif"]
+    assert (Path(result.output_dir) / "results.sarif").stat().st_uid == os.getuid()
     assert executor.run(request(image_id, tmp_path, "write-tmp")).outcome is RunOutcome.OK
 
 
@@ -135,14 +138,14 @@ def test_unknown_behavior_exit_64(executor: OciExecutor, image_id: str, tmp_path
 
 def test_symlink_out_fails_the_plugin(executor: OciExecutor, image_id: str, tmp_path: Path) -> None:
     result = executor.run(request(image_id, tmp_path, "symlink-out"))
-    assert result.outcome is RunOutcome.FAILED
+    assert result.outcome is RunOutcome.INVALID_OUTPUT and result.exit_code == 0
     assert result.detail == "output non valido: results.sarif"
     assert result.output_dir is None
 
 
 def test_oversize_fails_the_plugin(executor: OciExecutor, image_id: str, tmp_path: Path) -> None:
     result = executor.run(request(image_id, tmp_path, "oversize"))
-    assert result.outcome is RunOutcome.FAILED
+    assert result.outcome is RunOutcome.INVALID_OUTPUT and result.exit_code == 0
     assert result.detail == "output oltre il limite: results.sarif"
     assert result.output_dir is None
 
@@ -172,7 +175,7 @@ def test_missing_image_by_digest_fails_cleanly_without_pulling(
 ) -> None:
     with OciExecutor(work_dir=str(tmp_path)) as ex:  # riferimento per digest: non è locale
         result = ex.run(request(image_id, tmp_path, "success"))
-    assert result.outcome is RunOutcome.FAILED and (result.detail or "").startswith("create")
+    assert result.outcome is RunOutcome.FAILED and (result.detail or "").startswith("custodia")
     assert leftovers() == []
 
 
@@ -199,7 +202,9 @@ def test_feeds_sync_has_network_and_no_workspace(
     snapshot.chmod(0o777)
     result = executor.sync_feeds(
         FeedsSyncRequest(
-            manifest=PackagedPluginManifest.model_validate(data), snapshot_dir=str(snapshot)
+            manifest=PackagedPluginManifest.model_validate(data),
+            snapshot_dir=str(snapshot),
+            max_bytes=1 << 20,
         )
     )
     assert (result.outcome, result.output_dir) == (RunOutcome.OK, None)
@@ -225,7 +230,7 @@ def test_run_many_runs_in_parallel_with_distinct_outcomes(image_id: str, tmp_pat
         ("ok", 0),
         ("failed", 3),
         ("timeout", None),
-        ("failed", 0),
+        ("invalid_output", 0),
         ("ok", 0),
     ]
     assert results[3].detail == "output non valido: results.sarif"

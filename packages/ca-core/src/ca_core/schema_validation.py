@@ -9,6 +9,7 @@ import hashlib
 import itertools
 import json
 from collections.abc import Iterator, Mapping
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,10 @@ MANIFEST_NAME = "SOURCES.json"
 MAX_ERRORS = 20  # l'istanza è non fidata: niente elenchi di errori illimitati
 _REF_KEYS = ("$ref", "$dynamicRef", "$recursiveRef")
 _SARIF_FILE = "sarif-schema-2.1.0.json"
+PACKAGED_DIR = "vendor_schemas"
+# Ancora nel codice: SOURCES.json è nella stessa cartella e prova solo la coerenza interna.
+# Aggiornare uno schema fissato tocca file, SOURCES.json e questa costante (ADR-0003).
+VENDOR_MANIFEST_SHA256 = "f585c7cf10428a2323bb03def6013bb20e5cac7497f52e1c3b97c3aadfa2035b"
 
 
 class SchemaRefusedError(ValueError):
@@ -96,6 +101,18 @@ class SchemaStore:
         self._documents = documents
         self._validators: dict[str, Validator] = {}
         self._sarif_id = _doc_id(json.loads((vendor_dir / _SARIF_FILE).read_bytes()))
+
+    @classmethod
+    def packaged(cls) -> "SchemaStore":
+        """Schemi fissati del pacchetto installato; `SchemaRefusedError` se il manifest diverge."""
+        with resources.as_file(resources.files("ca_core").joinpath(PACKAGED_DIR)) as vendor_dir:
+            try:
+                raw = (vendor_dir / MANIFEST_NAME).read_bytes()
+            except OSError as exc:
+                raise SchemaRefusedError("schemi fissati assenti dal pacchetto") from exc
+            if hashlib.sha256(raw).hexdigest() != VENDOR_MANIFEST_SHA256:
+                raise SchemaRefusedError(f"{MANIFEST_NAME}: SHA-256 diverso da quello ancorato")
+            return cls(vendor_dir)  # carica tutto in memoria: il contesto può chiudersi
 
     def _validator(self, uri: str) -> Validator:
         if uri not in self._validators:

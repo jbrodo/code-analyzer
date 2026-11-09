@@ -21,3 +21,6 @@ docker run --rm --network none --read-only --cap-drop ALL \
   -v "$PWD":/workspace:ro --user 65534:65534 \
   ca-plugin-base:local python -c 'print("ok")'
 ```
+
+Licenze e SBOM (I-05): l'immagine include `/licenses`. Controllo e SBOM con
+`deploy/docker/build-image.sh`; vedi `deploy/docker/LICENSES-SBOM.md`.

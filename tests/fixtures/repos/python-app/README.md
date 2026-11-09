@@ -10,7 +10,7 @@ e i comandi usati sono nel campo `note` o nel report del task F-02.
 | Percorso | Per quale scanner |
 | --- | --- |
 | `poetry.lock` | osv-scanner, trivy (CVE note) |
-| `app/*.py` | bandit (regole diverse da B105, B106, B107) |
+| `app/*.py` | bandit (regole diverse da B105, B106, B107) e semgrep (regole del progetto, P-09) |
 | `Dockerfile`, `infra/main.tf` | trivy (misconfiguration) |
 | `third_party/copyleft_helper.py` | scancode (licenza per file) |
 | `vendor/legacycopyleft-1.0.0.dist-info/` | syft (licenza dichiarata di una dipendenza) |

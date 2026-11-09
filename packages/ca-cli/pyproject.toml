@@ -3,7 +3,7 @@ name = "ca-cli"
 version = "0.0.0"
 description = "Comando code-analyzer"
 requires-python = ">=3.12"
-dependencies = ["ca-core", "ca-plugins"]
+dependencies = ["ca-core", "ca-plugins", "pyyaml>=6"]
 
 [project.scripts]
 code-analyzer = "ca_cli.main:main"

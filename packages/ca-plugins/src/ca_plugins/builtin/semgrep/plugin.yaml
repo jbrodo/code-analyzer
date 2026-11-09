@@ -1,0 +1,32 @@
+# Plugin semgrep (P-10): SAST con le sole regole del progetto, SARIF 2.1.0. ADR-0004, 0005, 0007,
+# 0014, 0015. Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`)
+# perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e
+# sign-local.sh.
+apiVersion: code-analyzer/v1
+name: semgrep
+version: 1.0.0
+image: registry.invalid/ca-plugins/semgrep:1.0.0
+capabilities: [detect]
+languages: [python, javascript, typescript]
+categories: [sast]
+inputs:
+  workspace: readonly
+  config: optional  # {"rules": [...]} da `plugins.semgrep.rules`, ricontrollato dall'adattatore
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su semgrep 1.184.0 con le
+  # sole regole del progetto: 2,7 KB sulle fixture, 4,1 KB sul pilota saleor (circa 4000 volte di
+  # margine). Il valore e' largo perche' le regole di `plugins.semgrep.rules` non sono sotto il nostro
+  # controllo; un output ostile viene fermato qui e non in ca-core.
+  max_bytes: 16777216
+resources:
+  # Misure (profilo completo) sui tre pilota: memoria minima fra 256 MiB (fallisce su excalidraw con
+  # --cpus 1) e 384 MiB (riesce); 1 GiB = oltre 2,5 volte. PID: 8 fallisce, 16 riesce; 64 = 4 volte.
+  # Durata massima misurata 17,4 s con --cpus 1 (excalidraw, 167 MB), 10,4 s con 2 CPU; 120 s = 7
+  # volte il caso peggiore a una CPU. L'adattatore usa tanti job quante le CPU concesse al container.
+  cpu: "2"
+  memory: 1Gi
+  timeout: 120s
+  pids: 64
+network: none

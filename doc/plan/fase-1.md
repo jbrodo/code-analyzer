@@ -57,6 +57,8 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
 | **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Persona designata dall'utente, non un agente | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
 
+Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
+
 Blocchi non legati a un ADR da confermare con l'utente, senza effetto sul percorso critico:
 
 - `sbom --format spdx` è in §9.1 ma non in §13. ADR-0010 lo omette e il piano lo lascia fuori. Se deve rientrare, serve un task in più in `ca_core/sbom/` e in L-03.
@@ -272,7 +274,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `schemas/vendor/`, `packages/ca-core/src/ca_core/`.
 - Dipende da: M-01, V-09.
-- Accettazione: SARIF 2.1.0 e le versioni CycloneDX ammesse copiati con i relativi `$ref`. La validazione funziona senza rete e un `$ref` esterno o fuori dai percorsi ammessi viene rifiutato.
+- Accettazione: SARIF 2.1.0 e le versioni CycloneDX ammesse copiati con i relativi `$ref`. La validazione funziona senza rete e un `$ref` esterno o fuori dai percorsi ammessi viene rifiutato. Da R-09 i file stanno in `ca_core/vendor_schemas/` e `schemas/vendor` è un symlink (ADR-0003, emendamento per R-09).
 - Spec: §1, §7.2. ADR: 0003, 0007.
 
 ### C — Contratti
@@ -318,7 +320,7 @@ Precedono ogni implementazione che li consuma. Modello e schema esportato stanno
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/ports.py`.
 - Dipende da: C-01, C-02.
-- Accettazione: `Protocol` tipizzati per `PluginExecutor`, `SourceReader`, `ArtifactSink`, `Clock`, con ingressi e uscite serializzabili. Fake in memoria usati dai test di `ca-core`. `mypy` verde. Emendamenti dopo A-01: `SourceTooLarge`, livello di isolamento noto prima dell'esecuzione, ingressi non dichiarati rifiutati (ADR-0004, 0014).
+- Accettazione: `Protocol` tipizzati per `PluginExecutor`, `SourceReader`, `ArtifactSink`, `Clock`, con ingressi e uscite serializzabili. Fake in memoria usati dai test di `ca-core`. `mypy` verde. Emendamenti dopo A-01: `SourceTooLarge`, livello di isolamento noto prima dell'esecuzione, ingressi non dichiarati rifiutati (ADR-0004, 0014). Emendamenti di ADR-0002, 0004, 0005: `PluginExecutor.run_many`, `RunOutcome.INVALID_OUTPUT`, `PluginRunResult.signature` obbligatorio.
 - Spec: §5. ADR: 0001, 0002.
 
 #### C-07 — Test di contratto sugli schemi
@@ -543,8 +545,8 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: C-06, C-02.
-- Accettazione: con `PluginExecutor` finto, prima i plugin con `outputs.cyclonedx`, poi gli altri con l'SBOM se disponibile. Plugin fallito genera finding `health` `ca.scanner-not-run` e scansione parziale, senza fermare gli altri.
-- Spec: §5, §7.2. ADR: 0002, 0007.
+- Accettazione: con `PluginExecutor` finto, prima i plugin con `outputs.cyclonedx`, poi gli altri con l'SBOM se disponibile. Plugin fallito genera finding `health` `ca.scanner-not-run` e scansione parziale, senza fermare gli altri. Ogni stadio è una sola chiamata a `run_many`, e il secondo parte a primo finito. `ScanAborted` si propaga senza produrre un risultato. L'SBOM montato è il primo valido per nome, indipendentemente dall'ordine di fine. `invalid_output` diventa `outcome: failed` con il `detail` come `failure`, senza prefisso di exit.
+- Spec: §5, §7.2. ADR: 0002, 0004, 0007.
 
 #### K-17 — Passo `normalize`
 - Agente: `backend`. Stato: `IPOTESI` (D-0009-A).
@@ -557,7 +559,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-14, C-04, C-06.
-- Accettazione: scrive report e SARIF tramite `ArtifactSink`, report valido contro `schemas/scan-report.schema.json`.
+- Accettazione: scrive report e SARIF tramite `ArtifactSink`, con i nomi di ADR-0010 (`code-analyzer.report.json`, `code-analyzer.sarif`, emendamento per R-09), report valido contro `schemas/scan-report.schema.json`.
 - Spec: §5. ADR: 0002, 0010, 0011.
 
 ### R — Runner `ca-plugins`
@@ -573,21 +575,21 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`.
 - Dipende da: C-06, R-01, T-02, V-09.
-- Accettazione: Docker e Podman, argomenti come lista senza shell, profilo `hardened-container` completo di `--tmpfs /tmp:rw,noexec,nosuid` e `HOME=/tmp` (emendamento di ADR-0004), `/out` con permessi 0777 dentro una directory 0700 per esecuzione e scrivibile dal plugin come `65534:65534`, nessuna variabile dell'host al plugin. Senza runtime OCI: exit 2, nessun ripiego. Verificato su T-02.
+- Accettazione: Docker e Podman, argomenti come lista senza shell, profilo `hardened-container` completo di `--tmpfs /tmp:rw,noexec,nosuid` e `HOME=/tmp` (emendamento di ADR-0004), `/out` su volume tmpfs per esecuzione, proprietario `65534:65534`, con custodia e copia del solo file dichiarato (ADR-0004, emendamento per R-09), nessuna variabile dell'host al plugin. Senza runtime OCI: exit 2, nessun ripiego. Verificato su T-02.
 - Spec: §7.2. ADR: 0002, 0004.
 
 #### R-03 — Lettura sicura di `/out`
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`.
 - Dipende da: R-02.
-- Accettazione: cartella nuova per plugin e per esecuzione, sola lettura di file regolari al primo livello con `O_NOFOLLOW`, limite di byte dal manifest, directory rimossa a fine esecuzione. Valori provvisori da V-04; valori finali in X-02.
+- Accettazione: cartella nuova per plugin e per esecuzione, sola lettura di file regolari al primo livello con `O_NOFOLLOW`, limite di byte dal manifest, directory rimossa a fine esecuzione. L'emendamento per R-09 di ADR-0004 sostituisce la lettura diretta con la copia del solo file dichiarato da `docker cp`; i controlli di tipo e dimensione restano. Valori provvisori da V-04; valori finali in X-02.
 - Spec: §7.2. ADR: 0004.
 
 #### R-04 — Verifica della firma
 - Agente: `backend`. Stato: `IPOTESI` (D-0005).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`, `packages/ca-plugins/src/ca_plugins/keys/`.
 - Dipende da: R-01, V-09.
-- Accettazione: verifica con il comando fissato in V-06, poi esecuzione dello stesso digest, mai di un tag. Firma assente o errata, o registry non raggiungibile: exit 2 e nessun container. `CA_INSECURE_ALLOW_UNSIGNED=1` letta solo dall'ambiente e registrata come `signature: skipped`.
+- Accettazione: verifica con il comando fissato in V-06, poi esecuzione dello stesso digest, mai di un tag. Firma assente o errata, o registry non raggiungibile: exit 2, nessun report e nessun container del lotto, perché `run_many` verifica tutte le immagini prima di avviarne una; uno stadio precedente può aver eseguito immagini verificate (emendamento di ADR-0005). La verifica precede la preparazione in `run` e `sync_feeds`, quindi ogni risultato riporta l'esito reale. `CA_INSECURE_ALLOW_UNSIGNED=1` letta solo dall'ambiente e registrata come `signature: skipped`; il pull per digest avviene anche in quel caso.
 - Spec: §7.2. ADR: 0005.
 
 #### R-05 — Livelli di isolamento
@@ -601,14 +603,14 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/feeds.py`.
 - Dipende da: R-02, R-04.
-- Accettazione: container con rete e senza workspace né dati derivati dal repository, scaricamento di osv-scanner dagli `all.zip` degli ecosistemi fissati nel manifest, mai con `--download-offline-databases` (emendamento di ADR-0006), snapshot in cache per utente, soglia di età, snapshot precedente con avviso, plugin fallito se nessuno snapshot. Un test verifica l'invariante "codice o rete, mai entrambi".
+- Accettazione: container con rete e senza workspace né dati derivati dal repository, scaricamento di osv-scanner dagli `all.zip` degli ecosistemi fissati nel manifest, mai con `--download-offline-databases` (emendamento di ADR-0006), snapshot in cache per utente, soglia di età, snapshot precedente con avviso, plugin fallito se nessuno snapshot. Un test verifica l'invariante "codice o rete, mai entrambi". Controllo di spazio durante la sincronizzazione e pulizia con `purge_feeds`: ADR-0006, emendamento per R-09, realizzati in R-09.
 - Spec: §7.2, §15. ADR: 0006.
 
 #### R-07 — Parallelismo, timeout, esiti
 - Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`.
+- Percorsi: `packages/ca-plugins/src/ca_plugins/runner.py`, `packages/ca-core/src/ca_core/ports.py`, `packages/ca-core/src/ca_core/fakes.py`, `packages/ca-cli/src/ca_cli/composition.py`.
 - Dipende da: R-02, R-03.
-- Accettazione: esecuzione parallela nell'adattatore. Timeout dal manifest, predefinito 10 minuti. Exit non zero, timeout e output non valido danno esito distinto senza fermare gli altri. Durata registrata.
+- Accettazione: esecuzione parallela nell'adattatore tramite `PluginExecutor.run_many`, risultati nell'ordine delle richieste, al più `max_parallel` container, fissato dalla radice di composizione (emendamento di ADR-0002). Timeout dal manifest, predefinito 10 minuti. Exit non zero (`failed`), timeout (`timeout`) e output non valido (`invalid_output`) danno esito distinto senza fermare gli altri; anche timeout ed errori del client su `create`, `start`, `inspect` sono risultati `failed`. Un'eccezione che annulla la scansione non attende le esecuzioni precedenti nell'ordine e annulla subito quelle non avviate; i container in corso vengono rimossi. Durata registrata.
 - Spec: §5, §7.2. ADR: 0002, 0004.
 
 #### R-08 — `SourceReader` locale
@@ -620,10 +622,18 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 
 #### R-09 — Chiusura del runner
 - Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-plugins/src/ca_plugins/`.
+- Percorsi: `packages/ca-plugins/src/ca_plugins/`, `packages/ca-core/src/ca_core/` (`ports.py`, `fakes.py`, `schema_validation.py`, `vendor_schemas/`, `pipeline/publish.py`, `pipeline/exclusions.py`), `packages/ca-cli/src/ca_cli/`, `schemas/vendor`, `tests/`.
 - Dipende da: S-01.
-- Accettazione: finding critici e alti di S-01 risolti e riverificati da `security`; il rischio residuo è accettato dall'utente. Solo da qui il runner è considerato chiuso.
-- Spec: §7.2, §15. ADR: 0004, 0005.
+- Accettazione: finding critici e alti di S-01 risolti e riverificati da `security`; il rischio residuo è accettato dall'utente (fatto il 2026-11-09, con le condizioni riportate nella sezione delle decisioni). Solo da qui il runner è considerato chiuso. Deve valere, con prova:
+  - A-01 `/out`: volume tmpfs per esecuzione con custodia, dimensione `out_tmpfs_bytes`, `--memory` uguale a `resources.memory` più il tmpfs, copia del solo file dichiarato con i controlli su tipo e dimensione, file non dichiarati mai copiati, rimozione di container e volume anche con errori (ADR-0004).
+  - A-01 `/feeds`: guardia durante la sincronizzazione su spazio libero, byte e voci, `--ulimit fsize` (ADR-0006).
+  - A-02: `count_unreadable` prima del lotto, esito `partial` e avviso `workspace-unreadable` con il solo conteggio; nessun nome di file in report, stdout, stderr (ADR-0004).
+  - M-01: `rmtree` riesce su `/out`; `purge_feeds` rimuove gli snapshot scartati. Gli `xfail` strict di `test_t03_out_hostile.py` sono rimossi.
+  - M-03: SIGINT, SIGTERM e SIGHUP durante un lotto fermano i container e lasciano exit 2, `cancel_futures=True`, rimozione all'avvio dei soli orfani scaduti, `close()` sempre chiamato dalla CLI (ADR-0004).
+  - Schemi: `SchemaStore.packaged()` con SHA ancorato, wheel provato fuori dal repository (ADR-0003).
+  - Nome del report: un solo `REPORT_NAME`, nessuna ridenominazione (ADR-0010).
+  - Non si dichiara provato ciò che non lo è: Podman e gVisor restano `UNPROVEN` e il comportamento è il fallimento del plugin, mai un ripiego su bind mount.
+- Spec: §7.2, §15. ADR: 0003, 0004, 0005, 0006, 0010.
 
 ### I — Immagini e rilascio
 
@@ -746,7 +756,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `backend`. Stato: `IPOTESI` (D-0015).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/gitleaks/`.
 - Dipende da: P-01, F-04.
-- Accettazione: output grezzo su percorso interno, in `/out` solo SARIF oscurato con l'hash in `properties.secret_sha256`. Storia completa, copertura ridotta segnalata per clone superficiale. `evidence.validity = "unverified"`. Esecuzione senza `--redact` su percorso nel tmpfs interno; niente `snippet`, `email`, `author`, `commitMessage` in `/out`. `safe.directory` impostata su `/workspace`; `dubious ownership` nel log fa fallire il plugin. Test dedicato su workspace di altro proprietario: segreto trovato con l'impostazione, plugin fallito senza. Test di contratto su output oscurato.
+- Accettazione: output grezzo su percorso interno, in `/out` solo SARIF oscurato con l'hash in `properties.secret_sha256`. Storia completa, copertura ridotta segnalata per clone superficiale. `evidence.validity = "unverified"`. Esecuzione senza `--redact` su percorso nel tmpfs interno; niente `snippet`, `email`, `author`, `commitMessage` in `/out`. Git ombra nel tmpfs dell'adattatore, senza `safe.directory` né `--log-opts` (ADR-0012, emendamento per P-07); ogni errore di git nel log, `dubious ownership` compreso, fa fallire il plugin. Test su workspace di altro proprietario: segreto trovato. `tests/integration/test_gitleaks_hostile_repo.py` con `.git/config` ostile: nessun comando eseguito, controllo positivo sullo stesso repository, `.gitleaks.toml` e `.gitleaksignore` ostili senza effetto. Test di contratto su output oscurato.
 - Spec: §7.3, §15. ADR: 0007, 0008, 0012.
 
 #### P-08 — bandit
@@ -866,7 +876,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `test`. Stato: `LIBERO`.
 - Percorsi: `doc/verifiche/gate-1.md`.
 - Dipende da: X-01, I-04, L-05, L-07, R-09.
-- Accettazione: CLI impacchettata, 3 report `complete` e durata totale < 10 minuti per ciascuno, secondo la regola di X-01. Si registrano solo durate e conteggi: i report dei pilota sono riservati e non si committano. Limiti di byte confermati.
+- Accettazione: CLI impacchettata, 3 report `complete` e durata totale < 10 minuti per ciascuno, secondo la regola di X-01. Si registrano solo durate e conteggi: i report dei pilota sono riservati e non si committano. Limiti di byte confermati, inclusi i valori provvisori di ADR-0004 e ADR-0006 (emendamenti per R-09): dimensione del tmpfs di `/out` e margine, `FEEDS_MIN_FREE_BYTES`, `DEFAULT_MAX_BYTES`, costo dei container in più.
 - Spec: §13. ADR: 0004, 0009, 0010.
 
 #### X-05 — Auto-analisi

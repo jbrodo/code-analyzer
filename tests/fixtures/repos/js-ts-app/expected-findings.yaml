@@ -1,9 +1,9 @@
 # Attesi della fixture F-03. Formato: ../../expected-findings.schema.json
 # Ogni voce e' stata osservata eseguendo direttamente lo scanner (osv-scanner 2.7.0, trivy 0.76.2,
 # scancode 32.5.0, syft 1.57.0) sulla fixture il 2026-11-08, con database offline.
-# SAST assente di proposito: i problemi di src/server.ts sono rilevabili solo dalle regole Semgrep
-# del progetto (ADR-0015, task P-09), che non esistono ancora. Sono elencati nel README della
-# fixture e passeranno qui quando le regole avranno un `rule_id`.
+# SAST: i problemi di src/server.ts sono rilevati solo dalle regole Semgrep del progetto
+# (ADR-0015, task P-09), osservate con semgrep 1.184.0 il 2026-11-08 (`--metrics=off`, nessun
+# registry, copia della fixture fuori da tests/ perche' Semgrep ignora quella directory).
 version: 1
 expected:
   # --- dipendenze: package-lock.json (osv-scanner e trivy riportano tutte e sette) ---
@@ -14,6 +14,13 @@ expected:
   - {category: dependency, cve: CVE-2020-28168, path: package-lock.json, tools: [osv-scanner, trivy], note: "axios 0.21.0"}
   - {category: dependency, cve: CVE-2021-3749, path: package-lock.json, tools: [osv-scanner, trivy], note: "axios 0.21.0"}
   - {category: dependency, cve: CVE-2024-29041, path: package-lock.json, tools: [osv-scanner, trivy], note: "express 4.17.1"}
+
+  # --- SAST: regole Semgrep del progetto (builtin/semgrep/rules/javascript.yaml) ---
+  - {category: sast, rule_id: ca-js-command-injection, path: src/server.ts, start_line: 11, end_line: 13, tools: [semgrep], note: "child_process.exec con parametro della richiesta"}
+  - {category: sast, rule_id: ca-js-eval-dynamic, path: src/server.ts, start_line: 17, end_line: 17, tools: [semgrep], note: "eval su dato della richiesta"}
+  - {category: sast, rule_id: ca-js-sql-injection, path: src/server.ts, start_line: 22, end_line: 22, tools: [semgrep], note: "query SQL costruita per concatenazione"}
+  - {category: sast, rule_id: ca-js-reflected-xss, path: src/server.ts, start_line: 28, end_line: 28, tools: [semgrep], note: "parametro restituito senza escape"}
+  - {category: sast, rule_id: ca-js-weak-hash, path: src/server.ts, start_line: 32, end_line: 32, tools: [semgrep], note: "crypto.createHash md5"}
 
   # --- IaC: trivy (Dockerfile e Kubernetes) ---
   - {category: iac, rule_id: DS-0001, path: Dockerfile, start_line: 1, end_line: 1, tools: [trivy], note: "tag latest"}

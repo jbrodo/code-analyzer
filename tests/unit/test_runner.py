@@ -63,7 +63,11 @@ def test_hardened_profile() -> None:
     assert pairs["--user"] == "65534:65534"
     assert pairs["--tmpfs"] == "/tmp:rw,noexec,nosuid"
     assert pairs["--env"] == "HOME=/tmp"
-    assert (pairs["--cpus"], pairs["--memory"], pairs["--memory-swap"]) == ("1.5", "2g", "2g")
+    assert (pairs["--cpus"], pairs["--memory"], pairs["--memory-swap"]) == (
+        "1.5",
+        str(2 * 1024**3),
+        str(2 * 1024**3),
+    )  # byte, senza tmpfs
     assert pairs["--pids-limit"] == "77"
     assert pairs["--pull"] == "never"
     assert "--read-only" in a
@@ -235,12 +239,13 @@ def _requests(tmp_path: Path, n: int) -> list[PluginRunRequest]:
 
 
 def _res(outcome: str, code: int | None, detail: str | None = None) -> object:
-    from ca_core.ports import PluginRunResult, RunOutcome
+    from ca_core.ports import PluginRunResult, RunOutcome, Signature
 
     return PluginRunResult(
         outcome=RunOutcome(outcome),
         exit_code=code,
         isolation=Isolation.HARDENED_CONTAINER,
+        signature=Signature.VERIFIED,
         duration_seconds=0.5,
         output_dir=None,
         detail=detail,
@@ -299,7 +304,7 @@ def test_distinct_outcomes_do_not_stop_the_others(tmp_path: Path) -> None:
         [
             _res("failed", 3, "exit 3"),
             _res("timeout", None, "timeout oltre 30s"),
-            _res("failed", 0, "output non valido: results.sarif"),
+            _res("invalid_output", 0, "output non valido: results.sarif"),
             _res("ok", 0),
         ]
     )
@@ -313,7 +318,7 @@ def test_distinct_outcomes_do_not_stop_the_others(tmp_path: Path) -> None:
     assert [(r.outcome.value, r.exit_code) for r in results] == [
         ("failed", 3),
         ("timeout", None),
-        ("failed", 0),
+        ("invalid_output", 0),
         ("ok", 0),
     ]
     assert all(r.duration_seconds > 0 for r in results)

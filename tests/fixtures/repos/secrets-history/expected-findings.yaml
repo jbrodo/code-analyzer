@@ -1,0 +1,20 @@
+# Attesi della fixture `secrets-history`: la storia si genera durante il test
+# (tests/fixtures/builders/secrets_history.py), qui non c'e' un `.git`.
+# Il valore dei segreti non compare: e' composto a runtime da un seme fisso.
+version: 1
+expected:
+  # Segreto in HEAD. Lo stesso valore e' nei commit 1 e 3 dello stesso file: un solo finding
+  # (ADR-0008). Con clone superficiale (depth 1) resta l'unico rilevabile.
+  - category: secret
+    rule_id: github-pat
+    path: app/settings.py
+    start_line: 6
+    tools: [gitleaks]
+    note: In HEAD e nei commit 1 e 3; l'unico rilevabile da un clone superficiale.
+  # Segreto rimosso dall'albero: esiste solo nel commit 2.
+  - category: secret
+    rule_id: gitlab-pat
+    path: deploy/.env
+    start_line: 1
+    tools: [gitleaks]
+    note: Solo nella storia (commit 2, rimosso dal commit 4); il file non e' in HEAD.

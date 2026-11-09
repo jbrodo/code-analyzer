@@ -50,3 +50,21 @@ Data: 2026-11-08. Fissa i comandi provati in V-06 con cosign 3.1.4. L'opzione ra
 ## Emendamento dopo A-01
 
 Data: 2026-11-08. Il tag `latest` è vietato in `image`, nel manifest sorgente e in quello impacchettato: il digest fissa i byte, ma un tag mobile rende il manifest non tracciabile rispetto a `version`. La decisione su registry e chiave resta in D-0005.
+
+## Emendamento: esito della verifica nel risultato e ordine di verifica
+
+Data: 2026-11-08. Registry e chiave restano in D-0005.
+
+Confermato:
+
+- `PluginRunResult.signature` sta nel risultato della porta: la verifica è dell'adattatore e il passo si limita a copiarla in `PluginRun.signature`, senza conoscere cosign (ADR-0002).
+- Il verificatore resta un chiamabile interno a `ca-plugins`, `(manifest, riferimento) -> Signature`, e non una porta. Ha due soli esiti: `verified` o `skipped`, oppure `ScanAborted`. Non esiste un valore "firma fallita", perché quel caso non produce report.
+- `CA_INSECURE_ALLOW_UNSIGNED=1` si legge solo dall'ambiente, nella radice di composizione. Salta il controllo dell'origine e basta.
+- Il pull avviene anche con quella variabile. L'integrità resta garantita dal digest, si esegue lo stesso percorso del caso firmato e `create` continua a usare `--pull never`. Di conseguenza la variabile non rende superfluo il registry: se il pull fallisce, il plugin è `failed` e la scansione è parziale, come dopo una verifica riuscita.
+- `verifier=None` su `OciExecutor` (nessun pull, `skipped`) è solo per i test con immagini locali: la radice di composizione passa sempre un verificatore.
+
+Corretto:
+
+- `signature` diventa obbligatorio, senza valore predefinito, anche nell'helper `_result` dell'adattatore. Il predefinito `skipped` era prudente per il gate, ma registrava come saltata una verifica mai tentata: oggi un errore di preparazione in `run`, che precede la verifica, scrive `skipped` anche in modalità firmata. Un'attestazione di sicurezza non ha un valore implicito.
+- L'adattatore verifica prima di preparare l'esecuzione: dopo `isolation()` e prima delle directory e dei montaggi, sia in `run` sia in `sync_feeds`. Così ogni risultato riporta l'esito reale.
+- Precisazione di "nessun container parte". Nessun container parte mai da un'immagine non verificata. In `run_many` si verificano tutte le immagini del lotto, poi si avvia il primo container: una verifica fallita nel lotto non ne avvia nessuno. Lo stadio precedente può aver già eseguito immagini verificate; l'esito resta exit 2 senza report, quindi non arriva alcun risultato parziale. La verifica di tutte le immagini prima del primo stadio richiederebbe un altro metodo nella porta e risparmierebbe solo tempo in un caso raro, senza aggiungere garanzie.

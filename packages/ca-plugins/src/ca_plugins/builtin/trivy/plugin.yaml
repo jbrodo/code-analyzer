@@ -1,0 +1,39 @@
+# Plugin trivy (P-04, P-05): dipendenze e configurazioni IaC del workspace, SARIF. ADR-0004..0007.
+# Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`) perche' D-0005
+# e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: trivy
+version: 1.0.0
+image: registry.invalid/ca-plugins/trivy:1.0.0
+capabilities: [detect]
+languages: []
+categories: [dependency, iac]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 4 MiB. Massimo misurato su trivy 0.76.2: 22,9 KB
+  # sulle fixture, 215,2 KB sul pilota excalidraw (12,6 KB fastapi, 2,9 KB saleor), cioe' circa 19
+  # volte di margine sul massimo reale. Il SARIF cresce con le vulnerabilita': un repository molto
+  # piu' grande dei pilota resta sotto il limite, uno ostile viene fermato qui e non in ca-core.
+  max_bytes: 4194304
+resources:
+  # Misure (profilo completo, --cpus 1, /feeds in sola lettura con il database da 1,6 GB): memoria
+  # minima 192 MiB (160 MiB fallisce su saleor, 128 MiB su excalidraw), quindi 1 GiB = oltre 5 volte
+  # il minimo. PID: 10 bastano (8 falliscono), 64 ne danno 6 volte (i thread di Go contano). Durata
+  # massima misurata 2,2 s (container compreso) sui tre pilota; 120 s lasciano margine per
+  # repository molto piu' grandi.
+  cpu: "1"
+  memory: 1Gi
+  timeout: 120s
+  pids: 64
+network: none
+feeds:
+  # Database e regole in /feeds/trivy (V-05): nessun ecosistema per elenco, quindi vuoto (ADR-0006).
+  sync_command: [python, /opt/ca-plugin/trivy_adapter.py, sync]
+  ecosystems: []
+  mount: /feeds
+  # trivy-db 1,6 GB (V-05); separato da resources.timeout (ADR-0006).
+  sync_timeout: 1800s

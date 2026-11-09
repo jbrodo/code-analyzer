@@ -2,7 +2,7 @@
 
 import copy
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -178,6 +178,7 @@ def test_failed_plugin_does_not_stop_others(store: SchemaStore, outcome: RunOutc
         outcome=outcome,
         exit_code=1,
         isolation=FakePluginExecutor().isolation(),
+        signature=Signature.VERIFIED,
         duration_seconds=1,
         output_dir=None,
         detail="causa generica",
@@ -398,3 +399,77 @@ def test_secret_hash_never_enters_report(store: SchemaStore) -> None:
 
     assert result.plugins[0].outcome is Outcome.OK and len(result.findings) == 1
     assert "ab" * 32 not in result.model_dump_json()
+
+
+# --- K-16 con run_many (emendamento di ADR-0002) ----------------------------------------------
+
+
+class BatchSpy(FakePluginExecutor):
+    def __init__(self, *args: Any, **kw: Any) -> None:
+        super().__init__(*args, **kw)
+        self.batches: list[list[str]] = []
+
+    def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
+        self.batches.append([r.manifest.name for r in requests])
+        return super().run_many(requests)
+
+
+def test_one_run_many_call_per_stage(store: SchemaStore) -> None:
+    executor = BatchSpy({n: ok(f"/o/{n}") for n in ("syft", "bandit", "osv")})
+
+    call(
+        [scanner("osv", sbom="optional"), scanner("bandit"), sbom_producer()],
+        executor,
+        store,
+        {"/o/syft": {"sbom.cdx.json": SYFT}},
+    )
+
+    assert executor.batches == [["syft"], ["bandit", "osv"]]
+
+
+def test_scan_abort_in_run_many_propagates_without_result(store: SchemaStore) -> None:
+    class Abort(BatchSpy):
+        def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
+            raise ScanAborted("firma non valida")
+
+    with pytest.raises(ScanAborted):
+        call([scanner("bandit")], Abort(), store)
+
+
+def test_sbom_is_chosen_by_name_and_only_for_optional_consumers(store: SchemaStore) -> None:
+    names = ("syft", "alpha-sbom", "osv", "bandit")
+    executor = BatchSpy({n: ok(f"/o/{n}") for n in names})
+    files = {f"/o/{n}": {"sbom.cdx.json": SYFT} for n in ("syft", "alpha-sbom")}
+
+    result = call(
+        [
+            sbom_producer("syft"),
+            sbom_producer("alpha-sbom"),
+            scanner("osv", sbom="optional"),
+            scanner("bandit"),
+        ],
+        executor,
+        store,
+        files,
+    )
+
+    assert result.sbom_from == "alpha-sbom"
+    sent = {r.manifest.name: r.sbom for r in executor.runs}
+    assert sent["osv"] == "/o/alpha-sbom/sbom.cdx.json" and sent["bandit"] is None
+
+
+def test_invalid_output_is_a_failed_plugin_with_the_detail(store: SchemaStore) -> None:
+    bad = PluginRunResult(
+        outcome=RunOutcome.INVALID_OUTPUT,
+        exit_code=0,
+        isolation=FakePluginExecutor().isolation(),
+        signature=Signature.VERIFIED,
+        duration_seconds=1,
+        output_dir=None,
+        detail="output non valido: results.sarif",
+    )
+
+    result = call([scanner("bandit")], FakePluginExecutor({"bandit": bad}), store)
+
+    run = result.executions[0].run
+    assert run.outcome is Outcome.FAILED and run.failure == "output non valido: results.sarif"

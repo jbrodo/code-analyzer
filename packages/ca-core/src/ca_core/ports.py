@@ -5,6 +5,7 @@ Ingressi e uscite sono modelli serializzabili (JSON): ogni passo della pipeline 
 invocabile come activity senza modifiche. I percorsi sono stringhe, mai oggetti del sistema.
 """
 
+from collections.abc import Sequence
 from datetime import datetime
 from enum import StrEnum
 from typing import Protocol, Self, runtime_checkable
@@ -39,6 +40,8 @@ class SourceTooLarge(SourceError):
 class RunOutcome(StrEnum):
     OK = "ok"  # container terminato con exit 0
     FAILED = "failed"  # exit diverso da zero, o container non avviato
+    # exit 0, ma un output dichiarato è assente, non regolare, un symlink o oltre `max_bytes`
+    INVALID_OUTPUT = "invalid_output"
     TIMEOUT = "timeout"
 
 
@@ -66,6 +69,8 @@ class FeedsSyncRequest(_Frozen):
 
     manifest: PackagedPluginManifest
     snapshot_dir: str
+    # Tetto di byte allocati nella cartella durante la sincronizzazione (ADR-0006, R-09).
+    max_bytes: int = Field(gt=0)
 
     @model_validator(mode="after")
     def _manifest_has_feeds(self) -> Self:
@@ -74,13 +79,19 @@ class FeedsSyncRequest(_Frozen):
         return self
 
 
+class FeedsPurgeRequest(_Frozen):
+    """Rimozione di uno snapshot scartato che l'host non riesce a eliminare (ADR-0006, R-09)."""
+
+    manifest: PackagedPluginManifest
+    snapshot_dir: str
+
+
 class PluginRunResult(_Frozen):
     outcome: RunOutcome
     exit_code: int | None  # None se il container non è partito
     isolation: Isolation
-    # Esito della verifica di firma di `image`. Predefinito `skipped` (lettura più severa: il
-    # gate esce con 2): solo l'esecutore che ha verificato la firma dichiara `verified`.
-    signature: Signature = Signature.SKIPPED
+    # Esito della verifica di firma di `image`: obbligatorio, mai un valore implicito (ADR-0005).
+    signature: Signature
     duration_seconds: float = Field(ge=0)
     output_dir: str | None  # /out dell'esecuzione, da leggere con `SourceReader`; None se assente
     detail: str | None = None  # messaggio breve per il finding `health`; mai output dello scanner
@@ -94,7 +105,10 @@ class ArtifactRef(_Frozen):
 
 @runtime_checkable
 class PluginExecutor(Protocol):
-    """Esegue le immagini dei plugin. Il parallelismo è affare dell'adattatore (ADR-0002)."""
+    """Esegue le immagini dei plugin. Il parallelismo è affare dell'adattatore (ADR-0002).
+
+    Un plugin non riuscito è un risultato, mai un'eccezione. Escono come eccezione solo le
+    condizioni che annullano la scansione (`ScanAborted`, runtime assente)."""
 
     def isolation(self) -> Isolation:
         """Livello di isolamento che questo esecutore applica (ADR-0004), noto prima di `run`."""
@@ -102,7 +116,17 @@ class PluginExecutor(Protocol):
 
     def run(self, request: PluginRunRequest) -> PluginRunResult: ...
 
+    def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
+        """Un risultato per richiesta, nello stesso ordine; lotto vuoto, lista vuota. Alla prima
+        eccezione le esecuzioni non avviate si annullano subito e l'eccezione si propaga."""
+        ...
+
     def sync_feeds(self, request: FeedsSyncRequest) -> PluginRunResult: ...
+
+    def purge_feeds(self, request: FeedsPurgeRequest) -> None:
+        """Rimuove il contenuto di `snapshot_dir` con la stessa immagine. Migliore sforzo: un
+        fallimento non è un'eccezione."""
+        ...
 
 
 @runtime_checkable
@@ -140,6 +164,7 @@ __all__ = [
     "ArtifactRef",
     "ArtifactSink",
     "Clock",
+    "FeedsPurgeRequest",
     "FeedsSyncRequest",
     "Isolation",
     "PluginExecutor",

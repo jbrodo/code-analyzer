@@ -1,11 +1,12 @@
 """Fake in memoria delle porte (`ca_core.ports`) per i test di `ca-core` e dei pacchetti a valle."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import PurePosixPath
 
 from ca_core.ports import (
     ArtifactRef,
+    FeedsPurgeRequest,
     FeedsSyncRequest,
     Isolation,
     PluginRunRequest,
@@ -83,6 +84,7 @@ class FakePluginExecutor:
         self.results = results or {}
         self.runs: list[PluginRunRequest] = []
         self.syncs: list[FeedsSyncRequest] = []
+        self.purges: list[FeedsPurgeRequest] = []
 
     @staticmethod
     def ok(output_dir: str, duration_seconds: float = 0.0) -> PluginRunResult:
@@ -106,12 +108,19 @@ class FakePluginExecutor:
                 outcome=RunOutcome.FAILED,
                 exit_code=None,
                 isolation=self._isolation,
+                signature=Signature.SKIPPED,
                 duration_seconds=0,
                 output_dir=None,
                 detail="nessuna risposta configurata nel fake",
             )
         return entry(request) if callable(entry) else entry
 
+    def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
+        return [self.run(r) for r in requests]
+
     def sync_feeds(self, request: FeedsSyncRequest) -> PluginRunResult:
         self.syncs.append(request)
         return self.ok(request.snapshot_dir)
+
+    def purge_feeds(self, request: FeedsPurgeRequest) -> None:
+        self.purges.append(request)

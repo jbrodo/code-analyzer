@@ -1,0 +1,41 @@
+# Plugin osv-scanner (P-02, P-03): vulnerabilita' delle dipendenze, SARIF. ADR-0004..0007.
+# Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`) perche' D-0005
+# e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: osv-scanner
+version: 1.0.0
+image: registry.invalid/ca-plugins/osv-scanner:1.0.0
+capabilities: [detect]
+languages: []
+categories: [dependency]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 4 MiB. Massimo misurato su osv-scanner 2.7.0: 16,4 KB
+  # sulle fixture, 239,5 KB sul pilota excalidraw (43,0 KB saleor, 17,7 KB fastapi), cioe' circa 17
+  # volte di margine sul massimo reale. Il SARIF cresce con le vulnerabilita': un repository molto
+  # piu' grande dei pilota resta sotto il limite, uno ostile viene fermato qui e non in ca-core.
+  max_bytes: 4194304
+resources:
+  # Misure (profilo completo, --cpus 1, /feeds in sola lettura con npm e PyPI): memoria minima
+  # circa 576 MiB (512 MiB va in OOM) sul solo npm e sui pilota; il database npm e' caricato in
+  # memoria e cresce nel tempo, quindi 2 GiB = oltre 3 volte il minimo. PID: 8 bastano, 64 ne danno
+  # 8 volte (i thread di Go contano). Durata massima misurata 16 s (container compreso, excalidraw
+  # con i due database); 120 s lasciano margine per repository molto piu' grandi.
+  cpu: "1"
+  memory: 2Gi
+  timeout: 120s
+  pids: 64
+network: none
+feeds:
+  # Download diretto degli all.zip (ADR-0006, V-05): non --download-offline-databases, che dipende dai
+  # file del repository. Elenco chiuso e fisso, mai dal repository; il manifest e l'adattatore
+  # usano gli stessi nomi (i nomi del bucket OSV).
+  sync_command: [python, /opt/ca-plugin/osv_scanner_adapter.py, sync, npm, PyPI]
+  ecosystems: [npm, PyPI]
+  mount: /feeds
+  # npm 210 MB + PyPI 36 MB (V-05); separato da resources.timeout (ADR-0006).
+  sync_timeout: 900s

@@ -1,0 +1,120 @@
+rules:
+  - id: ca-js-command-injection
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Dato della richiesta usato in un comando di shell (iniezione di comandi).
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: $REQ.query
+              - pattern: $REQ.body
+              - pattern: $REQ.params
+              - pattern: $REQ.headers
+              - pattern: $REQ.cookies
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request)$
+    pattern-sanitizers:
+      - pattern: shellEscape(...)
+    pattern-sinks:
+      - pattern-either:
+          - pattern: exec(...)
+          - pattern: execSync(...)
+          - pattern: $CP.exec(...)
+          - pattern: $CP.execSync(...)
+    metadata:
+      category: sast
+      cwe: CWE-78
+  - id: ca-js-eval-dynamic
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Esecuzione di codice da una stringa non letterale (eval o Function).
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: new Function(..., $X)
+      - pattern-not: eval("...")
+      - pattern-not: new Function(..., "...")
+    metadata:
+      category: sast
+      cwe: CWE-95
+  # Non e' in modalita' taint: Semgrep confonde una variabile locale con un campo di tipo omonimo
+  # (`as { query: ... }`) e perde il flusso fino alla chiamata. Si segnala dove la query SQL
+  # (stringa che inizia con una parola chiave DML) incorpora un dato della richiesta.
+  - id: ca-js-sql-injection
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Dato della richiesta concatenato in una query SQL (iniezione SQL).
+    patterns:
+      - pattern-either:
+          - pattern: $S + $REQ.$K.$F
+          - pattern: $S + $REQ.$K[$F]
+          - pattern: $S + String($REQ.$K.$F)
+      - metavariable-regex:
+          metavariable: $REQ
+          regex: ^(req|request)$
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?is)^["'`]\s*(select|insert|update|delete)\b
+    metadata:
+      category: sast
+      cwe: CWE-89
+  - id: ca-js-sql-injection-template
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Dato della richiesta interpolato in una query SQL (iniezione SQL).
+    patterns:
+      - pattern: "`...${$REQ.$K.$F}...`"
+      - pattern-regex: (?is)`\s*(select|insert|update|delete)\b
+      - metavariable-regex:
+          metavariable: $REQ
+          regex: ^(req|request)$
+    metadata:
+      category: sast
+      cwe: CWE-89
+  - id: ca-js-reflected-xss
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Dato della richiesta restituito nella risposta senza escape (XSS riflesso).
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern-either:
+              - pattern: $REQ.query
+              - pattern: $REQ.body
+              - pattern: $REQ.params
+          - metavariable-regex:
+              metavariable: $REQ
+              regex: ^(req|request)$
+    pattern-sanitizers:
+      - pattern-either:
+          - pattern: escapeHtml(...)
+          - pattern: escape(...)
+          - pattern: encodeURIComponent(...)
+          - pattern: sanitizeHtml(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $RES.send($X)
+              - pattern: $RES.end($X)
+              - pattern: $RES.write($X)
+          - metavariable-regex:
+              metavariable: $RES
+              regex: ^(res|response)$
+          - focus-metavariable: $X
+    metadata:
+      category: sast
+      cwe: CWE-79
+  - id: ca-js-weak-hash
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: Algoritmo di hash debole (md5 o sha1) per crypto.createHash.
+    patterns:
+      - pattern: $C.createHash($ALG, ...)
+      - metavariable-regex:
+          metavariable: $ALG
+          regex: (?i)^["'`](md5|sha1)["'`]$
+    metadata:
+      category: sast
+      cwe: CWE-328

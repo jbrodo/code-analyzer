@@ -54,6 +54,16 @@ def effective_exclusions(user_patterns: Sequence[str]) -> list[str]:
     return list(dict.fromkeys([*DEFAULT_EXCLUDES, *user_patterns]))
 
 
+def coverage_exclusions(user_patterns: Sequence[str]) -> list[str]:
+    """Esclusioni per il controllo di copertura del workspace (ADR-0004, A-02).
+
+    Predefiniti senza quelli esentati per almeno un tool (`.git`: gitleaks legge la storia e
+    ciò che non può leggere conta), poi `paths.exclude`.
+    """
+    exempt = {p for patterns in TOOL_EXEMPTIONS.values() for p in patterns}
+    return list(dict.fromkeys([*(p for p in DEFAULT_EXCLUDES if p not in exempt), *user_patterns]))
+
+
 def _patterns_for(tools: Sequence[str], user_patterns: Sequence[str]) -> list[str]:
     # conservativo: se un tool del finding è esentato, il predefinito non si applica
     exempt = {p for t in tools for p in TOOL_EXEMPTIONS.get(t, ())}

@@ -1,5 +1,6 @@
-# Schemi esterni e fixture devono restare identici byte per byte (SHA in schemas/vendor/SOURCES.json).
-exclude: ^(schemas/vendor/|tests/fixtures/)
+# Schemi esterni e fixture devono restare identici byte per byte (SHA in SOURCES.json e in
+# `VENDOR_MANIFEST_SHA256`). I file stanno in ca_core/vendor_schemas; schemas/vendor è un symlink.
+exclude: ^(schemas/vendor/|packages/ca-core/src/ca_core/vendor_schemas/|packages/ca-plugins/src/ca_plugins/builtin/[^/]+/(fixtures|licenses)/|tests/fixtures/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import shutil
+import stat
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -67,6 +68,36 @@ def test_manifest_not_shipped_with_cli() -> None:
 @pytest.mark.parametrize("behavior", fake.BEHAVIORS)
 def test_every_behavior_is_declared_in_readme(behavior: str) -> None:
     assert f"`{behavior}`" in (HERE / "README.md").read_text()
+
+
+def test_fill_out_writes_the_requested_amount_capped(dirs: dict[str, Path]) -> None:
+    code, probes = fake.run("fill-out", {"mib": 3}, **dirs)
+    assert (code, probes) == (0, {"fill_mib": "3", "fill_error": "none"})
+    assert (dirs["out"] / "fill.bin").stat().st_size == 3 * 1024 * 1024
+    assert (dirs["out"] / "results.sarif").is_file()
+
+
+def test_fill_out_has_a_hard_cap(dirs: dict[str, Path], monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(fake, "FILL_MAX_MIB", 2)
+    assert fake.run("fill-out", {"mib": 10_000}, **dirs)[1]["fill_mib"] == "2"
+
+
+def test_subdir_out_applies_the_requested_mode(dirs: dict[str, Path]) -> None:
+    code, probes = fake.run("subdir-out", {"name": "d", "mode": 0o755}, **dirs)
+    assert (code, probes["subdir_mode"]) == (0, "0o755")
+    assert (dirs["out"] / "d" / "f").is_file()
+
+
+def test_fifo_out_makes_results_a_fifo(dirs: dict[str, Path]) -> None:
+    assert fake.run("fifo-out", **dirs)[0] == 0
+    assert stat.S_ISFIFO((dirs["out"] / "results.sarif").lstat().st_mode)
+
+
+def test_read_params_keeps_the_extra_parameters(tmp_path: Path) -> None:
+    config = tmp_path / "c.json"
+    config.write_text('{"behavior": "report", "read": "app.py"}')
+    assert fake.read_params(config) == {"behavior": "report", "read": "app.py"}
+    assert fake.read_params(tmp_path / "missing.json") == {}
 
 
 def test_success_output_is_accepted_by_the_sarif_reader(dirs: dict[str, Path]) -> None:

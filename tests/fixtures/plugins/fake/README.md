@@ -31,6 +31,14 @@ con quelle dell'immagine.
 | `write-rootfs` | scrive nel root file system | 0 bloccata, 4 violazione |
 | `exec-tmp` | esegue un binario copiato in `/tmp` (noexec) | 0 bloccata, 4 violazione |
 | `timeout` | dorme un'ora: il runner deve uccidere il container | (ucciso) |
+| `report` | SARIF valido e `/out/report.json` con quanto il processo vede (uid, gruppi, ambiente, capability, seccomp, montaggi, limiti cgroup, lettura di un file del workspace) | 0 |
+| `fill-out` | scrive `mib` MiB (tetto 512) in `/out/fill.bin`; con `hold` poi dorme (T-03, riempimento) | 0 (ucciso con `hold`) |
+| `subdir-out` | crea `/out/<name>/f` e imposta `mode` (default 0) sulla sottodirectory (T-03) | 0 |
+| `fifo-out` | `/out/results.sarif` e' una FIFO | 0 |
+
+Parametri opzionali in `/inputs/config.json`, oltre a `behavior`: `report` (bool: scrive anche
+`/out/report.json`, cambia l'elenco dei file di `/out`), `read` (nome di un file al primo livello
+di `/workspace` da leggere nel rapporto), `mib` e `hold` (`fill-out`), `name` e `mode` (`subdir-out`).
 
 ## Test
 
