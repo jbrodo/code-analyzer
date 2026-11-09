@@ -144,3 +144,77 @@ Esiti negativi: `.gitattributes` con `-diff` o `binary`, `vendor`, `test`, `dist
 Vincolo: `ca_core` non legge `invocations` del SARIF dei plugin, quindi le note degli adattatori non arrivano al report; ogni traccia va emessa da `report.warnings`.
 
 Non verificato: timeout per regola di semgrep; lockfile corrotto insieme a uno valido in osv; ecosistemi diversi da npm e PyPI.
+
+Decisione dell'utente del 2026-11-09: N-13 e N-14 accettati e da dichiarare nella documentazione utente (L-06).
+
+## S-01 — Quarta riverifica (N-10, N-10b, N-11, N-12)
+
+Revisione in sola lettura di `security`, 2026-11-09, commit d69dcbd. Test mirati con Docker reale: 32 passati, 1 saltato. Suite completa sullo stesso commit: 2532 passati, 5 saltati, 4 xfail.
+
+| Finding | Esito | Prova |
+| --- | --- | --- |
+| N-10 | Parzialmente risolto: chiuso per i nomi in `LOCKFILE_NAMES`, resta N-17 | CLI reale, Poetry 25→0 e npm 34→0: `partial`, `workspace-symlinks`, `gate` esce con 2 |
+| N-10b | Risolto | `.js`, `.ts`, `.py` contati; nessun aggiramento con catene, maiuscole, symlink a directory o verso l'esterno |
+| N-11 | Risolto | JS da 1,5 e 8 MB: 1 risultato; TS da 1,5 MB: 1; Python da 1,5 MB: 2 |
+| N-12 osv-scanner | Parzialmente risolto: l'esclusione `vulnmatch/` non è sfruttabile | Exit 3 sui lockfile corrotti principali, anche accanto a uno valido; ancora 0 risultati con exit 0 per `{}`, `{"lockfileVersion":3}`, `poetry.lock` da 0 byte, `yarn.lock` illeggibile, `requirements.txt` binario |
+| N-12 trivy, syft | Non corretto | Lockfile corrotto, da 0 byte o `{}`: trivy 34→0, syft 7→0, exit 0 |
+
+| ID | Scanner | Condizione | Gravità | Prova | Blocca R-09 |
+| --- | --- | --- | --- | --- | --- |
+| N-17 | osv-scanner, trivy | Symlink a lockfile con nome fuori da `LOCKFILE_NAMES` | Alto | `bun.lock` osv 5→0, trivy 6→0; `requirements-dev.txt` e `dev-requirements.txt` osv 48→0; `pylock.toml` osv 43→0; conteggio 0 | Sì |
+| N-18 | trivy (unico scanner IaC) | File IaC come symlink | Alto | `Dockerfile` 4→0, `main.tf` 9→0, `deploy.yaml` 18→0; conteggio 0 | Sì |
+| N-19 | semgrep | JS in UTF-16 LE con BOM | Basso | 1→0, exit 0, senza traccia | No |
+
+Stesso meccanismo di N-17, Medio, non bloccante: via trivy `Cargo.lock` 1→0, `go.mod` 5→0, `Gemfile.lock` 39→0, `composer.lock` 7→0.
+
+Prova di N-17 e N-18 dalla CLI reale: con i file regolari 67 finding, `complete`, `gate` esce con 1; con i symlink 0 finding, `complete`, nessun avviso, `gate` esce con 0.
+
+Non verificato: se npm, bun, pip, Docker e Terraform usano davvero questi symlink (condizione "file ancora usabile"); completezza dell'elenco dei nomi; syft, gitleaks e scancode con questi symlink; il timeout di 120 s del runner.
+
+R-09 resta aperto finché N-17 e N-18 non sono corretti e riverificati, o accettati dall'utente.
+
+Decisione dell'utente del 2026-11-09: N-17 e N-18 si correggono contando ogni symlink non escluso che non indica una directory, senza elenchi di nomi. Costo accettato: un repository con symlink a file innocui dà `partial` e `gate` esce con 2, salvo `--allow-partial` o `paths.exclude`; impatto da misurare sui pilota in X-04.
+
+## S-01 — Quinta riverifica (N-17, N-18)
+
+Revisione in sola lettura di `security`, 2026-11-09, working tree sopra d69dcbd. Test sui symlink: 31 passati.
+
+N-17 e N-18 sono risolti: i 13 vettori provati con la CLI reale, immagini firmate e feed congelati danno 0 finding, `partial`, avviso `workspace-symlinks`, `gate` esce con 2.
+
+| ID | Condizione | Gravità | Prova | Blocca R-09 |
+| --- | --- | --- | --- | --- |
+| N-20 | Scansione di una sottodirectory con symlink a directory che esce dalla radice scansionata | Alto; Medio se la Fase 1 si limita alla radice del repository | `app -> ../../elsewhere`: da 39 finding e `gate` 1 a 0 finding, `complete`, nessun avviso, `gate` 0 | Sì |
+| N-21 | Le esclusioni predefinite azzerano un'applicazione sotto `dist/`, con o senza symlink | Medio | 39→0, `complete`, `gate` 0; il report elenca i pattern ma non quanti finding toglie | No, decisione dell'utente |
+| N-22 | Il conteggio rivela se un percorso dell'host è una directory | Basso | `/etc` dà 0, `/etc/passwd` dà 1: un bit per scansione | No |
+
+Esiti negativi: FIFO, dispositivi e `/proc` contati in meno di 1 ms senza aprirli; nessuna fuga dell'ambiente dell'host; catene e cicli contati in eccesso; `self -> .`, `up -> ..`, `top -> /` non perdono contenuto del repository. Con `z.py -> /dev/zero`, `/proc/self/environ` o una FIFO bandit si blocca fino al timeout (circa 302 s): `partial`, `gate` 2, esito visibile.
+
+Non verificato: il limite reale di `MAX_FILES`; la via `SourceError` → exit 2 con la CLI; `stat` su mount automatici o NFS bloccati; se npm, bun, pip, Docker e Terraform usano davvero i symlink.
+
+R-09 resta aperto per N-20.
+
+Decisioni dell'utente del 2026-11-09: N-20 si corregge contando anche i symlink a directory che escono dalla radice scansionata o finiscono in un percorso escluso (chiude N-22 e la variante di N-21 con symlink); costo accettato: la scansione di una sottodirectory con un link come `shared -> ../../shared` dà `partial`. N-21 senza symlink accettato per la Fase 1 e dichiarato in L-06.
+
+## S-01 — Sesta riverifica (N-20, N-22) e chiusura di R-09
+
+Revisione in sola lettura di `security`, 2026-11-09, working tree sopra d69dcbd, con la CLI reale, immagini firmate e feed congelati. Suite completa con Docker reale sul working tree: 2543 passati, 5 saltati, 4 xfail.
+
+| Finding | Esito | Prova |
+| --- | --- | --- |
+| N-20 | Risolto | `services/api` con `app -> ../../elsewhere`: `partial`, avviso, `gate` 2; come directory vera 39 finding, `gate` 1 |
+| N-22 | Risolto per i link diretti fuori radice, resta N-24 | Directory, file, inesistente, permesso negato, `/dev/zero`, `/proc/1/mem`: tutti contano 1 |
+| N-21 con symlink | Risolto | `app -> dist/app` e catena `app -> via/app`: `partial`, `gate` 2 |
+
+| ID | Condizione | Gravità | Prova | Blocca R-09 |
+| --- | --- | --- | --- | --- |
+| N-23 | Catena lunga di symlink: `realpath` ha costo quadratico sull'host, senza timeout | Medio | N=1000 1,06 s; 4000 16,83 s; 8000 68,01 s; non fa sparire risultati | No. Correzione proposta: limite di 40 livelli |
+| N-24 | Target come `/etc/..<radice assoluta>` rivela se un percorso dell'host esiste (residuo di N-22) | Basso | Conta 0 o 1 secondo il percorso; serve conoscere la radice assoluta | No |
+| N-25 | Symlink a directory dentro `.git` con workspace non proveniente da `git` | Medio | `app -> .git/x`: da 39 finding e `gate` 1 a 0 finding, `complete`, `gate` 0; non realizzabile con `git clone` | Corretto: `**/.git` nel confronto sul target, con test unitario; non riverificato da `security` |
+
+Esiti negativi: catene miste con componenti intermedi, radice raggiunta tramite symlink, prefissi simili (`../repo-x`), `self -> .`, `sub/up -> ..`, link a directory dentro la radice non esclusa: comportamento corretto, senza falsi positivi.
+
+Non verificato: il limite reale di `MAX_FILES`; `stat` e `realpath` su mount automatici o NFS bloccati; se npm, bun, pip, Docker e Terraform usano davvero i symlink.
+
+**R-09 chiuso il 2026-11-09 su richiesta dell'utente.** Finding critici e alti di S-01 risolti e riverificati da `security`: N-10 (con N-17 e N-18), N-10b, N-11, N-17, N-18, N-20. Restano aperti, non bloccanti: N-12 parziale su osv-scanner e non corretto su trivy e syft, N-15, N-16, N-19 (dichiarati in L-06), N-23, N-24.
+
+Dopo la chiusura, 2026-11-09: N-23 corretto: `stat` applica il limite di 40 livelli del kernel prima di `realpath`, oltre il limite il link conta come non analizzato; test unitario, non riverificato da `security`.

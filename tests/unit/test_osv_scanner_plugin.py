@@ -361,6 +361,15 @@ def test_run_extraction_error_fails_the_plugin_whatever_the_exit(
     assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)  # mai un esito vuoto
 
 
+def test_run_feed_matcher_extraction_error_without_packages_is_still_an_empty_outcome(
+    tmp_path: Path,
+) -> None:
+    log = "Error during extraction: (extracting as vulnmatch/osvlocal) could not create : mkdir x"
+    body = f"echo '{log}'; echo 'No package sources found'; exit 128"
+    code, out = run_adapter(tmp_path, body)
+    assert (code, json.loads(out.read_text())["runs"][0]["results"]) == (0, [])
+
+
 @pytest.mark.parametrize("status", [2, 127, 137])
 def test_run_unexpected_exit_is_a_failure(tmp_path: Path, status: int) -> None:
     code, out = run_adapter(tmp_path, writing(native(), status))

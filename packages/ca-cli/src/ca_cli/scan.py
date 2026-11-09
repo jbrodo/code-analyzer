@@ -13,15 +13,18 @@ Scelte conservative:
   con avviso `no-plugin-run`, perché un report vuoto e `complete` farebbe passare il gate.
 - plugin con `feeds` senza snapshot utilizzabile: esecuzione `failed` (health) senza avviare
   il container; firma `skipped` perché in quel percorso non c'è una verifica propria.
-- `inputs.config` dei plugin non è cablato (nessun plugin del pacchetto lo usa ancora).
+- `inputs.config`: JSON generato qui con la sola parte del plugin, mai il file del repository
+  (ADR-0014); oggi solo `plugins.semgrep.rules`, che l'adattatore ricontrolla.
 """
 
 import argparse
+import json
 import os
 import re
 import sys
+import tempfile
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from ca_cli.composition import Context
@@ -34,6 +37,7 @@ from ca_cli.config_validate import (
 )
 from ca_core.models import CodeAnalyzerConfig, PackagedPluginManifest
 from ca_core.models.config import GateMode
+from ca_core.models.plugin_manifest import InputMode
 from ca_core.models.scan_report import (
     Gate,
     HistoryCoverage,
@@ -77,7 +81,7 @@ class ScanError(Exception):
     exit_code = 2
 
 
-def _load_config(root: str, source: SourceReader, context: Context) -> CodeAnalyzerConfig:
+def load_config(root: str, source: SourceReader, context: Context) -> CodeAnalyzerConfig:
     if not os.path.lexists(Path(root) / CONFIG_NAME):
         return CodeAnalyzerConfig(version=1)
     try:
@@ -94,6 +98,26 @@ def _load_config(root: str, source: SourceReader, context: Context) -> CodeAnaly
     if errors:
         raise ScanError(f"{CONFIG_NAME}: {'; '.join(errors)}")
     return config
+
+
+def coverage_warnings(root: str, exclude: Sequence[str]) -> list[Warning_]:
+    """Avvisi su cio' che i plugin non analizzano, anche su stderr. Mai nomi, solo il numero."""
+    try:
+        excluded = coverage_exclusions(exclude)
+        unreadable = count_unreadable(root, excluded)  # A-02: il plugin gira come 65534
+        links = count_skipped_symlinks(root, excluded)  # N-10, N-17, N-18, N-20
+    except SourceError as exc:
+        raise ScanError("workspace non esaminabile") from exc
+    found: list[Warning_] = []
+    if unreadable:
+        text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
+        found.append(Warning_(code="workspace-unreadable", message=text))
+    if links:
+        text = f"{links} collegamenti simbolici con contenuto non analizzato: analisi incompleta"
+        found.append(Warning_(code="workspace-symlinks", message=text))
+    for warning in found:
+        print(f"avviso: {warning.message}", file=sys.stderr)
+    return found
 
 
 def _git_state(root: str, source: SourceReader) -> tuple[str | None, HistoryCoverage]:
@@ -125,17 +149,20 @@ def _git_state(root: str, source: SourceReader) -> tuple[str | None, HistoryCove
 
 
 class _FeedingExecutor:
-    """Aggiunge a ogni richiesta di un plugin con `feeds` lo snapshot (`ensure_snapshot`).
+    """Aggiunge alle richieste la configurazione del plugin e, con `feeds`, lo snapshot.
 
     Il resto è delega. Il parallelismo e il verificatore restano dell'esecutore interno; la
     sincronizzazione avviene prima del lotto, solo per i plugin davvero richiesti.
     """
 
-    def __init__(self, inner: Context, cache_dir: Path, *, offline: bool) -> None:
+    def __init__(
+        self, inner: Context, cache_dir: Path, *, offline: bool, configs: Mapping[str, str]
+    ) -> None:
         self._inner = inner.executor
         self._clock = inner.clock
         self._cache = cache_dir
         self._offline = offline
+        self._configs = configs
         self.outcomes: dict[str, FeedsOutcome] = {}
 
     def isolation(self) -> Isolation:
@@ -157,7 +184,14 @@ class _FeedingExecutor:
             )
         return self.outcomes[manifest.name]
 
+    def _with_config(self, request: PluginRunRequest) -> PluginRunRequest:
+        path = self._configs.get(request.manifest.name)
+        if path is None or request.manifest.inputs.config is InputMode.NONE:
+            return request
+        return request.model_copy(update={"config": path})
+
     def run_many(self, requests: Sequence[PluginRunRequest]) -> list[PluginRunResult]:
+        requests = [self._with_config(r) for r in requests]
         ready: dict[int, PluginRunRequest] = {}
         failed: dict[int, PluginRunResult] = {}
         for i, request in enumerate(requests):
@@ -179,6 +213,15 @@ class _FeedingExecutor:
                 ready[i] = request.model_copy(update={"feeds_snapshot": outcome.snapshot_dir})
         done = iter(self._inner.run_many(list(ready.values())))
         return [failed[i] if i in failed else next(done) for i in range(len(requests))]
+
+
+def _plugin_configs(config: CodeAnalyzerConfig, directory: Path) -> dict[str, str]:
+    """File `/inputs/config.json` per plugin, con la sola parte che lo riguarda (ADR-0014)."""
+    if config.plugins.semgrep is None or not config.plugins.semgrep.rules:
+        return {}
+    path = directory / "semgrep.json"
+    path.write_text(json.dumps({"rules": config.plugins.semgrep.rules}))
+    return {"semgrep": str(path)}
 
 
 class _CapturingSink:
@@ -211,7 +254,7 @@ def _table(report: ScanReport, refs: Sequence[ArtifactRef]) -> str:
 def handle(args: argparse.Namespace, context: Context) -> int:
     started = context.clock.now()
     root = str(Path(args.path).resolve())
-    config = _load_config(root, context.source, context)
+    config = load_config(root, context.source, context)
     try:
         workspace = prepare_workspace(
             PrepareWorkspaceRequest(
@@ -229,41 +272,30 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     except (OSError, ValueError) as exc:
         raise ScanError("schemi fissati non utilizzabili") from exc
 
-    # A-02: ciò che il plugin (65534) non legge non è analizzato; mai nomi, solo il numero.
-    try:
-        excluded = coverage_exclusions(config.paths.exclude)
-        unreadable = count_unreadable(root, excluded)
-        links = count_skipped_symlinks(root, excluded)  # N-10: lockfile e sorgenti come symlink
-    except SourceError as exc:
-        raise ScanError("workspace non esaminabile") from exc
-    unreadable_text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
-    if unreadable:
-        print(f"avviso: {unreadable_text}", file=sys.stderr)
-    links_text = f"{links} collegamenti simbolici a lockfile o sorgenti non analizzati"
-    if links:
-        print(f"avviso: {links_text}: analisi incompleta", file=sys.stderr)
+    coverage = coverage_warnings(root, config.paths.exclude)
 
     commit, history = _git_state(root, context.source)
     name = Path(root).name or "workspace"
-    feeding = _FeedingExecutor(
-        context, context.feeds_cache or default_cache_dir(), offline=args.offline
-    )
-    try:
-        ran = run_plugins(
-            RunPluginsRequest(
-                repository=name,
-                commit=commit,
-                workspace=workspace,
-                manifests=context.manifests(),
-                disabled=config.plugins.disable,
-            ),
-            feeding,
-            context.source,
-            store,
-            context.clock,
-        )
-    except FeedsError as exc:
-        raise ScanError(str(exc)) from exc
+    cache = context.feeds_cache or default_cache_dir()
+    with tempfile.TemporaryDirectory(prefix="ca-config-") as scratch:
+        configs = _plugin_configs(config, Path(scratch))
+        feeding = _FeedingExecutor(context, cache, offline=args.offline, configs=configs)
+        try:
+            ran = run_plugins(
+                RunPluginsRequest(
+                    repository=name,
+                    commit=commit,
+                    workspace=workspace,
+                    manifests=context.manifests(),
+                    disabled=config.plugins.disable,
+                ),
+                feeding,
+                context.source,
+                store,
+                context.clock,
+            )
+        except FeedsError as exc:
+            raise ScanError(str(exc)) from exc
     warnings: list[Warning_] = []
     executions = []
     for execution in ran.executions:
@@ -292,13 +324,8 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         for n in ran.skipped_by_language
     ]
     status = normalized.status
-    if unreadable:
-        warnings.append(Warning_(code="workspace-unreadable", message=unreadable_text))
-        status = ReportStatus.PARTIAL
-    if links:
-        warnings.append(
-            Warning_(code="workspace-symlinks", message=f"{links_text}: analisi incompleta")
-        )
+    if coverage:
+        warnings += coverage
         status = ReportStatus.PARTIAL
     if not executions:
         warnings.append(Warning_(code="no-plugin-run", message="nessun plugin eseguito"))
