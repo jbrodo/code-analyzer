@@ -2,7 +2,7 @@
 
 La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate.
 
-**Stato.** Non esiste ancora un rilascio: i manifest dei plugin puntano a un registry provvisorio e le immagini vanno costruite e firmate localmente (D-0005).
+**Stato.** Non esiste ancora un rilascio: il pacchetto si costruisce con `deploy/docker/package-cli.sh`, che firma le immagini con una chiave di prova su un registry locale (D-0005).
 
 ## Requisiti
 

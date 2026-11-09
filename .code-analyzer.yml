@@ -5,6 +5,8 @@ paths:
   exclude:
     - .code-analyzer.yml
     - tests/fixtures/**
+    - tests/integration/semgrep_rule_cases/**
+    - packages/ca-plugins/src/ca_plugins/builtin/*/fixtures/**
 licenses:
   distributed_product: true
   forbidden:

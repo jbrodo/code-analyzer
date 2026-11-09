@@ -612,13 +612,13 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 - [x] Runner plugin in sandbox + manifest + verifica firma — R-09 chiuso il 2026-11-09 (`doc/verifiche/sicurezza-fase-1.md`). Firma provata con chiave di test: registry e chiave definitivi attendono D-0005.
 - [x] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit — provati su immagini firmate localmente. La verifica legale per la distribuzione resta in D-0015.
 - [x] Policy licenze da `.code-analyzer.yml`
-- [ ] CLI `scan`, `sbom`, `gate`, `config validate` — comandi implementati e provati con il laboratorio E2E (`tests/e2e/scan_local.py`); il pacchetto non è eseguibile da solo finché I-04 non produce manifest con digest.
+- [x] CLI `scan`, `sbom`, `gate`, `config validate` — pacchetto provato con registry locale e chiave di test (I-04); pubblicazione sul registry alla decisione di rilascio (D-0005).
 - [x] Output SARIF aggregato
 - [x] Fixture repo Python e JS/TS con problemi noti
 
 **Gate 1:** 3 repository pilota scansionati; scansione < 10 minuti; tutti i problemi noti delle fixture rilevati.
 
-Stato del Gate 1 al 2026-11-09: non superato. Pilota scelti ma non ancora scansionati con il prodotto, quindi durata da misurare (X-04, X-06). Problemi noti delle fixture rilevati dagli E2E; i 2 attesi di licenza sono trovati per percorso e regola, senza la riga.
+Stato del Gate 1 al 2026-11-09: 3 pilota `complete` sotto i 10 minuti (247,7 s il più lento, `doc/verifiche/gate-1.md`); problemi noti delle fixture rilevati dagli E2E, con i 2 attesi di licenza trovati per percorso e regola, senza la riga. Da chiudere: conferma dei limiti di byte (X-04) ed esito formale (X-06).
 
 ### Fase 2 — Qualità e impatto
 

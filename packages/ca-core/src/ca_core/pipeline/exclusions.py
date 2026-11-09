@@ -70,6 +70,12 @@ def _patterns_for(tools: Sequence[str], user_patterns: Sequence[str]) -> list[st
     return [p for p in DEFAULT_EXCLUDES if p not in exempt] + list(user_patterns)
 
 
+def component_excluded(locations: Sequence[str], user_patterns: Sequence[str]) -> bool:
+    """Componente dell'SBOM da ignorare: tutti i file da cui proviene sono esclusi (ADR-0014)."""
+    patterns = _patterns_for([], user_patterns)
+    return bool(locations) and all(is_excluded(path, patterns) for path in locations)
+
+
 def apply_exclusions(findings: Sequence[Finding], user_patterns: Sequence[str]) -> list[Finding]:
     """Finding che restano; l'ordine non cambia."""
     return [

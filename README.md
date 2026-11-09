@@ -18,7 +18,7 @@ Monorepo con componenti Python (FastAPI, Temporal e PostgreSQL), interfaccia Rea
 
 Il progetto è in Fase 1 (MVP per Python e JavaScript/TypeScript) e non ha ancora un rilascio. Sono implementati il nucleo, il runner dei plugin in sandbox, i sette scanner e i comandi `scan`, `sbom`, `gate` e `config validate`. API, dashboard, agenti AI e integrazioni CI sono previsti nelle fasi successive.
 
-Il pacchetto non è ancora eseguibile da solo, perché i manifest dei plugin non hanno immagini pubblicate. Per provare una scansione servono le immagini firmate localmente da `tests/e2e/scan_local.py`, con Docker, `cosign`, `syft` e uno snapshot dei feed.
+Le immagini dei plugin non sono ancora pubblicate. Per provare il prodotto, `deploy/docker/package-cli.sh` costruisce e firma le immagini su un registry locale e produce il pacchetto installabile; `tests/e2e/scan_local.py` fa lo stesso per una singola scansione. Servono Docker, `cosign`, `syft` e, senza rete, uno snapshot dei feed.
 
 Comandi, configurazione e limiti sono nella [guida della CLI](doc/utente/README.md); l'avanzamento è in [`doc/PROJECT.md` §13](doc/PROJECT.md).
 
