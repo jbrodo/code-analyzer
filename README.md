@@ -32,9 +32,9 @@ pre-commit install
 ```
 
 Gli hook validano JSON, YAML e TOML, rilevano chiavi private e marker di conflitto,
-correggono spazi finali e formattazione, ed eseguono Ruff, ty e il controllo del lock
-`uv`. Ruff e ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su
-tutto il repository:
+controllano spazi finali, formattazione, Ruff, ty e la coerenza del lock `uv`. Ruff e
+ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su tutto il
+repository:
 
 ```bash
 pre-commit run --all-files
