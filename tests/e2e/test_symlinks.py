@@ -40,7 +40,7 @@ def test_symlinked_lockfile_and_source_are_declared_not_silently_dropped(
     report = hostile.report
     assert report["status"] == "partial"
     (warning,) = (w for w in report["warnings"] if w["code"] == "workspace-symlinks")
-    text = "2 collegamenti simbolici a lockfile o sorgenti non analizzati: analisi incompleta"
+    text = "2 collegamenti simbolici con contenuto non analizzato: analisi incompleta"
     assert warning["message"] == text and text in result.stderr
     gate = fleet.run(
         root.parent, "gate", "--report", str(result.out_dir / "code-analyzer.report.json"),

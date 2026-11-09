@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 dist/
 .coverage
+
+# Output di tests/e2e/scan_local.py
+scan-out/

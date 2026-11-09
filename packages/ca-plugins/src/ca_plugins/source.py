@@ -182,47 +182,44 @@ def _count_dir(
     return count
 
 
-# Nomi di lockfile (npm e PyPI: osv-scanner, trivy) ed estensioni dei sorgenti che semgrep e bandit
-# analizzano. Un symlink con uno di questi nomi non viene analizzato dagli scanner (N-10).
-LOCKFILE_NAMES = frozenset(
-    {
-        "package-lock.json",
-        "npm-shrinkwrap.json",
-        "yarn.lock",
-        "pnpm-lock.yaml",
-        "poetry.lock",
-        "pipfile.lock",
-        "uv.lock",
-        "pdm.lock",
-        "requirements.txt",
-    }
-)
-SOURCE_EXTENSIONS = frozenset(
-    {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".py", ".pyi"}
-)
+def _link_loses_content(
+    entry: os.DirEntry[str], real_root: str, rel: str, excluded: Sequence[str]
+) -> bool:
+    """Vero se cio' che il symlink indica non e' analizzato al suo posto (N-20, N-21, N-22).
 
-
-def _is_analyzed_name(name: str) -> bool:
-    lower = name.lower()
-    return lower in LOCKFILE_NAMES or os.path.splitext(lower)[1] in SOURCE_EXTENSIONS
+    Un link che esce dalla radice conta prima di guardare il tipo della destinazione, cosi' il
+    numero non dice nulla dell'host. Rotto o in ciclo conta come file.
+    """
+    target = os.path.realpath(os.path.join(real_root, rel))
+    if os.path.commonpath([real_root, target]) != real_root:
+        return True
+    # `.git` non e' tra le esclusioni di copertura (gitleaks), ma i finding li' si scartano (N-25)
+    if is_excluded(os.path.relpath(target, real_root), [*excluded, "**/.git"]):
+        return True
+    try:
+        return not entry.is_dir()
+    except OSError:
+        return True
 
 
 def count_skipped_symlinks(root: str, excluded: Sequence[str]) -> int:
-    """Symlink sotto `root` con nome di lockfile o estensione sorgente analizzata (N-10, N-10b).
+    """Symlink sotto `root` il cui contenuto non e' analizzato (N-10, N-10b, N-17, N-18, N-20).
 
-    Gli scanner non seguono questi collegamenti: il file che indicano non e' analizzato e il
-    risultato sarebbe vuoto senza traccia. Non si seguono link; i percorsi esclusi non si contano
+    Gli scanner non seguono i symlink: restano fuori quelli a file, e quelli a directory che
+    escono da `root` o finiscono in un percorso escluso. Di un symlink a una directory analizzata
+    la destinazione resta analizzata al suo posto. Non dipende dal nome: quali file legge uno
+    scanner cambia con la versione. I link non si attraversano; i percorsi esclusi non si contano
     ne' si visitano. Mai nomi: solo il numero. `SourceError` oltre `MAX_FILES` e `MAX_DEPTH`.
     """
     root_fd = _open_dir(root)
     try:
-        return _count_links(root_fd, "", 0, excluded, [1])
+        return _count_links(root_fd, os.path.realpath(root), "", 0, excluded, [1])
     finally:
         os.close(root_fd)
 
 
 def _count_links(
-    dir_fd: int, prefix: str, depth: int, excluded: Sequence[str], seen: list[int]
+    dir_fd: int, real_root: str, prefix: str, depth: int, excluded: Sequence[str], seen: list[int]
 ) -> int:
     if depth > MAX_DEPTH:
         raise SourceError("directory annidate oltre il limite")
@@ -246,7 +243,7 @@ def _count_links(
         if seen[0] > MAX_FILES:
             raise SourceError("troppi file nella radice")
         if link:
-            count += int(_is_analyzed_name(entry.name))
+            count += int(_link_loses_content(entry, real_root, rel, excluded))
         elif is_dir:
             subdirs.append(entry.name)
     for name in subdirs:
@@ -255,15 +252,13 @@ def _count_links(
         except OSError:
             continue  # gia' contata da `count_unreadable`
         try:
-            count += _count_links(child, f"{prefix}{name}/", depth + 1, excluded, seen)
+            count += _count_links(child, real_root, f"{prefix}{name}/", depth + 1, excluded, seen)
         finally:
             os.close(child)
     return count
 
 
 __all__ = [
-    "LOCKFILE_NAMES",
-    "SOURCE_EXTENSIONS",
     "LocalSourceReader",
     "count_skipped_symlinks",
     "count_unreadable",

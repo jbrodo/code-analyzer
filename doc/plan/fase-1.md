@@ -623,7 +623,7 @@ Gli attesi precedono scanner e pipeline: G1.c si misura contro di essi. Ogni att
 - Spec: §7.2. ADR: 0001, 0008.
 
 #### R-09 — Chiusura del runner
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: `LIBERO`. Chiuso il 2026-11-09 (`doc/verifiche/sicurezza-fase-1.md`).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/`, `packages/ca-core/src/ca_core/` (`ports.py`, `fakes.py`, `schema_validation.py`, `vendor_schemas/`, `pipeline/publish.py`, `pipeline/exclusions.py`), `packages/ca-cli/src/ca_cli/`, `schemas/vendor`, `tests/`.
 - Dipende da: S-01.
 - Accettazione: finding critici e alti di S-01 risolti e riverificati da `security`; il rischio residuo è accettato dall'utente (fatto il 2026-11-09, con le condizioni riportate nella sezione delle decisioni). Solo da qui il runner è considerato chiuso. Deve valere, con prova:

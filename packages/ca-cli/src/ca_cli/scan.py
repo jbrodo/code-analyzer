@@ -233,13 +233,13 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     try:
         excluded = coverage_exclusions(config.paths.exclude)
         unreadable = count_unreadable(root, excluded)
-        links = count_skipped_symlinks(root, excluded)  # N-10: lockfile e sorgenti come symlink
+        links = count_skipped_symlinks(root, excluded)  # N-10, N-17, N-18, N-20
     except SourceError as exc:
         raise ScanError("workspace non esaminabile") from exc
     unreadable_text = f"{unreadable} percorsi non leggibili dai plugin: analisi incompleta"
     if unreadable:
         print(f"avviso: {unreadable_text}", file=sys.stderr)
-    links_text = f"{links} collegamenti simbolici a lockfile o sorgenti non analizzati"
+    links_text = f"{links} collegamenti simbolici con contenuto non analizzato"
     if links:
         print(f"avviso: {links_text}: analisi incompleta", file=sys.stderr)
 
