@@ -50,7 +50,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | --- | --- | --- | --- | --- | --- |
 | **D-CI** (decisa) | CI del progetto. Raccomandata GitHub Actions (origin è su GitHub; nessuna CI esiste) | Utente | O-01, O-02, O-03 | I-06, X-07 | Non blocca G1.a/b/c, blocca la chiusura fase |
 | **D-0004** (decisa) | Accettare `hardened-container` fuori dal server | Utente, con parere `security` | R-09, A-02, A-03 | X-04, X-06, X-07, I-06 | Blocca G1.a e G1.b |
-| **D-0005** (decisa fino al primo rilascio) | Host del registry, namespace, custodia chiave. Nel frattempo registry del repository e chiave di test | Utente | I-06, A-02 | X-07 tramite A-02; nessuno sul gate | Non blocca |
+| **D-0005** (decisa per il primo rilascio) | GHCR `ghcr.io/jbrodo/code-analyzer/plugins/<plugin>`; chiave Cosign privata nei segreti di un GitHub Actions Environment protetto con approvazione; chiave pubblica distribuita con la CLI host e montata in sola lettura da un percorso host fidato per la CLI immagine | Utente | I-06, A-02 | X-07 tramite A-02; nessuno sul gate | Non blocca |
 | **D-0006** (decisa) | Sincronizzazione separata del database vulnerabilità | Utente | R-06, P-03, P-05, F-05, L-07, T-08, O-03, A-02 | X-02, I-04, O-02, X-04, X-05, X-06, X-07, I-06 | Blocca G1.a, G1.b e la parte CVE di G1.c |
 | **D-0009-A** (decisa) | Livelli provvisori invece di anticipare la Variante A | Utente | A-02, A-03 | X-07 | Non blocca le tre condizioni; ne cambia il contenuto se respinta |
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
@@ -62,7 +62,7 @@ Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettat
 
 Decisioni dell'utente del 2026-11-09 sul Gate 1:
 
-- D-0005: registry GHCR del repository e chiave di test fino al primo rilascio. La scelta definitiva si fa prima del rilascio: I-06 resta bloccato.
+- D-0005, decisione dell'utente del 2026-11-09 per il primo rilascio: GHCR `ghcr.io/jbrodo/code-analyzer/plugins/<plugin>`; chiave Cosign privata nei segreti di un GitHub Actions Environment protetto con approvazione; chiave pubblica distribuita con la CLI host e montata in sola lettura da un percorso host fidato per la CLI immagine. La pubblicazione resta soggetta ad approvazione esplicita e a D-0015; I-06 resta bloccato.
 - D-0009-A: livelli provvisori accettati, la Variante A resta in Fase 2.
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 

@@ -1,8 +1,8 @@
 # ADR-0005: Firma e verifica delle immagini dei plugin
 
-- Stato: Proposto; deciso il 2026-11-09 fino al primo rilascio: registry GHCR del repository e chiave di test. La scelta definitiva si fa prima del rilascio
+- Stato: Deciso il 2026-11-09 per il primo rilascio: GHCR `ghcr.io/jbrodo/code-analyzer/plugins/<plugin>` e firma Cosign con chiave custodita in un GitHub Actions Environment protetto. La pubblicazione richiede ancora approvazione esplicita.
 - Data: 2026-11-08
-- Decisione umana richiesta: sì (registry definitivo e custodia della chiave)
+- Decisione umana richiesta: sì per autorizzare ogni rilascio; registry e custodia della chiave per il primo rilascio sono decisi
 - Riferimenti: §7.1, §7.2, §15
 
 ## Contesto
@@ -13,14 +13,16 @@
 
 1. **Solo digest fissato:** garantisce l'integrità, non l'origine, e §7.2 chiede la firma.
 2. **Cosign keyless (OIDC):** nessuna chiave da custodire, ma la verifica dipende dalla radice di fiducia e dal log pubblici; scomodo per self-hosted e air-gapped.
-3. **Cosign con chiave, pubblica distribuita con la CLI, più digest fissato.**
+3. **Cosign con chiave, pubblica distribuita tramite la CLI, più digest fissato.**
 
 ## Raccomandazione
 
 Opzione 3.
 
 - Firmiamo noi tutte le immagini built-in, costruite in CI da scanner a versione fissata.
-- La chiave pubblica è inclusa nel pacchetto CLI; la privata sta in un KMS o nei segreti CI protetti.
+- Il registry del primo rilascio è GHCR, namespace `ghcr.io/jbrodo/code-analyzer/plugins/<plugin>`.
+- La chiave privata sta nei segreti di un GitHub Actions Environment protetto, con approvazione del rilascio. Non è nel repository né nell'immagine.
+- La chiave pubblica è un trust anchor fidato: la CLI installata la distribuisce con il pacchetto; nella modalità immagine CLI si monta in sola lettura da un percorso host fidato, esterno a workspace, work e cache. La CLI verifica con quella chiave; non la carica dal repository analizzato.
 - I manifest built-in sono dati del pacchetto CLI e contengono il digest. Il rilascio costruisce e firma le immagini, poi inserisce i digest nei manifest e infine impacchetta la CLI. Lo schema richiede `@sha256:` sul manifest impacchettato.
 - Si verifica il digest e si esegue quello stesso digest, mai un tag.
 - La verifica deve funzionare senza accesso al log di trasparenza. Il comando esatto si fissa sulla versione di cosign adottata.
@@ -31,12 +33,12 @@ Opzione 3.
 ## Conseguenze
 
 - `cosign` a versione fissata è un prerequisito: incluso nell'immagine CLI, da installare per l'uso sull'host.
-- La rotazione della chiave richiede una nuova release della CLI; accettabile in Fase 1, da rivedere con il registry firmato di Fase 4.
-- Decisioni da prendere prima del primo rilascio: host del registry, spazio dei nomi, custodia della chiave. Fino ad allora la CI può usare il registry del repository con una chiave di test.
+- La rotazione della chiave richiede l'aggiornamento coordinato dei segreti CI e della chiave pubblica fidata montata sugli host prima di distribuire immagini firmate con la nuova chiave.
+- Ogni pubblicazione resta subordinata all'approvazione esplicita dell'utente e agli altri gate di rilascio, inclusa D-0015. La chiave pubblica montata deve essere gestita insieme alla chiave privata fidata: sostituirla cambia l'identità accettata dalla CLI.
 
 ## Emendamento dopo V-09
 
-Data: 2026-11-08. Fissa i comandi provati in V-06 con cosign 3.1.4. L'opzione raccomandata non cambia; registry e custodia della chiave restano in D-0005.
+Data: 2026-11-08. Fissa i comandi provati in V-06 con cosign 3.1.4. L'opzione raccomandata non cambia; registry e custodia della chiave sono poi stati decisi in D-0005 il 2026-11-09.
 
 - Firma: `cosign sign --yes --key k.key --tlog-upload=false --use-signing-config=false <immagine@digest>`.
 - Verifica: `cosign verify --key k.pub --insecure-ignore-tlog=true <immagine@digest>`.
@@ -49,11 +51,11 @@ Data: 2026-11-08. Fissa i comandi provati in V-06 con cosign 3.1.4. L'opzione ra
 
 ## Emendamento dopo A-01
 
-Data: 2026-11-08. Il tag `latest` è vietato in `image`, nel manifest sorgente e in quello impacchettato: il digest fissa i byte, ma un tag mobile rende il manifest non tracciabile rispetto a `version`. La decisione su registry e chiave resta in D-0005.
+Data: 2026-11-08. Il tag `latest` è vietato in `image`, nel manifest sorgente e in quello impacchettato: il digest fissa i byte, ma un tag mobile rende il manifest non tracciabile rispetto a `version`. La decisione su registry e chiave è in D-0005.
 
 ## Emendamento: esito della verifica nel risultato e ordine di verifica
 
-Data: 2026-11-08. Registry e chiave restano in D-0005.
+Data: 2026-11-08. Registry e chiave, decisi successivamente in D-0005, non cambiano l'ordine di verifica.
 
 Confermato:
 
