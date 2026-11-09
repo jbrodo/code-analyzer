@@ -7,11 +7,12 @@ OCI si rileva alla prima esecuzione, quindi `--help` e `config validate` funzion
 
 import os
 import stat
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ca_core.models import PackagedPluginManifest
 from ca_core.ports import (
     ArtifactRef,
     ArtifactSink,
@@ -19,7 +20,9 @@ from ca_core.ports import (
     PluginExecutor,
     SourceReader,
 )
-from ca_plugins.runner import OciExecutor
+from ca_core.schema_validation import SchemaStore
+from ca_plugins.runner import DEFAULT_MAX_PARALLEL, OciExecutor
+from ca_plugins.sdk import list_packaged_plugins, load_packaged_manifest
 from ca_plugins.signature import CosignVerifier, allow_unsigned_from_env
 from ca_plugins.source import LocalSourceReader
 
@@ -73,13 +76,30 @@ class DirectoryArtifactSink:
         return ArtifactRef(name=name, location=str(self._base.resolve() / name), size=len(content))
 
 
+def packaged_manifests() -> list[PackagedPluginManifest]:
+    """Manifest dei plugin del pacchetto: mai quelli del repository analizzato (ADR-0014)."""
+    return [load_packaged_manifest(name) for name in list_packaged_plugins()]
+
+
+def vendor_schema_store() -> SchemaStore:
+    """Schemi fissati dal pacchetto installato, con lo SHA del manifest ancorato nel codice."""
+    return SchemaStore.packaged()
+
+
 @dataclass(frozen=True)
 class Context:
-    """Porte collegate, passate ai gestori dei comandi."""
+    """Porte collegate, passate ai gestori dei comandi.
+
+    I campi dopo `clock` hanno un valore predefinito reale; i test li sostituiscono.
+    """
 
     executor: PluginExecutor
     source: SourceReader
     clock: Clock
+    manifests: Callable[[], list[PackagedPluginManifest]] = packaged_manifests
+    schemas: Callable[[], SchemaStore] = vendor_schema_store
+    feeds_cache: Path | None = None  # None: cache per utente (`feeds.default_cache_dir`)
+    close: Callable[[], None] = lambda: None  # `main()` lo chiama sempre, in `finally`
 
     @staticmethod
     def artifact_sink(output_dir: str) -> ArtifactSink:
@@ -105,6 +125,9 @@ def build_context(
         allow_http_registry=allow_http_registry,
         allow_unsigned=allow_unsigned_from_env(env),
     )
+    executor = OciExecutor(
+        verifier=verifier, max_parallel=min(DEFAULT_MAX_PARALLEL, os.cpu_count() or 1)
+    )
     return Context(
-        executor=OciExecutor(verifier=verifier), source=LocalSourceReader(), clock=SystemClock()
+        executor=executor, source=LocalSourceReader(), clock=SystemClock(), close=executor.close
     )

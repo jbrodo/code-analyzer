@@ -19,6 +19,14 @@ ENV HOME=/tmp \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# File di licenza (I-05, ADR-0015): COPY fallisce se la cartella manca; il testo
+# della licenza di CPython viene dalla distribuzione stessa. Verificato dopo la
+# build da deploy/docker/image-gate.sh. Nessuna licenza del prodotto (D-0015).
+COPY licenses/ /licenses/
+RUN mkdir -p /licenses/python \
+ && cp /usr/local/lib/python3.12/LICENSE.txt /licenses/python/LICENSE.txt \
+ && chmod -R a=rX /licenses
+
 # Gli adattatori leggono /workspace e scrivono /out; li crea il runner (mount).
 WORKDIR /workspace
 

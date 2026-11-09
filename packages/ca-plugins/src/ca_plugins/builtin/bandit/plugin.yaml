@@ -1,0 +1,31 @@
+# Plugin bandit (P-08): SAST Python in SARIF 2.1.0. ADR-0004, 0005, 0007, 0012.
+# Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`) perche' D-0005
+# e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: bandit
+version: 1.0.0
+image: registry.invalid/ca-plugins/bandit:1.0.0
+capabilities: [detect]
+languages: [python]
+categories: [sast]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 64 MiB. Massimo misurato su bandit 1.9.4: 3,6 KB
+  # sulle fixture, 19,2 MB sul pilota saleor (47 mila risultati, quasi tutti B101 `assert` nei
+  # test), cioe' circa 3,5 volte di margine. Il SARIF cresce con i risultati e non e' limitato dal
+  # numero di file: un repository ostile viene fermato qui e non in ca-core.
+  max_bytes: 67108864
+resources:
+  # Misure (profilo completo, --cpus 1) su saleor, 4.384 file Python: minimo fra 1 GiB (fallisce,
+  # memoria esaurita) e 1,5 GiB (riesce); 3 GiB = 2 volte il margine sul valore che riesce.
+  # Durata massima misurata 67,5 s (container compreso); 300 s = 4,4 volte. I PID: bandit regge
+  # con 4, 32 ne danno 8 volte.
+  cpu: "1"
+  memory: 3Gi
+  timeout: 300s
+  pids: 32
+network: none

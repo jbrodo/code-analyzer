@@ -1,0 +1,109 @@
+rules:
+  - id: ca-py-subprocess-shell
+    languages: [python]
+    severity: ERROR
+    message: Chiamata a subprocess con shell=True e comando non letterale (iniezione di comandi).
+    patterns:
+      - pattern: subprocess.$FN($CMD, ..., shell=True, ...)
+      - pattern-not: subprocess.$FN("...", ..., shell=True, ...)
+    metadata:
+      category: sast
+      cwe: CWE-78
+  - id: ca-py-os-system
+    languages: [python]
+    severity: ERROR
+    message: Comando di shell non letterale passato a os.system o os.popen.
+    patterns:
+      - pattern-either:
+          - pattern: os.system($CMD)
+          - pattern: os.popen($CMD)
+      - pattern-not: os.system("...")
+      - pattern-not: os.popen("...")
+    metadata:
+      category: sast
+      cwe: CWE-78
+  - id: ca-py-eval-dynamic
+    languages: [python]
+    severity: ERROR
+    message: Esecuzione di codice da una stringa non letterale (eval o exec).
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: exec($X)
+      - pattern-not: eval("...")
+      - pattern-not: exec("...")
+    metadata:
+      category: sast
+      cwe: CWE-95
+  - id: ca-py-pickle-load
+    languages: [python]
+    severity: ERROR
+    message: Deserializzazione con pickle di dati che possono non essere fidati.
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)
+      - pattern: cPickle.loads(...)
+      - pattern: cPickle.load(...)
+    metadata:
+      category: sast
+      cwe: CWE-502
+  - id: ca-py-yaml-unsafe-load
+    languages: [python]
+    severity: ERROR
+    message: yaml.load senza un loader sicuro puo' costruire oggetti arbitrari.
+    patterns:
+      - pattern-either:
+          - pattern: yaml.load(...)
+          - pattern: yaml.load_all(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)
+      - pattern-not: yaml.load(..., Loader=yaml.CSafeLoader)
+      - pattern-not: yaml.load(..., Loader=SafeLoader)
+      - pattern-not: yaml.load_all(..., Loader=yaml.SafeLoader)
+      - pattern-not: yaml.load_all(..., Loader=yaml.CSafeLoader)
+      - pattern-not: yaml.load_all(..., Loader=SafeLoader)
+    metadata:
+      category: sast
+      cwe: CWE-502
+  - id: ca-py-weak-hash
+    languages: [python]
+    severity: WARNING
+    message: Algoritmo di hash debole (md5 o sha1).
+    pattern-either:
+      - pattern: hashlib.md5(...)
+      - pattern: hashlib.sha1(...)
+      - pattern: hashlib.new("md5", ...)
+      - pattern: hashlib.new("sha1", ...)
+    metadata:
+      category: sast
+      cwe: CWE-328
+  - id: ca-py-tls-verify-disabled
+    languages: [python]
+    severity: ERROR
+    message: Verifica del certificato TLS disattivata in una richiesta HTTP.
+    pattern-either:
+      - pattern: requests.$FN(..., verify=False, ...)
+      - pattern: httpx.$FN(..., verify=False, ...)
+    metadata:
+      category: sast
+      cwe: CWE-295
+  - id: ca-py-sql-string-building
+    languages: [python]
+    severity: ERROR
+    message: Query SQL costruita per concatenazione o formattazione di stringa (iniezione SQL).
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: f"...{...}..."
+          - pattern: '"...".format(...)'
+          - pattern: '"..." % $X'
+          - pattern: '"..." + $X'
+          - pattern: '$X + "..."'
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $CUR.execute($Q, ...)
+              - pattern: $CUR.executemany($Q, ...)
+          - focus-metavariable: $Q
+    metadata:
+      category: sast
+      cwe: CWE-89

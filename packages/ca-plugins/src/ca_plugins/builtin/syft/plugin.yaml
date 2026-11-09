@@ -1,0 +1,33 @@
+# Plugin syft (P-01): SBOM CycloneDX 1.7 del workspace. ADR-0004, 0005, 0007.
+# Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`) perche' D-0005
+# e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: syft
+version: 1.0.0
+image: registry.invalid/ca-plugins/syft:1.0.0
+capabilities: [detect]
+languages: []
+categories: [dependency]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  cyclonedx: /out/sbom.cdx.json
+  cyclonedx_version: "1.7"
+  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su syft 1.57.0: 6,5 KB
+  # sulle fixture, 1,86 MB sul pilota excalidraw (0,73 e 0,76 MB gli altri due), cioe' circa 9 volte
+  # di margine sul massimo reale. L'SBOM cresce con i componenti: un repository molto piu' grande
+  # dei pilota resta sotto il limite, uno ostile viene fermato qui e non in ca-core.
+  max_bytes: 16777216
+resources:
+  # Misure (profilo completo, --cpus 1): minimo 160 MiB (128 MiB fallisce) su excalidraw, 256 MiB
+  # bastano ai tre pilota; 512 MiB = oltre 3 volte il minimo. Con 16 PID l'esito non e' stabile,
+  # 32 reggono; 128 ne danno 4 volte (i thread di Go contano). Durata massima misurata 1,3 s
+  # (container compreso) su excalidraw (167 MB); 120 s lasciano margine per repository molto piu'
+  # grandi.
+  cpu: "1"
+  memory: 512Mi
+  timeout: 120s
+  pids: 128
+network: none

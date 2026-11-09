@@ -26,6 +26,8 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 - Emendamenti "dopo A-01" in ADR-0003, 0004, 0005, 0006, 0007, 0014: revisione dei contratti dei plugin. Gli stati in tabella non cambiano.
 - Sezioni "Revisione A-01" in ADR-0002, 0003, 0007, 0008, 0010, 0011, 0014: esito della revisione e prove mancanti. ADR-0003 definisce dove vive un'invariante e conferma `tests/contract/`.
 
+- Emendamenti "per R-09" in ADR-0003 (schemi nel pacchetto), 0004 (`/out` su tmpfs, workspace illeggibile, interruzione), 0006 (spazio e pulizia della sincronizzazione), 0010 (nome del report); "per P-07" in ADR-0012 (configurazione git ostile). Gli stati in tabella non cambiano.
+
 ## Lacune rinviate
 
 Numerazione di `.claude/agents/architect.md`.

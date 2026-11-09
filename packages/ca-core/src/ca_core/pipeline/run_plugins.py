@@ -1,11 +1,12 @@
 """Passo `run_plugins` a due stadi (K-16, ADR-0002, ADR-0005, ADR-0007).
 
-Primo stadio: i plugin con `outputs.cyclonedx` (ordinati per nome), uno alla volta. Secondo stadio:
-gli altri, che con `inputs.sbom: optional` ricevono l'SBOM se disponibile. Il parallelismo dentro
-uno stadio è dell'adattatore `PluginExecutor` (ADR-0002); qui l'ordine è sequenziale e
-deterministico. Ingresso e uscita sono modelli serializzabili.
+Primo stadio: i plugin con `outputs.cyclonedx` (ordinati per nome). Secondo stadio: gli altri, che
+con `inputs.sbom: optional` ricevono l'SBOM se disponibile. Ogni stadio è una sola chiamata a
+`PluginExecutor.run_many`, senza catturare eccezioni; il secondo parte a primo finito, perché
+l'SBOM è un suo ingresso. Il parallelismo dentro lo stadio è dell'adattatore (ADR-0002); la
+lettura degli SBOM è sequenziale e per nome. Ingresso e uscita sono modelli serializzabili.
 
-Un plugin che non ha successo (`failed`, `timeout`, output assente o SBOM non valido) non ferma
+Un plugin che non ha successo (`failed`, `timeout`, `invalid_output`, SBOM non valido) non ferma
 gli altri: diventa un `PluginRun` con `outcome: failed`, un finding `health`
 `ca.scanner-not-run` e un report `partial`. Le eccezioni dell'esecutore (`ScanAborted`: firma
 assente o non valida, runtime assente) non si catturano: exit 2 senza report (ADR-0005).
@@ -15,6 +16,8 @@ del primo per nome; si filtra per `languages` del manifest sulla lingua rilevata
 vuoto: sempre); `inputs.config` e i `feeds` non si cablano qui (config per plugin e snapshot sono
 della CLI). I testi di fallimento sono codici e cause generiche, mai output dello scanner.
 """
+
+from collections.abc import Callable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -79,6 +82,8 @@ def _text(value: str) -> str:
 
 
 def _failure_text(result: PluginRunResult) -> str | None:
+    if result.outcome is RunOutcome.INVALID_OUTPUT:
+        return _text(result.detail or "output non valido")
     if result.outcome is RunOutcome.TIMEOUT:
         base = "timeout"
     elif result.outcome is RunOutcome.FAILED:
@@ -129,17 +134,23 @@ def _fail(execution: PluginExecution, reason: str) -> PluginExecution:
     return execution.model_copy(update={"run": run})
 
 
-def _execute(
-    manifest: PackagedPluginManifest,
+def _execute_stage(
+    manifests: list[PackagedPluginManifest],
     request: RunPluginsRequest,
     executor: PluginExecutor,
-    sbom: str | None,
-) -> PluginExecution:
-    result = executor.run(
-        PluginRunRequest(manifest=manifest, workspace=request.workspace.path, sbom=sbom)
-    )
-    run = _run_record(manifest, result, _failure_text(result))
-    return PluginExecution(manifest=manifest, run=run, output_dir=result.output_dir)
+    sbom_for: Callable[[PackagedPluginManifest], str | None],
+) -> list[PluginExecution]:
+    requests = [
+        PluginRunRequest(manifest=m, workspace=request.workspace.path, sbom=sbom_for(m))
+        for m in manifests
+    ]
+    results = executor.run_many(requests)  # `ScanAborted` si propaga: nessun report
+    return [
+        PluginExecution(
+            manifest=m, run=_run_record(m, r, _failure_text(r)), output_dir=r.output_dir
+        )
+        for m, r in zip(manifests, results, strict=True)
+    ]
 
 
 def run_plugins(
@@ -162,8 +173,7 @@ def run_plugins(
     executions: list[PluginExecution] = []
     sbom: str | None = None
     sbom_from: str | None = None
-    for manifest in stage_one:
-        execution = _execute(manifest, request, executor, None)
+    for execution in _execute_stage(stage_one, request, executor, lambda _m: None):
         if execution.run.outcome is Outcome.OK:
             try:
                 path = _read_sbom(execution, reader, store)
@@ -171,12 +181,15 @@ def run_plugins(
                 execution = _fail(execution, str(exc))
             else:
                 if sbom is None:
-                    sbom, sbom_from = path, manifest.name
+                    sbom, sbom_from = path, execution.manifest.name
         executions.append(execution)
 
-    for manifest in stage_two:
-        wants_sbom = manifest.inputs.sbom is InputMode.OPTIONAL
-        executions.append(_execute(manifest, request, executor, sbom if wants_sbom else None))
+    executions += _execute_stage(
+        stage_two,
+        request,
+        executor,
+        lambda m: sbom if m.inputs.sbom is InputMode.OPTIONAL else None,
+    )
 
     health = [
         health_finding(

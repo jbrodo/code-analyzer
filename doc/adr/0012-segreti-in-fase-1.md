@@ -58,3 +58,56 @@ Esce con 0 e zero risultati, con `dubious ownership` solo nel log: un falso nega
 
 - `partialFingerprints` contiene `commitSha`, `email`, `author`, `date` e `commitMessage`. L'adattatore non scrive quei campi in `/out`: il commit, se serve, va in `Location.commit`. Autore, email e messaggio non escono dal container, salvo una scelta esplicita futura.
 - L'hash del fingerprint (ADR-0008) richiede il valore, quindi l'adattatore esegue gitleaks senza `--redact` su un percorso nel tmpfs interno e scrive in `/out` solo il SARIF oscurato. I campioni di V-04 sono stati prodotti con `--redact`, quindi questo flusso è da provare in P-07.
+
+## Emendamento per P-07: configurazione git ostile (M-08)
+
+Data: 2026-11-09. Attua M-08 di S-01. `safe.directory`, prescritto dall'emendamento dopo V-09, fa rientrare `.git/config` del repository analizzato, che è codice: un comando definito lì gira nel container del plugin. Sostituisce la sezione "gitleaks su repository di altro proprietario" per il modo di ottenere la lettura; il requisito resta (storia letta anche con altro proprietario, plugin fallito se non si può).
+
+### Misure
+
+git 2.53.0, `git log -p -U0 --full-history --all --diff-filter=tuxdb`, con la sola `safe.directory`; un comando di prova lascia un marcatore. Sorgente di gitleaks v8.30.1 (`sources/git.go`) letto il 2026-11-09; gitleaks non è stato eseguito.
+
+| Vettore in `.git/config` | Default | Con `--no-textconv --no-ext-diff` | Con in più `--no-show-signature` e `GIT_NO_LAZY_FETCH=1` | Con git ombra |
+| --- | --- | --- | --- | --- |
+| `diff.<driver>.textconv` | Eseguito | Bloccato | Non provato (già bloccato) | Bloccato |
+| `log.showSignature` e `gpg.ssh.program` | Eseguito | **Eseguito** | Bloccato | Bloccato |
+| Promisor con `extensions.partialClone`, URL `ext::` e `protocol.ext.allow` | Eseguito | **Eseguito** | Bloccato | Bloccato |
+| `diff.external`, `core.fsmonitor`, `core.pager` | Non eseguiti | Non provato | Non provato | Non provato |
+
+`--log-opts` non è aggiuntivo: in gitleaks v8.30.1 se è valorizzato **sostituisce** `--full-history --all --diff-filter=tuxdb`. Il solo `--log-opts="--no-textconv --no-ext-diff"` richiesto da M-08 ridurrebbe la scansione alla storia di HEAD, senza errori. Inoltre gitleaks legge `.gitleaks.toml` dalla cartella analizzata e `.gitleaksignore` dalla cartella corrente: un repository può spegnere le regole o ignorare i propri finding.
+
+### Opzioni
+
+1. **`--log-opts` con l'elenco delle opzioni di disattivazione.** Lista di divieti: copre i vettori noti e si rompe al successivo, e va ripetuto a mano l'elenco di opzioni che gitleaks mette di suo.
+2. **Git ombra:** una git dir pulita nel tmpfs dell'adattatore, con collegamenti ai dati. La configurazione ostile non viene mai letta.
+
+### Decisione
+
+Opzione 2. Nessuna `safe.directory`, nessun `GIT_CONFIG_COUNT` e nessun `--log-opts`.
+
+L'adattatore, nel tmpfs `/tmp` del container, costruisce `<ombra>`:
+
+- `config` scritta dall'adattatore: `core.repositoryformatversion` e `core.bare = true`, più `extensions.objectformat` (`sha1`, `sha256`) ed `extensions.refstorage` (`files`, `reftable`) solo se presenti e tra quei valori. Si leggono con `git config --file /workspace/.git/config --get`, che non segue gli include e non esegue nulla. Altri valori: plugin fallito con motivo fisso.
+- `HEAD` **copiato**, dopo aver verificato che sia `ref: refs/…` con caratteri ammessi o un hash: git rifiuta un `HEAD` symlink verso un percorso assoluto.
+- Symlink a `/workspace/.git/objects` e, se esistono, `refs`, `packed-refs`, `shallow`, `reftable`.
+
+Ambiente di gitleaks e git: `GIT_CONFIG_NOSYSTEM=1`, `GIT_CONFIG_GLOBAL=/dev/null`, `GIT_ATTR_NOSYSTEM=1`, `GIT_NO_LAZY_FETCH=1`, cartella corrente vuota in `/tmp`, nessun altro `GIT_*`. Argomento: `gitleaks git <ombra>` con `--gitleaks-ignore-path <cartella vuota>`.
+
+Errori di git. gitleaks può uscire con 0 dopo un errore di git, come per `dubious ownership` in V-07, quindi l'adattatore fa fallire il plugin per ogni riga `[git]` di livello errore nel log, oltre a quella già prevista. Un clone parziale ha blob mancanti e con l'ombra `git log` esce con 128 (provato): deve risultare fallito, non pulito. `.git` che non sia una directory (worktree collegato, sottomodulo): plugin fallito con motivo fisso.
+
+Non misurato: l'ombra con oggetti di altro proprietario (le prove erano con lo stesso utente) e l'esecuzione con gitleaks reale. Li accerta il test qui sotto; se gitleaks rifiutasse la git dir ombra il punto torna in `architect` prima di ripiegare su `--log-opts`.
+
+Conseguenze: il repository non controlla più né comandi né regole di gitleaks. Restano il parsing di pack ostili da parte di git e gitleaks, coperti da R-1, e la lettura dei file puntati da `objects/info/alternates`, che non esce dal container.
+
+Prova, `tests/integration/test_gitleaks_hostile_repo.py`, sull'immagine reale con `docker run` e una cartella di marcatori montata in scrittura solo dal test:
+
+- parametri `textconv`, `log.showSignature` con `gpg.ssh.program`, promisor `ext::`, `core.fsmonitor`, `core.pager`: nessun marcatore creato;
+- controllo positivo: lo stesso repository con `git log` diretto nella stessa immagine, con `safe.directory`, crea il marcatore per i primi tre, così il test non passa per un vettore spento;
+- segreto presente solo in un commit di un altro branch trovato con `--all` (nessuna perdita di copertura);
+- `.gitleaks.toml` e `.gitleaksignore` ostili nel repository senza effetto;
+- workspace di altro proprietario: segreto trovato senza `safe.directory`;
+- clone parziale: plugin fallito.
+
+## Emendamento: soppressioni in linea (N-04)
+
+Data: 2026-11-09. Decisione dell'utente, valida per ora: i commenti in linea non nascondono finding. gitleaks gira con `--ignore-gitleaks-allow`, bandit con `--ignore-nosec`, semgrep con `--disable-nosem`. Le eccezioni passano da `.code-analyzer.yml`, che lascia traccia nel report. Il costo è più rumore per chi usa quei commenti in buona fede. Da rivedere se il rumore risulta eccessivo sui repository pilota.

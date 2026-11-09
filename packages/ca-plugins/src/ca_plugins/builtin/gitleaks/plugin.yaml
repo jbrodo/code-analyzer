@@ -1,0 +1,29 @@
+# Plugin gitleaks (P-07): segreti nella storia git, SARIF oscurato. ADR-0007, 0008, 0012.
+apiVersion: code-analyzer/v1
+name: gitleaks
+version: 1.0.0
+image: registry.invalid/ca-plugins/gitleaks:1.0.0
+capabilities: [detect]
+languages: []
+categories: [secret]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su gitleaks 8.30.1: circa
+  # 1,2 KB sulla storia di prova, 38 KB sul pilota saleor (28.855 commit, 82 risultati), cioe' circa
+  # 400 volte di margine. Un risultato pesa circa 460 byte (nessuno snippet, nessun dato personale).
+  max_bytes: 16777216
+resources:
+  # Misure (profilo completo, storia completa tramite git ombra) su saleor: memoria minima fra
+  # 256 MiB (fallisce, memoria esaurita) e 512 MiB (riesce); 1 GiB = 2 volte il minimo. Il tmpfs di
+  # /tmp conta nel limite (R-09). Durata massima misurata 80 s con --cpus 1 (container compreso), 35 s
+  # con 2 CPU; 300 s = 3,7 volte il caso peggiore. I PID: 16 fallisce (git e gitleaks), 32 riesce;
+  # 128 = 4 volte.
+  cpu: "1"
+  memory: 1Gi
+  timeout: 300s
+  pids: 128
+network: none

@@ -36,9 +36,16 @@ BEHAVIORS = (
     "write-rootfs",
     "exec-tmp",
     "timeout",
+    # T-03: comportamenti ostili in piu' (parametri in `/inputs/config.json`)
+    "report",
+    "fill-out",
+    "subdir-out",
+    "fifo-out",
 )
 # Il manifest dichiara max_bytes = 1 MiB: `oversize` lo supera di un MiB.
 OVERSIZE_BYTES = 2 * 1024 * 1024
+MIB = 1024 * 1024
+FILL_MAX_MIB = 512  # tetto della prova di riempimento: mai saturare davvero il disco
 BREACH_EXIT = 4
 UNREACHABLE = ("192.0.2.1", 9)  # TEST-NET-1 (RFC 5737): mai instradabile
 
@@ -117,8 +124,40 @@ def _exec_tmp(tmp: Path) -> str:
     return "ok"
 
 
+def _fill_out(out: Path, params: dict[str, Any]) -> dict[str, str]:
+    """Scrive `mib` MiB in `/out/fill.bin` (tetto `FILL_MAX_MIB`); con `hold` poi dorme.
+
+    Riporta quanti MiB sono stati scritti e l'eventuale errore. Nessun limite di quota e'
+    imposto dal plugin: serve a misurare quanto il confine lascia scrivere (T-03).
+    """
+    target = min(int(params.get("mib", 8)), FILL_MAX_MIB)
+    chunk = b"\0" * MIB
+    written = 0
+    error = "none"
+    try:
+        with (out / "fill.bin").open("wb", buffering=0) as handle:
+            while written < target:
+                handle.write(chunk)
+                written += 1
+    except OSError as exc:
+        error = errno_name(exc)
+    return {"fill_mib": str(written), "fill_error": error}
+
+
+def _subdir_out(out: Path, params: dict[str, Any]) -> dict[str, str]:
+    """Crea `/out/<name>/f` e poi imposta i permessi della sottodirectory (`mode`, intero)."""
+    name = str(params.get("name", "locked"))
+    mode = int(params.get("mode", 0))
+    sub = out / name
+    sub.mkdir()
+    (sub / "f").write_text("sottodirectory del plugin", encoding="utf-8")
+    sub.chmod(mode)
+    return {"subdir": "ok", "subdir_mode": oct(mode)}
+
+
 def run(
     behavior: str,
+    params: dict[str, Any] | None = None,
     *,
     out: Path = Path("/out"),
     workspace: Path = Path("/workspace"),
@@ -126,6 +165,7 @@ def run(
     rootfs_probe: Path = Path("/opt/ca-fake-rootfs-probe"),
 ) -> tuple[int, dict[str, Any]]:
     """Esegue `behavior`; ritorna (exit code, rapporto delle prove)."""
+    params = params or {}
     probes: dict[str, str] = {}
     code = 0
     if behavior == "exit-nonzero":
@@ -145,7 +185,19 @@ def run(
         (out / "results.sarif").symlink_to("/etc/passwd")
         return 0, probes
 
-    if behavior == "write-tmp":
+    if behavior == "fifo-out":
+        os.mkfifo(out / "results.sarif")
+        return 0, probes
+
+    if behavior == "fill-out":
+        _write_sarif(out, valid_sarif())
+        probes.update(_fill_out(out, params))
+        if params.get("hold"):
+            time.sleep(3600)
+        return 0, probes
+    if behavior == "subdir-out":
+        probes.update(_subdir_out(out, params))
+    elif behavior == "write-tmp":
         probes["tmp_write"] = _attempt(lambda: _write(tmp / "ca-fake-probe"))
     elif behavior == "write-out":
         probes["out_write"] = _attempt(lambda: (out / "extra.txt").write_text("extra"))
@@ -174,10 +226,72 @@ def _identity() -> dict[str, Any]:
     }
 
 
-def read_behavior(config: Path = Path("/inputs/config.json")) -> str:
-    """Il comportamento dalla configurazione; `success` se il file manca."""
+def _status_fields() -> dict[str, str]:
+    wanted = ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb", "NoNewPrivs", "Seccomp")
+    found: dict[str, str] = {}
+    for line in Path("/proc/self/status").read_text().splitlines():
+        key, _, value = line.partition(":")
+        if key in wanted:
+            found[key] = value.strip()
+    return found
+
+
+def _mount_options() -> dict[str, str]:
+    """Opzioni di montaggio (per-mount) dei punti che contano, da `/proc/self/mountinfo`."""
+    found: dict[str, str] = {}
+    for line in Path("/proc/self/mountinfo").read_text().splitlines():
+        fields = line.split()
+        if fields[4] in {"/", "/tmp", "/workspace", "/out", "/inputs/config.json"}:  # noqa: S108
+            found[fields[4]] = fields[5]
+    return found
+
+
+def _cgroup_limits() -> dict[str, str]:
+    found: dict[str, str] = {}
+    for name in ("pids.max", "memory.max", "memory.swap.max", "cpu.max"):
+        try:
+            found[name] = (Path("/sys/fs/cgroup") / name).read_text().strip()
+        except OSError:
+            found[name] = "unreadable"
+    return found
+
+
+def _read_workspace(workspace: Path, name: str) -> dict[str, Any]:
+    """Legge UN file al primo livello di `/workspace`, indicato dal chiamante (mai altro)."""
+    try:
+        target = workspace / Path(name).name
+        info = target.stat()
+        return {
+            "uid": info.st_uid,
+            "mode": oct(info.st_mode & 0o777),
+            "content": target.read_text(encoding="utf-8")[:200],
+        }
+    except OSError as exc:
+        return {"error": errno_name(exc)}
+
+
+def _isolation_report(params: dict[str, Any]) -> dict[str, Any]:
+    """Quello che il processo vede dall'interno (T-03): prova il profilo, non la logica."""
+    return {
+        "uid": os.getuid(),
+        "gid": os.getgid(),
+        "groups": sorted(os.getgroups()),
+        "env": dict(sorted(os.environ.items())),
+        "status": _status_fields(),
+        "mounts": _mount_options(),
+        "cgroup": _cgroup_limits(),
+        "docker_sock": Path("/var/run/docker.sock").exists(),
+        "workspace": (
+            _read_workspace(Path("/workspace"), str(params["read"])) if "read" in params else None
+        ),
+        "out_mode": oct(Path("/out").stat().st_mode & 0o777),
+    }
+
+
+def read_params(config: Path = Path("/inputs/config.json")) -> dict[str, Any]:
+    """La configurazione (oggetto JSON, al piu' 4 KiB); vuota se il file manca."""
     if not config.exists():
-        return "success"
+        return {}
     with config.open("rb") as handle:
         raw = handle.read(4097)
     if len(raw) > 4096:
@@ -186,16 +300,25 @@ def read_behavior(config: Path = Path("/inputs/config.json")) -> str:
     behavior = value.get("behavior", "success") if isinstance(value, dict) else None
     if behavior not in BEHAVIORS:
         raise ValueError("comportamento sconosciuto")
-    return str(behavior)
+    return dict(value)
+
+
+def read_behavior(config: Path = Path("/inputs/config.json")) -> str:
+    """Il comportamento dalla configurazione; `success` se il file manca."""
+    return str(read_params(config).get("behavior", "success"))
 
 
 def main() -> int:
     try:
-        behavior = read_behavior()
+        params = read_params()
     except (ValueError, OSError) as exc:
         print(f"fake-plugin: ingresso non valido: {exc}", file=sys.stderr)
         return 64
-    code, probes = run(behavior)
+    behavior = str(params.get("behavior", "success"))
+    code, probes = run(behavior, params)
+    if behavior == "report" or params.get("report"):  # opt-in: cambia l'elenco dei file di /out
+        report = {**_isolation_report(params), "probes": probes}
+        (Path("/out") / "report.json").write_text(json.dumps(report), encoding="utf-8")
     print(json.dumps({"behavior": behavior, **_identity(), "probes": probes}, sort_keys=True))
     return code
 

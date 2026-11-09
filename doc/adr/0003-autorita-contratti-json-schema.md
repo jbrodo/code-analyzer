@@ -77,3 +77,31 @@ Unica eccezione ammessa: i file `test_*_model_equivalence.py`, che importano il 
 ### Versione degli schemi
 
 Finché non esiste un rilascio, una correzione che allinea lo schema a ciò che il modello già rifiutava non cambia la versione: nessun documento valido per il prodotto diventa non valido. Dal primo rilascio vale la regola della versione maggiore.
+
+## Emendamento per R-09: schemi nel pacchetto installato
+
+Data: 2026-11-09. `vendor_schema_store()` cerca `schemas/vendor` risalendo l'albero dei sorgenti, quindi una CLI installata esce con 2 ("schemi fissati non utilizzabili"). La scelta (opzione 3) non cambia.
+
+Due casi distinti:
+
+- **Contratti del progetto** (`schemas/*.schema.json`). A run time non servono file: `publish` usa `Contract.render()` dal modello installato. La fonte resta il modello, l'artefatto per i consumatori resta `schemas/`, e `schema_export --check` non cambia.
+- **Schemi di terzi fissati** (SARIF, CycloneDX e dipendenti, `SOURCES.json`). Servono a run time, e sono l'unica cosa da impacchettare.
+
+Opzioni per i secondi:
+
+1. **File reali nel pacchetto `ca-core`, cartella `schemas/vendor` come symlink verso di essi.** Una sola copia, nel wheel senza configurazione.
+2. Copia in `ca-core` con controllo CI sull'uguaglianza: due copie, proprio ciò che questo ADR evita.
+3. File in `schemas/vendor` e symlink dentro il pacchetto: dipende da come il backend di build tratta i symlink e la cartella di destinazione non è nel modulo.
+4. Hook di build che copia: `uv_build` non ha hook.
+
+Decisione: opzione 1.
+
+- `git mv schemas/vendor packages/ca-core/src/ca_core/vendor_schemas`, poi `schemas/vendor` diventa il symlink relativo `../packages/ca-core/src/ca_core/vendor_schemas`. Provato con `uv build` il 2026-11-09: la cartella finisce nel wheel, senza dover configurare nulla. I percorsi `ROOT / "schemas" / "vendor"` dei test e `check` di `schema_export`, che guarda solo il primo livello di `schemas/`, restano validi.
+- Lettura: nuovo classmethod `SchemaStore.packaged()` in `schema_validation.py`, con `importlib.resources.files("ca_core").joinpath("vendor_schemas")` e `as_file`, come `load_packaged_manifest` per i manifest; il costruttore carica tutto in memoria, quindi il contesto può chiudersi subito. `ca-core` resta senza infrastruttura: è libreria standard.
+- `vendor_schema_store()` diventa una chiamata a `SchemaStore.packaged()`, mai più una ricerca nell'albero.
+
+Conferma dello SHA. `SchemaStore.__init__` verifica già ogni file contro `SOURCES.json`, ma il manifest è nella stessa cartella e prova solo la coerenza interna. Si ancora nel codice: `VENDOR_MANIFEST_SHA256` in `schema_validation.py`, valore attuale `f585c7cf10428a2323bb03def6013bb20e5cac7497f52e1c3b97c3aadfa2035b`. `packaged()` lo controlla prima di costruire lo store e solleva `SchemaRefusedError`; il costruttore resta invariato per i test che usano cartelle costruite a mano. Aggiornare uno schema fissato tocca così, in una stessa modifica revisionabile, file, `SOURCES.json` e costante.
+
+Test: `tests/contract/test_packaged_schemas.py` costruisce il wheel di `ca-core` con `uv build`, lo installa in un ambiente pulito e, fuori dal repository, apre `SchemaStore.packaged()` e valida un SARIF minimo. Serve `uv`, nessuna rete.
+
+Effetto collaterale da segnalare a D-0015: gli schemi di terzi entrano nel pacchetto distribuito, e questo emendamento non valuta le loro licenze.

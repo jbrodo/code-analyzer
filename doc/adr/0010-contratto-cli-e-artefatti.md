@@ -54,3 +54,9 @@ Precisazioni sul legame tra `status` e plugin:
 
 - Il vincolo è in un solo verso: un plugin `failed` impone `partial`. `partial` senza plugin falliti resta valido, così una causa futura è un'aggiunta compatibile.
 - ADR-0005 fa uscire il gate con 2 anche con `signature: skipped`, ma una firma saltata non è un plugin fallito e il report può essere `complete`. Lo gestisce il gate leggendo `plugins[].signature`, senza nuovi vincoli di schema (K-13).
+
+## Emendamento per R-09: nome del report
+
+Data: 2026-11-09. `publish` scrive `scan-report.json` e la CLI lo rinomina nel sink in `code-analyzer.report.json`: il nome stabilito qui vive in due punti, e chiunque altro usi `publish` otterrebbe il nome sbagliato.
+
+Decisione: il nome pubblico è uno solo e sta nel passo che scrive. `ca_core.pipeline.publish.REPORT_NAME = "code-analyzer.report.json"`. `_CapturingSink` conserva solo i byte per lo stdout e non rinomina più. `ca_cli.scan.REPORT_FILE` resta come alias di `REPORT_NAME`, così `gate.DEFAULT_REPORT` non cambia. Lo schema resta `scan-report`, il nome del contratto e non del file. Nessun documento già prodotto da una CLI rilasciata è coinvolto.

@@ -69,3 +69,27 @@ Data: 2026-11-08. Esito della revisione del blocco `feeds`. La scelta (opzione 3
 - `feeds.sync_timeout` è obbligatorio e separato da `resources.timeout`: confermato, un download da 1,6 GB ha tempi diversi da una scansione. CPU, memoria e PID della sincronizzazione restano quelli di `resources`.
 - `feeds.ecosystems` chiuso a `npm` e `PyPI`: confermato. I valori sono i nomi esatti del bucket OSV e l'enum chiuso impedisce che un manifest componga un URL arbitrario. Allargarlo è un'aggiunta compatibile (X-04).
 - `ecosystems` vuoto significa che il plugin non scarica per ecosistema (trivy), non "nessun dato". Per osv-scanner lo controlla il test del manifest in P-03.
+
+## Emendamento per R-09: spazio su disco e pulizia della sincronizzazione
+
+Data: 2026-11-09. Attua A-01 e la parte di M-01 di S-01 che riguarda `/feeds`. La scelta (opzione 3) e l'invariante non cambiano. `/feeds` resta su disco: 1,6 GB di trivy non stanno in un tmpfs.
+
+**Controllo durante la sincronizzazione**, in `OciExecutor.sync_feeds`:
+
+- `FeedsSyncRequest` ottiene `max_bytes: int = Field(gt=0)`, obbligatorio, passato da `ensure_snapshot`.
+- `_execute` riceve `guard: Callable[[], str | None] | None`. Con una guardia, `docker wait` gira in un `Popen` e il ciclo la chiama ogni `FEEDS_POLL_SECONDS = 1`. Se restituisce un motivo: `kill` del container ed esito `FAILED` con quel testo fisso. `ensure_snapshot` applica il percorso già previsto: cartella nuova scartata, snapshot precedente con avviso `feeds-sync-failed`, oppure plugin fallito.
+- La guardia ferma la sincronizzazione se:
+  1. spazio libero sul file system della cache (`statvfs`, `f_bavail * f_frsize`) inferiore a `FEEDS_MIN_FREE_BYTES = 2 GiB`. Vale anche prima dello start: sotto soglia il container non parte;
+  2. byte allocati nella cartella (`st_blocks * 512`, somma con `scandir` senza seguire link) oltre `request.max_bytes`;
+  3. più di `FEEDS_MAX_ENTRIES = 200_000` voci, che limita anche il costo del ciclo.
+- Una sottodirectory illeggibile dall'host non ferma la guardia, che somma ciò che vede: la soglia su `statvfs` non dipende dalla visita. M-02 resta com'è, non bloccante.
+- `container_args` riceve `file_size_limit: int | None`, che aggiunge `--ulimit fsize=<max_bytes>` alla sola sincronizzazione. Misurato su Docker 27.3.1: la scrittura si ferma al limite con SIGXFSZ. È un tetto per file, senza attesa.
+
+Valore della soglia: T-03 ha misurato circa 800 MiB/s su ext4, quindi 2 GiB sono il doppio di ciò che si scrive tra due controlli a quel ritmo. È provvisoria come i `DEFAULT_MAX_BYTES` da 8 GiB, e X-04 la conferma insieme al picco reale della sincronizzazione.
+
+**Pulizia (M-01).** I file scritti da 65534 dentro sottodirectory 0755 non sono eliminabili dall'host, quindi `_prune` e la pulizia di una sincronizzazione fallita lasciano snapshot interi senza errore. Questo è l'unico caso di M-01 non risolto dal tmpfs di `/out`.
+
+- Porta `PluginExecutor`, nuovo metodo `purge_feeds(request: FeedsPurgeRequest) -> None`, con `FeedsPurgeRequest(manifest, snapshot_dir)`. Migliore sforzo: un fallimento non è un'eccezione. Lo implementano `OciExecutor`, `FakeExecutor` e `_FeedingExecutor` di `scan.py`.
+- `OciExecutor.purge_feeds`: stesso digest, `--pull never`, nessuna rete, utente 65534, mount della sola cartella in `/feeds`, `--entrypoint python3` con un comando fisso nel codice del runner (`-I -S -c`, nessun dato dal manifest né dal repository) che dà `u+rwx` alle directory scendendo e rimuove tutto il contenuto, senza seguire symlink. Timeout di 300 secondi.
+- `feeds.py`, funzione `_discard(path)`: `rmtree` con `ignore_errors`; se la cartella esiste ancora, `executor.purge_feeds`, poi di nuovo `rmtree`. Vale in `_prune` e nel ramo di sincronizzazione fallita. Non si chiama con un `ScanAborted` o un'interruzione in corso: lì l'immagine può non essere verificata, e la cartella resta alla prossima sincronizzazione, che la rimuove con `_prune`.
+- L'immagine è quella appena usata per `sync_feeds`, quindi già verificata nella stessa esecuzione.

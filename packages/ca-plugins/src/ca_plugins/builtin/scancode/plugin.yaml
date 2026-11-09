@@ -1,0 +1,31 @@
+# Plugin scancode (P-06): licenze rilevate per file, SARIF 2.1.0 dal JSON nativo. ADR-0007, 0013, 0015.
+apiVersion: code-analyzer/v1
+name: scancode
+version: 1.0.0
+image: registry.invalid/ca-plugins/scancode:1.0.0
+capabilities: [detect]
+languages: []
+categories: [license]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # X-02 (provvisorio, da confermare con X-04): 16 MiB. Massimo misurato su scancode 32.5.0: circa
+  # 1 KB sulle fixture, 8,8 KB sul pilota excalidraw (167 MB, 3 file con licenza rilevata), cioe'
+  # circa 1900 volte di margine. Il SARIF ha un risultato (circa 300 byte) per file con licenza
+  # rilevata: 16 MiB bastano per oltre 50 mila file; un repository ostile viene fermato qui e non in
+  # ca-core.
+  max_bytes: 16777216
+resources:
+  # Misure (profilo completo, --cpus 4, 4 processi di scansione) sul pilota excalidraw: 143 s con
+  # 4 GiB e 147 s con 3 GiB; con 2 GiB fallisce (memoria esaurita, 14 s). 6 GiB = il doppio del
+  # minimo che riesce; il tmpfs di /tmp conta nel limite (R-09). Durata: V-08 misura 249 s su saleor
+  # (4.726 file, 4 CPU, nel profilo di V-07), excalidraw 147 s; 600 s = 2,4 volte il caso peggiore.
+  # I PID: 16 bastano a quattro processi, 128 ne danno 8 volte (V-07: 256 con -n 2 e -n 4).
+  cpu: "4"
+  memory: 6Gi
+  timeout: 600s
+  pids: 128
+network: none

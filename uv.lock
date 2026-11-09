@@ -103,12 +103,14 @@ source = { editable = "packages/ca-cli" }
 dependencies = [
     { name = "ca-core" },
     { name = "ca-plugins" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "ca-core", editable = "packages/ca-core" },
     { name = "ca-plugins", editable = "packages/ca-plugins" },
+    { name = "pyyaml", specifier = ">=6" },
 ]
 
 [[package]]
