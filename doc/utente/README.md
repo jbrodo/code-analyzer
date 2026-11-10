@@ -53,6 +53,8 @@ Legge il report (predefinito `code-analyzer.report.json` nella directory corrent
 
 I livelli sono `critico`, `alto`, `medio`, `basso`. `--fail-on ""` è una scelta esplicita: nulla blocca. I finding con un'eccezione attiva non contano.
 
+`gate` stampa su stderr gli avvisi del report, una riga per codice (`avviso del report: <codice>`), senza cambiare l'exit code: controllali nel log, perché segnalano anche una copertura ridotta.
+
 `gate` esce con 2 con una scansione parziale o con un plugin non firmato. `--allow-partial` valuta comunque i finding presenti e riporta i motivi su stderr.
 
 In CI si fissa la soglia con `--fail-on`, perché `.code-analyzer.yml` è modificabile da chi modifica il branch (vedi i limiti). Il SARIF va caricato prima di `gate`, che può far terminare il job.
@@ -115,6 +117,8 @@ Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi d
 **Copertura SAST limitata.** Il set di regole Semgrep è iniziale e copre i problemi noti, non un'analisi ampia. Per JavaScript e TypeScript semgrep è l'unico scanner SAST.
 
 **Storia git.** Con un clone superficiale la storia analizzata da gitleaks è ridotta. Il report lo indica con `repository.history: shallow` e con l'avviso `plugin-history-coverage-reduced`, senza effetto sul gate: in CI usa un clone completo. Senza una cartella `.git` l'avviso è `plugin-no-git-history`.
+
+**Ecosistemi non coperti.** osv-scanner controlla solo le dipendenze npm e PyPI. Se il repository contiene dipendenze di un altro ecosistema, per esempio un `pom.xml` di Maven, la scansione non fallisce: il report riporta l'avviso `plugin-feeds-ecosystem-missing` con l'ecosistema e il numero di pacchetti non controllati, e il gate può risultare superato.
 
 **Avvisi dei plugin.** Gli avvisi con codice `plugin-<id>` vengono dalle notifiche di uno scanner, indicato in `subject`: il testo è dello scanner, ripulito e troncato.
 

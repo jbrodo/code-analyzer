@@ -93,3 +93,23 @@ Valore della soglia: T-03 ha misurato circa 800 MiB/s su ext4, quindi 2 GiB sono
 - `OciExecutor.purge_feeds`: stesso digest, `--pull never`, nessuna rete, utente 65534, mount della sola cartella in `/feeds`, `--entrypoint python3` con un comando fisso nel codice del runner (`-I -S -c`, nessun dato dal manifest né dal repository) che dà `u+rwx` alle directory scendendo e rimuove tutto il contenuto, senza seguire symlink. Timeout di 300 secondi.
 - `feeds.py`, funzione `_discard(path)`: `rmtree` con `ignore_errors`; se la cartella esiste ancora, `executor.purge_feeds`, poi di nuovo `rmtree`. Vale in `_prune` e nel ramo di sincronizzazione fallita. Non si chiama con un `ScanAborted` o un'interruzione in corso: lì l'immagine può non essere verificata, e la cartella resta alla prossima sincronizzazione, che la rimuove con `_prune`.
 - L'immagine è quella appena usata per `sync_feeds`, quindi già verificata nella stessa esecuzione.
+
+## Emendamento per D2-09: ecosistema fuori elenco
+
+Data: 2026-11-10. Decisione dell'utente. Sostituisce, per i soli ecosistemi fuori elenco, la regola "l'adattatore rileva `could not load db` e marca il plugin come fallito, anche per un ecosistema fuori elenco".
+
+Contesto: un `pom.xml` in un repository qualsiasi rendeva `partial` la scansione, e il solo rimedio per chi usa il gate era `--allow-partial`, che lascia passare anche le altre cause di parzialità. Misurato sull'immagine: accanto a un `pom.xml`, osv-scanner interrompe il confronto e riporta 6 risultati PyPI su 25 della fixture `python-app`. Un avviso senza altro avrebbe quindi nascosto risultati di un ecosistema in elenco.
+
+Decisione:
+
+- Ecosistema in elenco (`feeds.ecosystems`) senza database: il plugin fallisce, come prima.
+- Ecosistema fuori elenco senza database: l'adattatore ripete la scansione con una copia della cache nel tmpfs, fatta di collegamenti ai database in elenco e di un database vuoto per l'ecosistema mancante. I risultati della prima esecuzione si scartano. Se la seconda segnala ancora un database mancante, o il nome dell'ecosistema non ha una forma ammessa come nome di cartella, il plugin fallisce.
+- L'adattatore scrive in `invocations` una notifica `feeds-ecosystem-missing` con l'ecosistema e il numero dei suoi pacchetti, contati con `--all-packages`. Il nucleo ne fa l'avviso `plugin-feeds-ecosystem-missing` (K-19). Il plugin è `ok` e il report può essere `complete`.
+- `gate` stampa su stderr gli avvisi del report, un rigo per codice e soggetto, senza cambiare l'exit code.
+
+Conseguenze:
+
+- Le dipendenze di un ecosistema fuori elenco non sono controllate da osv-scanner e il gate può risultare superato: lo dichiarano l'avviso nel report e la riga di `gate`.
+- `/feeds` resta in sola lettura e l'elenco degli ecosistemi resta fissato nel manifest: il repository non decide quali database si scaricano.
+- Una scansione con un ecosistema fuori elenco esegue osv-scanner due volte.
+- Aggiungere un ecosistema all'elenco (Maven in Fase 4) resta possibile sopra questo comportamento.

@@ -278,6 +278,31 @@ def test_gate_exit_codes_and_fail_on(env: Env, capsys: pytest.CaptureFixture[str
     assert main([*gate, "--fail-on", "alto,critico"]) == 1
 
 
+def test_gate_prints_report_warnings_on_stderr_without_changing_the_exit(
+    env: Env, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """D2-09: una copertura ridotta resta visibile nel log anche a gate superato."""
+    env.scan(env.context(FakePluginExecutor({"bandit": env.ok()})))
+    path = env.out / REPORT
+    report = json.loads(path.read_text())
+    report["warnings"] = [
+        {"code": "plugin-feeds-ecosystem-missing", "message": "m", "subject": "osv-scanner"},
+        {"code": "plugin-feeds-ecosystem-missing", "message": "n", "subject": "osv-scanner"},
+        {"code": "exception-expired", "message": "m", "subject": "testo \x1b[31mlibero"},
+    ]
+    path.write_text(json.dumps(report))
+    capsys.readouterr()
+
+    assert main(["gate", "--report", str(path), "--fail-on", ""]) == 0
+
+    captured = capsys.readouterr()
+    assert captured.err.splitlines() == [
+        "avviso del report: exception-expired",
+        "avviso del report: plugin-feeds-ecosystem-missing (osv-scanner) x2",
+    ]
+    assert "avviso del report" not in captured.out and "libero" not in captured.err
+
+
 def test_gate_rejects_bad_input_with_exit_2(env: Env, tmp_path: Path) -> None:
     assert main(["gate", "--report", str(tmp_path / "missing.json")]) == 2
     bad = tmp_path / "bad.json"

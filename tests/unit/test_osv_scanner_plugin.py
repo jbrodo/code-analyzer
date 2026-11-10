@@ -297,22 +297,23 @@ def writing(document: dict[str, Any], status: int, log: str = "") -> str:
 def test_run_passes_the_fixed_arguments_and_the_feeds_directory(tmp_path: Path) -> None:
     args = tmp_path / "args"
     body = f'echo "$@" > {args}; echo "$OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" > {tmp_path}/env\n'
-    body += f'pwd > {tmp_path}/cwd; wc -c < "$8" > {tmp_path}/size\n'
+    body += f'pwd > {tmp_path}/cwd; wc -c < "$9" > {tmp_path}/size\n'
     body += writing(native(), 1)
     code, out = run_adapter(tmp_path, body)
     assert code == 0  # exit 1 = vulnerabilita' trovate: non e' un fallimento
     argv = args.read_text().split()
-    config = argv[7]  # `--config` su un file vuoto e cwd propria: `osv-scanner.toml` no (N-01)
-    assert argv[:7] == [
+    config = argv[8]  # `--config` su un file vuoto e cwd propria: `osv-scanner.toml` no (N-01)
+    assert argv[:8] == [
         "scan",
         "source",
         "--offline-vulnerabilities",
         "--no-resolve",
         "-r",
+        "--all-packages",
         "--no-ignore",
         "--config",
     ]
-    assert argv[8:] == [
+    assert argv[9:] == [
         "--format",
         "json",
         "--output-file",
@@ -338,6 +339,129 @@ def test_run_no_packages_is_an_empty_outcome_not_a_failure(tmp_path: Path) -> No
 def test_run_exit_128_for_another_reason_is_a_failure(tmp_path: Path) -> None:
     code, out = run_adapter(tmp_path, "echo 'invalid flag'; exit 128")
     assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+
+
+MAVEN_LOG = "could not load db for Maven ecosystem: unable to fetch OSV database"
+
+
+def with_maven(document: dict[str, Any], count: int = 2) -> dict[str, Any]:
+    """Aggiunge un `pom.xml` con `count` pacchetti Maven senza vulnerabilita' (`--all-packages`)."""
+    packages = [
+        {"package": {"name": f"g:a{i}", "version": "1.0", "ecosystem": "Maven"}}
+        for i in range(count)
+    ]
+    extra = {"source": {"path": "/workspace/pom.xml", "type": "lockfile"}, "packages": packages}
+    return {**document, "results": [*document["results"], extra]}
+
+
+def maven_aware(tmp_path: Path, first_status: int, *, fixed_by_empty_db: bool = True) -> str:
+    """Scanner finto: segnala Maven senza database finche' la cache non ne contiene uno."""
+    seen = tmp_path / "caches"
+    probe = '[ -f "$OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY/osv-scalibr/Maven/all.zip" ]'
+    if not fixed_by_empty_db:
+        probe = "false"
+    return (
+        f'echo "$OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY" >> {seen}\n'
+        f"if {probe}; then\n{writing(with_maven(native()), 1)}\nfi\n"
+        + writing({"results": []}, first_status, MAVEN_LOG)
+    )
+
+
+@pytest.mark.parametrize("status", [1, 127])
+def test_run_unlisted_ecosystem_without_db_is_a_notification_not_a_failure(
+    tmp_path: Path, status: int
+) -> None:
+    """D2-09: un `pom.xml` non fa fallire il plugin. La prima esecuzione ha risultati parziali
+    e si scarta; la seconda, con un database vuoto per Maven, da' quelli completi."""
+    code, out = run_adapter(tmp_path, maven_aware(tmp_path, status))
+
+    (run,) = json.loads(out.read_text())["runs"]
+    baseline = json.loads(adapter.adapt(json.dumps(native()).encode()))["runs"][0]["results"]
+    assert code == 0 and run["results"] == baseline and baseline
+    (invocation,) = run["invocations"]
+    assert invocation["toolExecutionNotifications"] == [
+        {
+            "level": "warning",
+            "descriptor": {"id": "feeds-ecosystem-missing"},
+            "message": {
+                "text": "no vulnerability database for ecosystem Maven: 2 packages were not checked"
+            },
+        }
+    ]
+    first, second = (tmp_path / "caches").read_text().split()
+    assert first == "/feeds-under-test" and second != first and not Path(second).exists()
+
+
+def test_run_fails_when_the_empty_database_does_not_help(tmp_path: Path) -> None:
+    code, out = run_adapter(tmp_path, maven_aware(tmp_path, 1, fixed_by_empty_db=False))
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+    assert len((tmp_path / "caches").read_text().split()) == 2  # un solo nuovo tentativo
+
+
+@pytest.mark.parametrize("name", ["../etc", "a/b", "x..y", "", "x" * 60])
+def test_run_fails_on_an_ecosystem_name_unfit_for_a_directory(tmp_path: Path, name: str) -> None:
+    log = f"could not load db for {name} ecosystem: unable to fetch OSV database"
+    code, out = run_adapter(tmp_path, writing(native(), 1, log))
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+
+
+def test_shadow_cache_links_the_listed_databases_and_adds_empty_ones(tmp_path: Path) -> None:
+    feeds, shadow = tmp_path / "feeds", tmp_path / "shadow"
+    (feeds / "osv-scalibr/npm").mkdir(parents=True)
+    (feeds / "osv-scalibr/npm/all.zip").write_bytes(b"npm")
+    shadow.mkdir()
+
+    adapter._shadow_cache(str(feeds), str(shadow), ["Maven"])
+
+    root = shadow / "osv-scalibr"
+    assert sorted(p.name for p in root.iterdir()) == ["Maven", "npm"]
+    assert (root / "npm/all.zip").is_symlink() and (root / "npm/all.zip").read_bytes() == b"npm"
+    with zipfile.ZipFile(root / "Maven/all.zip") as archive:
+        assert archive.namelist() == []
+
+
+def test_run_listed_ecosystem_without_db_still_fails_next_to_an_unlisted_one(
+    tmp_path: Path,
+) -> None:
+    log = MAVEN_LOG + "\ncould not load db for npm ecosystem: unable to fetch OSV database"
+    code, out = run_adapter(tmp_path, writing(with_maven(native()), 1, log))
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+
+
+def test_run_unrecognised_could_not_load_db_line_fails(tmp_path: Path) -> None:
+    code, out = run_adapter(tmp_path, writing(native(), 1, "could not load db: broken"))
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+
+
+def test_run_exit_127_without_a_missing_ecosystem_is_a_failure(tmp_path: Path) -> None:
+    code, out = run_adapter(tmp_path, writing(native(), 127))
+    assert (code, out.exists()) == (adapter.EXIT_SCANNER, False)
+
+
+def test_missing_ecosystem_name_is_never_copied_unchecked() -> None:
+    """Il nome viene dall'output dello scanner: se ha una forma inattesa non entra nel testo."""
+    hostile = "x`rm -rf`\x1b[31m"
+    document = {
+        "results": [
+            {
+                "source": {"path": "/workspace/pom.xml"},
+                "packages": [{"package": {"name": "a", "version": "1", "ecosystem": hostile}}],
+            }
+        ]
+    }
+    out = json.loads(adapter.adapt(json.dumps(document).encode(), missing=frozenset({hostile})))
+
+    (note,) = out["runs"][0]["invocations"][0]["toolExecutionNotifications"]
+    assert note["message"]["text"] == (
+        "no vulnerability database for ecosystem unknown: 1 packages were not checked"
+    )
+
+
+def test_adapt_without_missing_ecosystems_has_no_invocations() -> None:
+    out = json.loads(adapter.adapt(json.dumps(with_maven(native())).encode()))
+    assert "invocations" not in out["runs"][0]
+    baseline = json.loads(adapter.adapt(json.dumps(native()).encode()))["runs"][0]["results"]
+    assert out["runs"][0]["results"] == baseline
 
 
 @pytest.mark.parametrize("status", [0, 1, 127])

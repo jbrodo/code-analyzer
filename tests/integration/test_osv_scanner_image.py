@@ -189,6 +189,50 @@ def test_missing_ecosystem_database_fails_the_plugin(image_id: str, tmp_path: Pa
     assert leftovers() == []
 
 
+POM = """<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>example</groupId>
+  <artifactId>accessory</artifactId>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.12.0</version>
+    </dependency>
+  </dependencies>
+</project>
+"""
+
+
+@needs_feeds
+def test_unlisted_ecosystem_is_a_notification_and_the_listed_ones_are_still_checked(
+    image_id: str, tmp_path: Path
+) -> None:
+    """D2-09: un `pom.xml` accessorio non fa fallire il plugin; PyPI resta valutato."""
+    workspace = tmp_path / "ws"
+    shutil.copytree(REPOS / "python-app", workspace)
+    (workspace / "pom.xml").write_text(POM)
+    work = tmp_path / "work"
+    work.mkdir()
+    result, document = execute(f"{TAG}@{image_id}", workspace, work, FEEDS)
+    assert result.outcome is RunOutcome.OK, result.detail
+    assert leftovers() == []
+    assert document is not None
+    assert HARNESS.sarif_problems(document, "osv-scanner") == {}
+    assert keys(document) == keys(recorded("python-app"))
+    (invocation,) = document["runs"][0]["invocations"]
+    assert invocation["toolExecutionNotifications"] == [
+        {
+            "level": "warning",
+            "descriptor": {"id": "feeds-ecosystem-missing"},
+            "message": {
+                "text": "no vulnerability database for ecosystem Maven: 1 packages were not checked"
+            },
+        }
+    ]
+
+
 def test_empty_snapshot_fails_and_no_packages_is_an_empty_outcome(
     image_id: str, tmp_path: Path
 ) -> None:

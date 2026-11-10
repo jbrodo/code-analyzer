@@ -367,6 +367,8 @@ def normalize_sarif(
 
 _NOTIFICATION_ID = re.compile(r"[a-z][a-z0-9-]{0,40}")
 _NOTIFICATION_LEVELS = frozenset({"warning", "error"})
+# `plugin-skipped` è un avviso del motore: una notifica non può produrre lo stesso codice.
+_RESERVED_NOTIFICATION_IDS = frozenset({"skipped"})
 _NOTIFICATION_TEXT = 300
 MAX_NOTIFICATIONS = 16  # per plugin: oltre, il resto è scartato
 
@@ -397,7 +399,11 @@ def notification_warnings(parsed: ParsedSarif, plugin: str) -> list[Warning_]:
                     continue
                 descriptor, message = item.get("descriptor"), item.get("message")
                 ident = descriptor.get("id") if isinstance(descriptor, Mapping) else None
-                if not isinstance(ident, str) or not _NOTIFICATION_ID.fullmatch(ident):
+                if (
+                    not isinstance(ident, str)
+                    or not _NOTIFICATION_ID.fullmatch(ident)
+                    or ident in _RESERVED_NOTIFICATION_IDS
+                ):
                     ident = "notification"
                 text = message.get("text") if isinstance(message, Mapping) else None
                 text = re.sub(r"[^\x20-\x7e]+", " ", text) if isinstance(text, str) else ""

@@ -41,6 +41,7 @@ def test_gate_output_omits_only_the_fingerprint_of_secrets(
         reasons=[],
     )
     monkeypatch.setattr(gate, "_read_report", lambda _path: None)
+    monkeypatch.setattr(gate, "warning_lines", lambda _report: [])
     monkeypatch.setattr(gate, "evaluate_gate", lambda *_a, **_k: result)
     args = argparse.Namespace(report="r.json", fail_on=None, allow_partial=False)
     assert gate.handle(args, None) == 1  # type: ignore[arg-type]

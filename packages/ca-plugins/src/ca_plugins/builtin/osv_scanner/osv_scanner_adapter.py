@@ -13,10 +13,16 @@ Due modi, nella stessa immagine firmata (ADR-0006):
 Il repository e l'output di osv-scanner sono dati non fidati: si leggono come JSON, non si
 interpretano e non si riportano in stdout o stderr. Nessun `snippet` in uscita (ADR-0012).
 
-Uscite: 0 ok; 3 osv-scanner fallito (exit inatteso, `could not load db`, `Error during
-extraction`, nessun output); 4 sync
-fallita; 5 output non conforme. Exit 1 (vulnerabilita' trovate) ed exit 128 con `No package sources
-found` (nessun pacchetto) non sono fallimenti: nel secondo caso il SARIF ha zero risultati.
+Uscite: 0 ok; 3 osv-scanner fallito (exit inatteso, `could not load db` per un ecosistema in
+elenco, `Error during extraction`, nessun output); 4 sync fallita; 5 output non conforme. Exit 1
+(vulnerabilita' trovate) ed exit 128 con `No package sources found` (nessun pacchetto) non sono
+fallimenti: nel secondo caso il SARIF ha zero risultati.
+
+Ecosistema fuori elenco (D2-09, emendamento di ADR-0006): se manca il database di un ecosistema
+che non sta in `ECOSYSTEMS` (ad esempio Maven per un `pom.xml`), il plugin non fallisce. La
+scansione si ripete con un database vuoto per quell'ecosistema, cosi' il confronto degli altri
+si completa, e una notifica `feeds-ecosystem-missing` in `invocations` nomina l'ecosistema e
+quanti pacchetti restano senza controllo; il nucleo ne fa un avviso del report.
 """
 
 import json
@@ -47,6 +53,10 @@ _MAX_TEXT = 300
 # e' un fallimento (lo e' `could not load db` quando i pacchetti ci sono). Gli altri estrattori
 # (lockfile) che falliscono si': un file corrotto non e' piu' usabile.
 _EXTRACTION_ERROR = re.compile(rb"error during extraction: \(extracting as (?!vulnmatch/)")
+_MISSING_DB = re.compile(rb"(?i)could not load db for ([^\n:]{1,80}?) ecosystem")
+# Diventa anche il nome di una cartella nel tmpfs: niente separatori ne' `..`.
+_ECOSYSTEM_NAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9 _-]|\.(?!\.)){0,39}")
+MISSING_ID = "feeds-ecosystem-missing"  # il nucleo ne fa l'avviso `plugin-<id>` (K-19)
 
 
 class InvalidOutput(ValueError):
@@ -156,8 +166,36 @@ def _result(
     }
 
 
-def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
-    """JSON nativo di osv-scanner -> SARIF 2.1.0 con percorsi relativi, o `InvalidOutput`."""
+def _missing_notes(document: Any, missing: frozenset[str]) -> list[dict[str, Any]]:
+    """Una notifica per ogni ecosistema senza database, col numero dei suoi pacchetti."""
+    counts: dict[str, int] = {}
+    names: dict[str, str] = {}
+    for entry in document["results"]:
+        for package in entry.get("packages", []):
+            name = str(package["package"].get("ecosystem") or "")
+            key = name.lower()
+            if key in missing:
+                counts[key] = counts.get(key, 0) + 1
+                names.setdefault(key, name)
+    notes = []
+    for key in sorted(missing):
+        name = names.get(key, key)
+        shown = name if _ECOSYSTEM_NAME.fullmatch(name) else "unknown"
+        text = (
+            f"no vulnerability database for ecosystem {shown}: "
+            f"{counts.get(key, 0)} packages were not checked"
+        )
+        notes.append(
+            {"level": "warning", "descriptor": {"id": MISSING_ID}, "message": {"text": text}}
+        )
+    return notes
+
+
+def adapt(raw: bytes, workspace: str = WORKSPACE, missing: frozenset[str] = frozenset()) -> bytes:
+    """JSON nativo di osv-scanner -> SARIF 2.1.0 con percorsi relativi, o `InvalidOutput`.
+
+    `missing`: ecosistemi fuori elenco senza database, in minuscolo (D2-09).
+    """
     try:
         document = json.loads(raw)
         results: list[dict[str, Any]] = []
@@ -172,35 +210,27 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
                     if key not in seen:
                         seen.add(key)
                         results.append(result)
+        notes = _missing_notes(document, missing) if missing else []
     except (ValueError, KeyError, TypeError, AttributeError, RecursionError) as exc:
         raise InvalidOutput("JSON nativo non conforme") from exc
-    sarif = {
-        "version": "2.1.0",
-        "runs": [
-            {
-                "tool": {"driver": {"name": "osv-scanner", "version": SCANNER_VERSION}},
-                "results": results,
-            }
-        ],
+    run_: dict[str, Any] = {
+        "tool": {"driver": {"name": "osv-scanner", "version": SCANNER_VERSION}},
+        "results": results,
     }
-    return json.dumps(sarif, separators=(",", ":")).encode()
+    if notes:
+        run_["invocations"] = [{"executionSuccessful": True, "toolExecutionNotifications": notes}]
+    return json.dumps({"version": "2.1.0", "runs": [run_]}, separators=(",", ":")).encode()
 
 
 # --- scansione ----------------------------------------------------------------------------
 
 
-def run(
-    *,
-    scanner: str = SCANNER,
-    workspace: str = WORKSPACE,
-    feeds: str = FEEDS,
-    out_file: str = OUT_FILE,
-    tmp_file: str = TMP_FILE,
-) -> int:
+def _scan(scanner: str, workspace: str, cache: str, tmp_file: str) -> tuple[int, bytes] | None:
+    """Esegue osv-scanner con i database in `cache`: `(exit, log)`, o `None` se non parte."""
     env = {
         "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
         "HOME": os.environ.get("HOME", "/tmp"),  # noqa: S108
-        "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY": feeds,
+        "OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY": cache,
     }
     Path(tmp_file).unlink(missing_ok=True)
     try:
@@ -211,7 +241,10 @@ def run(
             config = Path(empty, "osv-scanner.toml")
             config.touch()
             argv = [scanner, "scan", "source", "--offline-vulnerabilities", "--no-resolve", "-r"]
+            # `--all-packages`: anche i pacchetti senza vulnerabilita', per contare quelli di un
+            # ecosistema senza database (D2-09). `adapt` ignora chi non ha `groups`.
             argv += [
+                "--all-packages",
                 "--no-ignore",
                 "--config",
                 str(config),
@@ -229,15 +262,75 @@ def run(
                 check=False,
             )
     except OSError:
+        return None
+    return done.returncode, done.stdout + done.stderr
+
+
+def _shadow_cache(feeds: str, shadow: str, missing: list[str]) -> None:
+    """Copia di `feeds` per collegamenti, con un database vuoto per ogni ecosistema in `missing`.
+
+    Senza il database di un ecosistema osv-scanner interrompe il confronto e perde risultati
+    anche degli altri (misurato: 6 su 25 per PyPI accanto a un `pom.xml`). Con un database vuoto
+    il confronto si completa. `/feeds` e' in sola lettura: la copia sta nel tmpfs.
+    """
+    root = Path(shadow, "osv-scalibr")
+    root.mkdir()
+    source = Path(feeds, "osv-scalibr")
+    for eco in ECOSYSTEMS:
+        archive = source / eco / "all.zip"
+        if archive.is_file():
+            (root / eco).mkdir()
+            (root / eco / "all.zip").symlink_to(archive)
+    for eco in missing:
+        (root / eco).mkdir()
+        zipfile.ZipFile(root / eco / "all.zip", "w").close()
+
+
+def run(
+    *,
+    scanner: str = SCANNER,
+    workspace: str = WORKSPACE,
+    feeds: str = FEEDS,
+    out_file: str = OUT_FILE,
+    tmp_file: str = TMP_FILE,
+) -> int:
+    first = _scan(scanner, workspace, feeds, tmp_file)
+    if first is None:
         return EXIT_SCANNER
-    log = (done.stdout + done.stderr).lower()
-    if b"could not load db" in log:  # exit 1 o 127 con risultati parziali: plugin fallito (V-05)
+    code, log = first
+    # `could not load db`: exit 1 o 127 con risultati parziali (V-05). Per un ecosistema in
+    # elenco il plugin fallisce. Fuori elenco (D2-09) si ripete con un database vuoto per
+    # quell'ecosistema: se il nome non e' riconoscibile o la seconda esecuzione segnala ancora
+    # un database mancante, il plugin fallisce come prima.
+    names = sorted({m.decode("ascii", "replace").strip() for m in _MISSING_DB.findall(log)})
+    listed = {eco.lower() for eco in ECOSYSTEMS}
+    if b"could not load db" in log.lower():
+        if not names or any(n.lower() in listed or not _ECOSYSTEM_NAME.fullmatch(n) for n in names):
+            return EXIT_SCANNER
+        try:
+            with tempfile.TemporaryDirectory() as shadow:
+                _shadow_cache(feeds, shadow, names)
+                second = _scan(scanner, workspace, shadow, tmp_file)
+                if second is None:
+                    return EXIT_SCANNER
+                code, log = second
+                if b"could not load db" in log.lower():
+                    return EXIT_SCANNER
+                return _finish(code, log, workspace, out_file, tmp_file, names)
+        except OSError:
+            return EXIT_SCANNER
+    return _finish(code, log, workspace, out_file, tmp_file, [])
+
+
+def _finish(
+    code: int, log: bytes, workspace: str, out_file: str, tmp_file: str, missing: list[str]
+) -> int:
+    lowered = log.lower()
+    if _EXTRACTION_ERROR.search(lowered):  # lockfile non estraibile: mai un esito vuoto (N-12)
         return EXIT_SCANNER
-    if _EXTRACTION_ERROR.search(log):  # lockfile non estraibile: mai un esito vuoto (N-12)
-        return EXIT_SCANNER
-    if done.returncode == 128 and b"no package sources found" in log:
+    if code == 128 and b"no package sources found" in lowered:
         raw = b'{"results":[]}'
-    elif done.returncode in (0, 1):
+    elif code in (0, 1):
         try:
             raw = Path(tmp_file).read_bytes()
         except OSError:
@@ -245,7 +338,7 @@ def run(
     else:
         return EXIT_SCANNER
     try:
-        adapted = adapt(raw, workspace)
+        adapted = adapt(raw, workspace, frozenset(n.lower() for n in missing))
     except InvalidOutput:
         return EXIT_INVALID
     Path(out_file).write_bytes(adapted)

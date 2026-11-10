@@ -5,10 +5,14 @@ messaggi senza valori del file. Sono stampati solo fingerprint, livello e catego
 bloccanti (campi validati), mai testi che vengono dagli scanner. Per i segreti il fingerprint si
 omette: nei log CI permetterebbe di forzare offline un valore debole (N-27). Exit: quello di
 `evaluate_gate` (0 superato, 1 fallito, 2 errore o scansione parziale senza `--allow-partial`).
+Gli avvisi del report vanno su stderr, uno per codice e soggetto, senza cambiare l'exit: una
+copertura ridotta resta visibile nel log della CI anche quando il gate è superato (D2-09). Si
+stampano il codice (validato dal modello) e il soggetto solo se ha la forma di un nome di plugin.
 Nessun `--pr` né `--base`. `--fail-on ""` è una scelta esplicita: nulla blocca.
 """
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -22,6 +26,25 @@ from ca_core.pipeline.gate import evaluate_gate
 
 DEFAULT_REPORT = REPORT_FILE
 MAX_REPORT_BYTES = 256 * 1024 * 1024
+MAX_WARNING_LINES = 50
+_PLUGIN_NAME = re.compile(r"[a-z][a-z0-9-]{0,63}")
+
+
+def warning_lines(report: ScanReport) -> list[str]:
+    """Una riga per coppia (codice, soggetto), in ordine, col numero di occorrenze se > 1."""
+    counts: dict[tuple[str, str], int] = {}
+    for warning in report.warnings:
+        subject = warning.subject or ""
+        key = (warning.code, subject if _PLUGIN_NAME.fullmatch(subject) else "")
+        counts[key] = counts.get(key, 0) + 1
+    lines = []
+    for (code, subject), count in sorted(counts.items()):
+        line = f"avviso del report: {code}" + (f" ({subject})" if subject else "")
+        lines.append(line + (f" x{count}" if count > 1 else ""))
+    if len(lines) > MAX_WARNING_LINES:
+        rest = len(lines) - MAX_WARNING_LINES
+        lines = [*lines[:MAX_WARNING_LINES], f"avviso del report: altri {rest} codici"]
+    return lines
 
 
 def parse_levels(value: str) -> list[Level]:
@@ -62,4 +85,6 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     print(f"avvisi: {len(result.warned)}")
     for reason in result.reasons:
         print(f"motivo: {reason}", file=sys.stderr)
+    for line in warning_lines(report):
+        print(line, file=sys.stderr)
     return result.exit_code

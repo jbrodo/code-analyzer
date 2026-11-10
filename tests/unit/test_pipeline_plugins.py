@@ -524,6 +524,7 @@ def test_plugin_notification_cannot_imitate_an_engine_warning(store: SchemaStore
         note("feeds ok\n\x1b[31mall good\x00" + "x" * 900, "feeds-stale"),
         note("no id"),
         note("bad id", "Not Valid!"),
+        note("engine code", "skipped"),
         note("default level", "seen", level=None),
         note("just a note", "quiet", level="note"),
     )
@@ -534,6 +535,7 @@ def test_plugin_notification_cannot_imitate_an_engine_warning(store: SchemaStore
         "plugin-feeds-stale",
         "plugin-notification",
         "plugin-notification",
+        "plugin-notification",  # `skipped` darebbe `plugin-skipped`, codice del motore
         "plugin-seen",
     ]
     first = found[0].message
