@@ -890,14 +890,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §8. ADR: 0009, 0014, 0025.
 
 #### K-19 — Avviso di gitleaks sul clone superficiale (riporto dalla Fase 1)
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-10**; CI verde su `main` (`e2e` 42909328345: 371 passati, 5 saltati, nessun `xfail`).
 - Percorsi: `packages/ca-core/src/ca_core/sarif/`, `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: nessuno.
 - Accettazione: le notifiche in `invocations` del SARIF di un plugin diventano `warnings[]` nel report con un codice stabile, letto in modo difensivo; il test `xfail` di `tests/e2e/test_detection.py` passa e il marcatore è rimosso. `warnings[].code` è già una stringa libera: lo schema non cambia.
 - Spec: §7.3. ADR: 0010, 0011, 0012.
 
 #### K-20 — Riga nei finding di licenza su file (riporto dalla Fase 1)
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-10**; CI verde su `main` (`e2e` 42909328345: 371 passati, 5 saltati, nessun `xfail`).
 - Percorsi: `packages/ca-core/src/ca_core/policy/licenses.py`, `packages/ca-plugins/src/ca_plugins/builtin/scancode/`, `doc/adr/0013-*.md`.
 - Dipende da: nessuno.
 - Accettazione: il finding di licenza su file riporta la riga iniziale che scancode trova; il fingerprint `license-file` (percorso più licenza) non cambia, verificato su un vettore di prova; i due `xfail` `LICENSE_LINES` passano e il marcatore è rimosso; emendamento di ADR-0013.
