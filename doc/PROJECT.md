@@ -641,7 +641,7 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 
 Stato del Gate 1 al 2026-11-09: superato, con due scostamenti confermati dall'utente (`doc/verifiche/gate-1.md`). 3 pilota `complete` sotto i 10 minuti, 247,7 s il più lento; problemi noti delle fixture rilevati dagli E2E. La valutazione D-0015 è condizione per il primo rilascio (I-06), non per la chiusura della Fase 1.
 
-Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`).
+Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`). D-0015 approvata lo stesso giorno dal responsabile: il primo rilascio attende solo l'approvazione esplicita della pubblicazione.
 
 ### Fase 2 — Qualità e impatto
 

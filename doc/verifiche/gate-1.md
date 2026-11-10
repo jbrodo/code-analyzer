@@ -123,6 +123,8 @@ Stato al 2026-11-09: **valutazione da completare.** Quanto segue è un'analisi p
 
 Stato al 2026-11-10: **rinviata a I-06** per decisione dell'utente, con Riccardo Roveda come proprietario. X-05 è chiusa come scostamento e X-07 non è più bloccato da D-0015 (vedi "Decisioni del 2026-11-09 su licenze e chiusura"). I punti "Da chiarire" restano aperti e si valutano sugli SBOM della build di rilascio.
 
+Stato al 2026-11-10, dopo la chiusura della Fase 1: **approvata** da Riccardo Roveda, responsabile di D-0015. I punti "Da chiarire" della tabella sotto (semgrep, `git`, `libgomp1`, `unrar`) sono accettati come rischio residuo: l'approvazione è una decisione del responsabile, non un parere legale. I 6 finding di licenza effettiva restano aperti nell'auto-analisi finché non sono coperti da eccezioni. Per ogni rilascio vanno conservati insieme immagini, digest e SBOM.
+
 ### Analisi preliminare
 
 | Immagine | Analisi | Da chiarire |
@@ -259,13 +261,13 @@ Decisioni:
 | Decisione | Stato | Proprietario |
 | --- | --- | --- |
 | D-0013 | Chiusa il 2026-11-08 | Utente |
-| D-0015 | Rinviata a I-06: valutazione sugli SBOM della build di rilascio | Riccardo Roveda |
+| D-0015 | Rinviata a I-06 alla chiusura; approvata il 2026-11-10, subito dopo | Riccardo Roveda |
 
-ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato`: le prove elencate in "Revisione A-01" sono nel codice. ADR-0005 e ADR-0015 restano aperti fino a I-06.
+ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato`: le prove elencate in "Revisione A-01" sono nel codice. ADR-0005 resta aperto fino a I-06; ADR-0015 è `Accettato` con l'approvazione di D-0015.
 
 Passano alla Fase 2 o oltre:
 
-- I-06, primo rilascio: bloccato da D-0015 e dall'approvazione esplicita della pubblicazione.
+- I-06, primo rilascio: bloccato per decisione dell'utente del 2026-11-10, nessuna pubblicazione salvo destinazione privata e gratuita (D-0015 approvata lo stesso giorno).
 - I-03, immagine CLI.
 - Difetto: osv-scanner fallisce su un ecosistema senza database (un `pom.xml` rende `partial` la scansione), vedi la scansione di prova Java.
 - I due test `xfail` sulla riga dei finding di licenza (scostamento 2 del Gate 1).

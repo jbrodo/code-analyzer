@@ -18,7 +18,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 | [0012](0012-segreti-in-fase-1.md) | Rilevamento dei segreti in Fase 1 | Accettato | Presa il 2026-11-08 |
 | [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Accettato | Presa il 2026-11-08 |
 | [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Accettato | No |
-| [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Proposto | Sì |
+| [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Accettato | Presa il 2026-11-10 |
 
 ## Aggiornamenti dopo la stesura
 

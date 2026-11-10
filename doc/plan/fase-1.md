@@ -56,7 +56,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
 | **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
 | **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
-| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Riccardo Roveda (responsabile; non un agente) | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Rinviata a I-06 (2026-11-10): non blocca X-07 |
+| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Riccardo Roveda (responsabile; non un agente) | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Approvata il 2026-11-10 dal responsabile |
 
 Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
 
@@ -69,6 +69,10 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 Decisione dell'utente del 2026-11-09: in Fase 1 non si distribuisce nulla; X-05 chiusa come scostamento, la valutazione completa di D-0015 diventa condizione vincolante per I-06. Classificazione di semgrep in `doc/verifiche/gate-1.md`.
 
 Decisione dell'utente del 2026-11-10: D-0015 è rinviata a I-06, con Riccardo Roveda come proprietario. La valutazione si farà sugli SBOM della build di rilascio; per X-07 la decisione è riportata come rinviata.
+
+Decisione dell'utente del 2026-11-10, successiva alla chiusura di X-07: D-0015 è approvata da Riccardo Roveda, che accetta come rischio residuo i punti "Da chiarire" di `doc/verifiche/gate-1.md` (semgrep, `git`, `libgomp1`, `unrar`). Non è un parere legale. I-06 resta soggetto alla sola approvazione esplicita della pubblicazione; A-04 è sbloccato.
+
+Decisione dell'utente del 2026-11-10 sulla pubblicazione: per ora non si pubblica nulla, né su GHCR né altrove, salvo che la destinazione sia privata e gratuita. I-06 resta bloccato; la destinazione GHCR di D-0005 vale solo se rispetta questa condizione.
 
 Decisione dell'utente del 2026-11-09: licenza del prodotto nel file `LICENSE`. Copre il codice del progetto, non i componenti di terze parti nelle immagini; A-04 resta aperto per l'esito sui motori.
 
@@ -246,7 +250,7 @@ Task iniziale di verifica, diviso per argomento. Le informazioni negli ADR su li
 - Spec: §2, §3, §5, §13, §14, §16, §17. ADR: 0001, 0002, 0004, 0009, 0010, 0012.
 
 #### A-04 — Registrare l'esito legale e la licenza del prodotto
-- Agente: `architect`, su esito fornito dal proprietario umano. Stato: `BLOCCATO` da D-0015.
+- Agente: `architect`, su esito fornito dal proprietario umano. Stato: `LIBERO`; D-0015 approvata il 2026-11-10, licenza del prodotto GPL-3.0-only.
 - Percorsi: `doc/verifiche/licenze-fase-1.md`, `LICENSE`.
 - Dipende da: V-02.
 - Accettazione: esito firmato dal proprietario per ogni motore e per le regole; file `LICENSE` presente; condizioni di attribuzione riportate in I-05.
@@ -694,7 +698,7 @@ Nessuna pubblicazione senza approvazione esplicita dell'utente.
 - Spec: §7.3, §15. ADR: 0015.
 
 #### I-06 — Primo rilascio ufficiale
-- Agente: `devops`. Stato: `BLOCCATO` dalla valutazione completa di D-0015 e dall'approvazione esplicita della pubblicazione.
+- Agente: `devops`. Stato: `BLOCCATO` per decisione dell'utente del 2026-11-10: nessuna pubblicazione, salvo destinazione privata e gratuita. D-0015 approvata il 2026-11-10.
 - Percorsi: `deploy/docker/`, `.github/`.
 - Dipende da: I-04, O-02, R-09, A-04.
 - Accettazione: immagini pubblicate sul registry definitivo con la chiave definitiva, dopo approvazione esplicita dell'utente. Non serve per il Gate 1.
