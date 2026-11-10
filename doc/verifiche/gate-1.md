@@ -196,3 +196,34 @@ Per lo stesso motivo sono cambiati i fingerprint di due finding reali, che resta
 semgrep 1.184.0 è classificato `LGPL-2.1-only`, lettura prudenziale: si ignora `or-later` dei metadati della wheel.
 
 **X-05 chiusa come scostamento confermato dall'utente:** in Fase 1 non si distribuisce nulla. I 6 finding di licenza effettiva restano aperti e `gate --fail-on critico,alto` esce con 1. La valutazione completa di D-0015 (semgrep, `git`, `libgomp1`, `unrar`, base Debian) è condizione vincolante per I-06, insieme all'approvazione esplicita della pubblicazione.
+
+## Scansione di prova su un repository Java
+
+2026-11-10. Fuori dalla misura del Gate 1 (decisione dell'utente del 2026-11-08): Java/Kotlin resta in Fase 4, la prova serve solo a vedere cosa funziona già. CLI impacchettata da `deploy/docker/package-cli.sh`, firma verificata, feed sincronizzati in rete, nessun `.code-analyzer.yml`.
+
+| Voce | Valore |
+| --- | --- |
+| Repository | `spring-projects/spring-petclinic` |
+| Commit | `500158f732419217507c7656904b8e6aa1bcc0d6` (2026-09-29) |
+| File versionati | 132, nessun symlink |
+| Build | Maven (`pom.xml`) e Gradle |
+| Stato del report | `partial` |
+| Durata | 39,8 s |
+| `gate --fail-on critico,alto` | 2 (`partial-scan`) |
+
+| Plugin | Esito | Risultato |
+| --- | --- | --- |
+| trivy | `ok` | 39 finding, tutti IaC: 1 critico, 7 alti, 8 medi, 23 bassi (`.devcontainer/Dockerfile`, `k8s/`). Nessuna vulnerabilità di dipendenze |
+| osv-scanner | `failed` (exit 3) | Legge `pom.xml` (28 pacchetti), poi `could not load db for Maven ecosystem`: lo snapshot contiene solo npm e PyPI |
+| syft | `ok` | SBOM prodotto; contenuto Java non verificato |
+| scancode | `ok`, 20,0 s | Policy di licenze non valutata (`license-policy-absent`) |
+| gitleaks | `ok` | Nessun finding |
+| bandit, semgrep | `plugin-skipped` | Linguaggio non rilevato: nessun SAST su Java |
+
+Esiti:
+
+1. **Difetto di Fase 1:** un `pom.xml` rende `partial` qualunque scansione, anche di un repository Python o JS/TS, perché osv-scanner fallisce su un ecosistema senza database invece di segnalarlo e proseguire. Non corretto.
+2. Atteso, da Fase 4: database Maven nei feed, regole SAST per Java, rilevamento del linguaggio.
+3. Non verificato: perché trivy non riporta vulnerabilità dal `pom.xml`; i componenti Java nell'SBOM di syft.
+
+Nota operativa: con la cache dei feed su un tmpfs la sincronizzazione di trivy fallisce con `memoria esaurita`, perché le pagine scritte contano nel limite di memoria del container. Con la cache predefinita su disco funziona.
