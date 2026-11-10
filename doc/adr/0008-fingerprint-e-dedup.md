@@ -1,6 +1,6 @@
 # ADR-0008: Algoritmo di fingerprint e deduplicazione
 
-- Stato: Proposto; confermato il 2026-11-08 in revisione tecnica (A-01) l'algoritmo `fp1`. Deduplicazione e uso in normalizzazione non esistono ancora (K-05, K-07)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: deduplicazione in `ca_core/dedup.py` e uso in normalizzazione (K-05, K-07); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §4.1, §4.2, §8

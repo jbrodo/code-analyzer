@@ -1,6 +1,6 @@
 # ADR-0010: Contratto della CLI e artefatti di scansione
 
-- Stato: Proposto; confermato il 2026-11-08 in revisione tecnica (A-01) il contenuto del report. I comandi non esistono ancora (K-13, L-02..L-05)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: comandi `scan`, `gate`, `config validate` e `sbom` in `ca_cli` (K-13, L-02..L-05); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §9.1, §12.1, §13; lacuna 9

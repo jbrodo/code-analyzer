@@ -1,6 +1,6 @@
 # ADR-0014: Configurazione di Fase 1 e confini di fiducia
 
-- Stato: Proposto; confermati il 2026-11-08 in revisione tecnica (A-01) lo schema e i montaggi. Filtro, eccezioni e `config validate` non esistono ancora (K-08, K-09, L-02)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: filtro, eccezioni e `config validate` (K-08, K-09, L-02), montaggi reali (R-02, K-16); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §5, §7, §8, §17

@@ -1,6 +1,6 @@
 # ADR-0007: Adattatori nell'immagine, ordine dei plugin e versioni dei formati
 
-- Stato: Proposto; confermati il 2026-11-08 in revisione tecnica (A-01) manifest e proprietà SARIF. Adattatori e due stadi non esistono ancora (P-01..P-10, K-16)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: adattatori in `ca_plugins/builtin/` (P-01..P-10), due stadi e finding `ca.scanner-not-run` (K-16, K-17); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §3, §5, §7.1, §7.2, §7.3

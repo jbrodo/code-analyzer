@@ -227,3 +227,47 @@ Esiti:
 3. Non verificato: perché trivy non riporta vulnerabilità dal `pom.xml`; i componenti Java nell'SBOM di syft.
 
 Nota operativa: con la cache dei feed su un tmpfs la sincronizzazione di trivy fallisce con `memoria esaurita`, perché le pagine scritte contano nel limite di memoria del container. Con la cache predefinita su disco funziona.
+
+## Chiusura della Fase 1 (X-07)
+
+2026-11-10. **Fase 1 chiusa.**
+
+CI su `main`:
+
+| Workflow | Task | Esecuzione | Esito |
+| --- | --- | --- | --- |
+| `verify` | O-01 | 42891196195 | Verde |
+| `feeds-snapshot` | O-03 | 42891196470 | Verde; cache `feeds-snapshot-42891196470` salvata (262 MB) |
+| `e2e` | O-02 | 42891196255 | Verde: 368 passati, 5 saltati, 3 `xfail`, 17 min 53 s |
+
+Per arrivarci sono serviti due fix: il limite di CPU dei container sui runner a 2 CPU (`cd02b26`) e il percorso della cache dei feed, che conteneva `..` e non veniva salvato (`5a6ffeb`).
+
+Voci di §13: tutte spuntate in `doc/PROJECT.md`. Immagine CLI (I-03) rinviata alla Fase 2.
+
+Definition of Done (§17):
+
+| Voce | Evidenza | Esito |
+| --- | --- | --- |
+| Test unitari e di contratto verdi; copertura ≥ 80% su `ca-core` | `uv run pytest -q`: 2287 passati, 306 saltati (richiedono Docker, eseguiti in `e2e`); copertura 98,51% | Soddisfatta |
+| Schemi JSON aggiornati e validati | `python -m ca_core.schema_export --check` senza divergenze | Soddisfatta |
+| Documentazione utente aggiornata | `doc/utente/README.md` | Soddisfatta |
+| Telemetria per le operazioni lunghe | `duration_seconds` nel report, totale e per plugin (ADR-0010) | Soddisfatta |
+| Nessun finding Critico/Alto nell'auto-analisi | 6 finding di licenza effettiva aperti | Scostamento confermato dall'utente (X-05) |
+
+Decisioni:
+
+| Decisione | Stato | Proprietario |
+| --- | --- | --- |
+| D-0013 | Chiusa il 2026-11-08 | Utente |
+| D-0015 | Rinviata a I-06: valutazione sugli SBOM della build di rilascio | Riccardo Roveda |
+
+ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato`: le prove elencate in "Revisione A-01" sono nel codice. ADR-0005 e ADR-0015 restano aperti fino a I-06.
+
+Passano alla Fase 2 o oltre:
+
+- I-06, primo rilascio: bloccato da D-0015 e dall'approvazione esplicita della pubblicazione.
+- I-03, immagine CLI.
+- Difetto: osv-scanner fallisce su un ecosistema senza database (un `pom.xml` rende `partial` la scansione), vedi la scansione di prova Java.
+- I due test `xfail` sulla riga dei finding di licenza (scostamento 2 del Gate 1).
+- Il test `xfail` sull'avviso di gitleaks per il clone superficiale: l'avviso sta in `invocations` del SARIF e il nucleo non lo legge.
+- Rumore: `B101` di bandit, 47.276 finding su saleor.

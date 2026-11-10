@@ -1,6 +1,6 @@
 # ADR-0011: Struttura del SARIF aggregato
 
-- Stato: Proposto; rivisto il 2026-11-08 (A-01), nessuna contraddizione con i contratti. Il SARIF aggregato non esiste ancora (K-14)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: SARIF aggregato in `ca_core/sarif/aggregate.py` (K-14); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §1, §5 passo 10, §12.1, §13

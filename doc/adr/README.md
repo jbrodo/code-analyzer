@@ -5,19 +5,19 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 | ADR | Titolo | Stato | Decisione umana |
 | --- | --- | --- | --- |
 | [0001](0001-verso-dipendenze-pacchetti.md) | Verso delle dipendenze tra i pacchetti | Accettato | No |
-| [0002](0002-motore-scansione-senza-temporal.md) | Motore di scansione indipendente da Temporal | Proposto (prova: K-15..K-18, R-07) | No |
+| [0002](0002-motore-scansione-senza-temporal.md) | Motore di scansione indipendente da Temporal | Accettato | No |
 | [0003](0003-autorita-contratti-json-schema.md) | Autorità dei contratti JSON Schema | Accettato | No |
 | [0004](0004-esecuzione-plugin-e-isolamento.md) | Esecuzione dei plugin e livelli di isolamento | Accettato | Presa il 2026-11-08 |
 | [0005](0005-firma-immagini-plugin.md) | Firma e verifica delle immagini dei plugin | Proposto (deciso fino al primo rilascio) | Sì |
 | [0006](0006-feed-vulnerabilita-offline.md) | Database delle vulnerabilità in Fase 1 | Accettato | Presa il 2026-11-08 |
-| [0007](0007-contratto-output-plugin.md) | Adattatori, ordine dei plugin, versioni dei formati | Proposto (prova: P-01..P-10, K-16, K-17) | No |
-| [0008](0008-fingerprint-e-dedup.md) | Algoritmo di fingerprint e deduplicazione | Proposto (`fp1` confermato; prova: K-05, K-07) | No |
+| [0007](0007-contratto-output-plugin.md) | Adattatori, ordine dei plugin, versioni dei formati | Accettato | No |
+| [0008](0008-fingerprint-e-dedup.md) | Algoritmo di fingerprint e deduplicazione | Accettato | No |
 | [0009](0009-livelli-e-gate-fase-1.md) | Livelli e gate senza scoring né baseline | Accettato | Sì, per i livelli provvisori |
-| [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Proposto (report confermato; prova: K-13, L-02..L-05) | No |
-| [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Proposto (prova: K-14) | No |
+| [0010](0010-contratto-cli-e-artefatti.md) | Contratto della CLI e artefatti di scansione | Accettato | No |
+| [0011](0011-sarif-aggregato.md) | Struttura del SARIF aggregato | Accettato | No |
 | [0012](0012-segreti-in-fase-1.md) | Rilevamento dei segreti in Fase 1 | Accettato | Presa il 2026-11-08 |
 | [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Accettato | Presa il 2026-11-08 |
-| [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Proposto (schema confermato; prova: K-08, K-09, L-02, R-02, K-16) | No |
+| [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Accettato | No |
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Proposto | Sì |
 
 ## Aggiornamenti dopo la stesura
@@ -44,3 +44,4 @@ Numerazione di `.claude/agents/architect.md`.
 | 11 Multi-tenancy | 2 (progettazione con il primo schema DB); packaging in 4 |
 | 12 OpenAPI | 2 (principio in ADR-0003) |
 | 13 Evidenza decisionale | 3 |
+- X-07, 2026-11-10: ADR-0002, 0007, 0008, 0010, 0011, 0014 passano ad `Accettato`; le prove elencate nelle rispettive "Revisione A-01" sono nel codice e i test sono verdi.

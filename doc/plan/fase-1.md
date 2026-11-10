@@ -913,7 +913,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §13. ADR: 0009.
 
 #### X-07 — Chiusura della Fase 1
-- Agente: `architect`. Stato: `LIBERO`; X-05 chiusa come scostamento confermato dall'utente il 2026-11-09 (`doc/verifiche/gate-1.md`). Resta la prima esecuzione della CI (O-02, O-03).
+- Agente: `architect`. Stato: `LIBERO`; X-05 chiusa come scostamento confermato dall'utente il 2026-11-09 (`doc/verifiche/gate-1.md`). **Chiuso il 2026-11-10**: CI verde su `main` (O-01, O-02, O-03), evidenze in `doc/verifiche/gate-1.md`.
 - Percorsi: `doc/plan/fase-1.md`, `doc/verifiche/gate-1.md`.
 - Dipende da: X-05, X-06, T-06, T-07, S-02, L-06, O-01, O-02, A-02, A-03.
 - Accettazione: voci di §13 e di §17 spuntate con evidenza, copertura ≥ 80% su `ca-core`, D-0013 e D-0015 riportate come chiuse o rinviate con il loro proprietario. ADR-0002, 0007, 0008, 0010, 0011, 0014 portati ad `Accettato` con le prove elencate in "Revisione A-01", o riaperti con motivo.

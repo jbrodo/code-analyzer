@@ -628,7 +628,7 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 
 ### Fase 1 — MVP: inventario (Python, JS/TS)
 
-- [ ] Monorepo, CI del progetto, immagini Docker base — fatti monorepo, immagine base dei plugin e CI delle verifiche (`verify.yml`); build, firma ed E2E in CI (O-02) e job dello snapshot dei feed (O-03) sono scritti ma mai eseguiti. Immagine CLI (I-03) rinviata alla Fase 2.
+- [x] Monorepo, CI del progetto, immagini Docker base — monorepo, immagine base dei plugin, CI delle verifiche (`verify.yml`), build, firma ed E2E in CI (`e2e.yml`, O-02) e job dello snapshot dei feed (`feeds-snapshot.yml`, O-03), tutti verdi su `main` il 2026-11-10. Immagine CLI (I-03) rinviata alla Fase 2.
 - [x] `ca-core`: modello Finding, fingerprint, dedup, SARIF/CycloneDX I/O
 - [x] Runner plugin in sandbox + manifest + verifica firma — R-09 chiuso il 2026-11-09 (`doc/verifiche/sicurezza-fase-1.md`). Firma provata con chiave di test: registry e chiave definitivi attendono D-0005.
 - [x] Plugin: syft, osv-scanner, trivy, scancode, gitleaks, semgrep, bandit — provati su immagini firmate localmente. La verifica legale per la distribuzione resta in D-0015.
@@ -640,6 +640,8 @@ Ogni fase si chiude con un gate misurabile. Valori da confermare dopo il pilota.
 **Gate 1:** 3 repository pilota scansionati; scansione completa < 10 minuti (ADR-0009); tutti i problemi noti delle fixture rilevati.
 
 Stato del Gate 1 al 2026-11-09: superato, con due scostamenti confermati dall'utente (`doc/verifiche/gate-1.md`). 3 pilota `complete` sotto i 10 minuti, 247,7 s il più lento; problemi noti delle fixture rilevati dagli E2E. La valutazione D-0015 è condizione per il primo rilascio (I-06), non per la chiusura della Fase 1.
+
+Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`).
 
 ### Fase 2 — Qualità e impatto
 

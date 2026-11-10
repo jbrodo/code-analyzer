@@ -1,6 +1,6 @@
 # ADR-0002: Motore di scansione indipendente da Temporal
 
-- Stato: Proposto; confermate il 2026-11-08 in revisione tecnica (A-01) le porte e il verso delle dipendenze. I passi della pipeline non esistono ancora (K-15..K-18)
+- Stato: Accettato il 2026-11-10 alla chiusura della Fase 1 (X-07). Prove indicate in "Revisione A-01" presenti: passi della pipeline in `ca_core/pipeline/` (K-15..K-18) e parallelismo nell'adattatore (R-07); test unitari, di contratto ed E2E verdi
 - Data: 2026-11-08
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §2, §3, §5, §13
