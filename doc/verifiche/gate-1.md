@@ -121,6 +121,8 @@ Decisione dell'utente del 2026-11-09: restano aperti e riguardano D-0015, di cui
 
 Stato al 2026-11-09: **valutazione da completare.** Quanto segue è un'analisi preliminare e un inventario di fatti, non un parere legale né un'approvazione. I 6 finding restano aperti, X-05 non è superata e X-07 resta bloccato finché non c'è la valutazione umana della distribuzione.
 
+Stato al 2026-11-10: **rinviata a I-06** per decisione dell'utente, con Riccardo Roveda come proprietario. X-05 è chiusa come scostamento e X-07 non è più bloccato da D-0015 (vedi "Decisioni del 2026-11-09 su licenze e chiusura"). I punti "Da chiarire" restano aperti e si valutano sugli SBOM della build di rilascio.
+
 ### Analisi preliminare
 
 | Immagine | Analisi | Da chiarire |

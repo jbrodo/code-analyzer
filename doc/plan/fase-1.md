@@ -56,7 +56,7 @@ Ordine consigliato per chi decide: D-CI e D-0006 per prime, perché sono quelle 
 | **D-0009-B** (decisa) | Gate 1 su scansione completa < 10 minuti, PR incrementale al Gate 2; scelta dei 3 pilota; macchina di riferimento e trattamento della sincronizzazione feed nella misura | Utente | X-01, X-04, X-06, A-03 | X-07 | Blocca G1.a e G1.b |
 | **D-0012** (livello deciso: `alto`) | Livello dei segreti non verificati: `alto` raccomandato, `critico` alternativa | Utente | A-03 | X-07 | Non blocca |
 | **D-0013** (decisa) | Elenchi `forbidden` e `require_approval` (§18); `distributed_product: true`; `alto` per l'approvazione | Utente | Nessuno; X-03 applica i valori decisi | Nessuno | Non blocca |
-| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Riccardo Roveda (responsabile; non un agente) | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Non blocca finché non si distribuisce |
+| **D-0015** | Verifica legale di motori e regole; licenza del prodotto | Riccardo Roveda (responsabile; non un agente) | A-04, I-06 | Nessuno sul gate, se i pilota restano uso interno | Rinviata a I-06 (2026-11-10): non blocca X-07 |
 
 Rischio residuo di S-01, decisione dell'utente del 2026-11-09: R-1..R-5 accettati per CI effimere e uso locale, con A-01 e A-02 corretti e riverificati da `security`; runner persistenti condivisi non accettati senza gVisor; M-01 e M-03 inclusi in R-09; `/out` su tmpfs con dimensione massima, valore fissato misurando in X-04 (`doc/verifiche/sicurezza-fase-1.md`).
 
@@ -67,6 +67,8 @@ Decisioni dell'utente del 2026-11-09 sul Gate 1:
 - D-0009-B, regola di misura: macchina di riferimento il PC dell'utente, con le specifiche registrate in `doc/verifiche/gate-1.md`; sincronizzazione dei feed esclusa dai 10 minuti e misurata a parte; snapshot fissato prima della misura.
 
 Decisione dell'utente del 2026-11-09: in Fase 1 non si distribuisce nulla; X-05 chiusa come scostamento, la valutazione completa di D-0015 diventa condizione vincolante per I-06. Classificazione di semgrep in `doc/verifiche/gate-1.md`.
+
+Decisione dell'utente del 2026-11-10: D-0015 è rinviata a I-06, con Riccardo Roveda come proprietario. La valutazione si farà sugli SBOM della build di rilascio; per X-07 la decisione è riportata come rinviata.
 
 Decisione dell'utente del 2026-11-09: licenza del prodotto nel file `LICENSE`. Copre il codice del progetto, non i componenti di terze parti nelle immagini; A-04 resta aperto per l'esito sui motori.
 
