@@ -45,7 +45,7 @@ Gli ADR nuovi hanno numeri provvisori, da 0016 a 0030 (sezione 4). Un task che s
 | Condizione misurabile | Come si misura | Task che la producono | Decisioni necessarie |
 | --- | --- | --- | --- |
 | **G2.a** Entrambe le varianti calcolate in ombra | Su ogni repository del gate, il 100% dei finding ha i fattori e il punteggio di A e di B registrati nel report (e nel DB, se c'è il server), con la versione della configurazione di scoring | K-11, K-14, X-02 | D2-10, D2-11 |
-| **G2.b** Ordinamento validato dai team | Per ogni team del protocollo, campione stratificato di finding del proprio repository, ordinato dal team senza vedere punteggi né variante. Proposta: accordo tra l'ordinamento di ciascuna variante e quello del team misurato con tau di Kendall e sovrapposizione sui primi 10. Soglia proposta: tau ≥ 0,5 e almeno 6 dei primi 10 in comune per la variante migliore, su almeno 3 team | X-01, X-03, X-04, X-06 | D2-03 |
+| **G2.b** Ordinamento validato dai team | Per ogni team del protocollo, campione stratificato di finding del proprio repository, ordinato dal team senza vedere punteggi né variante. Proposta: accordo tra l'ordinamento di ciascuna variante e quello del team misurato con tau di Kendall e sovrapposizione sui primi 10. Soglia proposta: tau ≥ 0,5 e almeno 6 dei primi 10 in comune per la variante migliore, su almeno 3 team. Con D2-03 (2026-11-10) il valutatore è uno solo, l'utente, su 2 o 3 repository propri: la soglia si applica per repository e l'esito è registrato come scostamento | X-01, X-03, X-04, X-06 | D2-03 |
 | **G2.c** Variante predefinita scelta | Decisione dell'utente registrata in §18 e in un ADR, motivata dai valori di G2.b e dalle differenze di livello misurate in X-02 | X-06, X-08 | §18, decisa dall'utente sui dati |
 | **G2.d** Scansione PR incrementale < 10 minuti | Durata totale dal report in modalità `--pr` su ciascuno dei 3 pilota della Fase 1, con la regola di misura di `doc/verifiche/gate-1.md` (stessa macchina, snapshot fissato, sincronizzazione esclusa), su una PR di riferimento definita in X-05 | V-06, K-16, K-17, L-01, X-05 | D2-01 per la fonte della baseline |
 
@@ -60,27 +60,39 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Nessuna è stata presa. Ordine consigliato per chi decide: **D2-01** e **D2-03** per prime. D2-01 determina se servono Temporal, l'esecuzione sul server e un adattatore Kubernetes; D2-03 è l'unica che blocca il Gate 2 fin dal primo task (X-01). Seguono D2-10 e D2-02, che fermano il percorso dello scoring e del server.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-10, D2-11, D2-16. Le altre restano aperte.
+
+| Decisione | Esito |
+| --- | --- |
+| D2-01 | Opzione 2: il server riceve i report prodotti dalla CLI in CI. Niente Temporal né scansioni sul server in Fase 2 |
+| D2-03 | Non ci sono team da coinvolgere. Validatore unico: l'utente ordina alla cieca i finding di 2 o 3 repository propri in Python o JS/TS, con campione e metriche di G2.b. La variante predefinita che ne esce è provvisoria, da rivalidare con utenti reali. Il Gate 2 si chiude con lo scostamento dichiarato rispetto a §13 ("validato dai team"). I repository sono ancora da indicare: servono a X-01 |
+| D2-10 | Opzione 1: il gate resta sui livelli provvisori di ADR-0009 fino al Gate 2; A e B si calcolano entrambe in ombra |
+| D2-11 | Corpus fisso di repository pubblici con commit fissati, distribuzione versionata nel pacchetto. Corpus piccolo all'inizio, una decina di repository con i 3 pilota inclusi. ADI calcolato e servito dall'API, trend in Fase 4 |
+| D2-16 | Opzione 1: nessuna destinazione in Fase 2, solo il registry locale. I-04, I-07, E-05 e N-09 restano bloccati |
+
+Per le decisioni ancora aperte, ordine consigliato: D2-02 per prima.
+
+Testo originale della tabella, con opzioni e motivazioni: ordine consigliato **D2-01** e **D2-03** per prime. D2-01 determina se servono Temporal, l'esecuzione sul server e un adattatore Kubernetes; D2-03 è l'unica che blocca il Gate 2 fin dal primo task (X-01). Seguono D2-10 e D2-02, che fermano il percorso dello scoring e del server.
 
 | Decisione | Oggetto, opzioni e raccomandazione | Proprietario | Task bloccati direttamente | Bloccati indirettamente | Gate 2 |
 | --- | --- | --- | --- | --- | --- |
-| **D2-01** Orchestrazione e modalità server (ADR-0016) | §5, §14 e §2 portano Temporal in Fase 2, mentre ADR-0002 ha reso la pipeline indipendente. Opzioni: (1) Temporal e scansioni eseguite dal server, con adattatore Kubernetes e gVisor (obbligatorio sul server, ADR-0004), clone con credenziali e webhook; (2) il server **riceve i report prodotti dalla CLI in CI**, senza eseguire scansioni e senza Temporal; (3) server con coda semplice in PostgreSQL che esegue la CLI. **Raccomandata (2)**: il Gate 2 ha bisogno di finding con punteggio consultabili e confrontabili, non di esecuzione sul server; si evitano gVisor su Kubernetes, le credenziali di clone e un componente durevole. Temporal entra quando servono le scansioni sul server (notturne, webhook), da rivalutare in Fase 3 o 4 | Utente | B-01, B-03, L-03, B-12, I-03, A-15 nella parte sui componenti | B-*, W-03, I-06, T-05, O-04 | Cambia la fonte della baseline per G2.d |
+| **D2-01** (decisa il 2026-11-10) Orchestrazione e modalità server (ADR-0016) | §5, §14 e §2 portano Temporal in Fase 2, mentre ADR-0002 ha reso la pipeline indipendente. Opzioni: (1) Temporal e scansioni eseguite dal server, con adattatore Kubernetes e gVisor (obbligatorio sul server, ADR-0004), clone con credenziali e webhook; (2) il server **riceve i report prodotti dalla CLI in CI**, senza eseguire scansioni e senza Temporal; (3) server con coda semplice in PostgreSQL che esegue la CLI. **Raccomandata (2)**: il Gate 2 ha bisogno di finding con punteggio consultabili e confrontabili, non di esecuzione sul server; si evitano gVisor su Kubernetes, le credenziali di clone e un componente durevole. Temporal entra quando servono le scansioni sul server (notturne, webhook), da rivalutare in Fase 3 o 4 | Utente | B-01, B-03, L-03, B-12, I-03, A-15 nella parte sui componenti | B-*, W-03, I-06, T-05, O-04 | Cambia la fonte della baseline per G2.d |
 | **D2-02** Autenticazione, RBAC e tenant (ADR-0019, lacune 3 e 11) | Quale IdP OIDC; ruoli; tenant operativi. Raccomandazione: OIDC generico (nessun IdP cablato nel codice), IdP finto nei test e nel compose; ruoli `lettore`, `triage`, `approvatore` (eccezioni e falsi positivi), `amministratore`; pipeline autenticate con l'OIDC dei provider CI e associazione per claim `repository`; uno schema PostgreSQL per tenant progettato dalla prima migrazione, un solo tenant in esercizio nel pilota | Utente, con parere `security` (S-01) | B-04, B-05, W-03, I-05 | B-03, B-08..B-12, T-05, I-06 | Non blocca, se G2.b non usa la UI |
-| **D2-03** Team e protocollo del Gate 2 | Chi sono i team, quali repository (i 3 pilota pubblici non hanno un team raggiungibile), dimensione del campione, metrica e soglia. Raccomandazione: almeno 3 team, ciascuno con un proprio repository Python o JS/TS; campione di 30 finding per repository, stratificato per categoria e livello; ordinamento cieco rispetto alla variante; tau di Kendall e sovrapposizione sui primi 10, soglia come in G2.b; esiti in `doc/verifiche/gate-2.md`, solo conteggi e misure se i repository sono riservati. Il metodo di Martini et al. (ECSA 2018) va trascritto in ADR come protocollo, e l'utente conferma che la trascrizione è fedele | Utente | X-01 | X-02, X-03, X-04, X-06, X-08, X-09 | Blocca G2.a (repository), G2.b e G2.c |
+| **D2-03** (decisa il 2026-11-10) Team e protocollo del Gate 2 | Chi sono i team, quali repository (i 3 pilota pubblici non hanno un team raggiungibile), dimensione del campione, metrica e soglia. Raccomandazione: almeno 3 team, ciascuno con un proprio repository Python o JS/TS; campione di 30 finding per repository, stratificato per categoria e livello; ordinamento cieco rispetto alla variante; tau di Kendall e sovrapposizione sui primi 10, soglia come in G2.b; esiti in `doc/verifiche/gate-2.md`, solo conteggi e misure se i repository sono riservati. Il metodo di Martini et al. (ECSA 2018) va trascritto in ADR come protocollo, e l'utente conferma che la trascrizione è fedele | Utente | X-01 | X-02, X-03, X-04, X-06, X-08, X-09 | Blocca G2.a (repository), G2.b e G2.c |
 | **D2-04** Catalogo servizi per C ed E (§18, ADR-0028) | Opzioni: (1) catalogo esterno (per esempio un file di catalogo per repository o un servizio); (2) **tier ed esposizione registrati sul server per repository** da un `amministratore` (tabella `repositories` di §4.3), con il blocco `service` di `.code-analyzer.yml` ammesso solo in modalità locale e segnalato come non fidato; (3) solo `.code-analyzer.yml`. **Raccomandata (2)**: il file sta nel repository analizzato, quindi chi lo modifica può abbassare C ed E e quindi il punteggio (ADR-0014). Senza registrazione: C = 0,7 e E = 0,3 (§6.1) | Utente | B-10, K-04, K-05 | K-11, K-14, X-02 | Cambia i valori di G2.a e G2.b |
 | **D2-05** Feed EPSS/KEV e mirror (ADR-0024) | Fonte, termini d'uso, dove sta il mirror, firma degli snapshot. Raccomandazione: EPSS dal file giornaliero pubblicato da FIRST, KEV dal JSON di CISA, entrambi con sincronizzazione separata come ADR-0006; in Fase 2 solo la cache locale e quella della CI, come oggi; il mirror come artefatto OCI firmato con cosign, così la verifica riusa ADR-0005, si progetta ma si pubblica solo su una destinazione che rispetti D2-16. La ridistribuzione dei database (OSV, trivy-db, EPSS, KEV) in un mirror è una valutazione di licenze e va aggiunta a D2-14 | Utente; Riccardo Roveda per la parte di ridistribuzione (D2-14) | E-05 | Nessuno: E-02..E-04 procedono con la sola cache | Non blocca: P di A usa EPSS e KEV anche senza mirror |
 | **D2-06** Dove gira il server del pilota | Il Gate 2 con la UI richiede un server raggiungibile dai team. Raccomandazione: un solo host interno con il compose di I-05, nessun Kubernetes (Helm è in Fase 4) | Utente | I-06 | Nessuno | Solo se G2.b usa la UI |
 | **D2-07** Object storage e licenze dei componenti server (ADR-0030) | §2 indica S3/MinIO; MinIO server risulterebbe AGPL-3.0, vietata da D-0013 in un prodotto distribuito (da verificare in V-02). Raccomandazione: porta `ArtifactStore` con adattatore su file system per il pilota e adattatore S3 generico; nessun server di object storage incluso nel prodotto finché la Fase 4 non sceglie il packaging. Stessa verifica per il driver PostgreSQL | Utente; Riccardo Roveda per le licenze | B-07 | B-03, B-06, B-11 | Non blocca |
 | **D2-08** Rumore di B101 (bandit) | 47.276 finding su 47.718 nel pilota saleor, quasi tutti `assert` nei test. Opzioni: (1) disattivare B101 come B105..B107; (2) **scartare B101 solo nei file di test** (percorsi fissati nell'adattatore, non dal repository) e tenerlo altrove; (3) tenerlo e lasciare che lo scoring lo porti in basso. **Raccomandata (2)**: un `assert` nel codice di produzione sparisce con `-O` ed è un problema reale, nei test no | Utente | P-07 | Nessuno | Riduce il rumore nel campione di G2.b |
 | **D2-09** osv-scanner su un ecosistema senza database (emenda ADR-0006) | Oggi un `pom.xml` rende `partial` qualunque scansione. Opzioni: (1) allargare l'elenco degli ecosistemi (Maven, Go, crates…), che anticipa dati della Fase 4; (2) **per un ecosistema fuori elenco, avviso `feeds-ecosystem-missing` con ecosistema e numero di pacchetti, plugin `ok` e copertura ridotta dichiarata nel report**; il fallimento resta per un ecosistema in elenco senza database; (3) lasciare il fallimento. **Raccomandata (2)**: lo stesso trattamento della copertura ridotta di gitleaks, e la scansione Python o JS/TS con un `pom.xml` accessorio torna `complete` | Utente (ADR-0006 è una sua decisione) | P-06 | Nessuno | Può rendere `partial` le scansioni dei repository dei team |
-| **D2-10** Quale livello usa il gate durante l'ombra (ADR-0021) | §6 sceglie la variante per repository, §13 dice "modalità ombra entrambe". Opzioni: (1) **fino al Gate 2 il gate resta sui livelli provvisori di ADR-0009, A e B si calcolano entrambe in ombra; dopo la scelta della variante predefinita il livello da punteggio diventa attivo**; (2) la variante di `scoring.variant` è attiva da subito e l'altra in ombra; (3) gate sul massimo dei due livelli. **Raccomandata (1)**: le CI dei pilota non cambiano esito prima che l'ordinamento sia validato, e il passaggio dei livelli (ADR-0009, "molti finding cambieranno livello") avviene una volta sola, documentato | Utente | K-14, L-02 | X-02, X-07 | Definisce cosa misura G2.a |
-| **D2-11** Benchmark della Variante B (ADR-0023) | §6.2 normalizza l'intensità "con quantili sulla distribuzione di benchmark", ma il benchmark non esiste. Raccomandazione: corpus fisso di repository pubblici Python e JS/TS con commit fissati, pilota inclusi; distribuzione salvata come dato versionato nel pacchetto; ricalcolo solo esplicito. Si decide anche se l'ADI per modulo (§6.2) entra in Fase 2 solo come valore calcolato e servito dall'API, con il trend lasciato alla Fase 4 | Utente | K-06 | K-07, K-11, G-13 | Blocca la parte B di G2.a |
+| **D2-10** (decisa il 2026-11-10) Quale livello usa il gate durante l'ombra (ADR-0021) | §6 sceglie la variante per repository, §13 dice "modalità ombra entrambe". Opzioni: (1) **fino al Gate 2 il gate resta sui livelli provvisori di ADR-0009, A e B si calcolano entrambe in ombra; dopo la scelta della variante predefinita il livello da punteggio diventa attivo**; (2) la variante di `scoring.variant` è attiva da subito e l'altra in ombra; (3) gate sul massimo dei due livelli. **Raccomandata (1)**: le CI dei pilota non cambiano esito prima che l'ordinamento sia validato, e il passaggio dei livelli (ADR-0009, "molti finding cambieranno livello") avviene una volta sola, documentato | Utente | K-14, L-02 | X-02, X-07 | Definisce cosa misura G2.a |
+| **D2-11** (decisa il 2026-11-10) Benchmark della Variante B (ADR-0023) | §6.2 normalizza l'intensità "con quantili sulla distribuzione di benchmark", ma il benchmark non esiste. Raccomandazione: corpus fisso di repository pubblici Python e JS/TS con commit fissati, pilota inclusi; distribuzione salvata come dato versionato nel pacchetto; ricalcolo solo esplicito. Si decide anche se l'ADI per modulo (§6.2) entra in Fase 2 solo come valore calcolato e servito dall'API, con il trend lasciato alla Fase 4 | Utente | K-06 | K-07, K-11, G-13 | Blocca la parte B di G2.a |
 | **D2-12** GitLab: dove si pubblica e si prova il componente | Il repository è su GitHub, ma un componente del catalogo CI/CD vive in un progetto GitLab; ADR-0004 non supporta le CI senza daemon. Raccomandazione: progetto specchio su un'istanza GitLab scelta dall'utente, runner con Docker-in-Docker per gli E2E | Utente | N-08 | N-09 | Non blocca |
 | **D2-13** Rilascio dell'immagine CLI e dell'Action (estende D-0005) | Nome dell'immagine CLI e forma di distribuzione dell'Action: sottocartella del monorepo (`uses: <owner>/code-analyzer/integrations/github-action@ref`) o repository dedicato, come suggerisce `org/code-analyzer-action@v1` in §12.1 e come richiede il Marketplace (da verificare in V-02). Raccomandazione: Action nella sottocartella del monorepo, usata solo dalla CI di questo repository; nessun repository dedicato né Marketplace finché vale la decisione del 2026-11-10 sulla pubblicazione. Il nome dell'immagine CLI segue la destinazione di D2-16 (con GHCR sarebbe `ghcr.io/jbrodo/code-analyzer/cli`) | Utente | N-09 | Nessuno | Non blocca |
 | **D2-15** Perimetro della UI di Fase 2 (ADR-0029, lacune 1 e 2) | Decisa: UI centrata sull'elenco finding, portfolio in Fase 4. Da confermare il perimetro proposto: elenco finding con filtri, dettaglio con fattori e passi di correzione, triage ed eccezioni, stato della scansione (parziale compresa), selettore di repository. Esclusi aggregati, trend e grafici | Utente | Nessuno: U-01 e A-14 procedono in `IPOTESI` | W-04..W-08 | Non blocca |
 | **D2-14** Licenze dei motori e dei componenti nuovi (emenda ADR-0015) | D-0015, approvata il 2026-11-10, copre le 7 immagini della Fase 1. §7.3 chiede di verificare la licenza di ogni motore prima di includerlo in un'immagine distribuita: servono la stessa valutazione per ruff, eslint con typescript-eslint, checkov, hadolint, tree-sitter e grammatiche, i componenti del server e l'immagine CLI, e la ridistribuzione dei database in un mirror (D2-05). Raccomandazione: stessa procedura di D-0015, sugli SBOM della build di rilascio, con i risultati di V-02 come materiale; immagini, digest e SBOM conservati insieme per ogni rilascio | Riccardo Roveda (responsabile; non un agente) | I-07 | N-09 per i plugin nuovi, E-05 | Non blocca: i pilota e i team usano il prodotto internamente |
 | **Nessuna pubblicazione** (decisione dell'utente del 2026-11-10) | Per ora non si pubblica nulla, né su GHCR né altrove, salvo che la destinazione sia privata e gratuita. Resta in più l'approvazione esplicita di ogni pubblicazione | Utente | I-04, I-07, E-05, N-09 | Nessuno | Non blocca |
-| **D2-16** Destinazione privata e gratuita delle immagini (estende D-0005) | D-0005 indica GHCR, valido solo se rispetta la decisione del 2026-11-10. Dimensione da ospitare, secondo il coordinatore: circa 2,3 GB non compressi per le 7 immagini della Fase 1 (scancode 718 MB, semgrep 482 MB), più l'immagine CLI e i 6 plugin nuovi. Questi valori non sono nei documenti del repository e non li ho verificati; i documenti non dicono nemmeno se un registry privato GHCR di quella dimensione resti gratuito, e non l'ho controllato perché servirebbero chiamate esterne. Un registry privato richiede anche credenziali di lettura nei runner, e la verifica cosign richiede l'accesso al registry (ADR-0005). Opzioni: (1) **nessuna destinazione in Fase 2**: sviluppo, E2E e Gate 2 usano il registry locale di `deploy/compose/registry.yaml`, con le scansioni dei repository dei team eseguite sulla macchina di riferimento; (2) registry privato sull'host del pilota (D2-06), con autenticazione, TLS e volume persistente: privato e gratuito, raggiungibile solo dalla rete interna; (3) GHCR privato, solo dopo che l'utente ha verificato che quota e costi restano a zero. **Raccomandata (1)**, con (2) solo se i team devono far girare l'Action nelle proprie CI. Il Gate 2 non richiede alcuna pubblicazione | Utente | I-04, I-07, E-05, N-09, I-06 per la sola parte del registry | Nessuno | Non blocca con (1) |
+| **D2-16** (decisa il 2026-11-10) Destinazione privata e gratuita delle immagini (estende D-0005) | D-0005 indica GHCR, valido solo se rispetta la decisione del 2026-11-10. Dimensione da ospitare, secondo il coordinatore: circa 2,3 GB non compressi per le 7 immagini della Fase 1 (scancode 718 MB, semgrep 482 MB), più l'immagine CLI e i 6 plugin nuovi. Questi valori non sono nei documenti del repository e non li ho verificati; i documenti non dicono nemmeno se un registry privato GHCR di quella dimensione resti gratuito, e non l'ho controllato perché servirebbero chiamate esterne. Un registry privato richiede anche credenziali di lettura nei runner, e la verifica cosign richiede l'accesso al registry (ADR-0005). Opzioni: (1) **nessuna destinazione in Fase 2**: sviluppo, E2E e Gate 2 usano il registry locale di `deploy/compose/registry.yaml`, con le scansioni dei repository dei team eseguite sulla macchina di riferimento; (2) registry privato sull'host del pilota (D2-06), con autenticazione, TLS e volume persistente: privato e gratuito, raggiungibile solo dalla rete interna; (3) GHCR privato, solo dopo che l'utente ha verificato che quota e costi restano a zero. **Raccomandata (1)**, con (2) solo se i team devono far girare l'Action nelle proprie CI. Il Gate 2 non richiede alcuna pubblicazione | Utente | I-04, I-07, E-05, N-09, I-06 per la sola parte del registry | Nessuno | Non blocca con (1) |
 | **Eccezioni per i 6 finding di licenza** | D-0015 accetta il rischio residuo, ma i 6 finding restano aperti finché non sono eccezioni. Raccomandazione: eccezioni con `approved_by: Riccardo Roveda`, motivazione che rimanda all'approvazione di D-0015 e scadenza 2027-05-09 come le altre eccezioni di licenza | Riccardo Roveda | X-10 | X-07 | Non blocca |
 
 Stato di D-0015: approvata il 2026-11-10 da Riccardo Roveda, che accetta come rischio residuo i punti "Da chiarire" di `doc/verifiche/gate-1.md` (semgrep, `git`, `libgomp1`, `unrar`); non è un parere legale. ADR-0015 è `Accettato`. Non è più una decisione aperta. Il primo rilascio (I-04, cioè F1:I-06) resta bloccato dalla decisione dell'utente del 2026-11-10 (nessuna pubblicazione salvo destinazione privata e gratuita) e da D2-16, non più da D-0015.
@@ -646,7 +658,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6.1. ADR: 0022.
 
 #### G-13 — ADI per modulo
-- Agente: `backend`. Stato: `IPOTESI` (D2-11).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-graph/src/ca_graph/`.
 - Dipende da: G-05, G-06, G-07, G-08, A-08.
 - Accettazione: ADI calcolato per modulo secondo ADR-0023, nel report e, con il server, nel DB; nessun trend in UI.
@@ -787,14 +799,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1. ADR: 0028.
 
 #### K-06 — Distribuzione di benchmark della Variante B
-- Agente: `backend`, con `test`. Stato: `IPOTESI` (D2-11).
+- Agente: `backend`, con `test`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`, dato versionato nel pacchetto, procedura in `doc/verifiche/`.
 - Dipende da: A-08, P-01, P-02.
 - Accettazione: corpus di D2-11 con commit fissati, distribuzione per metrica calcolata con una procedura ripetibile e salvata come dato versionato; il ricalcolo è un'azione esplicita.
 - Spec: §6.2. ADR: 0023.
 
 #### K-07 — Variante B: G dei code smell
-- Agente: `backend`. Stato: `IPOTESI` (D2-11).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b.py`.
 - Dipende da: K-01, K-06.
 - Accettazione: indice di intensità con quantili sul benchmark, casi di F-05 verdi.
@@ -843,7 +855,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.3. ADR: 0012, 0013, 0021.
 
 #### K-14 — Passo `score`
-- Agente: `backend`. Stato: `IPOTESI` (D2-10).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-11, K-12, K-13, K-15.
 - Accettazione: passo idempotente; livello attivo secondo D2-10 (raccomandazione: provvisorio fino al Gate 2), punteggi in ombra sempre presenti; ordinamento dell'elenco per livello e punteggio, deterministico.
@@ -908,14 +920,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1. ADR: 0010, 0025.
 
 #### L-02 — `--variant` e punteggi in uscita
-- Agente: `backend`. Stato: `IPOTESI` (D2-10).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: K-14.
 - Accettazione: `--variant` con la precedenza di ADR-0021; punteggi e fattori in `json` e `sarif`, livello e punteggio in `table`.
 - Spec: §9.1. ADR: 0010, 0021.
 
 #### L-03 — Invio del report al server
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: A-01, C-08, B-04.
 - Accettazione: comando o opzione secondo ADR-0016, con token OIDC del provider CI e nessun segreto a lunga durata; senza server la CLI funziona come prima; `ca_cli` continua a non importare server né database (`lint-imports`).
@@ -940,21 +952,21 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3, questi restano.
 
 #### B-01 — Pacchetto `ca-api`
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/`, `pyproject.toml`.
 - Dipende da: A-01, A-02, A-15.
 - Accettazione: applicazione FastAPI nel workspace, contratti `import-linter` (`ca_api` verso `ca_core`), configurazione da ambiente, copertura misurata, export dell'OpenAPI disponibile per C-08.
 - Spec: §2, §3, §9.2. ADR: 0001, 0016, 0017.
 
 #### B-02 — Persistenza
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/db/`.
 - Dipende da: B-01, C-07.
 - Accettazione: repository dei dati sul modello di C-07 con selezione dello schema del tenant per richiesta; test su PostgreSQL in container (testcontainers).
 - Spec: §4.3. ADR: 0018.
 
 #### B-03 — Ingestione di una scansione
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-02, B-05, B-07, C-08.
 - Accettazione: `POST /v1/scans` valida report, SARIF e SBOM contro `schemas/` come input non fidati, con limiti di dimensione; idempotente per repository, commit ed esecuzione; aggiorna `first_seen`, `last_seen` e `finding_occurrences`; il repository del token deve coincidere con quello del report.
@@ -975,7 +987,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0018, 0019.
 
 #### B-06 — Stato e SARIF di una scansione
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03.
 - Accettazione: `GET /v1/scans/{id}` e `GET /v1/scans/{id}/sarif` conformi a C-08.
@@ -989,14 +1001,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §2. ADR: 0030.
 
 #### B-08 — Elenco dei finding
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-02, B-05, C-08.
 - Accettazione: `GET /v1/repositories/{id}/findings` con filtri per livello, categoria, stato e nuovi, ordinamento per livello attivo e punteggio, punteggi in ombra nella risposta, paginazione a cursore; prestazioni misurate su un volume pari a saleor.
 - Spec: §9.2. ADR: 0017, 0021, 0029.
 
 #### B-09 — Dettaglio e aggiornamento di un finding
-- Agente: `backend`. Stato: `IPOTESI` (D2-01, D2-02).
+- Agente: `backend`. Stato: `IPOTESI` (D2-02).
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-08, A-03.
 - Accettazione: `GET /v1/findings/{id}` e `PATCH /v1/findings/{id}` per stato, owner ed eccezione con motivazione e scadenza, con `approved_by` dall'identità autenticata, registro delle modifiche e precedenza di ADR-0018 sulle eccezioni del repository.
@@ -1010,21 +1022,21 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §4.3, §9.2. ADR: 0028, 0029.
 
 #### B-11 — SBOM e grafo
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03, C-02.
 - Accettazione: `GET /v1/repositories/{id}/sbom` (CycloneDX) e `GET /v1/repositories/{id}/graph` conformi a C-08. Nessuna vista del grafo in UI.
 - Spec: §9.2. ADR: 0017, 0020.
 
 #### B-12 — Baseline dal server
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03, A-10.
 - Accettazione: se ADR-0025 usa il server come fonte, endpoint per la baseline del branch base, consumato dalla porta di C-06; altrimenti il task si chiude come non necessario.
 - Spec: §5 passo 9. ADR: 0025.
 
 #### B-13 — Telemetria minima del server
-- Agente: `backend`. Stato: `IPOTESI` (D2-01).
+- Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-api/`.
 - Dipende da: B-01.
 - Accettazione: durata delle richieste e delle ingestioni, errori, esportazione OTLP opzionale e disattivata per default; nessun segreto né contenuto dei finding nei log.
@@ -1172,7 +1184,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.2. ADR: 0004, 0005.
 
 #### I-03 — Immagine del server
-- Agente: `devops`. Stato: `IPOTESI` (D2-01, D2-07).
+- Agente: `devops`. Stato: `IPOTESI` (D2-07).
 - Percorsi: `deploy/docker/server/`.
 - Dipende da: B-01, W-01.
 - Accettazione: immagine dell'API con la SPA compilata, utente non root, nessun segreto, licenze e SBOM.
@@ -1230,7 +1242,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §16 regola 7. ADR: 0006, 0024.
 
 #### O-04 — Integrazione del server
-- Agente: `devops`. Stato: `IPOTESI` (D2-01).
+- Agente: `devops`. Stato: `LIBERO`.
 - Percorsi: `.github/workflows/`.
 - Dipende da: T-05.
 - Accettazione: job con PostgreSQL e archivio in container per i test di integrazione di `ca-api`; nessun servizio esterno.
@@ -1313,7 +1325,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §5, §14. ADR: 0025.
 
 #### T-05 — Integrazione del server
-- Agente: `test`. Stato: `IPOTESI` (D2-01, D2-02).
+- Agente: `test`. Stato: `IPOTESI` (D2-02).
 - Percorsi: `tests/integration/`.
 - Dipende da: B-03, B-05, B-08, B-09, I-05.
 - Accettazione: ingestione e lettura su PostgreSQL e archivio in container, matrice di autorizzazione, isolamento dei tenant, report ostili rifiutati.
@@ -1329,10 +1341,10 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 ### X — Misura e chiusura
 
 #### X-01 — Registrare team, repository e protocollo del Gate 2
-- Agente: `architect`, su scelta dell'utente. Stato: `BLOCCATO` (D2-03).
+- Agente: `architect`, su scelta dell'utente. Stato: `BLOCCATO` finché l'utente non indica i 2 o 3 repository propri (D2-03 decisa il 2026-11-10: validatore unico).
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: nessuno.
-- Accettazione: team, repository con commit fissato, campione, metrica, soglia e regola di misura di D2-03; riservatezza dei dati dichiarata.
+- Accettazione: validatore unico (l'utente), 2 o 3 repository con commit fissato, campione, metrica, soglia e regola di misura di D2-03; scostamento rispetto a §13 e riservatezza dei dati dichiarati.
 - Spec: §13. ADR: 0021, 0023.
 
 #### X-02 — Scansione in ombra dei repository del gate
