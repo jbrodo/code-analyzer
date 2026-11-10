@@ -9,7 +9,8 @@ Dagli output dei plugin all'elenco ordinato dei finding. Ordine di composizione:
    da `output_dir` con il limite `outputs.max_bytes`; `parse_sarif` con i controlli strutturali di
    K-10 (`structural_checks`) prima della normalizzazione; `normalize_sarif`; licenze dichiarate
    dall'SBOM. Un output non utilizzabile fa fallire il plugin (`failed`, finding `health`) e
-   scarta tutto ciò che ne era stato letto, SARIF e SBOM insieme;
+   scarta tutto ciò che ne era stato letto, SARIF e SBOM insieme. Le notifiche in `invocations`
+   del SARIF diventano avvisi `plugin-<id>` (K-19);
 2. esclusioni `paths.exclude` (ADR-0014) su tutti i finding;
 3. i finding `license` dei plugin non vanno nel report: alimentano la policy (K-12), insieme alle
    licenze dichiarate; restano i soli finding della policy;
@@ -26,7 +27,13 @@ from ca_core.dedup import deduplicate
 from ca_core.models.config import CodeAnalyzerConfig
 from ca_core.models.finding import Category, Finding
 from ca_core.models.scan_report import AppliedException, Outcome, PluginRun, ReportStatus, Warning_
-from ca_core.normalize import DeclaredLicense, declared_licenses, health_finding, normalize_sarif
+from ca_core.normalize import (
+    DeclaredLicense,
+    declared_licenses,
+    health_finding,
+    normalize_sarif,
+    notification_warnings,
+)
 from ca_core.pipeline.exceptions import apply_exceptions
 from ca_core.pipeline.exclusions import (
     apply_exclusions,
@@ -69,14 +76,15 @@ def _consume(
     reader: SourceReader,
     store: SchemaStore,
     clock: Clock,
-) -> tuple[list[Finding], list[DeclaredLicense]]:
-    """Findings e licenze dichiarate di un plugin; `ValueError` con un motivo generico."""
+) -> tuple[list[Finding], list[DeclaredLicense], list[Warning_]]:
+    """Findings, licenze dichiarate e notifiche di un plugin; `ValueError` se inutilizzabile."""
     manifest, directory = execution.manifest, execution.output_dir
     if directory is None:
         raise ValueError("output assente")
     outputs = manifest.outputs
     findings: list[Finding] = []
     declared: list[DeclaredLicense] = []
+    notes: list[Warning_] = []
     try:
         if outputs.sarif is not None:
             data = reader.read_file(directory, output_name(outputs.sarif), outputs.max_bytes)
@@ -95,6 +103,7 @@ def _consume(
                 reader=reader,
                 clock=clock,
             )
+            notes = notification_warnings(parsed, manifest.name)
         if outputs.cyclonedx is not None:
             data = reader.read_file(directory, output_name(outputs.cyclonedx), outputs.max_bytes)
             sbom = parse_cyclonedx(data, store, outputs.cyclonedx_version or "", outputs.max_bytes)
@@ -103,7 +112,7 @@ def _consume(
         raise ValueError(f"output non utilizzabile: {exc.code.value}") from exc
     except SourceError as exc:
         raise ValueError("output non leggibile o troppo grande") from exc
-    return findings, declared
+    return findings, declared, notes
 
 
 def normalize(
@@ -116,15 +125,17 @@ def normalize(
     plugins: list[PluginRun] = []
     findings: list[Finding] = []
     declared: list[DeclaredLicense] = []
+    notes: list[Warning_] = []
     for execution in sorted(request.executions, key=lambda e: e.run.name):
         run = execution.run
         if run.outcome is Outcome.OK:
             try:
-                got, licenses = _consume(execution, request, reader, store, clock)
+                got, licenses, noted = _consume(execution, request, reader, store, clock)
             except ValueError as exc:
                 run = run.model_copy(update={"outcome": Outcome.FAILED, "failure": str(exc)})
             else:
                 findings += got
+                notes += noted
                 declared += [
                     d for d in licenses if not component_excluded(d.locations, config.paths.exclude)
                 ]
@@ -158,6 +169,6 @@ def normalize(
         plugins=plugins,
         status=ReportStatus.PARTIAL if failed else ReportStatus.COMPLETE,
         exceptions=excepted.applied,
-        warnings=[*policy.warnings, *excepted.warnings],
+        warnings=[*notes, *policy.warnings, *excepted.warnings],
         exclusions=effective_exclusions(config.paths.exclude),
     )

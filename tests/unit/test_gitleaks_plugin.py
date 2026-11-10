@@ -154,7 +154,11 @@ def test_adapt_ignores_an_untrusted_commit_value() -> None:
 def test_adapt_adds_the_notes_as_notifications() -> None:
     out = json.loads(adapter.adapt(raw_sarif(), notes=(adapter.SHALLOW_NOTE,)))
     notification = out["runs"][0]["invocations"][0]["toolExecutionNotifications"][0]
-    assert notification == {"level": "warning", "message": {"text": adapter.SHALLOW_NOTE}}
+    assert notification == {
+        "level": "warning",
+        "descriptor": {"id": "history-coverage-reduced"},
+        "message": {"text": adapter.SHALLOW_NOTE},
+    }
     assert "invocations" not in json.loads(adapter.adapt(raw_sarif()))["runs"][0]
 
 

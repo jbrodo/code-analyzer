@@ -3,6 +3,7 @@
 import pytest
 from builders import NOW, finding
 
+from ca_core import fingerprint as fp
 from ca_core.fakes import FixedClock
 from ca_core.models.config import Licenses
 from ca_core.models.finding import Category, Level, LevelSource
@@ -175,6 +176,49 @@ def test_detected_on_file_without_purl_is_reported_on_the_file() -> None:
 
     assert out.location.path == "vendor/LICENSE" and out.location.purl is None
     assert out.level is Level.CRITICAL
+
+
+def file_detection(path: str, spdx: str, start: int | None, end: int | None = None):
+    detected = finding("x", category=Category.LICENSE, tool="scancode", path=path)
+    location = detected.location.model_copy(update={"start_line": start, "end_line": end})
+    return detected.model_copy(update={"license_spdx": spdx, "location": location})
+
+
+def test_file_finding_keeps_the_lines_and_the_fingerprint() -> None:
+    """K-20: la riga di scancode arriva nel finding; il fingerprint resta percorso più licenza."""
+    [without] = run(detected=[file_detection("vendor/LICENSE", "SSPL-1.0", None)]).findings
+    [with_lines] = run(detected=[file_detection("vendor/LICENSE", "SSPL-1.0", 3, 9)]).findings
+    [single] = run(detected=[file_detection("vendor/LICENSE", "SSPL-1.0", 4)]).findings
+
+    assert (without.location.start_line, without.location.end_line) == (None, None)
+    assert (with_lines.location.start_line, with_lines.location.end_line) == (3, 9)
+    assert (single.location.start_line, single.location.end_line) == (4, 4)
+    assert without.fingerprint == with_lines.fingerprint == single.fingerprint
+    assert with_lines.fingerprint == fp.fingerprint_license_file(
+        path="vendor/LICENSE", spdx="SSPL-1.0"
+    )
+
+
+def test_file_finding_lines_cover_every_detection_in_any_order() -> None:
+    detections = [
+        file_detection("vendor/LICENSE", "SSPL-1.0", 12, 14),
+        file_detection("vendor/LICENSE", "SSPL-1.0", None),
+        file_detection("vendor/LICENSE", "SSPL-1.0", 2),
+    ]
+
+    for order in (detections, detections[::-1]):
+        [out] = run(detected=order).findings
+        assert (out.location.start_line, out.location.end_line) == (2, 14)
+
+
+def test_package_finding_has_no_lines() -> None:
+    detected = file_detection("vendor/LICENSE", "SSPL-1.0", 3, 9)
+    location = detected.location.model_copy(update={"purl": "pkg:npm/x@1.0.0"})
+
+    [out] = run(detected=[detected.model_copy(update={"location": location})]).findings
+
+    assert out.location.purl == "pkg:npm/x@1.0.0"
+    assert (out.location.start_line, out.location.end_line) == (None, None)
 
 
 def test_detected_raw_findings_are_consumed_not_passed_through() -> None:

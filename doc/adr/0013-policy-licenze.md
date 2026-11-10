@@ -70,3 +70,11 @@ Le voci sono identificatori SPDX esatti. Licenze non elencate, incluse MIT, Apac
 
 - Le fixture usano una policy di test separata; gli elenchi approvati non sono predefiniti nel codice e vanno applicati nella configurazione del progetto.
 - La scelta `alto` per l'approvazione rende la policy vincolante e richiede un'eccezione per ogni dipendenza approvata; G = 0,6 in §6.1 è coerente con un tetto di 60, cioè Alto.
+
+## Emendamento per K-20: riga nei finding su file
+
+Data: 2026-11-10. Il finding su file aveva il percorso ma non la riga, mentre l'atteso delle fixture chiede la riga che scancode trova (scostamento 2 del Gate 1).
+
+Decisione: il finding su file riporta `location.start_line` e `location.end_line` presi dai finding di scancode che lo compongono, minimo e massimo tra quelli con una riga. Il fingerprint `license-file` resta percorso più licenza (ADR-0008): le righe non vi entrano, quindi eccezioni e storico già registrati restano validi. Il finding su pacchetto non ha righe.
+
+Limite: la regione che scancode scrive copre tutte le corrispondenze del file, non quelle della singola espressione.

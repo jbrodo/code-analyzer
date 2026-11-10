@@ -43,6 +43,8 @@ TMP_DIR = "/tmp"  # noqa: S108 - tmpfs del profilo
 EXIT_TOOL, EXIT_INVALID, EXIT_REPO = 3, 5, 6
 SHALLOW_NOTE = "shallow clone: history coverage is reduced"
 NO_HISTORY_NOTE = "no git history: only the files of the workspace were scanned"
+# Il nucleo ne fa avvisi del report: `plugin-<id>` (K-19).
+NOTE_IDS = {SHALLOW_NOTE: "history-coverage-reduced", NO_HISTORY_NOTE: "no-git-history"}
 
 _HEAD = re.compile(r"(?:ref: refs/[A-Za-z0-9._/-]{1,200}|[0-9a-f]{40}|[0-9a-f]{64})\n?")
 _COMMIT = re.compile(r"[0-9a-f]{7,64}")
@@ -192,7 +194,8 @@ def adapt(raw: bytes, workspace: str = WORKSPACE, notes: tuple[str, ...] = ()) -
             {
                 "executionSuccessful": True,
                 "toolExecutionNotifications": [
-                    {"level": "warning", "message": {"text": n}} for n in notes
+                    {"level": "warning", "descriptor": {"id": NOTE_IDS[n]}, "message": {"text": n}}
+                    for n in notes
                 ],
             }
         ]

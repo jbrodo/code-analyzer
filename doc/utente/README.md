@@ -114,9 +114,11 @@ Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi d
 
 **Copertura SAST limitata.** Il set di regole Semgrep è iniziale e copre i problemi noti, non un'analisi ampia. Per JavaScript e TypeScript semgrep è l'unico scanner SAST.
 
-**Storia git.** Con un clone superficiale la storia analizzata da gitleaks è ridotta. Il report lo indica solo con `repository.history: shallow`, senza un avviso e senza effetto sul gate: in CI usa un clone completo.
+**Storia git.** Con un clone superficiale la storia analizzata da gitleaks è ridotta. Il report lo indica con `repository.history: shallow` e con l'avviso `plugin-history-coverage-reduced`, senza effetto sul gate: in CI usa un clone completo. Senza una cartella `.git` l'avviso è `plugin-no-git-history`.
 
-**Licenze.** Il finding di licenza su un file indica il percorso ma non la riga.
+**Avvisi dei plugin.** Gli avvisi con codice `plugin-<id>` vengono dalle notifiche di uno scanner, indicato in `subject`: il testo è dello scanner, ripulito e troncato.
+
+**Licenze.** Il finding di licenza su un file indica l'intervallo di righe che copre tutte le corrispondenze trovate da scancode nel file, non la singola corrispondenza.
 
 ### Casi in cui i risultati si riducono senza avviso
 

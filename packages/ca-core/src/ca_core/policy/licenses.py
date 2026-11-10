@@ -202,6 +202,8 @@ class _Observation:
     path: str | None
     expression: str | None
     source: str  # "declared" | "detected"
+    start_line: int | None = None  # solo per i finding su file (K-20)
+    end_line: int | None = None
 
 
 @dataclass(frozen=True)
@@ -253,13 +255,18 @@ def evaluate_licenses(
     for finding in detected:
         if finding.category is not Category.LICENSE or not finding.license_spdx:
             continue
-        if finding.location.purl or finding.location.path:
+        location = finding.location
+        if location.purl:
+            observations.append(_Observation(location.purl, None, finding.license_spdx, "detected"))
+        elif location.path:
             observations.append(
                 _Observation(
-                    finding.location.purl,
-                    None if finding.location.purl else finding.location.path,
+                    None,
+                    location.path,
                     finding.license_spdx,
                     "detected",
+                    location.start_line,
+                    location.end_line or location.start_line,
                 )
             )
     now = clock.now()
@@ -281,6 +288,11 @@ def evaluate_licenses(
         if level is None:
             continue
         spdx = _printable((expression or "NOASSERTION")[:MAX_EXPRESSION])
+        # Righe: non entrano nel fingerprint (percorso e licenza), quindi non lo cambiano (K-20).
+        starts = [o.start_line for o in group if o.start_line is not None]
+        ends = [o.end_line for o in group if o.end_line is not None]
+        start_line = min(starts) if starts else None
+        end_line = max([start_line, *ends]) if start_line is not None else None
         subject = _printable(first.purl or first.path or "")
         title = f"Licenza {spdx}"
         if verdict is Verdict.UNKNOWN:
@@ -300,7 +312,12 @@ def evaluate_licenses(
                 title=title,
                 message=message[:4096],
                 location=Location(
-                    repository=repository, commit=commit, path=first.path, purl=first.purl
+                    repository=repository,
+                    commit=commit,
+                    path=first.path,
+                    purl=first.purl,
+                    start_line=start_line,
+                    end_line=end_line,
                 ),
                 license_spdx=spdx,
                 evidence={

@@ -29,29 +29,11 @@ def entries(fixture: str) -> list[dict[str, Any]]:
     return [e for e in load_expected(path) if e["category"] != "dependency"]
 
 
-LICENSE_LINES = pytest.mark.xfail(
-    strict=True,
-    reason="difetto del prodotto (o atteso troppo stretto, da decidere): il finding di licenza su "
-    "file ha il percorso ma nessuna riga (`location.start_line` nullo, `tools` solo `ca-core`: "
-    "ADR-0013 'finding su file'), mentre l'atteso chiede la riga che scancode trova. "
-    "Rilevato per percorso e regola: vedi test_license_expectation_is_detected_by_path_and_rule.",
-)
-
-
-def lacks_lines_by_design(entry: dict[str, Any]) -> bool:
+def license_with_lines(entry: dict[str, Any]) -> bool:
     return entry["category"] == "license" and "start_line" in entry
 
 
-CASES = [
-    pytest.param(
-        f,
-        e,
-        id=f"{f}::{describe(e)}",
-        marks=[LICENSE_LINES] if lacks_lines_by_design(e) else [],
-    )
-    for f in FIXTURES
-    for e in entries(f)
-]
+CASES = [pytest.param(f, e, id=f"{f}::{describe(e)}") for f in FIXTURES for e in entries(f)]
 
 
 @pytest.mark.parametrize(("fixture", "entry"), CASES)
@@ -70,12 +52,13 @@ def test_expected_finding_is_detected(
 @pytest.mark.parametrize(
     ("fixture", "entry"),
     [pytest.param(f, e, id=f"{f}::{describe(e)}") for f in FIXTURES for e in entries(f)
-     if lacks_lines_by_design(e)],
+     if license_with_lines(e)],
 )  # fmt: skip
 def test_license_expectation_is_detected_by_path_and_rule(
     fixture: str, entry: dict[str, Any], request: pytest.FixtureRequest
 ) -> None:
-    """Stessa prova senza le righe: la violazione di policy e' nel report, nel file giusto."""
+    """La violazione di policy e' nel report, nel file giusto, con la licenza attesa (K-20:
+    le righe sono verificate da `test_expected_finding_is_detected`)."""
     scan = request.getfixturevalue(FIXTURE_SCAN[fixture])
     found = matching(entry, scan.findings, ignore_lines=True)
     assert found and all(f["license_spdx"] == "AGPL-3.0-only" for f in found), found
@@ -124,12 +107,9 @@ def test_shallow_clone_detects_only_the_secret_in_head(secrets_shallow_scan: Any
     assert scan.report["repository"]["history"] == "shallow"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="difetto del prodotto: l'avviso di gitleaks sulla copertura ridotta (clone "
-    "superficiale) viaggia in `invocations` del suo SARIF e il nucleo non lo legge; il report ha "
-    "solo `repository.history: shallow`, nessun `warnings[]` che avvisi chi legge il gate.",
-)
 def test_shallow_clone_reduced_coverage_is_a_report_warning(secrets_shallow_scan: Any) -> None:
-    codes = {w["code"] for w in secrets_shallow_scan.report["warnings"]}
-    assert any("shallow" in c or "history" in c or "coverage" in c for c in codes), sorted(codes)
+    """K-19: la notifica di gitleaks arriva in `warnings[]`, senza cambiare lo stato del report."""
+    report = secrets_shallow_scan.report
+    found = [w for w in report["warnings"] if w["code"] == "plugin-history-coverage-reduced"]
+    assert [w["subject"] for w in found] == ["gitleaks"], report["warnings"]
+    assert report["status"] == "complete"

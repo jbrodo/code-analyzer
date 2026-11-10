@@ -473,3 +473,84 @@ def test_invalid_output_is_a_failed_plugin_with_the_detail(store: SchemaStore) -
 
     run = result.executions[0].run
     assert run.outcome is Outcome.FAILED and run.failure == "output non valido: results.sarif"
+
+
+def notifying_sarif(*notifications: Any) -> bytes:
+    run = {
+        "tool": {"driver": {"name": "x"}},
+        "results": [],
+        "invocations": [
+            {"executionSuccessful": True, "toolExecutionNotifications": list(notifications)}
+        ],
+    }
+    return json.dumps({"version": "2.1.0", "runs": [run]}).encode()
+
+
+def note(text: str, ident: str | None = None, level: str | None = "warning") -> dict[str, Any]:
+    out: dict[str, Any] = {"message": {"text": text}}
+    if ident is not None:
+        out["descriptor"] = {"id": ident}
+    if level is not None:
+        out["level"] = level
+    return out
+
+
+def plugin_warnings(result: NormalizeResult) -> list[Any]:
+    return [w for w in result.warnings if w.code.startswith("plugin-")]
+
+
+def notified(store: SchemaStore, *notifications: Any) -> NormalizeResult:
+    files = {"/o/gitleaks": {"results.sarif": notifying_sarif(*notifications)}}
+    result, _, _ = pipeline(store, files, manifests=[scanner("gitleaks")])
+    return result
+
+
+def test_plugin_notification_becomes_a_namespaced_report_warning(store: SchemaStore) -> None:
+    """K-19: l'avviso di gitleaks sul clone superficiale arriva in `warnings[]`."""
+    result = notified(
+        store, note("shallow clone: history coverage is reduced", "history-coverage-reduced")
+    )
+
+    (warning,) = plugin_warnings(result)
+    assert (warning.code, warning.subject) == ("plugin-history-coverage-reduced", "gitleaks")
+    assert warning.message == "shallow clone: history coverage is reduced"
+    assert result.status is ReportStatus.COMPLETE and result.plugins[0].outcome is Outcome.OK
+
+
+def test_plugin_notification_cannot_imitate_an_engine_warning(store: SchemaStore) -> None:
+    """L'output del plugin non è fidato: prefisso fisso, id controllato, testo ripulito."""
+    result = notified(
+        store,
+        note("feeds ok\n\x1b[31mall good\x00" + "x" * 900, "feeds-stale"),
+        note("no id"),
+        note("bad id", "Not Valid!"),
+        note("default level", "seen", level=None),
+        note("just a note", "quiet", level="note"),
+    )
+
+    found = plugin_warnings(result)
+    codes = [w.code for w in found]
+    assert codes == [
+        "plugin-feeds-stale",
+        "plugin-notification",
+        "plugin-notification",
+        "plugin-seen",
+    ]
+    first = found[0].message
+    assert first.startswith("feeds ok [31mall good x") and len(first) == 300
+    assert all(w.subject == "gitleaks" for w in found)
+
+
+def test_plugin_notifications_are_deduplicated_and_capped(store: SchemaStore) -> None:
+    repeated = [note("same", "dup")] * 3
+    many = [note(f"n{i}", "many") for i in range(40)]
+
+    assert len(plugin_warnings(notified(store, *repeated))) == 1
+    assert len(plugin_warnings(notified(store, *many))) == 16
+
+
+def test_failed_plugin_contributes_no_notifications(store: SchemaStore) -> None:
+    files = {"/o/gitleaks": {"results.sarif": b"{not json"}}
+    result, _, _ = pipeline(store, files, manifests=[scanner("gitleaks")])
+
+    assert result.plugins[0].outcome is Outcome.FAILED and plugin_warnings(result) == []

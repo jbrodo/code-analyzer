@@ -1,1 +1,1 @@
-{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"gitleaks","rules":[]}},"results":[],"invocations":[{"executionSuccessful":true,"toolExecutionNotifications":[{"level":"warning","message":{"text":"no git history: only the files of the workspace were scanned"}}]}]}]}
+{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"gitleaks","rules":[]}},"results":[],"invocations":[{"executionSuccessful":true,"toolExecutionNotifications":[{"level":"warning","descriptor":{"id":"no-git-history"},"message":{"text":"no git history: only the files of the workspace were scanned"}}]}]}]}

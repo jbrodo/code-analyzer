@@ -38,6 +38,7 @@ from ca_core import fingerprint as fp
 from ca_core.models.finding import Category, Finding, Location
 from ca_core.models.plugin_manifest import PluginManifest
 from ca_core.models.plugin_sarif import PluginSarifProperties
+from ca_core.models.scan_report import Warning_
 from ca_core.ports import Clock, SourceError, SourceReader, SourceTooLarge
 from ca_core.sarif.errors import SarifError, SarifErrorCode
 from ca_core.sarif.reader import ParsedSarif, SarifResult
@@ -362,6 +363,53 @@ def normalize_sarif(
             )
         )
     return findings
+
+
+_NOTIFICATION_ID = re.compile(r"[a-z][a-z0-9-]{0,40}")
+_NOTIFICATION_LEVELS = frozenset({"warning", "error"})
+_NOTIFICATION_TEXT = 300
+MAX_NOTIFICATIONS = 16  # per plugin: oltre, il resto è scartato
+
+
+def notification_warnings(parsed: ParsedSarif, plugin: str) -> list[Warning_]:
+    """Notifiche `warning` ed `error` in `invocations` del SARIF di `plugin`, come avvisi (K-19).
+
+    L'output del plugin non è fidato: il codice è sempre `plugin-<id>`, così non può imitare un
+    avviso del motore; `<id>` è `descriptor.id` se ha la forma attesa, altrimenti `notification`.
+    Il testo è ridotto a caratteri ASCII stampabili e troncato. Al più `MAX_NOTIFICATIONS`,
+    senza duplicati. Ogni forma inattesa è ignorata: una notifica non fa mai fallire il plugin.
+    """
+    warnings: list[Warning_] = []
+    seen: set[tuple[str, str]] = set()
+    runs = parsed.document.get("runs")
+    for run in runs if isinstance(runs, list) else []:
+        invocations = run.get("invocations") if isinstance(run, Mapping) else None
+        for invocation in invocations if isinstance(invocations, list) else []:
+            found = (
+                invocation.get("toolExecutionNotifications")
+                if isinstance(invocation, Mapping)
+                else None
+            )
+            for item in found if isinstance(found, list) else []:
+                if not isinstance(item, Mapping):
+                    continue
+                if item.get("level", "warning") not in _NOTIFICATION_LEVELS:
+                    continue
+                descriptor, message = item.get("descriptor"), item.get("message")
+                ident = descriptor.get("id") if isinstance(descriptor, Mapping) else None
+                if not isinstance(ident, str) or not _NOTIFICATION_ID.fullmatch(ident):
+                    ident = "notification"
+                text = message.get("text") if isinstance(message, Mapping) else None
+                text = re.sub(r"[^\x20-\x7e]+", " ", text) if isinstance(text, str) else ""
+                text = " ".join(text.split())[:_NOTIFICATION_TEXT] or "notifica senza testo"
+                key = (ident, text)
+                if key in seen:
+                    continue
+                seen.add(key)
+                warnings.append(Warning_(code=f"plugin-{ident}", message=text, subject=plugin))
+                if len(warnings) == MAX_NOTIFICATIONS:
+                    return warnings
+    return warnings
 
 
 def health_finding(
