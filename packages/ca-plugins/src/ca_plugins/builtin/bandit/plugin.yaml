@@ -18,6 +18,8 @@ outputs:
   # sulle fixture, 19,2 MB sul pilota saleor (47 mila risultati, quasi tutti B101 `assert` nei
   # test), cioe' circa 3,5 volte di margine. Il SARIF cresce con i risultati e non e' limitato dal
   # numero di file: un repository ostile viene fermato qui e non in ca-core.
+  # P-07 (2026-11-13): senza B101 nei file di test saleor scende a 85 risultati e 30 KB. Il limite
+  # resta: un repository ostile non mette i propri `assert` nei test.
   max_bytes: 67108864
 resources:
   # Misure (profilo completo, --cpus 1) su saleor, 4.384 file Python: minimo fra 1 GiB (fallisce,

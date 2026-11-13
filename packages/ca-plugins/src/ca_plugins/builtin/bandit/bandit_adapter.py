@@ -5,8 +5,10 @@ Gira nell'immagine con il profilo `hardened-container` (ADR-0004): `/workspace` 
 `--skip B105,B106,B107` (ADR-0012: i segreti sono compito di gitleaks) e riscrive il SARIF nel
 contratto di ADR-0007: `uri` relativi alla radice del workspace senza `uriBaseId`, nessuno
 `snippet` ne `contextRegion` (senza snippet non porta altro), `properties` ridotte a
-`tool_severity`. La configurazione del repository (`.bandit`, `pyproject.toml`) non si legge: e' un
-dato non fidato che potrebbe spegnere i controlli.
+`tool_severity`. B101 (`assert`) si scarta nei soli file di test (P-07, D2-08), riconosciuti dal
+percorso con le regole fisse di `is_test_path`: nei test un `assert` e' la norma, altrove sparisce
+con `-O` e resta un finding. La configurazione del repository (`.bandit`, `pyproject.toml`) non
+si legge: e' un dato non fidato che potrebbe spegnere i controlli.
 
 Uscite: 0 ok; 3 bandit fallito o senza output; 5 SARIF non conforme (non JSON, non 2.1.0, `uri`
 fuori dal workspace).
@@ -25,6 +27,10 @@ OUT_FILE = "/out/results.sarif"
 TMP_DIR = "/tmp"  # noqa: S108 - tmpfs del profilo
 SKIP = "B105,B106,B107"
 EXIT_TOOL, EXIT_INVALID = 3, 5
+# Regole di percorso fisse, non lette dal repository (ADR-0014). Chi rinomina una cartella in
+# `tests` nasconde solo i propri B101, nessun'altra regola.
+TEST_ONLY_SKIP = "B101"
+TEST_DIRS = frozenset({"test", "tests", "testing"})
 
 
 class InvalidOutput(ValueError):
@@ -59,6 +65,28 @@ def _clean(value: Any, workspace: str) -> Any:
     return out
 
 
+def is_test_path(uri: str) -> bool:
+    """File di test dal percorso relativo: cartella di test, `test_*.py`, `*_test.py`, conftest."""
+    *dirs, name = uri.casefold().split("/")
+    return (
+        not TEST_DIRS.isdisjoint(dirs)
+        or name == "conftest.py"
+        or name.startswith("test_")
+        or name.endswith("_test.py")
+    )
+
+
+def _assert_in_test(result: dict[str, Any]) -> bool:
+    if result.get("ruleId") != TEST_ONLY_SKIP:
+        return False
+    uris = [
+        ((loc.get("physicalLocation") or {}).get("artifactLocation") or {}).get("uri")
+        for loc in result.get("locations") or []
+        if isinstance(loc, dict)
+    ]
+    return bool(uris) and all(isinstance(uri, str) and is_test_path(uri) for uri in uris)
+
+
 def _contract_properties(result: dict[str, Any]) -> dict[str, Any]:
     severity = (result.get("properties") or {}).get("issue_severity")
     return {"tool_severity": severity} if isinstance(severity, str) and severity else {}
@@ -77,6 +105,7 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
         raise InvalidOutput("atteso un solo run")
     run = runs[0]
     results = [r for r in run.get("results") or [] if isinstance(r, dict)]
+    cleaned = [{**_clean(r, workspace), "properties": _contract_properties(r)} for r in results]
     rules = (run.get("tool") or {}).get("driver", {}).get("rules") or []
     clean = {
         "version": "2.1.0",
@@ -88,9 +117,7 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
                         "rules": [{"id": r["id"]} for r in rules if isinstance(r.get("id"), str)],
                     }
                 },
-                "results": [
-                    {**_clean(r, workspace), "properties": _contract_properties(r)} for r in results
-                ],
+                "results": [r for r in cleaned if not _assert_in_test(r)],
             }
         ],
     }

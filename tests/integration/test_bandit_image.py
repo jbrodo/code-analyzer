@@ -81,6 +81,19 @@ def test_expected_python_findings_are_found_and_the_skipped_rules_are_not(
     assert not {"B105", "B106", "B107"} & {rule for rule, _, _ in found}
 
 
+def test_assert_is_reported_in_production_code_and_not_in_test_files(
+    image_id: str, tmp_path: Path
+) -> None:
+    ws = tmp_path / "ws"
+    (ws / "app").mkdir(parents=True)
+    (ws / "tests").mkdir()
+    (ws / "app/logic.py").write_text("def f(x):\n    assert x\n")
+    (ws / "app/test_logic.py").write_text("def test_f():\n    assert True\n")
+    (ws / "tests/helpers.py").write_text("def check(x):\n    assert x\n")
+    found = findings(run_ok(PLUGIN, TAG, image_id, ws, tmp_path / "run")["results.sarif"])
+    assert {(rule, uri) for rule, uri, _ in found if rule == "B101"} == {("B101", "app/logic.py")}
+
+
 def test_hardcoded_secret_never_reaches_out_and_repository_config_is_ignored(
     image_id: str, tmp_path: Path
 ) -> None:

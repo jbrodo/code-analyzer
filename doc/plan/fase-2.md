@@ -705,14 +705,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.3. ADR: 0007, 0014, 0026.
 
 #### P-06 — osv-scanner su ecosistema senza database (riporto dalla Fase 1)
-- Agente: `backend`. Stato: `IPOTESI` (D2-09).
+- Agente: `backend`. Stato: **chiuso il 2026-11-10** (D2-09 decisa); CI verde su `main` (`e2e` 42916043217).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/osv_scanner/`, `tests/fixtures/`.
 - Dipende da: A-16.
 - Accettazione: un repository Python o JS/TS con un `pom.xml` dà una scansione `complete` con avviso `feeds-ecosystem-missing` che nomina l'ecosistema; un ecosistema in elenco senza database fa ancora fallire il plugin; test su entrambi i casi senza rete.
 - Spec: §7.2. ADR: 0006.
 
 #### P-07 — B101 di bandit (riporto dalla Fase 1)
-- Agente: `backend`. Stato: `IPOTESI` (D2-08).
+- Agente: `backend`. Stato: **implementato il 2026-11-13** in `IPOTESI` (D2-08 ancora aperta, opzione 2 raccomandata). Misura su saleor (`1d707dc`, immagine ricostruita, profilo completo): B101 da 47.276 a 22, risultati di bandit 85, SARIF da 19,2 MB a 30 KB, 62 s.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/bandit/`.
 - Dipende da: nessuno.
 - Accettazione: B101 scartato nei soli file di test, riconosciuti con regole di percorso fisse nell'adattatore; un `assert` in un modulo di produzione resta un finding; il conteggio su saleor viene rimisurato e registrato.

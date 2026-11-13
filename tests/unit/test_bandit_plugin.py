@@ -126,6 +126,55 @@ def test_recorded_python_output_has_the_expected_rules_and_not_the_skipped_ones(
 # --- adattatore ---------------------------------------------------------------------------
 
 
+def assert_result(uri: str, rule: str = "B101") -> dict[str, Any]:
+    return {
+        "ruleId": rule,
+        "level": "note",
+        "message": {"text": "Use of assert detected."},
+        "locations": [location(f"file:///workspace/{uri}")],
+        "properties": {"issue_severity": "LOW"},
+    }
+
+
+@pytest.mark.parametrize(
+    "uri",
+    [
+        "tests/test_api.py",
+        "app/tests/helpers.py",
+        "src/pkg/Testing/util.py",
+        "test/unit/x.py",
+        "app/test_models.py",
+        "app/models_test.py",
+        "conftest.py",
+        "app/conftest.py",
+    ],
+)
+def test_b101_is_dropped_in_test_files(uri: str) -> None:
+    document = sarif()
+    document["runs"][0]["results"] = [assert_result(uri)]
+    assert json.loads(adapter.adapt(json.dumps(document).encode()))["runs"][0]["results"] == []
+
+
+@pytest.mark.parametrize(
+    "uri",
+    ["app/handlers.py", "app/latest/x.py", "app/contest.py", "app/testdata.py", "attest/a.py"],
+)
+def test_b101_stays_in_production_files(uri: str) -> None:
+    document = sarif()
+    document["runs"][0]["results"] = [assert_result(uri)]
+    (result,) = json.loads(adapter.adapt(json.dumps(document).encode()))["runs"][0]["results"]
+    assert result["ruleId"] == "B101"
+    assert result["locations"][0]["physicalLocation"]["artifactLocation"] == {"uri": uri}
+
+
+def test_other_rules_stay_in_test_files_and_b101_without_location_stays() -> None:
+    document = sarif()
+    no_location = {**assert_result("tests/x.py"), "locations": []}
+    document["runs"][0]["results"] = [assert_result("tests/test_api.py", "B602"), no_location]
+    results = json.loads(adapter.adapt(json.dumps(document).encode()))["runs"][0]["results"]
+    assert [r["ruleId"] for r in results] == ["B602", "B101"]
+
+
 def test_adapt_rewrites_uri_and_drops_snippets_and_foreign_properties() -> None:
     out = json.loads(adapter.adapt(json.dumps(sarif()).encode()))
     run = out["runs"][0]

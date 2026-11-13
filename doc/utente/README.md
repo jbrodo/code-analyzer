@@ -139,6 +139,7 @@ Un repository può ridurre i risultati di uno scanner nei modi seguenti, e il re
 | semgrep | File JavaScript in UTF-16 |
 | trivy, syft | `"dev": true` nel lockfile (osv-scanner mantiene i risultati) |
 | bandit | File con errore di sintassi, byte NUL o `coding` inesistente: saltati (semgrep li analizza ancora) |
+| bandit | `B101` (`assert`) nei file di test: cartelle `test`, `tests`, `testing`, file `test_*.py`, `*_test.py`, `conftest.py`. Altrove resta un finding |
 | bandit | Directory `.tox`, `.eggs`, `__pycache__`, `CVS`, `.hg`, `.svn` (semgrep le analizza ancora) |
 | Vari | Lockfile dentro `node_modules/` o con un nome non standard |
 | Vari | Script senza estensione |
