@@ -252,14 +252,14 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §7.3, §12. ADR: 0013, 0015.
 
 #### V-03 — Output reali dei nuovi motori
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`, campioni in `tests/fixtures/plugin-output/fase-2/`. typescript-eslint non accetta TypeScript 7; le metriche stanno solo nel testo dei messaggi; il formattatore SARIF di eslint non va usato.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`, `tests/fixtures/plugin-output/`.
 - Dipende da: V-01.
 - Accettazione: campioni reali e, per ruff, eslint, checkov, hadolint: SARIF disponibile o formato nativo necessario, campi di severità, `uri` relativi o assoluti, metriche presenti nei messaggi delle regole di complessità e dimensione (servono alla Variante B), formato dei report LCOV e Cobertura prodotti da coverage.py, pytest-cov, istanbul/nyc e vitest.
 - Spec: §6.2, §7.1. ADR: 0007.
 
 #### V-04 — Comportamento offline e con le restrizioni del container
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Tutti girano con il profilo dei plugin; nessuno è sicuro con le impostazioni predefinite. `.checkov.yaml` del repository si applica anche con `--config-file`.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: V-01.
 - Accettazione: ciascun motore gira con `network: none`, workspace in sola lettura e il profilo di F1:V-07. In particolare: cache di ruff con workspace in sola lettura, chiamate di rete e telemetria di checkov e come disattivarle, eslint con una configurazione inclusa nell'immagine senza `node_modules` del repository, hadolint senza configurazione esterna.

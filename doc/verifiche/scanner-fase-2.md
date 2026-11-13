@@ -61,7 +61,7 @@ Il Temporal SDK non è nell'elenco: D2-01 lo esclude dalla Fase 2.
 - **Driver PostgreSQL (D2-07, D2-14).** psycopg è LGPL-3.0-only, una licenza che la policy D-0013 mette tra quelle da approvare. Il server lo userebbe come libreria importata, non modificata. Le alternative senza copyleft sono asyncpg (Apache-2.0, solo asincrono) e pg8000 (BSD-3-Clause, Python puro). La scelta è di ADR-0030 (A-15).
 - **hadolint (D2-14).** GPL-3.0, eseguito come binario separato nella propria immagine. Il progetto è GPL-3.0-only, quindi la combinazione non introduce una licenza più restrittiva di quella del prodotto; resta la valutazione di D2-14 sulla distribuzione dell'immagine.
 - **Componenti fermi.** tree-sitter-typescript (novembre 2024) e `@microsoft/eslint-formatter-sarif` (aprile 2024) non hanno rilasci recenti, mentre i loro compagni sono avanzati di una o più serie. Vanno provati prima di fissarli: V-07 per la grammatica, V-03 per il formattatore.
-- **TypeScript 7.** È la serie corrente e cambia compilatore. typescript-eslint, openapi-typescript e vite vanno provati con questa serie in V-03 e W-01; se uno non la regge, si fissa l'ultima 6.x.
+- **TypeScript 7.** È la serie corrente e cambia compilatore. typescript-eslint 8.72.2 non la accetta (V-03): per il plugin eslint vale la 6.0.3. openapi-typescript e vite vanno provati in W-01; se uno non la regge, anche `web/` usa la 6.0.3.
 - **Node.** gli intervalli dichiarati da eslint 10, vite 8 e vitest 5 hanno in comune Node 22 dalla 22.13 e Node 24. Node 24 li soddisfa tutti: è il candidato per l'immagine del plugin eslint e per la CI di `web/`.
 - **Python.** I motori dei plugin girano nelle immagini con Python 3.12 (base dei plugin), il server con Python 3.14. Nessun pacchetto del server dichiara un limite superiore di versione di Python; psycopg-binary, asyncpg e tree-sitter hanno una wheel cp314. L'installazione su 3.14 non è stata provata.
 - **Frequenza dei rilasci.** checkov, fastapi, ruff e typescript-eslint pubblicano più volte al mese: le versioni di questa tabella sono un punto di partenza, e ogni task che aggiunge la dipendenza fissa quella corrente con il proprio checksum.
@@ -292,3 +292,94 @@ Il terzo `import()` "calcolato" contato dallo script su excalidraw è in realtà
 - **Alias di `tsconfig`:** vanno risolti, o il grafo dei progetti TypeScript perde gran parte degli archi interni. È il punto più importante emerso.
 - **Archi mancanti:** import calcolati e caricamenti dinamici sono pochi (da 0 a 7 per pilota) ma esistono: il grafo dichiara quanti ne ha saltati.
 - **Limiti di questa misura:** nessuna risoluzione degli import è stata implementata, solo il conteggio delle forme; `extends` tra file `tsconfig`, i workspace dei monorepo e le riesportazioni non sono stati esaminati.
+
+## V-03 — Output reali dei nuovi motori
+
+Verificato il 2026-11-13 eseguendo gli strumenti alle versioni di V-01 su un repository di esempio di poche righe (Python, JS, TS, TSX, un Dockerfile, un manifest Kubernetes, un file Terraform). I campioni sono in `tests/fixtures/plugin-output/fase-2/`. I quattro SARIF prodotti sono validi contro lo schema SARIF 2.1.0 del repository.
+
+**Correzione a V-01:** typescript-eslint 8.72.2 dichiara `typescript >=4.8.4 <6.1.0` e l'installazione con TypeScript 7.0.2 fallisce. Per il plugin eslint la versione di TypeScript è la 6.0.3 (2026-04-16). TypeScript 7 resta candidato solo per `web/`, se gli strumenti del frontend lo reggono (W-01).
+
+| | ruff | eslint | checkov | hadolint |
+| --- | --- | --- | --- | --- |
+| SARIF nativo | Sì, `--output-format sarif` | No: JSON nativo; SARIF solo con il formattatore esterno | Sì, `-o sarif` | Sì, `-f sarif` |
+| `uri` | Assoluti: `file:///workspace/...` | JSON: `filePath` assoluto. Formattatore: `file:///workspace/...` | Relativi alla radice del file system, senza barra iniziale: `workspace/Dockerfile` | Il percorso passato sulla riga di comando: `/workspace/Dockerfile` |
+| Severità | `level` sempre `error`. Nessuna distinzione tra regole | JSON: `severity` 1 o 2, cioè quella scelta nella configurazione. Formattatore: `warning` o `error` | `level` sempre `error`. Le severità di checkov vengono dalla piattaforma a pagamento e senza chiave non ci sono | `error`, `warning`, `note`, dalla severità propria di ogni regola (`error`, `warning`, `info`, `style`) |
+| Regole nel SARIF | `rules[]` con `shortDescription`, `fullDescription` in Markdown, `helpUri`; `help.text` è il modello del messaggio, non una spiegazione | Formattatore: `rules[]` con `shortDescription` e `helpUri` | `rules[]` con nome; `help.text` ripete il nome e la risorsa | Nessun `rules[]` |
+| Frammenti di codice | No | No, né nel JSON né nel SARIF | **Sì: `region.snippet` con il testo della risorsa** | No |
+| Uscita con finding | 1 | 1 | 1; 0 con `soft-fail` | 1 |
+| Altro | Ogni risultato porta `fixes` | Il JSON elenca anche i file senza messaggi | Un risultato per controllo e risorsa: 34 risultati su tre file di esempio | Analizza solo i file passati: i Dockerfile vanno elencati dall'adattatore |
+
+### Metriche per la Variante B
+
+Nessuno strumento espone la metrica come campo: sta solo nel testo del messaggio.
+
+| Strumento | Regola | Messaggio reale |
+| --- | --- | --- |
+| ruff | `C901` | `` `branchy` is too complex (9 > 3) `` |
+| ruff | `PLR0913` | `Too many arguments in function definition (7 > 5)` |
+| ruff | `PLR0911`, `PLR0912`, `PLR0915` | `Too many return statements (6 > 3)`, `Too many branches (8 > 3)`, `Too many statements (8 > 5)` |
+| eslint | `complexity` | `Function 'branchy' has a complexity of 7. Maximum allowed is 3.` |
+| eslint | `max-params` | `Function 'branchy' has too many parameters (4). Maximum allowed is 3.` |
+| eslint | `max-lines-per-function` | `Function 'branchy' has too many lines (18). Maximum allowed is 10.` |
+| eslint | `max-depth` | `Blocks are nested too deeply (3). Maximum allowed is 2.` |
+
+Conseguenze per ADR-0023 e ADR-0026:
+
+- L'adattatore estrae valore e soglia dal messaggio con un'espressione per regola e li mette nell'evidenza. Il formato del messaggio diventa parte di ciò che va riprovato a ogni aggiornamento dello strumento.
+- Lo strumento segnala solo ciò che supera la soglia. Per avere la distribuzione completa che serve ai quantili del benchmark (D2-11) le soglie vanno impostate al minimo, e i finding sotto la soglia vera vanno scartati dopo aver registrato la metrica. Altrimenti il benchmark vede solo la coda.
+- eslint misura la complessità con la stessa regola per JS, TS e TSX, attraverso il parser di typescript-eslint.
+
+### Formattatore SARIF di eslint
+
+Funziona con eslint 10, ma dichiara `eslint ^8.9.0` come dipendenza: l'installazione porta nell'immagine una seconda copia di eslint, la 8.57.1, non più supportata, con dipendenze deprecate. Con V-01 (fermo dal 2024) e V-02 (nessun testo di licenza nel pacchetto) sono tre motivi per non usarlo: l'adattatore converte il JSON nativo di eslint.
+
+### Report di copertura
+
+| | coverage.py 7.17.3 (anche con pytest-cov 7.1.0) | vitest 5.1.0 con `@vitest/coverage-v8` | nyc 18.0.0 |
+| --- | --- | --- | --- |
+| LCOV, percorsi | `SF:pkg/calc.py`, relativo alla cartella in cui girano i test | `SF:src/calc.js`, relativo alla radice del progetto | Vuoto sul campione: nyc non strumenta i moduli ES senza un caricatore |
+| LCOV, record | `DA`, `LF`, `LH`, `FN` con riga iniziale e finale (`FN:1,2,add`), `FNDA`, `FNF`, `FNH`; nessun `TN` | `TN:` vuoto, `FN` con la sola riga (`FN:1,add`), `FNDA`, `FNF`, `FNH`, `DA`, `LF`, `LH`, `BRDA`, `BRF`, `BRH` | — |
+| Cobertura, percorsi | `<source>` con il percorso assoluto della macchina che ha eseguito i test; `filename` relativo a quello | Idem | Idem |
+| Cobertura, intestazione | Nessun `DOCTYPE` | `<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">` | Idem |
+| Cobertura, valori | `line-rate` decimale | `line-rate` decimale | `line-rate="NaN"` nel report vuoto |
+
+Conseguenze per ADR-0026 e P-05:
+
+- I percorsi sono relativi alla cartella in cui girano i test, non alla radice del repository, e `<source>` è un percorso di un'altra macchina. Il plugin deve ricondurli al workspace, con la cartella di lavoro dei test indicata in `plugins.coverage`, e scartare ciò che esce dal workspace.
+- Il `DOCTYPE` con DTD esterna va ignorato senza scaricare nulla: il lettore XML deve avere entità esterne e DTD disattivate.
+- Due dialetti di `FN` in LCOV, e valori non numerici in Cobertura: lettura tollerante sulla forma, rigida sui limiti.
+- Un report vuoto è valido e non è un errore del plugin.
+
+## V-04 — Comportamento offline e con le restrizioni del container
+
+Verificato il 2026-11-13 con il profilo dei plugin: `--network none`, file system in sola lettura, `/tmp` tmpfs `noexec`, nessuna capability, `no-new-privileges`, utente 65534, 1 CPU, 2 GB, 64 processi, workspace montato in sola lettura. Il repository di esempio contiene per ogni strumento un file di configurazione ostile.
+
+| Strumento | Con le restrizioni | Rete | Configurazione del repository |
+| --- | --- | --- | --- |
+| ruff | **Predefinito: fallisce.** Scrive la cache in `.ruff_cache` dentro il workspace ("Read-only file system"). Con `--no-cache` funziona | Nessuna chiamata | Con `--isolated` `ruff.toml` e `pyproject.toml` del repository non si leggono |
+| eslint | Funziona, con la cartella di lavoro nel workspace. Da un'altra cartella tutti i file risultano ignorati perché fuori dalla base della configurazione | Nessuna chiamata | **Predefinito: esegue `eslint.config.js` del repository come codice** (il file di prova ha scritto in `/tmp`). Con `--no-config-lookup -c <config dell'immagine>` non viene caricato |
+| checkov | Funziona. Scrive cache in `$HOME`, che deve essere scrivibile (`HOME=/tmp`) | **Predefinito: chiama `api0.prismacloud.io`** per le linee guida; senza rete registra un avviso e prosegue. Con `--skip-download` nessuna chiamata e nessun avviso | **`.checkov.yaml` nella cartella analizzata si applica anche con `--config-file` su un altro file:** 34 controlli falliti invece di 36, e uscita 0 per `soft-fail`. Non si applica passando i file uno per uno con `-f`, o analizzando una copia senza quel file |
+| hadolint | Funziona | Nessuna chiamata | `.hadolint.yaml` nella cartella di lavoro si applica: 2 segnalazioni invece di 8. Da un'altra cartella di lavoro non viene letto. `--config /dev/null` non è utilizzabile: errore di lettura |
+
+Tempi sul campione: checkov circa 3 s per esecuzione, gli altri sotto il secondo. Non misurati sui pilota.
+
+### Soppressioni scritte nei file analizzati
+
+Oltre ai file di configurazione, ogni strumento accetta commenti di soppressione nel codice, che sono dati del repository:
+
+| Strumento | Verificato | Stato |
+| --- | --- | --- |
+| checkov | `#checkov:skip=<regola>:<motivo>` toglie il controllo dai falliti e lo mette tra i saltati, visibili nell'uscita JSON | Verificato. Nessuna opzione per disattivarlo è stata trovata: l'adattatore può leggere i saltati dal JSON |
+| ruff | `# noqa`; esiste l'opzione `--ignore-noqa` | Non verificato |
+| eslint | `/* eslint-disable */`; esiste l'opzione `--no-inline-config` | Non verificato |
+| hadolint | `# hadolint ignore=...`; esiste l'opzione `--disable-ignore-pragma` | Non verificato |
+
+In Fase 1 la scelta è stata non rispettare le soppressioni del repository (bandit con `--ignore-nosec`). ADR-0026 decide se vale anche qui; le tre opzioni non verificate vanno provate in P-01, P-02 e P-04.
+
+### Cosa ne segue per ADR-0026
+
+- Tutti e quattro girano con il profilo dei plugin esistente. Nessuno richiede la rete.
+- **Nessuno è sicuro con le impostazioni predefinite.** Per ciascuno esiste un'invocazione che ignora la configurazione del repository, ed è diversa per ognuno: `--isolated --no-cache` per ruff; cartella di lavoro nel workspace con `--no-config-lookup -c` per eslint; file passati uno per uno, `--skip-download` e `HOME` scrivibile per checkov; cartella di lavoro fuori dal workspace per hadolint. Ogni plugin deve avere un test con la configurazione ostile, come P-02 già prevede per eslint.
+- Il caso di checkov è il più insidioso, perché l'opzione che sembra risolverlo (`--config-file`) non basta.
+- L'output di checkov contiene frammenti dei file analizzati: l'adattatore li toglie, come per gli altri plugin (ADR-0007, ADR-0012).
+- ruff e checkov non danno una severità utile: il livello provvisorio di tutti i loro finding sarebbe lo stesso. Serve una tabella di severità per regola nel plugin, o il livello resta piatto finché non c'è il punteggio.
