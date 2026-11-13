@@ -64,7 +64,7 @@ I filtri attivi sono visibili come elenco sopra la tabella, ciascuno rimovibile,
 
 ### Tastiera
 
-Frecce o `j`/`k` per muoversi tra le righe, `Invio` apre il dettaglio, `Esc` lo chiude e riporta il fuoco sulla riga, `/` porta il fuoco sulla ricerca. Dettagli e alternative in U-03.
+Frecce o `j`/`k` per muoversi tra le righe, `Invio` apre il dettaglio, `Esc` lo chiude e riporta il fuoco sulla riga, `/` porta il fuoco sulla ricerca. Le scorciatoie valgono solo con il fuoco nella tabella. Dettagli in `doc/ux/accessibilita.md`.
 
 ## 3. Dettaglio di un finding
 

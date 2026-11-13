@@ -435,7 +435,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §1. ADR: nessuno.
 
 #### U-03 — Criteri di accessibilità
-- Agente: `ux-ui`. Stato: `LIBERO`.
+- Agente: `ux-ui`. Stato: **chiuso il 2026-11-13**; `doc/ux/accessibilita.md`, con la verifica (automatica o manuale) indicata per ogni criterio.
 - Percorsi: `doc/ux/`.
 - Dipende da: U-01.
 - Accettazione: criteri WCAG 2.2 AA applicati alle viste di U-01, navigazione da tastiera della tabella, contrasto, verificabili con test automatici in W-08 e con la revisione U-05.
