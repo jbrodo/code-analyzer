@@ -31,7 +31,7 @@ Opzione 2.
 
 §9.2 dice "Avvia una scansione": in Fase 2 significa "registra una scansione eseguita".
 
-- Corpo `multipart/form-data` con tre parti: `report` (obbligatoria, `scan-report`), `sarif` (facoltativa, SARIF aggregato di ADR-0011), `sbom` (facoltativa, CycloneDX). I nomi dei file non contano.
+- Corpo `multipart/form-data` con tre parti: `report` (obbligatoria, `scan-report`), `sarif` (facoltativa, SARIF aggregato di ADR-0011), `sbom` (facoltativa, CycloneDX). I nomi dei file non contano. ADR-0018 aggiunge una quarta parte facoltativa, `graph`, per il grafo dei moduli.
 - Ogni parte è un input non fidato: si valida contro i file di `schemas/` con gli stessi lettori difensivi del nucleo (limiti di dimensione, profondità e numero di elementi). Un artefatto non valido respinge l'intera richiesta: non esistono ingestioni a metà.
 - Il report deve avere `commit`. Una scansione di una cartella non git non si carica.
 - Il repository del report deve coincidere con quello del token della pipeline (ADR-0019). Senza corrispondenza: 403.

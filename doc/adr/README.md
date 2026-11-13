@@ -21,6 +21,8 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Accettato | Presa il 2026-11-10 |
 | [0016](0016-modalita-server-e-orchestrazione.md) | Modalità server e orchestrazione in Fase 2 | Accettato | Presa il 2026-11-10 (D2-01) |
 | [0017](0017-flusso-contratto-openapi.md) | Flusso del contratto OpenAPI | Proposto | No |
+| [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Proposto | No (D2-02 per l'esercizio dei tenant) |
+| [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto | Sì, D2-05 (aperta) per il mirror |
 
 ## Aggiornamenti dopo la stesura
 

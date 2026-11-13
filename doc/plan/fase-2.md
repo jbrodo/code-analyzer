@@ -312,7 +312,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §2, §9.2. ADR: 0003.
 
 #### A-03 — ADR-0018: modello dati relazionale e multi-tenancy
-- Agente: `architect`. Stato: `LIBERO` (dipende da D2-02 solo per l'esercizio dei tenant).
+- Agente: `architect`. Stato: **chiuso il 2026-11-13**; ADR-0018 `Proposto` in attesa delle prove di C-07 e B-02. Aggiunge la tabella `finding_events` e la parte `graph` dell'ingestione.
 - Percorsi: `doc/adr/0018-*.md`.
 - Dipende da: A-01.
 - Accettazione: tabelle di §4.3 necessarie in Fase 2 (`tenants`, `repositories`, `scans`, `findings`, `finding_occurrences`, `components`, `graph_nodes`, `graph_edges`, `exceptions`), escluse quelle di Fase 3; schema per tenant con `tenants` globale e migrazioni Alembic per schema; `id` opaco distinto dal fingerprint, unicità `(repository_id, fingerprint)`; `first_seen` e `last_seen` dal DB; precedenza tra stato e eccezioni sul server e `exceptions` di `.code-analyzer.yml`; dove si salvano i punteggi in ombra; conservazione dello storico.
@@ -354,7 +354,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §6.2. ADR: 0020, 0021.
 
 #### A-09 — ADR-0024: feed EPSS e KEV, cache e mirror
-- Agente: `architect`. Stato: `LIBERO` (stesura); la chiude D2-05.
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-13**; ADR-0024 `Proposto`, la parte su mirror e firma attende D2-05.
 - Percorsi: `doc/adr/0024-*.md`.
 - Dipende da: V-05.
 - Accettazione: sincronizzazione senza workspace come ADR-0006; porta in `ca_core/scoring/feeds/` e adattatore di rete fuori dal nucleo (ADR-0001); cache e soglia di età; origine dei feed solo da pacchetto, flag o ambiente (ADR-0014); mirror e firma degli snapshot secondo D2-05; comportamento con feed assente (P di A senza EPSS dichiarato nell'evidenza, mai un valore inventato).
