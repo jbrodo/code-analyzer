@@ -245,7 +245,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §2, §7.3, §16 regola 2. ADR: 0007, 0015.
 
 #### V-02 — Licenze sul testo della versione fissata
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Tutti i checksum coincidono. Per D2-14 e D2-07: hadolint e psycopg da approvare, MinIO vietato, formattatore SARIF di eslint senza testo di licenza nel pacchetto.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: V-01.
 - Accettazione: licenza letta dal file al tag fissato per ogni voce di V-01 e per MinIO, con collegamento e confronto con D-0013. In evidenza i casi da sottoporre a D2-14: hadolint, driver PostgreSQL, MinIO, grammatiche tree-sitter, schemi dei report GitLab. Registra anche i requisiti di GitHub Marketplace (posizione di `action.yml`) e del catalogo CI/CD di GitLab. Non è il parere legale.

@@ -66,6 +66,66 @@ Il Temporal SDK non è nell'elenco: D2-01 lo esclude dalla Fase 2.
 - **Python.** I motori dei plugin girano nelle immagini con Python 3.12 (base dei plugin), il server con Python 3.14. Nessun pacchetto del server dichiara un limite superiore di versione di Python; psycopg-binary, asyncpg e tree-sitter hanno una wheel cp314. L'installazione su 3.14 non è stata provata.
 - **Frequenza dei rilasci.** checkov, fastapi, ruff e typescript-eslint pubblicano più volte al mese: le versioni di questa tabella sono un punto di partenza, e ogni task che aggiunge la dipendenza fissa quella corrente con il proprio checksum.
 
+## V-02 — Licenze sul testo della versione fissata
+
+Verificato il 2026-11-13. Per ogni voce di V-01 ho scaricato l'artefatto della versione fissata, ne ho confrontato il checksum con quello del registro (tutti coincidono) e ho letto il file di licenza contenuto nell'artefatto. Per hadolint, MinIO e gli schemi di GitLab il file è stato letto dal repository. Il riconoscimento è sul testo del file, per frasi caratteristiche: dice quale licenza è, non se è stata modificata. Non è un parere legale.
+
+Confronto con D-0013: **ammessa** se non è né vietata né da approvare; le altre due classi sono quelle della policy.
+
+| Componente | File letto | Licenza dal testo | D-0013 |
+| --- | --- | --- | --- |
+| ruff 0.17.5 | `LICENSE` nella wheel | MIT | Ammessa |
+| checkov 3.4.5 | `LICENSE` nella wheel | Apache-2.0 | Ammessa |
+| hadolint 2.15.1 | `LICENSE` al tag `v2.15.1` | GPL versione 3 | **Da approvare** |
+| eslint 10.14.0 | `LICENSE` nel pacchetto | MIT | Ammessa |
+| typescript-eslint 8.72.2 | `LICENSE` nel pacchetto | MIT | Ammessa |
+| @microsoft/eslint-formatter-sarif 3.1.0 | **Nessun file di licenza nel pacchetto.** I metadati dichiarano MIT; il sorgente è nel repository `Microsoft/sarif-js-sdk` | Non verificabile dal pacchetto | Da chiarire |
+| tree-sitter 0.26.1 | `LICENSE` nella wheel | MIT | Ammessa |
+| tree-sitter-python 0.25.0, tree-sitter-javascript 0.25.0 | `LICENSE` nella wheel | MIT | Ammessa |
+| tree-sitter-typescript 0.23.2 | `LICENSE` nella wheel e al tag `v0.23.2` | MIT | Ammessa |
+| fastapi 0.162.6, sqlalchemy 2.1.8, alembic 1.20.1, pyjwt 2.15.1 | `LICENSE` nella wheel | MIT | Ammessa |
+| uvicorn 0.54.0, authlib 1.9.5 | `LICENSE` nella wheel | BSD a 3 clausole | Ammessa |
+| psycopg 3.3.9, psycopg-binary 3.3.9 | `LICENSE.txt` nella wheel | LGPL versione 3 | **Da approvare** |
+| asyncpg 0.32.0 | `LICENSE` nella wheel | Apache-2.0 | Ammessa |
+| pg8000 1.31.6 | `LICENSE` nella wheel | BSD a 3 clausole | Ammessa |
+| opentelemetry-api e opentelemetry-sdk 1.45.2, testcontainers 4.15.0 | `LICENSE` nella wheel | Apache-2.0 | Ammessa |
+| react e react-dom 19.3.1, openapi-typescript 7.13.0, @testing-library/react 16.3.3 | `LICENSE` nel pacchetto | MIT | Ammessa |
+| vite 8.3.8, vitest 5.1.0 | `LICENSE.md` nel pacchetto | MIT, seguita dalle licenze delle dipendenze incluse nel pacchetto | Ammessa per il testo principale; le dipendenze incluse non sono state lette una per una |
+| typescript 7.0.2 | `LICENSE` e `NOTICE.txt` nel pacchetto | Apache-2.0; il `NOTICE` riporta testi MIT di terzi | Ammessa |
+| pnpm 12.18.0 | Nessun file di licenza al primo livello; i metadati dichiarano MIT. Il pacchetto include dipendenze con i propri file di licenza | Non verificabile dal primo livello | Strumento di build, non distribuito con il prodotto |
+| MinIO (server) | `LICENSE` del repository, ramo `master` | AGPL versione 3 | **Vietata** in un prodotto distribuito |
+| Schemi dei report di sicurezza GitLab | `LICENSE.md` del repository `gitlab-org/security-products/security-report-schemas` | MIT | Ammessa |
+
+### Da portare a D2-14 e D2-07
+
+- **hadolint:** licenza da approvare. È un binario separato nella propria immagine; la licenza del progetto è della stessa famiglia e versione.
+- **psycopg:** licenza da approvare, usata come libreria importata dal server. `psycopg-binary` include anche libpq e le sue dipendenze, non lette qui. Alternative con licenze ammesse: asyncpg e pg8000.
+- **MinIO:** conferma l'ipotesi di D2-07: il server non può far parte di un prodotto distribuito senza un'eccezione alla policy. La raccomandazione di D2-07 (porta `ArtifactStore` con adattatore su file system, nessun server di object storage incluso) evita il problema.
+- **Formattatore SARIF di eslint:** il pacchetto non porta il testo della licenza. Con il fatto che è fermo dal 2024 (V-01), pesa a favore del SARIF prodotto dall'adattatore.
+- **Grammatiche tree-sitter:** nessun problema di licenza sul testo. Le wheel contengono codice C generato; la sua provenienza non è stata esaminata.
+- **Dipendenze transitive:** questa verifica copre i componenti nominati, non l'albero delle loro dipendenze. Quello lo copre l'SBOM della build, come in D-0015.
+
+### Requisiti di pubblicazione
+
+Letti alla fonte il 2026-11-13. Servono a D2-12 e D2-13; nulla viene pubblicato (D2-16).
+
+**GitHub Marketplace** (<https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace>):
+
+- "The action must be in a public repository."
+- "Each repository must contain a single action metadata file (`action.yml` or `action.yaml`) at the root." Altri file di metadati in sottocartelle sono ammessi, ma non vengono elencati nel Marketplace.
+- Il `name` dell'action deve essere unico nel Marketplace.
+- Servono l'accettazione dei termini del Marketplace e l'autenticazione a due fattori.
+
+Quindi un'action in `integrations/github-action/` del monorepo si può usare con `uses:` e il percorso, ma non si può elencare nel Marketplace: per quello serve un repository dedicato e pubblico con `action.yml` alla radice. Conferma la raccomandazione di D2-13.
+
+**Catalogo CI/CD di GitLab** (<https://docs.gitlab.com/ci/components/>):
+
+- Il componente vive in un progetto GitLab, in una cartella `templates/` alla radice, con un `README.md`.
+- Per il catalogo: descrizione del progetto, progetto marcato come progetto di catalogo (serve il ruolo Owner), rilascio creato da un job con la parola chiave `release` su una pipeline di tag, tag in versione semantica.
+- "You can only reference components in the same GitLab instance as your project": un'istanza self-managed deve avere una copia del progetto.
+
+Quindi il componente non può essere usato dal repository GitHub: serve un progetto su ciascuna istanza GitLab che lo usa. Conferma l'incoerenza 13 e D2-12.
+
 ## V-05 — Feed EPSS e KEV
 
 Verificato il 2026-11-13, scaricando i file e leggendo le pagine indicate.
