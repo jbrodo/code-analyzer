@@ -389,7 +389,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §4.3, §6.1, §8, §18. ADR: 0014.
 
 #### A-14 — ADR-0029: UI dell'elenco finding, perimetro e dati
-- Agente: `architect`. Stato: `IPOTESI` (D2-15).
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-13** in `IPOTESI` (D2-15); ADR-0029 `Proposto`. Da aggiungere al piano dopo A-16: il testo di aiuto delle regole negli adattatori della Fase 1.
 - Percorsi: `doc/adr/0029-*.md`.
 - Dipende da: U-01, A-02.
 - Accettazione: per ogni vista di U-01, gli endpoint e i campi che servono; endpoint aggiunti a §9.2 (elenco repository, elenco scansioni, dettaglio finding); campo per i passi di correzione nel `Finding` e sua fonte (`help` delle regole SARIF, testi delle regole proprie), reso sempre come testo; ordinamento predefinito e paginazione.
