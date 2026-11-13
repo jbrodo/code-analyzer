@@ -273,7 +273,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §6.1, §19. ADR: 0006.
 
 #### V-06 — Misura preliminare di una scansione PR
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. La scansione completa più lenta dura 221 s: G2.d regge anche senza restringere i plugin ai file cambiati.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: nessuno (CLI della Fase 1).
 - Accettazione: sui 3 pilota della Fase 1, durata per plugin della scansione completa e, a mano, di una scansione limitata ai file di una PR reale scelta e registrata. Indica quali plugin si possono restringere ai file cambiati (SAST, qualità) e quali devono vedere tutto il repository (dipendenze, licenze da SBOM), e quanto margine resta sotto i 10 minuti. Serve ad A-10.

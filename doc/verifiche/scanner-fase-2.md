@@ -178,3 +178,62 @@ Serve a D2-05 (mirror) e a D2-14.
   - OSV per PyPI e GitHub Advisory: CC-BY 4.0, ridistribuibile con attribuzione. Va chiarito quale sorgente copre npm.
   - trivy-db: le licenze dei dati aggregati non sono dichiarate nel README. Valutazione necessaria prima di ridistribuire il database.
 - **Non verificato:** l'API di EPSS; i termini generali del sito FIRST (`/about/policies/terms`); il file `LICENSE` di trivy-db; le licenze delle singole sorgenti di trivy-db.
+
+## V-06 — Misura preliminare di una scansione PR
+
+Misurato il 2026-11-13 sulla macchina di sviluppo, con la CLI impacchettata da `package-cli.sh` al commit `2790159` (include P-07), immagini firmate sul registry locale, `--offline` con gli snapshot dei feed già in cache. Una sola esecuzione per caso: i valori indicano l'ordine di grandezza, non una media.
+
+Differenze rispetto alla misura del Gate 1 (`gate-1.md`): i pilota sono clonati con 80 commit di storia anziché per intero, quindi gitleaks vede meno storia; bandit non riporta più B101 nei test.
+
+### Scansione completa, per plugin
+
+Durate in secondi, dal report. I plugin girano in parallelo dopo syft, quindi il totale è vicino a syft più il plugin più lento.
+
+| Pilota | Totale | Finding | syft | osv-scanner | trivy | scancode | semgrep | bandit | gitleaks |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` (`aabb901`) | 15,9 | 474 | 1,2 | 13,2 | 1,3 | 12,9 | 2,8 | 1,0 | 1,0 |
+| `excalidraw` (`701b901`) | 141,7 | 1.515 | 1,5 | 16,6 | 1,8 | 135,8 | 11,5 | saltato | 4,8 |
+| `saleor` (`1d707dc`) | 220,8 | 436 | 1,4 | 13,2 | 2,0 | 217,8 | 5,5 | 66,9 | 12,9 |
+
+Tutte `complete`. Rispetto al Gate 1 saleor passa da 47.718 a 436 finding e da 247,7 a 220,8 s. scancode determina il totale su due pilota su tre.
+
+### Scansione limitata ai file di una PR
+
+Simulata a mano: una cartella con i soli file toccati dalla PR, nella versione del commit del pilota, scansionata con la stessa CLI. La cartella non ha storia git, quindi gitleaks analizza i file e non i commit.
+
+| Pilota | PR di riferimento | File | Totale | scancode | semgrep | bandit | gitleaks |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | #2460, commit `f8dd304`: 11 file, di cui 7 ancora presenti | 7 | 7,2 | 5,2 | 2,5 | 0,7 | 0,7 |
+| `excalidraw` | #12516, commit `dd2f8fc` | 16 | 23,9 | 22,0 | 3,9 | saltato | 0,8 |
+| `saleor` | #19969, commit `0e3fa1b` | 7 | 7,2 | 5,4 | 2,5 | 0,8 | 0,7 |
+
+In questa simulazione anche syft, osv-scanner e trivy hanno visto solo i file della PR: i loro valori non servono e non sono riportati.
+
+### Quali plugin si possono restringere
+
+| Plugin | Si restringe ai file cambiati? | Motivo |
+| --- | --- | --- |
+| bandit, semgrep | Sì | Regole su un file alla volta. Un file cambiato può però spostare un finding in un file non cambiato solo con regole tra file, che i motori usati non hanno |
+| scancode, licenze dei file | Sì | La licenza rilevata in un file dipende solo dal file |
+| scancode, licenze dei componenti | No | Legge l'SBOM dell'intero repository |
+| syft | No | L'SBOM descrive tutto il repository; un manifest cambiato può essere ovunque |
+| osv-scanner, trivy | No | Leggono manifest e lockfile dell'intero repository. Costano poco: da 1,3 a 2,0 s trivy, da 13 a 17 s osv-scanner, quasi tutti di caricamento del database |
+| gitleaks | Non per file: per intervallo di commit | In una PR vanno analizzati i commit della PR, non i file nello stato finale: un segreto aggiunto e tolto nella stessa PR resta nella storia |
+
+### Stima della scansione PR e margine
+
+Stima: syft completo, poi in parallelo osv-scanner e trivy completi e gli altri ristretti; si aggiunge lo scarto tra totale e plugin misurato nella scansione completa (da 1,5 a 4,4 s).
+
+| Pilota | Plugin più lento | Stima | Scansione completa | Margine sotto 600 s |
+| --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | osv-scanner, 13,2 s | circa 16 s | 15,9 s | circa 584 s |
+| `excalidraw` | scancode sui file della PR, 22,0 s | circa 28 s | 141,7 s | circa 572 s |
+| `saleor` | osv-scanner, 13,2 s | circa 16 s | 220,8 s | circa 584 s |
+
+### Cosa ne segue per ADR-0025
+
+- **G2.d è già soddisfatta senza restringere nulla:** la scansione completa più lenta dura 221 s. La restrizione ai file cambiati riduce saleor da 221 a circa 16 s, ma non serve a rispettare i 10 minuti.
+- **Scansionare anche il branch base nello stesso job è sostenibile:** costa una scansione completa in più, al massimo 221 s sui pilota. Base completo più PR ristretta: circa 240 s su saleor. Base e PR entrambi completi: circa 440 s, ancora sotto i 600 s ma con poco margine.
+- **Il collo di bottiglia è scancode,** non gli scanner di sicurezza: 136 e 218 s sui due pilota grandi. È anche il plugin che guadagna di più dalla restrizione.
+- **osv-scanner ha un costo fisso di circa 13 s** indipendente dal repository: è il pavimento di ogni scansione PR finché gira per intero.
+- **Limiti di questa misura:** mancano i plugin della Fase 2 (ruff, eslint, checkov, hadolint, coverage) e `ca-graph`, che deve vedere tutto il repository; la restrizione è simulata copiando i file, non con la modalità `--pr`; una sola esecuzione; storia git ridotta. X-05 rimisura con la modalità reale e la regola del Gate 1.
