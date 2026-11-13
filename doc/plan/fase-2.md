@@ -428,7 +428,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §1, §4.1, §6, §13. ADR: nessuno.
 
 #### U-02 — Design token e componenti di base
-- Agente: `ux-ui`. Stato: `LIBERO`.
+- Agente: `ux-ui`. Stato: **chiuso il 2026-11-13**; `doc/ux/tokens.json` e `doc/ux/componenti.md`. I contrasti dei token sono verificati da `doc/ux/check_tokens.py`, eseguito nei test.
 - Percorsi: `doc/ux/`.
 - Dipende da: U-01.
 - Accettazione: token (colori, tipografia, spaziature) in un file leggibile da `frontend`; componenti di base (tabella densa, filtri, badge di livello con testo e non solo colore, pannello di dettaglio, dialogo).
