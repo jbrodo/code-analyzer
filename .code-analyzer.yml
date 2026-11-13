@@ -1,6 +1,8 @@
 # X-03: policy di licenze decisa in D-0013, usata anche per i repository pilota.
 # Il file stesso e' escluso: scancode riconosce gli identificatori SPDX elencati qui sotto.
 # Eccezioni: falsi positivi confermati, triage in doc/verifiche/gate-1.md.
+# Le ultime 6 (X-10) non sono falsi positivi: licenze effettive di componenti nelle immagini,
+# accettate come rischio residuo con l'approvazione di D-0015 del 2026-11-10.
 version: 1
 paths:
   exclude:
@@ -118,5 +120,29 @@ exceptions:
     approved_by: "Riccardo Roveda"
   - fingerprint: "sha256:dcbc2e54ada6869387b6bd6c1f18861a3f05341ccfd7886456769b47c4db7776"
     reason: "Finding comparso solo con l'aggiunta di LICENSE, file invariato: licenza del progetto attribuita da scancode."
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:667700ee9555f29cd47c43f1fd6e971e5629ee74999a32ad3dd14afec3adcb26"
+    reason: "Rischio residuo accettato, non falso positivo: deploy/docker/LICENSES-SBOM.md registra la licenza LGPL del motore semgrep. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:664d75c1b5f53f8be721503bbbfb2a3221807e6f86bbe04c34f28616de27267f"
+    reason: "Rischio residuo accettato, non falso positivo: pacchetto Debian git (GPL-2.0-only) nell'immagine gitleaks. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:5eac6fac3bbc3371dbd16836ca34dd1620ebb72e2e7779dbfe1d1dedbf0dcdbd"
+    reason: "Rischio residuo accettato, non falso positivo: libgomp1 e componenti binari GPL nell'immagine scancode. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:d82671dc1118d84f6508ea4521848c515fb8d2aa963740d7ab56efd7dce151e9"
+    reason: "Rischio residuo accettato, non falso positivo: il Dockerfile di semgrep cita il testo LGPL-2.1 del motore installato. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:60d5407fa3f6160171470b9d0a78209364afde530c01c10ed0b41fc58ae8af6b"
+    reason: "Rischio residuo accettato, non falso positivo: semgrep 1.184.0 sotto LGPL-2.1 nell'immagine semgrep. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:751669cbd33d79596c3763ea463028146c821c6d5b78a797efc3fe3a0bdbed80"
+    reason: "Rischio residuo accettato, non falso positivo: testo LGPL-2.1 del motore semgrep incluso nell'immagine. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
