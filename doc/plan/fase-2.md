@@ -280,7 +280,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §5. ADR: 0009, 0010.
 
 #### V-07 — tree-sitter sui pilota
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Meno di 6 s e 42 MB sul pilota più grande, 5 file con errori su 5.259; gli alias di `tsconfig` vanno risolti o il grafo TypeScript perde gran parte degli archi interni.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`, codice usa e getta fuori dal repository.
 - Dipende da: V-01.
 - Accettazione: tempo, memoria e numero di file con errori di parsing per Python, JS, TS e TSX sui 3 pilota; casi di import non risolvibili staticamente (dinamici, alias di `tsconfig`, `__init__` impliciti). Serve ad A-05.

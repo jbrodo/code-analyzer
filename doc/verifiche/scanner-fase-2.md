@@ -237,3 +237,58 @@ Stima: syft completo, poi in parallelo osv-scanner e trivy completi e gli altri 
 - **Il collo di bottiglia è scancode,** non gli scanner di sicurezza: 136 e 218 s sui due pilota grandi. È anche il plugin che guadagna di più dalla restrizione.
 - **osv-scanner ha un costo fisso di circa 13 s** indipendente dal repository: è il pavimento di ogni scansione PR finché gira per intero.
 - **Limiti di questa misura:** mancano i plugin della Fase 2 (ruff, eslint, checkov, hadolint, coverage) e `ca-graph`, che deve vedere tutto il repository; la restrizione è simulata copiando i file, non con la modalità `--pr`; una sola esecuzione; storia git ridotta. X-05 rimisura con la modalità reale e la regola del Gate 1.
+
+## V-07 — tree-sitter sui pilota
+
+Misurato il 2026-11-13 con codice usa e getta fuori dal repository. tree-sitter 0.26.1, tree-sitter-python 0.25.0, tree-sitter-javascript 0.25.0, tree-sitter-typescript 0.23.2, installati dalle wheel per Python 3.14 ed eseguiti nell'immagine `python:3.14-slim-trixie` con `--network none`, file system in sola lettura, utente 65534, 1 CPU, workspace montato in sola lettura. Esclusi `.git`, `node_modules`, `.venv`, `dist`, `build`.
+
+Risponde anche a due dubbi di V-01: le wheel si installano e funzionano su Python 3.14, e la grammatica TypeScript del 2024 (ABI 14) si carica con tree-sitter 0.26.1 (le altre due sono ABI 15).
+
+### Tempo, memoria, errori
+
+Il tempo comprende il parsing e una visita completa dell'albero in Python, che è la parte più lenta; il solo parsing del file più costoso è indicato a parte.
+
+| Pilota | Linguaggio | File | Dimensione | Tempo | Nodi | File con errori | Parsing più lento |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | Python | 43 | 91 KB | 0,02 s | 25 mila | 0 | 2 ms |
+| | TypeScript | 39 | 133 KB | 0,03 s | 37 mila | 0 | 1 ms |
+| | TSX | 70 | 185 KB | 0,04 s | 44 mila | 0 | 2 ms |
+| `excalidraw` | JavaScript | 28 | 128 KB | 0,03 s | 31 mila | 0 | 3 ms |
+| | TypeScript | 372 | 5,3 MB | 0,75 s | 846 mila | 2 | 11 ms |
+| | TSX | 323 | 3,4 MB | 0,82 s | 949 mila | 3 | 30 ms (`App.tsx`, 371 KB) |
+| `saleor` | Python | 4.384 | 28,3 MB | 5,54 s | 6,05 milioni | 0 | 19 ms |
+
+Memoria massima del processo: 26 MB su fastapi, 42 MB su excalidraw, 36 MB su saleor. Il file più grande è `woff2-wasm.ts` di excalidraw, 972 KB di dati incorporati: si analizza senza problemi.
+
+### Errori di parsing
+
+5 file su 5.259, tutti in excalidraw, tutti file di test e tutti per lo stesso costrutto: un argomento di tipo `typeof import("...")` in una chiamata, per esempio `importOriginal<typeof import("../src/binding")>()`. La grammatica 0.23.2 non lo riconosce. L'errore resta locale: il resto del file viene analizzato e gli `import` in cima al file sono letti.
+
+Per il grafo delle dipendenze la conseguenza è piccola, perché quel costrutto è un riferimento di tipo dentro un test. Ma mostra il rischio di una grammatica ferma dal 2024: la sintassi nuova di TypeScript produce errori. `ca-graph` deve trattare un file con errori come analizzato in parte e contarlo nel report, non scartarlo né fallire.
+
+### Import non risolvibili staticamente
+
+Conteggi delle forme di import trovate. "Calcolato" significa che l'argomento non è una stringa letterale.
+
+| Caso | fastapi | excalidraw | saleor | Trattamento proposto per ADR-0020 |
+| --- | --- | --- | --- | --- |
+| Import relativi | 93 (JS/TS) | 3.027 | 16.431 (Python) | Risolvibili dal percorso |
+| Import assoluti di Python | 191 | — | 10.051 | Risolvibili se la radice del pacchetto è nota; altrimenti dipendenza esterna |
+| Import "nudi" di JS/TS | 198 | 2.151 | — | Esterni, salvo gli alias sotto |
+| Alias di `tsconfig` (`paths`) | 203 con prefisso `@/`, dichiarato in `frontend/tsconfig.json` | Alias `@excalidraw/*` in `tsconfig.json` e `packages/tsconfig.base.json`: sono tra gli import nudi | — | **Senza leggere `paths` più della metà degli import interni di fastapi e una parte di quelli di excalidraw risulta esterna.** Va letto `tsconfig.json`, che è un file del repository e quindi un dato non fidato |
+| `require` con stringa | — | 52 | — | Come un import |
+| `require` calcolato | — | 7, negli script di rilascio | — | Non risolvibile: arco mancante, contato |
+| `import()` dinamico con stringa | — | 26 | — | Risolvibile; arco marcato come dinamico |
+| `import()` dinamico calcolato | — | 2 (per esempio `` import(`./locales/${code}.json`) ``) | — | Non risolvibile: contato |
+| `importlib.import_module` calcolato | 0 | — | 4 (caricamento di plugin e scheduler) | Non risolvibile: contato |
+| Cartelle con file Python senza `__init__.py` | 4 | — | 10 | Pacchetti impliciti: la risoluzione non può richiedere `__init__.py` |
+
+Il terzo `import()` "calcolato" contato dallo script su excalidraw è in realtà letterale, preceduto da un commento: errore dello script di misura, corretto a mano nella tabella.
+
+### Cosa ne segue per ADR-0020
+
+- **Prestazioni:** non sono un vincolo. Il pilota più grande si analizza in meno di 6 secondi con una visita completa in Python e 36 MB di memoria. Limiti di risorse stretti per l'estrazione sono realistici.
+- **Isolamento:** l'estrazione ha funzionato con le stesse restrizioni dei plugin (senza rete, sola lettura, utente non privilegiato, nessuna capability). Eseguirla in un container come un plugin non costa in tempo più dell'avvio del container.
+- **Alias di `tsconfig`:** vanno risolti, o il grafo dei progetti TypeScript perde gran parte degli archi interni. È il punto più importante emerso.
+- **Archi mancanti:** import calcolati e caricamenti dinamici sono pochi (da 0 a 7 per pilota) ma esistono: il grafo dichiara quanti ne ha saltati.
+- **Limiti di questa misura:** nessuna risoluzione degli import è stata implementata, solo il conteggio delle forme; `extends` tra file `tsconfig`, i workspace dei monorepo e le riesportazioni non sono stati esaminati.
