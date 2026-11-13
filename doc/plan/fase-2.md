@@ -361,7 +361,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §5 passo 6, §6.1, §13. ADR: 0001, 0005, 0006, 0014.
 
 #### A-10 — ADR-0025: baseline, modalità PR e finding nuovi
-- Agente: `architect`. Stato: `LIBERO` (la fonte della baseline dipende da D2-01).
+- Agente: `architect`. Stato: **chiuso il 2026-11-13**; ADR-0025 `Proposto`. Decide che in Fase 2 nessun plugin si restringe ai file cambiati (V-06) e che la baseline è un report passato alla CLI: K-16, C-01, C-04 e F-06 vanno letti con la sezione "Effetti sul piano" dell'ADR.
 - Percorsi: `doc/adr/0025-*.md`.
 - Dipende da: A-01, V-06.
 - Accettazione: fonte della baseline (report del branch base dal server o da un artefatto della CI, oppure scansione del base nello stesso job, con il costo misurato in V-06); stati nuovo, esistente, risolto e `baselineState` SARIF; quali plugin si limitano ai file cambiati e quali no; `gate.mode: new-findings-only` reale; configurazione letta dal branch base in modalità PR (ADR-0014); clone necessario (`fetch-depth`).
@@ -874,7 +874,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: A-10, C-06, F-06.
-- Accettazione: file cambiati rispetto al base dalla porta della storia git; plugin limitati ai file cambiati solo dove ADR-0025 lo ammette; rinomine e cancellazioni gestite.
+- Accettazione (rivista da ADR-0025 il 2026-11-13): lettura e validazione della baseline (percorso fuori dal workspace, schema, commit uguale a `--base`, scansione completa) e configurazione effettiva ricavata dalla baseline; nessun calcolo dei file cambiati e nessun plugin ristretto in Fase 2. Testo originale: file cambiati rispetto al base dalla porta della storia git; plugin limitati ai file cambiati solo dove ADR-0025 lo ammette; rinomine e cancellazioni gestite.
 - Spec: §5 passo 2. ADR: 0025.
 
 #### K-17 — Passo `diff_baseline`
