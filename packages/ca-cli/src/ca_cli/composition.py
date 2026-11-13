@@ -21,6 +21,7 @@ from ca_core.ports import (
     SourceReader,
 )
 from ca_core.schema_validation import SchemaStore
+from ca_plugins.hostpaths import IMAGE_MARKER, OUTPUT_ROOT, HostPaths, HostPathsError, from_env
 from ca_plugins.runner import DEFAULT_MAX_PARALLEL, OciExecutor
 from ca_plugins.sdk import list_packaged_plugins, load_packaged_manifest
 from ca_plugins.signature import CosignVerifier, allow_unsigned_from_env
@@ -101,11 +102,30 @@ class Context:
     manifests: Callable[[], list[PackagedPluginManifest]] = packaged_manifests
     schemas: Callable[[], SchemaStore] = vendor_schema_store
     feeds_cache: Path | None = None  # None: cache per utente (`feeds.default_cache_dir`)
+    output_root: Path | None = None  # immagine CLI: gli artefatti stanno solo qui sotto
     close: Callable[[], None] = lambda: None  # `main()` lo chiama sempre, in `finally`
 
     @staticmethod
     def artifact_sink(output_dir: str) -> ArtifactSink:
         return DirectoryArtifactSink(output_dir)
+
+
+def _image_mode(env: Mapping[str, str]) -> tuple[HostPaths | None, Callable[[], None] | None]:
+    """Percorsi host e controllo da eseguire prima del runtime (ADR-0004, M-11).
+
+    Un errore di configurazione si solleva alla prima esecuzione e non qui: `gate` e
+    `config validate` non usano container e devono funzionare anche senza le tre variabili.
+    """
+    try:
+        paths = from_env(env)
+    except HostPathsError as exc:
+        error = exc
+
+        def fail() -> None:
+            raise error
+
+        return None, fail
+    return (paths, paths.check_container) if paths is not None else (None, None)
 
 
 def build_context(
@@ -127,9 +147,27 @@ def build_context(
         allow_http_registry=allow_http_registry,
         allow_unsigned=allow_unsigned_from_env(env),
     )
+    host_paths, preflight = _image_mode(env)
+    if host_paths is not None and environ is None:
+        # Root in sola lettura e uid arbitrario: client del runtime e cosign scrivono solo in /tmp.
+        os.environ.update(
+            HOME="/tmp",  # noqa: S108 - tmpfs dell'immagine CLI
+            XDG_CACHE_HOME=str(host_paths.roots["snapshot"]),
+            DOCKER_CONFIG="/tmp/.docker",  # noqa: S108
+        )
     executor = OciExecutor(
-        verifier=verifier, max_parallel=min(DEFAULT_MAX_PARALLEL, os.cpu_count() or 1)
+        verifier=verifier,
+        max_parallel=min(DEFAULT_MAX_PARALLEL, os.cpu_count() or 1),
+        work_dir=str(host_paths.roots["inputs"]) if host_paths is not None else None,
+        host_paths=host_paths,
+        preflight=preflight,
     )
+    in_image = host_paths is not None or env.get(IMAGE_MARKER) == "1"
     return Context(
-        executor=executor, source=LocalSourceReader(), clock=SystemClock(), close=executor.close
+        executor=executor,
+        source=LocalSourceReader(),
+        clock=SystemClock(),
+        feeds_cache=host_paths.roots["snapshot"] if host_paths is not None else None,
+        output_root=Path(OUTPUT_ROOT) if in_image else None,
+        close=executor.close,
     )

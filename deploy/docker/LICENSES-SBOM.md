@@ -18,6 +18,10 @@ per la verifica legale, che resta di una persona: non la sostituiscono.
 - `build-image.sh <contesto> <nome:tag> <cartella-sbom>`: `docker build` locale
   piu' `image-gate.sh`. Nessun push, nessuna firma.
 - `test-image-gate.sh`: prova dei casi positivi e negativi, pulisce le immagini.
+- `cli/build-cli-image.sh <pacchetto> <nome:tag> <cartella-sbom>`: immagine CLI
+  (I-01) dai wheel di `package-cli.sh`, piu' `image-gate.sh`. E' l'unica immagine
+  che contiene codice del progetto: porta il file `LICENSE` del repository in
+  `/licenses/code-analyzer/`, senza etichetta `org.opencontainers.image.licenses`.
 
 ## SBOM
 CycloneDX 1.7 JSON (syft `cyclonedx-json@1.7`), un file per immagine:

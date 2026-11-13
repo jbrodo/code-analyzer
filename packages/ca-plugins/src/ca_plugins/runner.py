@@ -15,6 +15,7 @@ Non provati qui (runtime assenti): gVisor (`runsc`) e Podman; vedi i commenti `U
 """
 
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -48,10 +49,12 @@ from ca_core.ports import (
     PluginRunRequest,
     PluginRunResult,
     RunOutcome,
+    ScanAborted,
     Signature,
     SourceError,
     SourceTooLarge,
 )
+from ca_plugins.hostpaths import HostPaths, Kind
 
 PLUGIN_UID: Final = 65534
 PLUGIN_GID: Final = 65534
@@ -288,6 +291,66 @@ def holder_args(
     return [*args, "--entrypoint", "sleep", image, str(sleep_seconds)]
 
 
+PROBE_MOUNT: Final = "/probe"
+PROBE_MAX_OUTPUT: Final = 4096
+# Comando fisso della prova di identità (ADR-0004, M-11): nessun dato dal repository. Del
+# workspace stampa device, inode, mtime e hash dei nomi di primo livello; delle radici scrivibili
+# il nonce che la CLI ha appena scritto.
+_PROBE_CODE: Final = (
+    "import hashlib, json, os, sys\n"
+    "s = os.stat('/probe/workspace')\n"
+    "names = sorted(os.listdir('/probe/workspace'))\n"
+    "digest = hashlib.sha256('\\0'.join(names).encode('utf-8', 'surrogateescape')).hexdigest()\n"
+    "out = {'workspace': [s.st_dev, s.st_ino, s.st_mtime_ns, digest]}\n"
+    "for kind in ('inputs', 'snapshot'):\n"
+    "    with open('/probe/' + kind + '/' + sys.argv[1], 'rb') as f:\n"
+    "        out[kind] = f.read(64).decode('ascii', 'replace')\n"
+    "print(json.dumps(out))\n"
+)
+
+
+def workspace_identity(root: Path | str) -> list[int | str]:
+    """Stessa impronta che `_PROBE_CODE` calcola nel container."""
+    info = os.stat(root)
+    names = "\0".join(sorted(os.listdir(root))).encode("utf-8", "surrogateescape")
+    return [info.st_dev, info.st_ino, info.st_mtime_ns, hashlib.sha256(names).hexdigest()]
+
+
+def probe_args(
+    *,
+    name: str,
+    image: str,
+    hosts: dict[Kind, Path],
+    isolation: Isolation,
+    user: str,
+    marker: str,
+    expires: int,
+) -> list[str]:
+    """Argomenti di `<runtime> run` per la prova di identità: i tre percorsi host in sola
+    lettura, uid della CLI (le radici di lavoro sono 0700), nessuna capability né rete."""
+    args = [
+        "run", "--rm",
+        "--name", name,
+        "--label", "code-analyzer.executor=1",
+        "--label", f"{EXPIRES_LABEL}={expires}",
+        "--pull", "never",
+        "--read-only",
+        "--cap-drop", "ALL",
+        "--security-opt", "no-new-privileges",
+        "--user", user,
+        "--network", "none",
+        "--cpus", "0.5",
+        "--memory", "64m",
+        "--memory-swap", "64m",
+        "--pids-limit", "16",
+    ]  # fmt: skip
+    if isolation is Isolation.GVISOR:
+        args += ["--runtime", "runsc"]  # UNPROVEN: sotto runsc device e inode possono differire
+    for kind, host in hosts.items():
+        args += bind_mount(host, f"{PROBE_MOUNT}/{kind}", readonly=True)
+    return [*args, "--entrypoint", "python3", image, "-I", "-S", "-c", _PROBE_CODE, marker]
+
+
 def feeds_usage(root: Path, max_bytes: int, max_entries: int) -> tuple[int, int, bool]:
     """(byte allocati, voci, oltre un limite) sotto `root`, senza seguire link.
 
@@ -489,6 +552,8 @@ class OciExecutor:
         verifier: Callable[[PackagedPluginManifest, str], Signature] | None = None,
         image_ref: Callable[[str], str] = digest_ref,
         max_parallel: int = DEFAULT_MAX_PARALLEL,
+        host_paths: HostPaths | None = None,
+        preflight: Callable[[], None] | None = None,
     ) -> None:
         if max_parallel < 1:
             raise ValueError("max_parallel deve essere almeno 1")
@@ -507,6 +572,10 @@ class OciExecutor:
         self._stopping = threading.Event()
         self._sweep_lock = threading.Lock()
         self._swept = False
+        self._host_paths = host_paths
+        self._preflight = preflight
+        self._proof_lock = threading.Lock()
+        self._proved = host_paths is None
 
     def __enter__(self) -> "OciExecutor":
         return self
@@ -536,6 +605,8 @@ class OciExecutor:
     def _detect_locked(self) -> None:
         if self._isolation is not None:
             return
+        if self._preflight is not None:
+            self._preflight()  # modalità immagine: exit 2 prima di cercare il runtime
         for exe in [self._requested] if self._requested else ["docker", "podman"]:
             path = shutil.which(exe)
             if path is None:
@@ -565,9 +636,101 @@ class OciExecutor:
                 except ValueError:
                     runtimes = {}
                 gvisor = isinstance(runtimes, dict) and "runsc" in runtimes
+            if self._host_paths is not None:
+                self._check_daemon_paths(self._host_paths)
             self._isolation = Isolation.GVISOR if gvisor else Isolation.HARDENED_CONTAINER
             return
         raise RuntimeUnavailable("nessun runtime OCI (docker, podman) utilizzabile")
+
+    def _check_daemon_paths(self, host_paths: HostPaths) -> None:
+        """N-32: i percorsi host non espongono la radice dei dati del daemon né il suo socket."""
+        try:
+            done = self._cli("info", "--format", "{{.DockerRootDir}}", timeout=30)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RuntimeUnavailable("radice dei dati del daemon non leggibile") from exc
+        root = done.stdout.decode("utf-8", "replace").strip()
+        if done.returncode != 0 or not root.startswith("/"):
+            raise RuntimeUnavailable("radice dei dati del daemon non leggibile")
+        host = os.environ.get("DOCKER_HOST", "unix:///var/run/docker.sock")
+        socket = host.removeprefix("unix://") if host.startswith("unix://") else None
+        host_paths.check_daemon(root, socket)
+
+    def _src(self, kind: Kind, path: Path) -> Path:
+        """Sorgente di un `--mount`: in modalità immagine il percorso host, o `ScanAborted`."""
+        return path if self._host_paths is None else self._host_paths.translate(kind, path)
+
+    def _prove_identity(self, manifest: PackagedPluginManifest) -> None:
+        """Una volta, dopo la prima verifica di firma e prima di ogni montaggio (N-34, N-37).
+
+        Prova che le radici viste dalla CLI sono quelle che il daemon monterà: nonce nelle due
+        scrivibili, impronta del primo livello per il workspace. Qualunque scarto è `ScanAborted`.
+        """
+        host_paths = self._host_paths
+        if host_paths is None:
+            return
+        with self._proof_lock:
+            if self._proved:
+                return
+            if (found := next(host_paths.sockets(), None)) is not None:
+                raise ScanAborted(f"socket in una radice montata: {found.name[:80]!r}")
+            image = self._image_ref(manifest.image)
+            token = uuid.uuid4().hex
+            marker = f".ca-probe-{token[:16]}"
+            name = f"ca-probe-{token[:16]}"
+            nonces: dict[Kind, str] = {"inputs": uuid.uuid4().hex, "snapshot": uuid.uuid4().hex}
+            files = [host_paths.roots[kind] / marker for kind in nonces]
+            self._register(name)
+            try:
+                for kind, nonce in nonces.items():
+                    fd = os.open(
+                        host_paths.roots[kind] / marker,
+                        os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                        0o600,
+                    )
+                    with os.fdopen(fd, "w") as handle:
+                        handle.write(nonce)
+                expected = {
+                    "workspace": workspace_identity(host_paths.roots["workspace"]),
+                    **nonces,
+                }
+                if self._stopping.is_set():
+                    raise ScanAborted("interrotto")
+                if self._verifier is not None:
+                    pulled = self._cli("pull", "--quiet", image, timeout=_PULL_TIMEOUT)
+                    if pulled.returncode != 0:
+                        raise ScanAborted(f"pull fallito: {_brief(pulled.stderr)}")
+                done = self._cli(
+                    *probe_args(
+                        name=name,
+                        image=image,
+                        hosts=dict(host_paths.hosts),
+                        isolation=self._isolation or Isolation.HARDENED_CONTAINER,
+                        user=f"{os.getuid()}:{os.getgid()}",
+                        marker=marker,
+                        expires=int(time.time()) + _QUICK_TIMEOUT + _EXPIRES_GRACE,
+                    )
+                )
+                if done.returncode != 0 or len(done.stdout) > PROBE_MAX_OUTPUT:
+                    raise ScanAborted("prova di identità dei montaggi non riuscita")
+                try:
+                    seen = json.loads(done.stdout)
+                except ValueError as exc:
+                    raise ScanAborted("prova di identità dei montaggi non leggibile") from exc
+                if seen != expected:
+                    raise ScanAborted(
+                        "i percorsi host non corrispondono ai montaggi della CLI "
+                        "(CA_HOST_WORKSPACE, CA_HOST_WORK, CA_HOST_CACHE)"
+                    )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                raise ScanAborted("prova di identità dei montaggi non riuscita") from exc
+            finally:
+                with contextlib.suppress(Exception):
+                    self._cli("rm", "--force", name)
+                self._unregister(name)
+                for path in files:
+                    with contextlib.suppress(OSError):
+                        path.unlink()
+            self._proved = True
 
     def isolation(self) -> Isolation:
         self._detect()
@@ -579,6 +742,8 @@ class OciExecutor:
     def _base_dir(self) -> Path:
         with self._lock:
             if self._base is None:
+                if self._host_paths is not None:
+                    self._host_paths.sweep_work()
                 self._base = Path(tempfile.mkdtemp(prefix="ca-oci-", dir=self._work_dir))  # 0700
                 weakref.finalize(self, shutil.rmtree, self._base, True)
             return self._base
@@ -660,12 +825,12 @@ class OciExecutor:
 
     # -- esecuzione --
 
-    @staticmethod
-    def _prepare(request: PluginRunRequest, run_dir: Path, out: Path) -> list[list[str]]:
+    def _prepare(self, request: PluginRunRequest, run_dir: Path, out: Path) -> list[list[str]]:
         # Copie dell'host (ADR-0004): non montata nel container, quindi sempre eliminabile.
         out.mkdir(mode=0o700)
         out.chmod(0o700)
-        mounts = [bind_mount(_existing_dir(request.workspace), WORKSPACE_MOUNT, readonly=True)]
+        workspace = self._src("workspace", _existing_dir(request.workspace))
+        mounts = [bind_mount(workspace, WORKSPACE_MOUNT, readonly=True)]
         inputs = run_dir / "inputs"
         inputs.mkdir()
         for source, name, target in (
@@ -674,11 +839,10 @@ class OciExecutor:
         ):
             if source is not None:
                 _stage_file(source, inputs / name)
-                mounts.append(bind_mount(inputs / name, target, readonly=True))
+                mounts.append(bind_mount(self._src("inputs", inputs / name), target, readonly=True))
         if request.feeds_snapshot is not None:
-            mounts.append(
-                bind_mount(_existing_dir(request.feeds_snapshot), FEEDS_MOUNT, readonly=True)
-            )
+            snapshot = self._src("snapshot", _existing_dir(request.feeds_snapshot))
+            mounts.append(bind_mount(snapshot, FEEDS_MOUNT, readonly=True))
         return mounts
 
     def _verify(self, manifest: PackagedPluginManifest) -> Signature:
@@ -690,6 +854,7 @@ class OciExecutor:
     def run(self, request: PluginRunRequest) -> PluginRunResult:
         isolation = self.isolation()
         signature = self._verify(request.manifest)  # prima di directory e montaggi (ADR-0005)
+        self._prove_identity(request.manifest)
         return self._run_verified(request, isolation, signature)
 
     def _run_verified(
@@ -753,6 +918,7 @@ class OciExecutor:
                 signatures = self._gather(
                     pool, [pool.submit(self._verify, r.manifest) for r in requests]
                 )
+                self._prove_identity(requests[0].manifest)
                 return self._gather(
                     pool,
                     [
@@ -773,9 +939,11 @@ class OciExecutor:
         assert feeds is not None
         isolation = self.isolation()
         signature = self._verify(manifest)
+        self._prove_identity(manifest)
         try:
             snapshot = _existing_dir(request.snapshot_dir)
-            mounts = [bind_mount(snapshot, FEEDS_MOUNT, readonly=False)]
+            # La guardia resta sul percorso visto dalla CLI; solo il sorgente si traduce.
+            mounts = [bind_mount(self._src("snapshot", snapshot), FEEDS_MOUNT, readonly=False)]
             return self._execute(
                 manifest,
                 mounts,
@@ -798,7 +966,10 @@ class OciExecutor:
         try:
             isolation = self.isolation()
             self._sweep_orphans()
-            mounts = [bind_mount(_existing_dir(request.snapshot_dir), FEEDS_MOUNT, readonly=False)]
+            if not self._proved:  # mai un montaggio prima della prova (M-11)
+                return
+            snapshot = self._src("snapshot", _existing_dir(request.snapshot_dir))
+            mounts = [bind_mount(snapshot, FEEDS_MOUNT, readonly=False)]
             args = container_args(
                 name=name,
                 image=self._image_ref(request.manifest.image),

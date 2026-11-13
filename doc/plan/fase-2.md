@@ -1172,7 +1172,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né altrove, salvo destinazione privata e gratuita (D2-16), e comunque solo con approvazione esplicita. Tutti i task di questa sezione tranne I-04, I-07 e la parte di registry di I-06 lavorano sul registry locale.
 
 #### I-01 — Immagine CLI (riporto di F1:I-03)
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **implementato il 2026-11-13**; si chiude con la CI verde su `main`. Scostamenti dal progetto in ADR-0004, "Realizzazione (I-01)". `CA_HOST_OUTPUT` non esiste: `/ca/output` la scrive solo la CLI (N-38). Il client Docker nell'immagine va aggiunto a D2-14.
 - Percorsi: `deploy/docker/cli/`.
 - Dipende da: nessuno.
 - Accettazione: come F1:I-03: orchestra i plugin come container fratelli con `CA_HOST_WORKSPACE` e `CA_HOST_OUTPUT`, contiene `cosign` a versione fissata, nessun plugin al suo interno, il socket non raggiunge i plugin, privilegio del socket documentato; licenze e SBOM come F1:I-05; E2E con il registry locale.
@@ -1392,7 +1392,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §17. ADR: 0009, 0021.
 
 #### X-10 — Eccezioni per i 6 finding di licenza effettiva
-- Agente: `test`. Stato: **chiuso il 2026-11-13**, confermato da Riccardo Roveda. Auto-analisi su clone pulito: `complete`, 41,1 s, 342 finding, `gate --fail-on critico,alto` esce con 0 con 36 eccezioni, tutte in uso. Oltre ai 6 finding previsti: 2 dei 6 fingerprint erano cambiati rispetto a `gate-1.md`, e servivano altre 8 eccezioni approvate lo stesso giorno (2 citazioni già eccepite con fingerprint cambiato, 1 citazione nuova in `doc/plan/fase-2.md`, 5 dichiarazioni GPL-3.0-only del progetto in `README.md` e nei `pyproject.toml`).
+- Agente: `test`. Stato: **chiuso il 2026-11-13**, confermato da Riccardo Roveda. Auto-analisi su clone pulito: `complete`, 41,1 s, 342 finding, `gate --fail-on critico,alto` esce con 0 con 36 eccezioni, tutte in uso. Oltre ai 6 finding previsti: 2 dei 6 fingerprint erano cambiati rispetto a `gate-1.md`, e servivano altre 8 eccezioni approvate lo stesso giorno (2 citazioni già eccepite con fingerprint cambiato, 1 citazione nuova in `doc/plan/fase-2.md`, 5 dichiarazioni della licenza del progetto in `README.md` e nei `pyproject.toml`). Dopo I-01 resta 1 finding nuovo da eccepire: le note di terze parti dell'immagine CLI, che nominano la licenza del progetto.
 - Percorsi: `.code-analyzer.yml`.
 - Dipende da: nessuno.
 - Accettazione: un'eccezione per ciascuno dei 6 fingerprint elencati in `doc/verifiche/gate-1.md` ("Non eccepibili come falsi positivi"), con `approved_by: Riccardo Roveda`, motivazione che rimanda all'approvazione di D-0015 del 2026-11-10 come rischio residuo, non come falso positivo, e scadenza proposta 2027-05-09; `config validate` verde; `gate --fail-on critico,alto` sull'auto-analisi esce con 0 con le sole eccezioni attive. Se un fingerprint cambia (per esempio con K-20, che non deve cambiarli), l'eccezione va rifatta.

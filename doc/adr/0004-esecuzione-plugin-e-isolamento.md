@@ -242,3 +242,21 @@ Progetto:
 Fuori ambito: `DOCKER_HOST` remoto, dove la prova di identità fallisce e la scansione si annulla; Podman, ancora `UNPROVEN`.
 
 Non verificato: snapshot LVM, ZFS o btrfs rispetto alla prova; Docker Desktop; daemon rootless o userns-remap; il costo del container di prova.
+
+### Realizzazione (I-01, 2026-11-13)
+
+Stato: **implementato.** `ca_plugins/hostpaths.py` (variabili, traduzione, controlli), `OciExecutor` (prova di identità, sorgenti tradotti nei cinque punti), `ca_cli/composition.py` e `deploy/docker/cli/`. Prove: `tests/unit/test_hostpaths.py` e `tests/e2e/test_packaging.py`.
+
+Scostamenti e precisazioni rispetto al progetto:
+
+- **`CA_CLI_IMAGE=1`**, impostata dal Dockerfile. "Tutte o nessuna" lascerebbe partire in modalità host una CLI nel container senza variabili, con percorsi che il daemon risolve sull'host. Con il marcatore, l'assenza delle tre variabili è exit 2.
+- **Errori di configurazione alla prima esecuzione.** Le variabili si leggono all'avvio, ma l'errore esce quando serve il runtime: `gate` e `config validate` non usano container e funzionano senza.
+- **Percorso reale del socket (punto 3).** Dal container non si conosce il percorso host del socket. Si rifiutano `/run` e `/var/run` e i loro antenati, e il percorso indicato da `DOCKER_HOST` visto dalla CLI. Un socket del daemon in una posizione insolita dell'host, sotto una radice montata, lo ferma il controllo dei socket del punto 4.
+- **Socket nelle radici (punto 4).** Il controllo percorre le tre radici per intero, senza seguire i link, prima della prova.
+- **Immagine della prova.** Il container di prova usa l'immagine del primo plugin verificato, con `python3` e un comando fisso. Tutte le immagini built-in hanno Python; un plugin esterno senza Python farebbe fallire la prova, quindi la scansione.
+- **`purge_feeds`** non monta nulla se la prova non è ancora riuscita.
+- **Scadenza di `ca-oci-*` (punto 6):** 24 ore dall'ultima modifica.
+- **Client del runtime.** L'immagine contiene il client Docker 28.5.2, copiato dall'immagine ufficiale fissata per digest. Il progetto non lo nominava, ma senza client la CLI non parla con il daemon. È un componente in più per D2-14.
+- **gVisor.** Sotto `runsc` device e inode visti dal container possono differire da quelli dell'host: la prova sul workspace fallirebbe chiusa. Non verificato.
+
+Misure sulla macchina di riferimento: immagine di 327 MB; scansione di `python-app` dall'immagine `complete` con i 7 plugin `ok` e `verified`.

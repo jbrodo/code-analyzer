@@ -16,6 +16,10 @@ La CLI `code-analyzer` analizza una directory con scanner open source eseguiti i
 
 `--help` e `config validate` funzionano anche senza runtime.
 
+## Immagine CLI
+
+In alternativa all'installazione, la CLI gira in un container che avvia i plugin come container fratelli attraverso il socket del daemon. Montaggi, variabili `CA_HOST_WORKSPACE`, `CA_HOST_WORK` e `CA_HOST_CACHE`, e il privilegio che il socket comporta sono in `deploy/docker/cli/README.md`. Non esiste ancora un'immagine pubblicata: si costruisce con `deploy/docker/cli/build-cli-image.sh`.
+
 ## Comandi
 
 | Comando | Cosa fa | Exit |

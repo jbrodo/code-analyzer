@@ -9,15 +9,18 @@ sempre 2, con un messaggio breve su stderr e senza traceback (i dati analizzati 
 
 import argparse
 import contextlib
+import os
 import signal
 import sys
 import threading
 from collections.abc import Callable, Generator, Sequence
+from pathlib import Path
 from types import FrameType
 
 from ca_cli import config_validate, gate, sbom, scan
 from ca_cli.composition import Context, build_context
 from ca_core.models.scan_report import Isolation
+from ca_plugins.hostpaths import HostPathsError
 
 PROG = "code-analyzer"
 Handler = Callable[[argparse.Namespace, Context], int]
@@ -105,6 +108,8 @@ def main(argv: Sequence[str] | None = None, *, context: Context | None = None) -
         ctx: Context | None = context
         try:
             ctx = ctx or build_context()
+            if ctx.output_root is not None:
+                _confine_outputs(args, ctx.output_root)
             return handler(args, ctx)
         except KeyboardInterrupt:
             print(f"{PROG}: interrotto", file=sys.stderr)
@@ -119,6 +124,22 @@ def main(argv: Sequence[str] | None = None, *, context: Context | None = None) -
                     ctx.close()
                 except Exception as exc:  # la pulizia non cambia l'esito
                     print(f"{PROG}: pulizia incompleta ({exc.__class__.__name__})", file=sys.stderr)
+
+
+def _confine_outputs(args: argparse.Namespace, root: Path) -> None:
+    """Immagine CLI: `--output-dir`, `--output` e `--report` valgono solo sotto `root`.
+
+    Un percorso relativo, predefiniti compresi, si legge rispetto a `root`: la directory
+    corrente è il workspace, montato in sola lettura.
+    """
+    for name in ("output_dir", "output", "report"):
+        value = getattr(args, name, None)
+        if value is None:
+            continue
+        resolved = Path(os.path.realpath(root / value))
+        if not resolved.is_relative_to(root):
+            raise HostPathsError(f"nell'immagine CLI gli artefatti stanno solo sotto {root}")
+        setattr(args, name, str(resolved))
 
 
 def _message(exc: Exception) -> str:
