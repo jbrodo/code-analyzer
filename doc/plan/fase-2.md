@@ -421,7 +421,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 `ux-ui` scrive in `doc/ux/`.
 
 #### U-01 — Mappa delle pagine e flussi della Fase 2
-- Agente: `ux-ui`. Stato: `IPOTESI` (D2-15).
+- Agente: `ux-ui`. Stato: **chiuso il 2026-11-13** in `IPOTESI` (D2-15); `doc/ux/fase-2.md`, con le lacune per A-14 nella sezione 6 e due domande aperte per D2-15.
 - Percorsi: `doc/ux/fase-2.md`.
 - Dipende da: nessuno.
 - Accettazione: pagine di D2-15 e loro navigazione; flussi di triage, dettaglio con passi di correzione, eccezione con motivazione e scadenza, stato della scansione; stati di caricamento, vuoto, errore e scansione parziale; per ogni vista, dati necessari, con le lacune segnalate ad `architect`. Separazione visibile tra finding nuovi ed esistenti. Nessuna vista di portfolio.
