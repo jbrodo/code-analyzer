@@ -238,7 +238,7 @@ Formato: `Stato` come da sezione 1. `Spec` e `ADR` indicano la sezione della spe
 Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (§16 regola 7 riguarda i test) e girano solo su repository pubblici o di prova.
 
 #### V-01 — Fissare le versioni candidate
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Da portare a D2-07 e D2-14: psycopg e hadolint hanno licenze che D-0013 mette tra quelle da approvare.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: nessuno.
 - Accettazione: tabella con versione esatta, checksum o digest di rilascio, data e stato di manutenzione per ruff, eslint con typescript-eslint e un formattatore SARIF, checkov, hadolint, py-tree-sitter e le grammatiche Python, JavaScript, TypeScript e TSX, FastAPI, SQLAlchemy, Alembic, un driver PostgreSQL, una libreria JWT/OIDC, testcontainers, React, Vite, TypeScript, pnpm, un generatore di tipi dall'OpenAPI, una libreria di test dei componenti. Temporal SDK solo se D2-01 cade.

@@ -2,6 +2,70 @@
 
 Esiti dei task V di `doc/plan/fase-2.md`. Ogni dato indica se è misurato qui o letto alla fonte, con la data. Non è un parere legale: le valutazioni di licenza restano di D2-14.
 
+## V-01 — Versioni candidate
+
+Raccolte il 2026-11-13 dai registri (API JSON di PyPI, registro npm, API dei rilasci di GitHub). Versione: l'ultima stabile pubblicata. Licenza: quella **dichiarata nei metadati** del pacchetto; la lettura dal file di licenza al tag è di V-02. Nulla è stato installato né eseguito: compatibilità e comportamento sono di V-03, V-04 e V-07.
+
+### Motori dei plugin e `ca-graph`
+
+| Componente | Versione | Data | Artefatto e SHA-256 | Licenza dichiarata | Note |
+| --- | --- | --- | --- | --- | --- |
+| ruff | 0.17.5 | 2026-11-12 | `ruff-0.17.5-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl` `40ca8afaac309b41a5b2e09e4e7beb1f824826b93c25697c4d74f573324fba4e` | MIT | Rilasci settimanali |
+| checkov | 3.4.5 | 2026-11-12 | `checkov-3.4.5-py3-none-any.whl` `64210c48a957ecb85dfb38057e00faa150b5e46e76b08e710d29beb687b7ced2` | Apache License 2.0 | Rilasci quasi quotidiani: la versione fissata invecchia in fretta |
+| hadolint | 2.15.1 | 2026-07-31 | `hadolint-linux-x86_64` `c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507` | GPL-3.0 (dal repository) | **GPL-3.0: in `require_approval` di D-0013**, da portare a D2-14. Binario statico dai rilasci di GitHub. Rilasci rari: 2.13.1 e 2.14.0 a settembre 2025, 2.15.0 e 2.15.1 a luglio 2026; ultimo push al repository 2026-10-19 |
+| eslint | 10.14.0 | 2026-10-30 | `eslint-10.14.0.tgz` `sha512-T0pNsxkb9IKmtQjhpK3d7nWOpFv+YHuMbTJnSVMoQblF0onvXfErrtp4V1jHtsQPan7dKaGVD0q1WCXnzMF31A==` | MIT | Rilasci ogni due settimane. Richiede Node 20.19, 22.13 o 24 |
+| typescript-eslint | 8.72.2 | 2026-11-09 | `typescript-eslint-8.72.2.tgz` `sha512-c/+AKMW1KB81r28Sp0AAdcyXj5dzNmAsZFcsrxKbZTKmcBK2xIwBR31dcSYSDu3bKmzXe8GKrSxO+eDQ401Uzg==` | MIT | Compatibilità con TypeScript 7 da provare in V-03 |
+| @microsoft/eslint-formatter-sarif | 3.1.0 | 2024-04-12 | `eslint-formatter-sarif-3.1.0.tgz` `sha512-/mn4UXziHzGXnKCg+r8HGgPy+w4RzpgdoqFuqaKOqUVBT5x2CygGefIrO4SusaY7t0C4gyIWMNu6YQT6Jw64Cw==` | MIT | **Fermo da aprile 2024**, 9 versioni in tutto: compatibilità con eslint 10 da provare in V-03; in alternativa SARIF prodotto dall'adattatore a partire dal JSON di eslint |
+| tree-sitter | 0.26.1 | 2026-11-09 | `tree_sitter-0.26.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl` `7b14ac81a2afdcf75610f714f1d2eeaac40da93965c104cabb5c4c2b536a488a` | MIT License | Wheel per cp310..cp314. Checksum della wheel cp312; cp314: `0c1b48e17b26cf555060c1285b35f49eeb345222e62c2a35d70c393a7c61c65b` |
+| tree-sitter-python | 0.25.0 | 2025-09-11 | `tree_sitter_python-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl` `86f118e5eecad616ecdb81d171a36dde9bef5a0b21ed71ea9c3e390813c3baf5` | MIT | Wheel abi3. Ultimo rilascio a settembre 2025 |
+| tree-sitter-javascript | 0.25.0 | 2025-09-01 | `tree_sitter_javascript-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl` `9dc04ba91fc8583344e57c1f1ed5b2c97ecaaf47480011b92fbeab8dda96db75` | MIT | Wheel abi3. Ultimo rilascio a settembre 2025 |
+| tree-sitter-typescript | 0.23.2 | 2024-11-11 | `tree_sitter_typescript-0.23.2-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl` `e96d36b85bcacdeb8ff5c2618d75593ef12ebaf1b4eace3477e2bdb2abb1752c` | MIT | Contiene TypeScript e TSX. **Fermo da novembre 2024**: compatibilità con tree-sitter 0.26 da provare in V-07 |
+
+Per npm la colonna riporta il campo `integrity` del registro (SHA-512 in base64), che è ciò che `pnpm` verifica.
+
+### Server
+
+| Componente | Versione | Data | Artefatto e SHA-256 | Licenza dichiarata | Note |
+| --- | --- | --- | --- | --- | --- |
+| fastapi | 0.162.6 | 2026-11-13 | `fastapi-0.162.6-py3-none-any.whl` `df12575573c26a49083f690c43496b6dafa483dca72ca66de4b50d1db5940787` | MIT | Rilasci frequenti |
+| uvicorn | 0.54.0 | 2026-09-25 | `uvicorn-0.54.0-py3-none-any.whl` `505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf` | BSD-3-Clause | Server ASGI per FastAPI |
+| sqlalchemy | 2.1.8 | 2026-11-04 | `sqlalchemy-2.1.8-py3-none-any.whl` `69aea77b5d8a64e95d01fd7ec54985c84b4a8ef3cac3108e9271145441400c1b` | MIT | Serie 2.1 |
+| alembic | 1.20.1 | 2026-10-22 | `alembic-1.20.1-py3-none-any.whl` `9970712cfb81ea26c8658d378aaa5b8f6ff9146e5bb111d70497c164016cf598` | MIT |  |
+| psycopg | 3.3.9 | 2026-11-12 | `psycopg-3.3.9-py3-none-any.whl` `d2d7d04a1ce6dab4f5b27316bea3b52585cafa2f2d631e5b09dd69823f5c26f6` | LGPL-3.0-only | **LGPL-3.0-only: in `require_approval` di D-0013.** Da portare a D2-07 e D2-14 |
+| psycopg-binary | 3.3.9 | 2026-11-12 | `psycopg_binary-3.3.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl` `b36b1f1488843301af90a25b135dd4373a9835c4df185e564f14e6565220c353` | LGPL-3.0-only | Come psycopg; wheel cp314 disponibile. Include libpq e le sue dipendenze |
+| asyncpg | 0.32.0 | 2026-10-06 | `asyncpg-0.32.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl` `63417b8f7369c54f6754c1fbd5a2968fbe632ff55bfbedd56a0177b6a96bd251` | Apache-2.0 | Alternativa a psycopg senza copyleft; solo asincrono. Un rilascio all'anno |
+| pg8000 | 1.31.6 | 2026-10-26 | `pg8000-1.31.6-py3-none-any.whl` `1ffe27af94fa5b37ce6885b98d591dc75562ff076859bf50ca7729af59345a80` | BSD-3-Clause | Alternativa in Python puro, sincrona |
+| pyjwt | 2.15.1 | 2026-09-28 | `pyjwt-2.15.1-py3-none-any.whl` `42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193` | MIT | Candidata per la verifica dei token OIDC |
+| authlib | 1.9.5 | 2026-11-05 | `authlib-1.9.5-py2.py3-none-any.whl` `e32a63e3d869196b61816b2602231862179a2ffc29358c009d1f022c8b86a8b2` | BSD-3-Clause | Alternativa a pyjwt, più ampia. Sulla serie 1.9 esiste un rilascio più recente (2026-11-12) non marcato come ultimo |
+| opentelemetry-api | 1.45.2 | 2026-10-29 | `opentelemetry_api-1.45.2-py3-none-any.whl` `2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34` | Apache-2.0 | ADR-0016 |
+| opentelemetry-sdk | 1.45.2 | 2026-10-29 | `opentelemetry_sdk-1.45.2-py3-none-any.whl` `ff974ea70ee4f1d51e2ec152db37c2b626c7bf82bb3f7d86114fd8704e7199c6` | Apache-2.0 | ADR-0016 |
+| testcontainers | 4.15.0 | 2026-07-24 | `testcontainers-4.15.0-py3-none-any.whl` `8796c14e76604031ad39cf0ed3b8e9806283a1fbf5270965c2b1c594caa31b74` | Apache-2.0 |  |
+
+### Frontend
+
+| Componente | Versione | Data | Artefatto e integrità | Licenza dichiarata | Note |
+| --- | --- | --- | --- | --- | --- |
+| react | 19.3.1 | 2026-10-14 | `react-19.3.1.tgz` `sha512-QNhWdt7nrgVWWQG58QuGsAR3jv3Hbe4mb4vz7w2csnHavciZJgda1CPNaldF6eVxv90ud3jUXpKlHL69gO38yw==` | MIT |  |
+| react-dom | 19.3.1 | 2026-10-14 | `react-dom-19.3.1.tgz` `sha512-Y0bARz53lhEC1NMCASs0/j+faB/zqt3R8hpvg1e8+61ZVJ4UL0UdC4cBbXfZMcIuhrfgeILTLe+ZeBCavQPtKQ==` | MIT |  |
+| vite | 8.3.8 | 2026-11-11 | `vite-8.3.8.tgz` `sha512-LzOn3h9rG/0vhLdXrV4yJ4QFA9eEoqCl+Yx+kGJd7aB9w6nfNgVHKSYwLPZUHrz4ZGa+t+kXjV9itvcHDLQouA==` | MIT | Richiede Node 20.19 o 22.12 |
+| typescript | 7.0.2 | 2026-07-08 | `typescript-7.0.2.tgz` `sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==` | Apache-2.0 | Serie 7, la prima con il compilatore nativo: da provare con typescript-eslint e openapi-typescript |
+| pnpm | 12.18.0 | 2026-11-05 | `pnpm-12.18.0.tgz` `sha512-nXiC1dyCFH7PxOBiqjSDTgrQKWcQoYN6ERWuASEn02txCeMhrBWYod0KZVl2gbHpmRfhLtDXSerpEYeUM2O+sw==` | MIT |  |
+| openapi-typescript | 7.13.0 | 2026-02-11 | `openapi-typescript-7.13.0.tgz` `sha512-EFP392gcqXS7ntPvbhBzbF8TyBA+baIYEm791Hy5YkjDYKTnk/Tn5OQeKm5BIZvJihpp8Zzr4hzx0Irde1LNGQ==` | MIT | Generatore dei tipi dall'OpenAPI (ADR-0017). Ultimo rilascio a febbraio 2026 |
+| vitest | 5.1.0 | 2026-11-02 | `vitest-5.1.0.tgz` `sha512-MzmNFnrwa8v8lF1bLxw3UJ4EREwVOVb75VqJZmUDRjJ6EluK/x9th7qTbaeDk41WxE1GxWqmTXcdsfobfH5sOA==` | MIT | Richiede Node 22.12, 24 o 26 |
+| @testing-library/react | 16.3.3 | 2026-08-27 | `react-16.3.3.tgz` `sha512-Uo193NgQbPMz6lrrhtRQQFcMC6Re/ELLFbbuVL30WDlZxlpZf9/lMHTAVxPRLw1q1iu9OJmR1c2BLiENRstdBg==` | MIT |  |
+
+Il Temporal SDK non è nell'elenco: D2-01 lo esclude dalla Fase 2.
+
+### Punti da decidere o provare
+
+- **Driver PostgreSQL (D2-07, D2-14).** psycopg è LGPL-3.0-only, una licenza che la policy D-0013 mette tra quelle da approvare. Il server lo userebbe come libreria importata, non modificata. Le alternative senza copyleft sono asyncpg (Apache-2.0, solo asincrono) e pg8000 (BSD-3-Clause, Python puro). La scelta è di ADR-0030 (A-15).
+- **hadolint (D2-14).** GPL-3.0, eseguito come binario separato nella propria immagine. Il progetto è GPL-3.0-only, quindi la combinazione non introduce una licenza più restrittiva di quella del prodotto; resta la valutazione di D2-14 sulla distribuzione dell'immagine.
+- **Componenti fermi.** tree-sitter-typescript (novembre 2024) e `@microsoft/eslint-formatter-sarif` (aprile 2024) non hanno rilasci recenti, mentre i loro compagni sono avanzati di una o più serie. Vanno provati prima di fissarli: V-07 per la grammatica, V-03 per il formattatore.
+- **TypeScript 7.** È la serie corrente e cambia compilatore. typescript-eslint, openapi-typescript e vite vanno provati con questa serie in V-03 e W-01; se uno non la regge, si fissa l'ultima 6.x.
+- **Node.** gli intervalli dichiarati da eslint 10, vite 8 e vitest 5 hanno in comune Node 22 dalla 22.13 e Node 24. Node 24 li soddisfa tutti: è il candidato per l'immagine del plugin eslint e per la CI di `web/`.
+- **Python.** I motori dei plugin girano nelle immagini con Python 3.12 (base dei plugin), il server con Python 3.14. Nessun pacchetto del server dichiara un limite superiore di versione di Python; psycopg-binary, asyncpg e tree-sitter hanno una wheel cp314. L'installazione su 3.14 non è stata provata.
+- **Frequenza dei rilasci.** checkov, fastapi, ruff e typescript-eslint pubblicano più volte al mese: le versioni di questa tabella sono un punto di partenza, e ogni task che aggiunge la dipendenza fissa quella corrente con il proprio checksum.
+
 ## V-05 — Feed EPSS e KEV
 
 Verificato il 2026-11-13, scaricando i file e leggendo le pagine indicate.
