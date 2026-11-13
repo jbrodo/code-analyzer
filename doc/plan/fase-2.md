@@ -266,7 +266,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §7.2. ADR: 0004, 0006.
 
 #### V-05 — Feed EPSS e KEV
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Da portare a D2-14: EPSS non ha una licenza dichiarata, trivy-db non dichiara le licenze dei dati.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: nessuno.
 - Accettazione: per EPSS e KEV, URL di distribuzione, formato, dimensione, frequenza di aggiornamento, checksum o firma disponibili, termini d'uso letti alla fonte con collegamento. Per OSV e trivy-db, i termini di ridistribuzione dei dati, che servono a D2-05.
