@@ -713,7 +713,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.2. ADR: 0006.
 
 #### P-07 — B101 di bandit (riporto dalla Fase 1)
-- Agente: `backend`. Stato: **implementato il 2026-11-13** (D2-08 decisa lo stesso giorno, opzione 2); si chiude con la CI verde su `main`. Misura su saleor (`1d707dc`, immagine ricostruita, profilo completo): B101 da 47.276 a 22, risultati di bandit 85, SARIF da 19,2 MB a 30 KB, 62 s.
+- Agente: `backend`. Stato: **chiuso il 2026-11-13** (D2-08 decisa lo stesso giorno, opzione 2); CI verde su `main` (`e2e` 43430902706). Misura su saleor (`1d707dc`, immagine ricostruita, profilo completo): B101 da 47.276 a 22, risultati di bandit 85, SARIF da 19,2 MB a 30 KB, 62 s.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/bandit/`.
 - Dipende da: nessuno.
 - Accettazione: B101 scartato nei soli file di test, riconosciuti con regole di percorso fisse nell'adattatore; un `assert` in un modulo di produzione resta un finding; il conteggio su saleor viene rimisurato e registrato.
@@ -1172,7 +1172,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né altrove, salvo destinazione privata e gratuita (D2-16), e comunque solo con approvazione esplicita. Tutti i task di questa sezione tranne I-04, I-07 e la parte di registry di I-06 lavorano sul registry locale.
 
 #### I-01 — Immagine CLI (riporto di F1:I-03)
-- Agente: `devops`. Stato: **implementato il 2026-11-13**; si chiude con la CI verde su `main`. Scostamenti dal progetto in ADR-0004, "Realizzazione (I-01)". `CA_HOST_OUTPUT` non esiste: `/ca/output` la scrive solo la CLI (N-38). Il client Docker nell'immagine va aggiunto a D2-14.
+- Agente: `devops`. Stato: **chiuso il 2026-11-13**; CI verde su `main` (`e2e` 43433206651). Scostamenti dal progetto in ADR-0004, "Realizzazione (I-01)". `CA_HOST_OUTPUT` non esiste: `/ca/output` la scrive solo la CLI (N-38). Il client Docker nell'immagine va aggiunto a D2-14.
 - Percorsi: `deploy/docker/cli/`.
 - Dipende da: nessuno.
 - Accettazione: come F1:I-03: orchestra i plugin come container fratelli con `CA_HOST_WORKSPACE` e `CA_HOST_OUTPUT`, contiene `cosign` a versione fissata, nessun plugin al suo interno, il socket non raggiunge i plugin, privilegio del socket documentato; licenze e SBOM come F1:I-05; E2E con il registry locale.
