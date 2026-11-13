@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `Proposto` significa che la decisione attende conferma: dove indicato serve l'utente, negli altri casi basta la revisione tecnica. Dopo A-01, un ADR senza decisione umana resta `Proposto` solo perché manca la prova nell'implementazione: la decisione non è contestata e i task che la realizzano procedono. La sezione "Revisione A-01" di ogni ADR elenca ciò che è confermato e i task che portano il resto.
+Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, da 0016, la Fase 2 (`doc/plan/fase-2.md` sezione 4). `Proposto` significa che la decisione attende conferma: dove indicato serve l'utente, negli altri casi basta la revisione tecnica. Dopo A-01, un ADR senza decisione umana resta `Proposto` solo perché manca la prova nell'implementazione: la decisione non è contestata e i task che la realizzano procedono. La sezione "Revisione A-01" di ogni ADR elenca ciò che è confermato e i task che portano il resto.
 
 | ADR | Titolo | Stato | Decisione umana |
 | --- | --- | --- | --- |
@@ -19,6 +19,8 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13). `P
 | [0013](0013-policy-licenze.md) | Valutazione della policy di licenze | Accettato | Presa il 2026-11-08 |
 | [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Accettato | No |
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Accettato | Presa il 2026-11-10 |
+| [0016](0016-modalita-server-e-orchestrazione.md) | Modalità server e orchestrazione in Fase 2 | Accettato | Presa il 2026-11-10 (D2-01) |
+| [0017](0017-flusso-contratto-openapi.md) | Flusso del contratto OpenAPI | Proposto | No |
 
 ## Aggiornamenti dopo la stesura
 

@@ -297,14 +297,14 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tabella di `doc/adr/README.md`.
 
 #### A-01 — ADR-0016: modalità server e orchestrazione
-- Agente: `architect`. Stato: `LIBERO` (stesura); la chiude D2-01.
+- Agente: `architect`. Stato: **chiuso il 2026-11-13**; ADR-0016 `Accettato` (D2-01 decisa il 2026-11-10).
 - Percorsi: `doc/adr/0016-*.md`.
 - Dipende da: nessuno.
 - Accettazione: opzioni di D2-01 con effetti su §5, §14, ADR-0002 e ADR-0004; con l'opzione raccomandata: `POST /v1/scans` come ingestione di report, idempotenza, limiti di dimensione, nessuna esecuzione sul server; strumentazione minima del server (durate e metriche via OpenTelemetry SDK, esportazione opzionale), senza stack.
 - Spec: §2, §5, §9.2, §14, §15. ADR: 0002, 0004.
 
 #### A-02 — ADR-0017: flusso del contratto OpenAPI
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-13**; ADR-0017 `Proposto` in attesa delle prove di B-01, C-08 e W-02.
 - Percorsi: `doc/adr/0017-*.md`.
 - Dipende da: nessuno.
 - Accettazione: OpenAPI esportata da FastAPI in `schemas/openapi.json`, versionata, con `--check` in CI come gli altri schemi (ADR-0003); i tipi del frontend generati dal file in `schemas/`, mai scritti a mano, e controllo di deriva in CI; versione nel percorso (`/v1`) e regole di compatibilità; formato di errore unico.
