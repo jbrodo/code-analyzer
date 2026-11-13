@@ -60,12 +60,13 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Le altre restano aperte.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
 
 | Decisione | Esito |
 | --- | --- |
 | D2-01 | Opzione 2: il server riceve i report prodotti dalla CLI in CI. Niente Temporal né scansioni sul server in Fase 2 |
-| D2-03 | Non ci sono team da coinvolgere. Validatore unico: l'utente ordina alla cieca i finding di 2 o 3 repository propri in Python o JS/TS, con campione e metriche di G2.b. La variante predefinita che ne esce è provvisoria, da rivalidare con utenti reali. Il Gate 2 si chiude con lo scostamento dichiarato rispetto a §13 ("validato dai team"). I repository sono ancora da indicare: servono a X-01 |
+| D2-03 | Non ci sono team da coinvolgere. Validatore unico: l'utente ordina alla cieca i finding di 2 o 3 repository propri in Python o JS/TS, con campione e metriche di G2.b. La variante predefinita che ne esce è provvisoria, da rivalidare con utenti reali. Il Gate 2 si chiude con lo scostamento dichiarato rispetto a §13 ("validato dai team"). Repository indicati il 2026-11-13: `orario-scuola` e `birds-cataloger`, un terzo facoltativo ancora da indicare (`doc/verifiche/gate-2.md`) |
+| D2-08 | Opzione 2 (2026-11-13): B101 scartato nei soli file di test, riconosciuti con regole di percorso fisse nell'adattatore |
 | D2-09 | Opzione 2: un ecosistema fuori elenco senza database è un avviso e il plugin resta `ok`. In più `gate` stampa su stderr gli avvisi del report. Vedi l'emendamento di ADR-0006 |
 | D2-10 | Opzione 1: il gate resta sui livelli provvisori di ADR-0009 fino al Gate 2; A e B si calcolano entrambe in ombra |
 | D2-11 | Corpus fisso di repository pubblici con commit fissati, distribuzione versionata nel pacchetto. Corpus piccolo all'inizio, una decina di repository con i 3 pilota inclusi. ADI calcolato e servito dall'API, trend in Fase 4 |
@@ -84,7 +85,7 @@ Testo originale della tabella, con opzioni e motivazioni: ordine consigliato **D
 | **D2-05** Feed EPSS/KEV e mirror (ADR-0024) | Fonte, termini d'uso, dove sta il mirror, firma degli snapshot. Raccomandazione: EPSS dal file giornaliero pubblicato da FIRST, KEV dal JSON di CISA, entrambi con sincronizzazione separata come ADR-0006; in Fase 2 solo la cache locale e quella della CI, come oggi; il mirror come artefatto OCI firmato con cosign, così la verifica riusa ADR-0005, si progetta ma si pubblica solo su una destinazione che rispetti D2-16. La ridistribuzione dei database (OSV, trivy-db, EPSS, KEV) in un mirror è una valutazione di licenze e va aggiunta a D2-14 | Utente; Riccardo Roveda per la parte di ridistribuzione (D2-14) | E-05 | Nessuno: E-02..E-04 procedono con la sola cache | Non blocca: P di A usa EPSS e KEV anche senza mirror |
 | **D2-06** Dove gira il server del pilota | Il Gate 2 con la UI richiede un server raggiungibile dai team. Raccomandazione: un solo host interno con il compose di I-05, nessun Kubernetes (Helm è in Fase 4) | Utente | I-06 | Nessuno | Solo se G2.b usa la UI |
 | **D2-07** Object storage e licenze dei componenti server (ADR-0030) | §2 indica S3/MinIO; MinIO server risulterebbe AGPL-3.0, vietata da D-0013 in un prodotto distribuito (da verificare in V-02). Raccomandazione: porta `ArtifactStore` con adattatore su file system per il pilota e adattatore S3 generico; nessun server di object storage incluso nel prodotto finché la Fase 4 non sceglie il packaging. Stessa verifica per il driver PostgreSQL | Utente; Riccardo Roveda per le licenze | B-07 | B-03, B-06, B-11 | Non blocca |
-| **D2-08** Rumore di B101 (bandit) | 47.276 finding su 47.718 nel pilota saleor, quasi tutti `assert` nei test. Opzioni: (1) disattivare B101 come B105..B107; (2) **scartare B101 solo nei file di test** (percorsi fissati nell'adattatore, non dal repository) e tenerlo altrove; (3) tenerlo e lasciare che lo scoring lo porti in basso. **Raccomandata (2)**: un `assert` nel codice di produzione sparisce con `-O` ed è un problema reale, nei test no | Utente | P-07 | Nessuno | Riduce il rumore nel campione di G2.b |
+| **D2-08** (decisa il 2026-11-13: opzione 2) Rumore di B101 (bandit) | 47.276 finding su 47.718 nel pilota saleor, quasi tutti `assert` nei test. Opzioni: (1) disattivare B101 come B105..B107; (2) **scartare B101 solo nei file di test** (percorsi fissati nell'adattatore, non dal repository) e tenerlo altrove; (3) tenerlo e lasciare che lo scoring lo porti in basso. **Raccomandata (2)**: un `assert` nel codice di produzione sparisce con `-O` ed è un problema reale, nei test no | Utente | P-07 | Nessuno | Riduce il rumore nel campione di G2.b |
 | **D2-09** (decisa il 2026-11-10: opzione 2, più la stampa degli avvisi in `gate`) osv-scanner su un ecosistema senza database (emenda ADR-0006) | Oggi un `pom.xml` rende `partial` qualunque scansione. Opzioni: (1) allargare l'elenco degli ecosistemi (Maven, Go, crates…), che anticipa dati della Fase 4; (2) **per un ecosistema fuori elenco, avviso `feeds-ecosystem-missing` con ecosistema e numero di pacchetti, plugin `ok` e copertura ridotta dichiarata nel report**; il fallimento resta per un ecosistema in elenco senza database; (3) lasciare il fallimento. **Raccomandata (2)**: lo stesso trattamento della copertura ridotta di gitleaks, e la scansione Python o JS/TS con un `pom.xml` accessorio torna `complete` | Utente (ADR-0006 è una sua decisione) | P-06 | Nessuno | Può rendere `partial` le scansioni dei repository dei team |
 | **D2-10** (decisa il 2026-11-10) Quale livello usa il gate durante l'ombra (ADR-0021) | §6 sceglie la variante per repository, §13 dice "modalità ombra entrambe". Opzioni: (1) **fino al Gate 2 il gate resta sui livelli provvisori di ADR-0009, A e B si calcolano entrambe in ombra; dopo la scelta della variante predefinita il livello da punteggio diventa attivo**; (2) la variante di `scoring.variant` è attiva da subito e l'altra in ombra; (3) gate sul massimo dei due livelli. **Raccomandata (1)**: le CI dei pilota non cambiano esito prima che l'ordinamento sia validato, e il passaggio dei livelli (ADR-0009, "molti finding cambieranno livello") avviene una volta sola, documentato | Utente | K-14, L-02 | X-02, X-07 | Definisce cosa misura G2.a |
 | **D2-11** (decisa il 2026-11-10) Benchmark della Variante B (ADR-0023) | §6.2 normalizza l'intensità "con quantili sulla distribuzione di benchmark", ma il benchmark non esiste. Raccomandazione: corpus fisso di repository pubblici Python e JS/TS con commit fissati, pilota inclusi; distribuzione salvata come dato versionato nel pacchetto; ricalcolo solo esplicito. Si decide anche se l'ADI per modulo (§6.2) entra in Fase 2 solo come valore calcolato e servito dall'API, con il trend lasciato alla Fase 4 | Utente | K-06 | K-07, K-11, G-13 | Blocca la parte B di G2.a |
@@ -712,7 +713,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.2. ADR: 0006.
 
 #### P-07 — B101 di bandit (riporto dalla Fase 1)
-- Agente: `backend`. Stato: **implementato il 2026-11-13** in `IPOTESI` (D2-08 ancora aperta, opzione 2 raccomandata). Misura su saleor (`1d707dc`, immagine ricostruita, profilo completo): B101 da 47.276 a 22, risultati di bandit 85, SARIF da 19,2 MB a 30 KB, 62 s.
+- Agente: `backend`. Stato: **implementato il 2026-11-13** (D2-08 decisa lo stesso giorno, opzione 2); si chiude con la CI verde su `main`. Misura su saleor (`1d707dc`, immagine ricostruita, profilo completo): B101 da 47.276 a 22, risultati di bandit 85, SARIF da 19,2 MB a 30 KB, 62 s.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/bandit/`.
 - Dipende da: nessuno.
 - Accettazione: B101 scartato nei soli file di test, riconosciuti con regole di percorso fisse nell'adattatore; un `assert` in un modulo di produzione resta un finding; il conteggio su saleor viene rimisurato e registrato.
@@ -1342,7 +1343,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 ### X — Misura e chiusura
 
 #### X-01 — Registrare team, repository e protocollo del Gate 2
-- Agente: `architect`, su scelta dell'utente. Stato: `BLOCCATO` finché l'utente non indica i 2 o 3 repository propri (D2-03 decisa il 2026-11-10: validatore unico).
+- Agente: `architect`, su scelta dell'utente. Stato: **chiuso il 2026-11-13** con 2 repository; un terzo, facoltativo, si aggiunge prima di X-02.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: nessuno.
 - Accettazione: validatore unico (l'utente), 2 o 3 repository con commit fissato, campione, metrica, soglia e regola di misura di D2-03; scostamento rispetto a §13 e riservatezza dei dati dichiarati.
@@ -1391,7 +1392,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §17. ADR: 0009, 0021.
 
 #### X-10 — Eccezioni per i 6 finding di licenza effettiva
-- Agente: `test`. Stato: `IPOTESI` (scadenza e testo da confermare con Riccardo Roveda).
+- Agente: `test`. Stato: **chiuso il 2026-11-13**, confermato da Riccardo Roveda. Auto-analisi su clone pulito: `complete`, 41,1 s, 342 finding, `gate --fail-on critico,alto` esce con 0 con 36 eccezioni, tutte in uso. Oltre ai 6 finding previsti: 2 dei 6 fingerprint erano cambiati rispetto a `gate-1.md`, e servivano altre 8 eccezioni approvate lo stesso giorno (2 citazioni già eccepite con fingerprint cambiato, 1 citazione nuova in `doc/plan/fase-2.md`, 5 dichiarazioni GPL-3.0-only del progetto in `README.md` e nei `pyproject.toml`).
 - Percorsi: `.code-analyzer.yml`.
 - Dipende da: nessuno.
 - Accettazione: un'eccezione per ciascuno dei 6 fingerprint elencati in `doc/verifiche/gate-1.md` ("Non eccepibili come falsi positivi"), con `approved_by: Riccardo Roveda`, motivazione che rimanda all'approvazione di D-0015 del 2026-11-10 come rischio residuo, non come falso positivo, e scadenza proposta 2027-05-09; `config validate` verde; `gate --fail-on critico,alto` sull'auto-analisi esce con 0 con le sole eccezioni attive. Se un fingerprint cambia (per esempio con K-20, che non deve cambiarli), l'eccezione va rifatta.

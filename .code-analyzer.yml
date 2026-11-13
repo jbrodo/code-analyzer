@@ -1,8 +1,11 @@
 # X-03: policy di licenze decisa in D-0013, usata anche per i repository pilota.
 # Il file stesso e' escluso: scancode riconosce gli identificatori SPDX elencati qui sotto.
 # Eccezioni: falsi positivi confermati, triage in doc/verifiche/gate-1.md.
-# Le ultime 6 (X-10) non sono falsi positivi: licenze effettive di componenti nelle immagini,
-# accettate come rischio residuo con l'approvazione di D-0015 del 2026-11-10.
+# Quelle con "Rischio residuo accettato" (X-10) non sono falsi positivi: licenze effettive di
+# componenti nelle immagini, accettate con l'approvazione di D-0015 del 2026-11-10.
+# Quelle con "Licenza del prodotto" coprono le dichiarazioni GPL-3.0-only del progetto stesso.
+# Il fingerprint di un finding di licenza su file e' percorso + licenze: cambia se cambiano le
+# licenze rilevate nel file, e l'eccezione va rifatta.
 version: 1
 paths:
   exclude:
@@ -42,11 +45,11 @@ exceptions:
     reason: "Falso positivo: doc/adr/0013-policy-licenze.md cita la licenza senza dichiararla. Testo della policy D-0013"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
-  - fingerprint: "sha256:c91ebc962d3cefef01df5e14e9d7701ddb47526a01cbb9857e979c1654a75ab5"
+  - fingerprint: "sha256:5b2d0d9d6127e4b525efe7dc14d893110547e8c3954a4011001a3c761eb613ad"
     reason: "Falso positivo: doc/adr/0015-regole-semgrep-e-licenze-motori.md cita la licenza senza dichiararla. Tabella dei motori: la riga AGPL è trufflehog, non incluso in Fase 1"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
-  - fingerprint: "sha256:5ef93d70ce83cb60260eeb7a86c1c20cecc4e4aa427896c763ee6f2864a974e2"
+  - fingerprint: "sha256:56197f9fedcd59a2d89e58b4068bc1c9524e5827957b32f0611caaabc9f7f2d6"
     reason: "Falso positivo: doc/plan/fase-1.md cita la licenza senza dichiararla. Testo di D-0013 e nota su trufflehog"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
@@ -126,7 +129,7 @@ exceptions:
     reason: "Rischio residuo accettato, non falso positivo: deploy/docker/LICENSES-SBOM.md registra la licenza LGPL del motore semgrep. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
-  - fingerprint: "sha256:664d75c1b5f53f8be721503bbbfb2a3221807e6f86bbe04c34f28616de27267f"
+  - fingerprint: "sha256:598f9caa0662863f332253f30976ef5f08f2fb2b29f020e37ad949ac4d05f1e2"
     reason: "Rischio residuo accettato, non falso positivo: pacchetto Debian git (GPL-2.0-only) nell'immagine gitleaks. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
@@ -138,11 +141,35 @@ exceptions:
     reason: "Rischio residuo accettato, non falso positivo: il Dockerfile di semgrep cita il testo LGPL-2.1 del motore installato. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
-  - fingerprint: "sha256:60d5407fa3f6160171470b9d0a78209364afde530c01c10ed0b41fc58ae8af6b"
+  - fingerprint: "sha256:34b2cabe48f609a22174cb3e2969a5aac68baedb2687c1ffd23cb3b2e2b604e9"
     reason: "Rischio residuo accettato, non falso positivo: semgrep 1.184.0 sotto LGPL-2.1 nell'immagine semgrep. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
   - fingerprint: "sha256:751669cbd33d79596c3763ea463028146c821c6d5b78a797efc3fe3a0bdbed80"
     reason: "Rischio residuo accettato, non falso positivo: testo LGPL-2.1 del motore semgrep incluso nell'immagine. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:58cc793e6c3769f8e1ff71a9b074582dd6e38f5dffc7698bd18547e2cd55b08f"
+    reason: "Falso positivo: doc/plan/fase-2.md cita la licenza senza dichiararla. Decisione D2-07 su MinIO e incoerenza 16"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:55e48d8894a193962e6d41842e6d9c1ab4eb04e48d8ab80b39ffafecee180360"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): dichiarazione in README.md"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:d2d45d02efd5b03e1c80570f1caf75ea129274c697c5e0a484d903e970e58bee"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:ddc0f7e2c2a76b2e3f9ec3e46182ab7b2fae37005a5626fe0b0d4313ba36407c"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-core/pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:19961bd0ee9094821061188f0168c9fda11522fc25d1090720a72c20a23d38fc"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-plugins/pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:79ccd244bcc13e64ddc4573c7d8e02d98d9d595d2e47093d1ff4ffda8581ae36"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-cli/pyproject.toml"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
