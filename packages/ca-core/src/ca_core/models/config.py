@@ -3,6 +3,11 @@
 Il file sta nel repository analizzato: input non fidato. Nessuna chiave per immagine, digest,
 firma, isolamento, rete, montaggi, comando o origine dei feed: `extra="forbid"` le rifiuta.
 Chiavi aggiunte in futuro dentro la versione 1 devono restare compatibili (ADR-0003).
+
+Fase 2 (C-05, versione 1.1): opzioni per i plugin di qualità, IaC e coverage (ADR-0026) e `tier`
+limitato a 1..3 (ADR-0028). Il repository può solo disattivare regole e indicare dove stanno i
+report di copertura: non può attivare regole, cambiare soglie o pesi, né indicare un file di
+configurazione dei motori.
 """
 
 import re
@@ -48,8 +53,17 @@ RelativePath = Annotated[
 ]
 
 
+# Identificativo di una regola di un motore: `F401`, `CKV_DOCKER_3`, `max-params`,
+# `@typescript-eslint/no-explicit-any`. Nessuno spazio, nessun carattere di shell o di glob.
+RULE_ID_PATTERN = r"^[A-Za-z0-9@][A-Za-z0-9_./@-]{0,127}$"
+MAX_DISABLED_RULES = 500
+MAX_COVERAGE_REPORTS = 20
+
+
 class GateMode(StrEnum):
-    """IPOTESI D-0009-A: in Fase 1 `new-findings-only` è valutato come `all`. Togliere con essa."""
+    """Modo richiesto. Quello effettivo lo registra il report (ADR-0009, ADR-0025):
+    `new-findings-only` vale come `all` su una scansione completa o senza baseline valida.
+    """
 
     ALL = "all"
     NEW_FINDINGS_ONLY = "new-findings-only"
@@ -59,9 +73,11 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class Service(_Strict):  # inerte in Fase 1
+class Service(_Strict):
+    """Dichiarazione non verificata: vale solo se manca il file di contesto (ADR-0028)."""
+
     catalog_id: str | None = None
-    tier: StrictInt | None = Field(default=None, ge=1)
+    tier: StrictInt | None = Field(default=None, ge=1, le=3)
     internet_facing: StrictBool | None = None
 
 
@@ -110,9 +126,41 @@ class SemgrepOptions(_Strict):
     rules: list[RelativePath] = Field(default_factory=list)
 
 
+class LinterOptions(_Strict):
+    """ADR-0026: il repository può solo spegnere regole; il report le elenca."""
+
+    disable_rules: list[Annotated[str, Field(pattern=RULE_ID_PATTERN)]] = Field(
+        default_factory=list, max_length=MAX_DISABLED_RULES
+    )
+
+
+class CoverageFormat(StrEnum):
+    LCOV = "lcov"
+    COBERTURA = "cobertura"
+
+
+class CoverageReport(_Strict):
+    """Un report prodotto dalla CI prima della scansione, come file del workspace."""
+
+    path: RelativePath
+    format: CoverageFormat
+    # Cartella in cui sono girati i test: i percorsi nel report sono relativi a questa (V-03).
+    # Assente: la radice del workspace.
+    base_dir: RelativePath | None = None
+
+
+class CoverageOptions(_Strict):
+    reports: list[CoverageReport] = Field(default_factory=list, max_length=MAX_COVERAGE_REPORTS)
+
+
 class Plugins(_Strict):
     disable: list[str] = Field(default_factory=list)
-    semgrep: SemgrepOptions | None = None  # unico plugin con opzioni in §8
+    semgrep: SemgrepOptions | None = None
+    ruff: LinterOptions | None = None
+    eslint: LinterOptions | None = None
+    checkov: LinterOptions | None = None
+    hadolint: LinterOptions | None = None
+    coverage: CoverageOptions | None = None
 
 
 class ConfigException(_Strict):

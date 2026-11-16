@@ -22,9 +22,15 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0016](0016-modalita-server-e-orchestrazione.md) | Modalità server e orchestrazione in Fase 2 | Accettato | Presa il 2026-11-10 (D2-01) |
 | [0017](0017-flusso-contratto-openapi.md) | Flusso del contratto OpenAPI | Proposto | No |
 | [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Proposto | No (D2-02 per l'esercizio dei tenant) |
+| [0019](0019-autenticazione-e-rbac.md) | Autenticazione e RBAC | Accettato | Presa il 2026-11-16 (D2-02) |
+| [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto | No |
 | [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto | Sì, D2-05 (aperta) per il mirror |
 | [0025](0025-baseline-modalita-pr-finding-nuovi.md) | Baseline, modalità PR e finding nuovi | Proposto | No |
+| [0026](0026-plugin-qualita-iac-coverage.md) | Plugin di qualità, IaC e coverage | Proposto | No |
+| [0027](0027-integrazioni-ci.md) | Integrazioni CI | Proposto | Sì, D2-12 e D2-13 (aperte) per la pubblicazione |
+| [0028](0028-catalogo-servizi.md) | Catalogo servizi | Accettato | Presa il 2026-11-16 (D2-04) |
 | [0029](0029-ui-elenco-finding-perimetro-e-dati.md) | UI dell'elenco finding: perimetro e dati | Proposto | Sì, D2-15 (perimetro da confermare) |
+| [0030](0030-componenti-server-e-object-storage.md) | Componenti del server e object storage | Accettato | Presa il 2026-11-16 (D2-07) |
 
 ## Aggiornamenti dopo la stesura
 

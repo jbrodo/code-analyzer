@@ -23,6 +23,8 @@ uv run ty check packages --error-on-warning
 uv run pytest -q
 uv run lint-imports
 uv run python -m ca_core.schema_export --check
+pnpm --dir web lint
+pnpm --dir web test
 ```
 
-I comandi `pnpm --dir web lint` e `pnpm --dir web test` sono omessi finché `web/` non esiste.
+`web/` usa pnpm alla versione fissata in `web/package.json` (`packageManager`) e Node 24; prima dei due comandi serve `pnpm --dir web install --frozen-lockfile`. La CI li esegue da O-01: fino ad allora vanno lanciati a mano.

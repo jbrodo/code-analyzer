@@ -1,0 +1,45 @@
+# Attesi della fixture F-02 della Fase 2. Formato: ../../expected-findings.schema.json
+# Ogni voce e' stata osservata il 2026-11-16 eseguendo lo strumento sulla fixture:
+#   checkov 3.4.5: checkov -f <file> ... --skip-download --framework dockerfile kubernetes terraform
+#   hadolint 2.15.1: hadolint --disable-ignore-pragma -f json Dockerfile
+#   trivy 0.76.2: trivy config --format json
+# `correlation` nomina il problema: le voci con lo stesso valore sullo stesso file sono lo stesso
+# problema visto da strumenti diversi, e devono finire nello stesso gruppo (ADR-0026, K-21).
+# Gli strumenti riportano molto altro su questi tre file (34 controlli checkov, 36 trivy):
+# qui stanno solo i problemi messi di proposito.
+# Righe: checkov riporta l'intervallo dell'intera risorsa; trivy non da' una riga a DS-0002 e DS-0026.
+version: 1
+expected:
+  # --- Dockerfile ---
+  - {category: iac, rule_id: DS-0001, path: Dockerfile, start_line: 1, end_line: 1, tools: [trivy], correlation: dockerfile.latest-tag}
+  - {category: iac, rule_id: CKV_DOCKER_7, path: Dockerfile, start_line: 1, end_line: 1, tools: [checkov], correlation: dockerfile.latest-tag}
+  - {category: iac, rule_id: DL3007, path: Dockerfile, start_line: 1, end_line: 1, tools: [hadolint], correlation: dockerfile.latest-tag}
+  - {category: iac, rule_id: DS-0005, path: Dockerfile, start_line: 2, end_line: 2, tools: [trivy], correlation: dockerfile.add-instead-of-copy}
+  - {category: iac, rule_id: CKV_DOCKER_4, path: Dockerfile, start_line: 2, end_line: 2, tools: [checkov], correlation: dockerfile.add-instead-of-copy}
+  - {category: iac, rule_id: DL3020, path: Dockerfile, start_line: 2, end_line: 2, tools: [hadolint], correlation: dockerfile.add-instead-of-copy}
+  - {category: iac, rule_id: DS-0010, path: Dockerfile, start_line: 4, end_line: 4, tools: [trivy], correlation: dockerfile.sudo}
+  - {category: iac, rule_id: CKV2_DOCKER_1, path: Dockerfile, start_line: 4, end_line: 4, tools: [checkov], correlation: dockerfile.sudo}
+  - {category: iac, rule_id: DL3004, path: Dockerfile, start_line: 4, end_line: 4, tools: [hadolint], correlation: dockerfile.sudo}
+  - {category: iac, rule_id: DS-0002, path: Dockerfile, tools: [trivy], correlation: dockerfile.root-user}
+  - {category: iac, rule_id: CKV_DOCKER_3, path: Dockerfile, start_line: 1, end_line: 5, tools: [checkov], correlation: dockerfile.root-user}
+  - {category: iac, rule_id: DS-0026, path: Dockerfile, tools: [trivy], correlation: dockerfile.no-healthcheck}
+  - {category: iac, rule_id: CKV_DOCKER_2, path: Dockerfile, start_line: 1, end_line: 5, tools: [checkov], correlation: dockerfile.no-healthcheck}
+  - {category: iac, rule_id: DS-0013, path: Dockerfile, start_line: 4, end_line: 4, tools: [trivy], correlation: dockerfile.cd-instead-of-workdir}
+  - {category: iac, rule_id: DL3003, path: Dockerfile, start_line: 4, end_line: 4, tools: [hadolint], correlation: dockerfile.cd-instead-of-workdir}
+  - {category: iac, rule_id: DS-0029, path: Dockerfile, start_line: 3, end_line: 3, tools: [trivy], correlation: dockerfile.apt-recommends}
+  - {category: iac, rule_id: DL3015, path: Dockerfile, start_line: 3, end_line: 3, tools: [hadolint], correlation: dockerfile.apt-recommends}
+  - {category: iac, rule_id: DL3008, path: Dockerfile, start_line: 3, end_line: 3, tools: [hadolint], note: "versioni non fissate in apt-get install"}
+  - {category: iac, rule_id: DL3009, path: Dockerfile, start_line: 3, end_line: 3, tools: [hadolint], note: "liste di apt non cancellate"}
+  - {category: iac, rule_id: DL3025, path: Dockerfile, start_line: 5, end_line: 5, tools: [hadolint], note: "CMD non in notazione JSON"}
+
+  # --- Kubernetes ---
+  - {category: iac, rule_id: KSV-0017, path: k8s/pod.yaml, start_line: 7, end_line: 10, tools: [trivy], correlation: kubernetes.privileged}
+  - {category: iac, rule_id: CKV_K8S_16, path: k8s/pod.yaml, start_line: 1, end_line: 10, tools: [checkov], correlation: kubernetes.privileged}
+  - {category: iac, rule_id: KSV-0013, path: k8s/pod.yaml, start_line: 7, end_line: 10, tools: [trivy], correlation: kubernetes.latest-tag}
+  - {category: iac, rule_id: CKV_K8S_14, path: k8s/pod.yaml, start_line: 1, end_line: 10, tools: [checkov], correlation: kubernetes.latest-tag}
+
+  # --- Terraform ---
+  - {category: iac, rule_id: AWS-0107, path: terraform/main.tf, start_line: 10, end_line: 10, tools: [trivy], correlation: terraform.aws.ssh-open}
+  - {category: iac, rule_id: CKV_AWS_24, path: terraform/main.tf, start_line: 1, end_line: 12, tools: [checkov], correlation: terraform.aws.ssh-open}
+  - {category: iac, rule_id: AWS-0086, path: terraform/main.tf, start_line: 14, end_line: 16, tools: [trivy], correlation: terraform.aws.s3-public-access-block}
+  - {category: iac, rule_id: CKV2_AWS_6, path: terraform/main.tf, start_line: 14, end_line: 16, tools: [checkov], correlation: terraform.aws.s3-public-access-block}

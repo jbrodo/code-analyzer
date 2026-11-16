@@ -164,8 +164,7 @@ def out_tmpfs_bytes(outputs: Outputs) -> int:
     Il margine copre i temporanei dell'adattatore e fa riconoscere un output appena oltre
     `max_bytes` come `invalid_output` e non come scrittura troncata. Provvisorio fino a X-04.
     """
-    declared = sum(p is not None for p in (outputs.sarif, outputs.cyclonedx))
-    data = declared * outputs.max_bytes
+    data = len(outputs.declared()) * outputs.max_bytes
     return data + max(OUT_MARGIN_MIN, data // 4)
 
 
@@ -1181,9 +1180,7 @@ class OciExecutor:
         """Copia dalla custodia il solo file dichiarato, per ogni output: un assente, non
         regolare, symlink o oltre il limite fa fallire. I non dichiarati non si toccano."""
         outputs = manifest.outputs
-        for declared in (outputs.sarif, outputs.cyclonedx):
-            if declared is None:
-                continue
+        for declared in outputs.declared():
             name = Path(declared).name
             try:
                 self._fetch_output(holder, _first_level_name(name), outputs.max_bytes, out)

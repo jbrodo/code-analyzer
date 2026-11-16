@@ -1,0 +1,18 @@
+# Attesi della fixture F-02 della Fase 2. Formato: ../../expected-findings.schema.json
+# Ogni voce e' stata osservata eseguendo ruff 0.17.5 sulla fixture il 2026-11-16:
+#   ruff check --isolated --no-cache --no-respect-gitignore --ignore-noqa
+#     --select F,B,C901,PLR0911,PLR0912,PLR0913,PLR0915
+# Soglie predefinite di ruff (complessita' 10, argomenti 5, return 6, rami 12). I valori della
+# fixture le superano con margine, cosi' gli attesi reggono anche con soglie piu' larghe:
+# complessita' 18, argomenti 9, return 14, rami 18. PLR0915 (istruzioni) non scatta: assente.
+# app/clean.py non ha problemi: nessun atteso.
+version: 1
+expected:
+  - {category: quality, rule_id: F401, path: app/report.py, start_line: 2, end_line: 2, tools: [ruff], note: "import non usato"}
+  - {category: quality, rule_id: F841, path: app/report.py, start_line: 6, end_line: 6, tools: [ruff], note: "variabile locale mai usata"}
+  - {category: quality, rule_id: F821, path: app/report.py, start_line: 42, end_line: 42, tools: [ruff], note: "nome non definito"}
+  - {category: quality, rule_id: B006, path: app/report.py, start_line: 5, end_line: 5, tools: [ruff], note: "valore predefinito mutabile"}
+  - {category: quality, rule_id: C901, path: app/report.py, start_line: 5, end_line: 5, tools: [ruff], note: "complessita' 18"}
+  - {category: quality, rule_id: PLR0913, path: app/report.py, start_line: 5, end_line: 5, tools: [ruff], note: "9 argomenti"}
+  - {category: quality, rule_id: PLR0911, path: app/report.py, start_line: 5, end_line: 5, tools: [ruff], note: "14 return"}
+  - {category: quality, rule_id: PLR0912, path: app/report.py, start_line: 5, end_line: 5, tools: [ruff], note: "18 rami"}

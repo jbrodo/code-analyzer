@@ -52,6 +52,33 @@ VALID = {
     },
     "agents-max-phase-lower": {"version": 1, "agents": {"max_phase": 1}},
     "plugins-semgrep-null": {"version": 1, "plugins": {"semgrep": None}},
+    "plugins-linters-disable-rules": {
+        "version": 1,
+        "plugins": {
+            "ruff": {"disable_rules": ["F401", "PLR0913"]},
+            "eslint": {"disable_rules": ["max-params", "@typescript-eslint/no-explicit-any"]},
+            "checkov": {"disable_rules": ["CKV_DOCKER_3", "CKV2_AWS_6"]},
+            "hadolint": {"disable_rules": ["DL3008"]},
+        },
+    },
+    "plugins-linters-empty-and-null": {
+        "version": 1,
+        "plugins": {"ruff": {}, "eslint": None, "checkov": {"disable_rules": []}},
+    },
+    "plugins-coverage-reports": {
+        "version": 1,
+        "plugins": {
+            "coverage": {
+                "reports": [
+                    {"path": "backend/coverage.xml", "format": "cobertura", "base_dir": "backend"},
+                    {"path": "web/coverage/lcov.info", "format": "lcov"},
+                    {"path": "lcov.info", "format": "lcov", "base_dir": None},
+                ]
+            }
+        },
+    },
+    "plugins-coverage-empty": {"version": 1, "plugins": {"coverage": {}}},
+    "service-tier-3": {"version": 1, "service": {"tier": 3}},
 }
 
 # Chiavi vietate (ADR-0014), nelle posizioni in cui un autore le proverebbe a mettere.
@@ -76,16 +103,29 @@ for key in FORBIDDEN_KEYS:
     FORBIDDEN[f"top-level-{key}"] = {"version": 1, key: "x"}
     FORBIDDEN[f"plugins-{key}"] = {"version": 1, "plugins": {key: "x"}}
     FORBIDDEN[f"plugins-semgrep-{key}"] = {"version": 1, "plugins": {"semgrep": {key: "x"}}}
+    for _plugin in ("ruff", "eslint", "checkov", "hadolint", "coverage"):
+        FORBIDDEN[f"plugins-{_plugin}-{key}"] = {"version": 1, "plugins": {_plugin: {key: "x"}}}
+# ADR-0026: il repository non attiva regole, non cambia soglie, non indica file di configurazione.
+for _key in ("rules", "select", "enable_rules", "config", "config_file", "thresholds", "severity"):
+    for _plugin in ("ruff", "eslint", "checkov", "hadolint"):
+        FORBIDDEN[f"plugins-{_plugin}-{_key}"] = {"version": 1, "plugins": {_plugin: {_key: []}}}
 FORBIDDEN["plugins-per-plugin-image"] = {"version": 1, "plugins": {"trivy": {"image": "x:1"}}}
 FORBIDDEN["plugins-enable"] = {"version": 1, "plugins": {"enable": ["x"]}}
 
 
+def _coverage(**fields: object) -> Json:
+    report = {"path": "coverage.xml", "format": "cobertura", **fields}
+    return {"version": 1, "plugins": {"coverage": {"reports": [report]}}}
+
+
 def _paths(key: str, value: str) -> Json:
-    return (
-        {"version": 1, "paths": {"exclude": [value]}}
-        if key == "paths"
-        else {"version": 1, "plugins": {"semgrep": {"rules": [value]}}}
-    )
+    if key == "paths":
+        return {"version": 1, "paths": {"exclude": [value]}}
+    if key == "coverage-path":
+        return _coverage(path=value)
+    if key == "coverage-base-dir":
+        return _coverage(base_dir=value)
+    return {"version": 1, "plugins": {"semgrep": {"rules": [value]}}}
 
 
 UNSAFE_PATHS = {
@@ -100,9 +140,9 @@ UNSAFE_PATHS = {
     "windows-drive-backslash": "C:\\x",
     "windows-traversal": "a\\..\\b",
 }
-for _key in ("paths", "semgrep-rules"):
+for _key in ("paths", "semgrep-rules", "coverage-path", "coverage-base-dir"):
     for _name, _value in UNSAFE_PATHS.items():
-        FORBIDDEN[f"{_key}-{_name}"] = _paths("paths" if _key == "paths" else "rules", _value)
+        FORBIDDEN[f"{_key}-{_name}"] = _paths(_key, _value)
 
 INVALID = {
     "gate-same-level-block-and-warn": {
@@ -127,6 +167,38 @@ INVALID = {
     "agents-max-phase-0": {"version": 1, "agents": {"max_phase": 0}},
     "agents-max-phase-9": {"version": 1, "agents": {"max_phase": 9}},
     "service-tier-0": {"version": 1, "service": {"tier": 0}},
+    "service-tier-4": {"version": 1, "service": {"tier": 4}},
+    "linter-rule-with-space": {"version": 1, "plugins": {"ruff": {"disable_rules": ["F401 E"]}}},
+    "linter-rule-glob": {"version": 1, "plugins": {"eslint": {"disable_rules": ["*"]}}},
+    "linter-rule-empty": {"version": 1, "plugins": {"checkov": {"disable_rules": [""]}}},
+    "linter-rule-option-like": {
+        "version": 1,
+        "plugins": {"hadolint": {"disable_rules": ["--config"]}},
+    },
+    "linter-rule-too-long": {"version": 1, "plugins": {"ruff": {"disable_rules": ["A" * 129]}}},
+    "linter-rules-not-array": {"version": 1, "plugins": {"ruff": {"disable_rules": "F401"}}},
+    "linter-too-many-rules": {
+        "version": 1,
+        "plugins": {"ruff": {"disable_rules": [f"R{i}" for i in range(501)]}},
+    },
+    "coverage-format-unknown": _coverage(format="jacoco"),
+    "coverage-missing-format": {
+        "version": 1,
+        "plugins": {"coverage": {"reports": [{"path": "coverage.xml"}]}},
+    },
+    "coverage-missing-path": {
+        "version": 1,
+        "plugins": {"coverage": {"reports": [{"format": "lcov"}]}},
+    },
+    "coverage-unknown-key": _coverage(url="https://example.invalid/coverage.xml"),
+    "coverage-too-many-reports": {
+        "version": 1,
+        "plugins": {
+            "coverage": {
+                "reports": [{"path": f"c{i}.xml", "format": "cobertura"} for i in range(21)]
+            }
+        },
+    },
     "service-unknown-key": {"version": 1, "service": {"owner": "x"}},
     "paths-exclude-not-array": {"version": 1, "paths": {"exclude": "a"}},
     "paths-unknown-key": {"version": 1, "paths": {"include": ["a"]}},

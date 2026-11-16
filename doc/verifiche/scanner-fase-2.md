@@ -383,3 +383,127 @@ In Fase 1 la scelta è stata non rispettare le soppressioni del repository (band
 - Il caso di checkov è il più insidioso, perché l'opzione che sembra risolverlo (`--config-file`) non basta.
 - L'output di checkov contiene frammenti dei file analizzati: l'adattatore li toglie, come per gli altri plugin (ADR-0007, ADR-0012).
 - ruff e checkov non danno una severità utile: il livello provvisorio di tutti i loro finding sarebbe lo stesso. Serve una tabella di severità per regola nel plugin, o il livello resta piatto finché non c'è il punteggio.
+
+## V-08 — Consolidamento
+
+Scritto il 2026-11-16. Esiti ricavati dal testo di V-01..V-07 e dai campioni in `tests/fixtures/plugin-output/fase-2/`. Nessuna nuova esecuzione. Stessa forma di V-09 della Fase 1: `confermato`, `smentito`, `non verificabile`. Le affermazioni vengono dagli ADR esistenti e dalle raccomandazioni di `doc/plan/fase-2.md`; i presupposti impliciti sono indicati come tali.
+
+### Esiti
+
+| Fonte | Affermazione | Esito | Verifica e nota |
+| --- | --- | --- | --- |
+| ADR-0004 | Il profilo `hardened-container` (con tmpfs su `/tmp` e `HOME=/tmp`) basta a eseguire i motori nuovi | `confermato` | V-04: ruff, eslint, checkov e hadolint girano; V-07: tree-sitter gira. Nessuna modifica al profilo |
+| ADR-0004 | Presupposto: un motore eseguito con il profilo e senza rete è innocuo con le sue impostazioni predefinite | `smentito` | V-04: ruff scrive nel workspace, eslint esegue `eslint.config.js`, checkov chiama la rete e applica `.checkov.yaml`, hadolint applica `.hadolint.yaml`. Serve un'invocazione specifica per motore (ADR-0026) |
+| ADR-0007 | Ogni motore si riconduce a SARIF 2.1.0 con un adattatore | `confermato` | V-03: tre SARIF nativi validi; eslint dal JSON nativo |
+| ADR-0007 | Gli `uri` vanno riscritti dall'adattatore | `confermato` | V-03: quattro forme diverse, nessuna relativa al workspace |
+| ADR-0007, ADR-0012 | Presupposto: i motori di qualità e IaC non emettono frammenti di codice | `smentito` | V-03: checkov mette il testo della risorsa in `region.snippet`. L'adattatore lo toglie, come per bandit e semgrep |
+| ADR-0009 | La severità del tool distingue i finding di `sast` e `iac` | `smentito` per ruff e checkov | V-03: `level` sempre `error`. Con la tabella di ADR-0009 tutti i loro finding sarebbero `alto`. Decide ADR-0026 |
+| ADR-0009 | Idem | `confermato` per hadolint ed eslint | V-03: hadolint ha una severità per regola; eslint quella della configurazione, che è nostra |
+| ADR-0012, emendamento N-04 | Le soppressioni in linea si possono disattivare in ogni motore | `non verificabile` per ruff, eslint, hadolint; `smentito` per checkov | V-04: le tre opzioni esistono ma non sono provate (P-01, P-02, P-04). checkov non ha un'opzione: i controlli saltati si leggono dal JSON |
+| ADR-0017 | Esiste un generatore di tipi dall'OpenAPI con licenza ammessa | `confermato` | V-01, V-02: openapi-typescript |
+| ADR-0017 | Presupposto: il generatore funziona con il TypeScript scelto per `web/` | `non verificabile` | V-01: TypeScript 7 da provare in W-01; in caso contrario 6.0.3 |
+| ADR-0024 | EPSS e KEV si sincronizzano come ADR-0006, con costo trascurabile | `confermato` | V-05: meno di 5 MB compressi in tutto |
+| ADR-0024 | La fonte non permette di verificare l'origine dei dati | `confermato` | V-05: nessun checksum né firma |
+| ADR-0025 | G2.d regge senza restringere i plugin ai file cambiati | `confermato` sui plugin della Fase 1 | V-06: 221 s la scansione più lenta. Mancano i plugin nuovi e `ca-graph` (X-05) |
+| Piano, V-01 | TypeScript 7 per il plugin eslint | `smentito` | V-03: typescript-eslint lo rifiuta. Il plugin usa la 6.0.3 |
+| Piano, V-01 | Formattatore SARIF esterno per eslint | `smentito` | V-01, V-02, V-03: fermo dal 2024, senza testo di licenza, porta una seconda copia non supportata di eslint. L'adattatore converte il JSON |
+| Piano, V-01 | La grammatica TypeScript del 2024 funziona con tree-sitter 0.26 | `confermato` | V-07, con 5 file su 5.259 analizzati in parte |
+| Piano, V-01 | Le dipendenze del server si installano su Python 3.14 | `non verificabile` | Provate solo le wheel di tree-sitter (V-07). Lo prova B-01 |
+| Piano, D2-07 | Il server di object storage indicato da §2 ha una licenza vietata da D-0013 | `confermato` | V-02 |
+| Piano, D2-07 | Presupposto: il driver PostgreSQL più diffuso ha una licenza ammessa | `smentito` | V-02: psycopg è da approvare. Due alternative ammesse (ADR-0030) |
+| Piano, D2-13 | Il Marketplace richiede un repository dedicato | `confermato` | V-02, letto alla fonte |
+| Piano, D2-12 | Il componente GitLab non si usa dal repository GitHub | `confermato` | V-02, letto alla fonte: serve un progetto per istanza |
+| Piano, D2-05 | Il mirror può contenere tutti i database | `smentito` per EPSS e trivy-db | V-05: ridistribuzione non concessa in modo esplicito. Già recepito in ADR-0024 |
+| Piano, lacuna 6 | Solo alcune regole di ruff ed eslint portano una metrica | `confermato` | V-03: la metrica è solo nel testo del messaggio |
+| Piano, K-06 | Presupposto: i finding dei linter bastano a costruire la distribuzione del benchmark | `smentito` | V-03: il motore segnala solo sopra soglia. Per i quantili le soglie vanno al minimo (ADR-0023) |
+| Piano, G-02 | Presupposto: un pacchetto Python ha `__init__.py` | `smentito` | V-07: 4 e 10 cartelle senza. La risoluzione non lo richiede |
+| Piano, G-03 | Gli alias di `tsconfig` vanno letti | `confermato` | V-07: senza, più della metà degli import interni di un pilota risulta esterna |
+| Piano, A-05 | L'estrazione in container come un plugin è sostenibile | `confermato` | V-07: meno di 6 s e 42 MB con le restrizioni dei plugin |
+
+### Cosa cambia
+
+Nessun ADR `Accettato` va riaperto: gli esiti `smentito` riguardano presupposti impliciti o raccomandazioni del piano, e ognuno ha già un ADR della Fase 2 che lo recepisce.
+
+| Esito | Dove va | Task |
+| --- | --- | --- |
+| Invocazione sicura diversa per ogni motore; test con configurazione ostile per tutti e quattro, non solo eslint | ADR-0026; accettazione di P-01, P-03, P-04 | A-11 |
+| Frammenti di checkov tolti dall'adattatore | ADR-0026; accettazione di P-03 | A-11 |
+| Severità piatta di ruff e checkov: tabella per regola nel plugin | ADR-0026 | A-11 |
+| Soppressioni in linea: stessa regola dell'emendamento N-04 di ADR-0012; i controlli saltati di checkov tornano finding | ADR-0026; prove in P-01, P-02, P-04 | A-11 |
+| Percorsi dei report di copertura relativi alla cartella dei test; `DOCTYPE` con DTD esterna; due dialetti di `FN`; report vuoto valido | ADR-0026; P-05, F-03 | A-11 |
+| Metrica estratta dal messaggio; soglie al minimo per il benchmark e scarto dei finding sotto la soglia vera | ADR-0023, ADR-0026; K-06, K-07 | A-08, A-11 |
+| Adattatore eslint dal JSON nativo; TypeScript 6.0.3 e Node 24 nell'immagine | ADR-0026; P-02 | A-11 |
+| Alias di `tsconfig` letti come dati non fidati; pacchetti impliciti; file con errori analizzati in parte e contati; archi mancanti contati | ADR-0020; C-02, G-02, G-03 | A-05 |
+| Driver PostgreSQL con licenza ammessa, o approvazione | ADR-0030 | A-15 |
+| Attribuzione di EPSS in documentazione e UI | ADR-0024 (già scritto); L-05, U-04, W-05 | — |
+| TypeScript 7 in `web/` solo se vite, vitest e openapi-typescript lo reggono | W-01 | — |
+
+### Da portare a D2-14
+
+Stessa procedura di D-0015, sugli SBOM della build di rilascio. V-02 copre solo i componenti nominati, non le dipendenze transitive.
+
+| Voce | Stato secondo D-0013 | Nota |
+| --- | --- | --- |
+| ruff, checkov, eslint, typescript-eslint, TypeScript 6.0.3 | Ammessa sul testo | Dipendenze transitive dall'SBOM dell'immagine |
+| hadolint | Da approvare | Binario separato nella propria immagine; licenza della stessa famiglia e versione di quella del prodotto |
+| tree-sitter e le tre grammatiche | Ammessa sul testo | Le wheel contengono codice C generato, provenienza non esaminata |
+| Lettore dei report di copertura | Nessun motore di terzi previsto | Da confermare in P-05: solo libreria standard |
+| Immagine CLI (I-01) | Già costruita | SBOM della build di rilascio |
+| Componenti del server: fastapi, uvicorn, sqlalchemy, alembic, pyjwt o authlib, opentelemetry | Ammessa sul testo | Elenco definitivo da ADR-0030 e B-01 |
+| Driver PostgreSQL | psycopg da approvare; asyncpg e pg8000 ammessi | Decide ADR-0030 con D2-07 |
+| Dipendenze di `web/` | Ammessa sul testo principale | vite e vitest includono dipendenze non lette una per una; pnpm è strumento di build |
+| Formattatore SARIF di eslint | Esce | Non usato |
+| Server di object storage di §2 | Vietata | Non incluso (D2-07) |
+| Ridistribuzione nel mirror: KEV | Concessa | Dominio pubblico dichiarato |
+| Ridistribuzione nel mirror: OSV per PyPI e GitHub Advisory | Concessa con attribuzione | Sorgente di npm da chiarire |
+| Ridistribuzione nel mirror: EPSS, trivy-db | Da valutare | Fuori dal mirror fino all'esito (ADR-0024) |
+
+### Non verificato, con il task che lo prova
+
+- Opzioni che disattivano le soppressioni in linea di ruff, eslint e hadolint: P-01, P-02, P-04.
+- Installazione delle dipendenze del server su Python 3.14: B-01.
+- TypeScript 7 con vite, vitest e openapi-typescript: W-01.
+- Tempi di checkov, ruff, eslint e hadolint sui pilota: X-05.
+- `extends` tra `tsconfig`, workspace dei monorepo, riesportazioni: G-03, con i fixture di F-01.
+- API di EPSS, termini generali del sito FIRST, file di licenza e sorgenti di trivy-db: D2-14, solo se il mirror li include.
+
+## W-01 — Dipendenze di `web/`
+
+Verificato il 2026-11-16 installando con pnpm 12.18.0 e Node 24.11.1. Versioni esatte in `web/package.json`, integrità in `web/pnpm-lock.yaml`.
+
+### TypeScript
+
+`web/` usa TypeScript 6.0.3, non la serie 7: typescript-eslint 8.72.2 non accetta la 7 (V-03) e il lint di `web/` usa typescript-eslint con le regole che leggono i tipi. Chiude il punto lasciato aperto da V-01. Vite 8.3.8, vitest 5.1.0 e `@vitejs/plugin-react` funzionano con la 6.0.3: `pnpm lint`, `pnpm test` e `pnpm build` sono verdi. openapi-typescript non è ancora installato: lo prova W-02.
+
+### Dipendenze dirette non elencate in V-01
+
+File di licenza letto nel pacchetto installato, come in V-02. Tutte ammesse da D-0013.
+
+| Componente | Versione | Ruolo | Licenza dal testo |
+| --- | --- | --- | --- |
+| `@vitejs/plugin-react` | 6.3.0 | Sviluppo: trasformazione JSX e aggiornamento a caldo | Permissiva, la stessa di vite |
+| `jsdom` | 31.0.1 | Test: DOM simulato | Permissiva, la stessa di vite |
+| `@testing-library/dom` | 10.4.2 | Test: dipendenza richiesta da `@testing-library/react` | Permissiva, la stessa di vite |
+| `@eslint/js` | 10.0.1 | Lint: regole raccomandate di eslint | Permissiva, la stessa di eslint |
+| `eslint-plugin-react-hooks` | 7.1.1 | Lint: regole degli hook | Permissiva, la stessa di react |
+| `@types/react`, `@types/react-dom`, `@types/node` | 19.3.0, 19.3.0, 24.19.2 | Tipi | Permissiva, la stessa di react |
+
+### Albero completo
+
+`pnpm licenses list` sui 215 pacchetti installati, dalla licenza **dichiarata** nei metadati: il testo è stato letto solo per le dipendenze dirette.
+
+| Classe | Pacchetti | Nota |
+| --- | --- | --- |
+| Permissive | 212 | Sei licenze diverse, nessuna con obblighi oltre all'attribuzione |
+| Con reciprocità limitata al file modificato | 2 | `lightningcss` e il suo binario: dipendenza di vite, strumento di build |
+| Dati con obbligo di attribuzione | 1 | `caniuse-lite`: tabella dei browser, usata a build |
+
+Nessuna licenza vietata e nessuna da approvare secondo D-0013.
+
+Ciò che finisce nel prodotto distribuito è solo l'uscita di `vite build`: oggi `react` e `react-dom`. Tutto il resto serve a sviluppo, lint, test e build. L'SBOM che fa fede è quello dell'immagine del server che conterrà la SPA (I-03), come per le altre immagini; D2-14 lo valuta lì.
+
+### Non fatto
+
+- `web/package.json` non dichiara una licenza: il pacchetto è privato e non si pubblica. Dichiararla aprirebbe un finding di licenza nell'auto-analisi, da coprire con un'eccezione approvata da Riccardo Roveda come per i `pyproject.toml`.
+- L'auto-analisi non è stata rieseguita con `web/`: syft, osv-scanner e trivy leggeranno `pnpm-lock.yaml`, e i finding che ne escono vanno guardati prima di X-07.
+- La CI non esegue ancora i comandi di `web/`: è O-01.

@@ -1,0 +1,83 @@
+/* Generato da scripts/tokens.mjs a partire da doc/ux/tokens.json. Non modificare a mano. */
+:root {
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f5f6f8;
+  --color-bg-row-selected: #e6eefb;
+  --color-border: #d3d7de;
+  --color-border-control: #7b8494;
+  --color-text: #1a1f29;
+  --color-text-muted: #535c6b;
+  --color-accent: #1257c9;
+  --color-accent-text: #ffffff;
+  --color-focus: #1257c9;
+  --color-danger: #b3261e;
+  --color-level-critico-bg: #fbe4e2;
+  --color-level-critico-text: #8c1a12;
+  --color-level-alto-bg: #fde8d4;
+  --color-level-alto-text: #8a3c00;
+  --color-level-medio-bg: #fbf0c4;
+  --color-level-medio-text: #6b4e00;
+  --color-level-basso-bg: #e7eaf0;
+  --color-level-basso-text: #3d4553;
+  --color-status-ok-text: #1c6b3a;
+  --color-status-warn-bg: #fbf0c4;
+  --color-status-warn-text: #6b4e00;
+  --font-family-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-line-height-tight: 1.3;
+  --font-line-height-text: 1.5;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --size-row-height: 2.25rem;
+  --size-control-height: 2rem;
+  --size-target-min: 1.5rem;
+  --size-panel-width: 30rem;
+  --size-topbar-height: 3rem;
+  --size-breakpoint-narrow: 48rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --border-width: 1px;
+  --border-focus-width: 2px;
+  --border-focus-offset: 2px;
+  --motion-duration-fast: 120ms;
+  --motion-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #14171c;
+    --color-bg-subtle: #1c2027;
+    --color-bg-row-selected: #1d2c47;
+    --color-border: #333a45;
+    --color-border-control: #7d8798;
+    --color-text: #e8ebf0;
+    --color-text-muted: #a4adbb;
+    --color-accent: #7fb0ff;
+    --color-accent-text: #0d1626;
+    --color-focus: #7fb0ff;
+    --color-danger: #ff9c94;
+    --color-level-critico-bg: #4a1a17;
+    --color-level-critico-text: #ffc9c4;
+    --color-level-alto-bg: #4a2a0e;
+    --color-level-alto-text: #ffd2a8;
+    --color-level-medio-bg: #3f3408;
+    --color-level-medio-text: #f5dc85;
+    --color-level-basso-bg: #2a303a;
+    --color-level-basso-text: #c9d0db;
+    --color-status-ok-text: #7fd6a0;
+    --color-status-warn-bg: #3f3408;
+    --color-status-warn-text: #f5dc85;
+  }
+}

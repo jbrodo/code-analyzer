@@ -1,0 +1,22 @@
+# Attesi della fixture F-02 della Fase 2. Formato: ../../expected-findings.schema.json
+# Ogni voce e' stata osservata il 2026-11-16 con eslint 10.14.0, typescript-eslint 8.72.2,
+# typescript 6.0.3 e Node 24:
+#   eslint --no-config-lookup --no-inline-config -c <configurazione di prova> -f json src
+# Configurazione di prova: regole raccomandate di eslint e di typescript-eslint, piu' complexity,
+# max-params, max-depth e max-lines-per-function con le soglie predefinite (20, 3, 4, 50).
+# I valori della fixture: complessita' 26, 6 parametri, annidamento 6.
+# Fuori dagli attesi, di proposito:
+#  - la variabile non usata di src/plain.js: l'id della regola dipende dalla configurazione
+#    (quella di base o quella di typescript-eslint), che fissa P-02;
+#  - max-lines-per-function su src/plain.js: 51 righe contro 50, troppo vicino alla soglia.
+# src/clean.ts non ha problemi: nessun atteso.
+version: 1
+expected:
+  - {category: quality, rule_id: complexity, path: src/plain.js, start_line: 1, end_line: 1, tools: [eslint], note: "complessita' 26"}
+  - {category: quality, rule_id: max-params, path: src/plain.js, start_line: 1, end_line: 1, tools: [eslint], note: "6 parametri"}
+  - {category: quality, rule_id: max-depth, path: src/plain.js, start_line: 7, end_line: 7, tools: [eslint], note: "annidamento 5"}
+  - {category: quality, rule_id: max-depth, path: src/plain.js, start_line: 8, end_line: 8, tools: [eslint], note: "annidamento 6"}
+  - {category: quality, rule_id: "@typescript-eslint/no-explicit-any", path: src/model.ts, start_line: 1, end_line: 1, tools: [eslint], note: "any esplicito"}
+  - {category: quality, rule_id: "@typescript-eslint/no-unused-vars", path: src/model.ts, start_line: 2, end_line: 2, tools: [eslint], note: "variabile mai usata"}
+  - {category: quality, rule_id: no-empty, path: src/model.ts, start_line: 5, end_line: 5, tools: [eslint], note: "blocco catch vuoto"}
+  - {category: quality, rule_id: "@typescript-eslint/no-unused-vars", path: src/view.tsx, start_line: 2, end_line: 2, tools: [eslint], note: "variabile mai usata in un file TSX"}

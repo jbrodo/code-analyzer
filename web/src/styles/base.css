@@ -1,0 +1,59 @@
+/* Base della SPA (W-01). Solo valori dei token di doc/ux: nessun colore o misura scritti qui. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+}
+
+:focus-visible {
+  outline: var(--border-focus-width) solid var(--color-focus);
+  outline-offset: var(--border-focus-offset);
+}
+
+a {
+  color: var(--color-accent);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-topbar-height);
+  padding: 0 var(--space-4);
+  background: var(--color-bg-subtle);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+main {
+  padding: var(--space-4);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+  }
+}

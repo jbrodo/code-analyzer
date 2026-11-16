@@ -22,6 +22,7 @@ SCHEMA_NAMES = (
     "plugin-manifest",
     "plugin-sarif-properties",
     "scan-report",
+    "graph",
 )
 
 Json = dict[str, Any]

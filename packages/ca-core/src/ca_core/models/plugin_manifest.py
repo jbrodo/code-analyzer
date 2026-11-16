@@ -97,8 +97,10 @@ MAX_OUTPUT_BYTES = 268_435_456  # 256 MiB, tetto provvisorio da rivedere con X-0
 class Outputs(_Strict):
     """File di output del plugin, in `/out`.
 
-    Vincolo non espresso dallo schema: `sarif` e `cyclonedx`, se entrambi presenti, devono
-    essere percorsi diversi (altrimenti due uscite sovrascriverebbero lo stesso file).
+    Vincolo non espresso dallo schema: le uscite presenti devono essere percorsi diversi
+    (altrimenti due uscite sovrascriverebbero lo stesso file).
+
+    `graph` (ADR-0020, C-02): il grafo dei moduli nel contratto `graph`, emesso da `ca-graph`.
     """
 
     model_config = ConfigDict(
@@ -108,6 +110,7 @@ class Outputs(_Strict):
             "anyOf": [
                 {"properties": {"sarif": {"type": "string"}}, "required": ["sarif"]},
                 {"properties": {"cyclonedx": {"type": "string"}}, "required": ["cyclonedx"]},
+                {"properties": {"graph": {"type": "string"}}, "required": ["graph"]},
             ],
             "if": {"properties": {"cyclonedx": {"type": "string"}}, "required": ["cyclonedx"]},
             "then": {
@@ -120,6 +123,7 @@ class Outputs(_Strict):
 
     sarif: str | None = Field(default=None, pattern=_OUTPUT_PATH)
     cyclonedx: str | None = Field(default=None, pattern=_OUTPUT_PATH)
+    graph: str | None = Field(default=None, pattern=_OUTPUT_PATH)
     cyclonedx_version: str | None = Field(
         default=None,
         description="Versione CycloneDX emessa, tra quelle ammesse (ADR-0007).",
@@ -134,10 +138,11 @@ class Outputs(_Strict):
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:
-        if self.sarif is None and self.cyclonedx is None:
-            raise ValueError("serve almeno un'uscita tra sarif e cyclonedx")
-        if self.sarif is not None and self.sarif == self.cyclonedx:
-            raise ValueError("sarif e cyclonedx devono essere file diversi")
+        declared = self.declared()
+        if not declared:
+            raise ValueError("serve almeno un'uscita tra sarif, cyclonedx e graph")
+        if len(set(declared)) != len(declared):
+            raise ValueError("le uscite devono essere file diversi")
         if self.cyclonedx is None and self.cyclonedx_version is not None:
             raise ValueError("cyclonedx_version senza cyclonedx")
         if self.cyclonedx is not None and self.cyclonedx_version not in (
@@ -145,6 +150,10 @@ class Outputs(_Strict):
         ):
             raise ValueError(f"cyclonedx_version deve essere tra {ADMITTED_CYCLONEDX_VERSIONS}")
         return self
+
+    def declared(self) -> list[str]:
+        """Percorsi delle uscite dichiarate, nell'ordine sarif, cyclonedx, graph."""
+        return [p for p in (self.sarif, self.cyclonedx, self.graph) if p is not None]
 
 
 class Resources(_Strict):

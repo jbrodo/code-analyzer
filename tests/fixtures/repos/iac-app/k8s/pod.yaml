@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fixture-pod
+spec:
+  containers:
+    - name: app
+      image: registry.invalid/fixture-app:latest
+      securityContext:
+        privileged: true

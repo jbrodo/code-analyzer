@@ -8,6 +8,7 @@ import pytest
 from conftest import Json, case_params, errors_of, make_validator
 from pydantic import ValidationError
 from test_manifest_contract import (
+    MINIMAL,
     PACKAGED_INVALID,
     PACKAGED_VALID,
     SOURCE_INVALID,
@@ -20,7 +21,13 @@ SOURCE = make_validator("plugin-manifest")
 PACKAGED = make_validator("plugin-manifest", "PackagedPluginManifest")
 
 # Rifiutati solo dal modello: vuoto finché non emergono differenze (da elencare per nome).
-MODEL_ONLY: dict[str, Json] = {}
+MODEL_ONLY: dict[str, Json] = {
+    # Due uscite sullo stesso file: lo schema non confronta i valori di due proprietà.
+    "outputs-graph-same-file-as-sarif": {
+        **MINIMAL,
+        "outputs": {"max_bytes": 1, "sarif": "/out/a.json", "graph": "/out/a.json"},
+    },
+}
 
 
 def _accepts(model: type, instance: object) -> bool:

@@ -60,7 +60,7 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
 
 | Decisione | Esito |
 | --- | --- |
@@ -71,8 +71,12 @@ Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Deci
 | D2-10 | Opzione 1: il gate resta sui livelli provvisori di ADR-0009 fino al Gate 2; A e B si calcolano entrambe in ombra |
 | D2-11 | Corpus fisso di repository pubblici con commit fissati, distribuzione versionata nel pacchetto. Corpus piccolo all'inizio, una decina di repository con i 3 pilota inclusi. ADI calcolato e servito dall'API, trend in Fase 4 |
 | D2-16 | Opzione 1: nessuna destinazione in Fase 2, solo il registry locale. I-04, I-07, E-05 e N-09 restano bloccati |
+| D2-02 | (2026-11-16) Come ADR-0019: OIDC generico, token in memoria nella SPA e server senza sessioni; ruoli `lettore`, `triage`, `approvatore`, `amministratore`; un tenant in esercizio |
+| D2-04 | (2026-11-16) Come ADR-0028: tier ed esposizione registrati sul server da un `amministratore` e passati a `scan` come file di contesto; il blocco `service` del repository vale solo se il file manca |
+| D2-07 | (2026-11-16) pg8000 come driver; `ArtifactStore` con adattatore su file system **e adattatore S3 già in Fase 2** (ADR-0030). Nessun server di object storage incluso nel prodotto |
+| S5-A1 | (2026-11-16) Limite inferiore al livello di una dipendenza in funzione del CVSS, in configurazione: i feed possono alzare un livello, non azzerarlo. Da scrivere in ADR-0021 (A-06) |
 
-Per le decisioni ancora aperte, ordine consigliato: D2-02 per prima.
+Restano aperte: D2-05, D2-06, D2-12, D2-13, D2-14, e la conferma del perimetro di D2-15.
 
 Testo originale della tabella, con opzioni e motivazioni: ordine consigliato **D2-01** e **D2-03** per prime. D2-01 determina se servono Temporal, l'esecuzione sul server e un adattatore Kubernetes; D2-03 è l'unica che blocca il Gate 2 fin dal primo task (X-01). Seguono D2-10 e D2-02, che fermano il percorso dello scoring e del server.
 
@@ -287,7 +291,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Spec: §2, §3. ADR: 0004.
 
 #### V-08 — Consolidamento
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-16**; esito in `doc/verifiche/scanner-fase-2.md`, sezione V-08. Nessun ADR `Accettato` da riaprire: gli esiti smentiti sono presupposti impliciti, recepiti da ADR-0020, 0023, 0026 e 0030 e dalle accettazioni di G-02, P-01, P-03 e P-04. Elenco per D2-14 nella stessa sezione.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`, `doc/adr/`.
 - Dipende da: V-02, V-03, V-04, V-05, V-06, V-07.
 - Accettazione: per ogni esito che contraddice un ADR esistente o una raccomandazione di questo piano, un emendamento o una nota in sezione 3. Elenco dei motori e componenti da portare a D2-14.
@@ -319,14 +323,14 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §4.1, §4.3. ADR: 0003, 0008, 0014.
 
 #### A-04 — ADR-0019: autenticazione e RBAC
-- Agente: `architect`. Stato: `LIBERO` (stesura); la chiude D2-02.
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-16**; ADR-0019 `Accettato` (D2-02 decisa il 2026-11-16). Per S-01: token dell'utente nella SPA o cookie di sessione dal server. Per B-04: i nomi dei claim dei provider CI sono da confermare alla fonte.
 - Percorsi: `doc/adr/0019-*.md`.
 - Dipende da: A-03.
 - Accettazione: OIDC per gli utenti con flusso per la SPA; OIDC dei provider CI per l'invio dei report, con verifica di emittente, audience e claim del repository; nessun token a lunga durata (§9.2); ruoli e matrice permessi per endpoint; `approved_by` di un'eccezione creata sul server è l'utente autenticato.
 - Spec: §9.2. ADR: 0014.
 
 #### A-05 — ADR-0020: `ca-graph`
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-16**; ADR-0020 `Proposto`. Estrazione in container firmato, smell sull'host; uscita `graph` nel manifest e `kind` `architecture` (C-01, C-02, A-16). Le definizioni degli smell sono trascritte a memoria: vanno confrontate con le pubblicazioni di §19 prima di G-05.
 - Percorsi: `doc/adr/0020-*.md`.
 - Dipende da: V-07.
 - Accettazione: dove gira l'estrazione con tree-sitter (raccomandato: container firmato senza rete come un plugin, che emette il grafo nel formato di C-02; rilevamento degli smell sull'host, su dati); schema del grafo con `confidence`; definizione e soglie di Cyclic, Hub-Like e Unstable Dependency con riferimento alle pubblicazioni di §19, soglie in configurazione; granularità (modulo, pacchetto); `kind` del fingerprint per gli smell, senza cambiare `fp1` per i `kind` esistenti; churn estratto nello stesso container con git ombra come gitleaks (ADR-0012, emendamento per P-07).
@@ -368,21 +372,21 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §5 passi 2 e 9, §8, §9.1, §12.1. ADR: 0008, 0009, 0010, 0011, 0014.
 
 #### A-11 — ADR-0026: plugin di qualità, IaC e coverage
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-16**; ADR-0026 `Proposto`. Chiavi nuove per C-05 (`plugins.<nome>.disable_rules`, `plugins.coverage`), campi nuovi per C-01 (gruppo di correlazione, metrica), `kind` `coverage` e righe di ADR-0009 per A-16.
 - Percorsi: `doc/adr/0026-*.md`.
 - Dipende da: V-03, V-04.
 - Accettazione: configurazione dei linter (raccomandato: regole incluse nell'immagine; la configurazione del repository non si esegue mai, perché `eslint.config.js` è codice; il repository può solo disattivare regole tramite le opzioni per plugin di `.code-analyzer.yml`); report di copertura letti come file del workspace indicati in `plugins.coverage`, con contenimento controllato e parser senza entità esterne; quali finding produce la copertura (soglie in configurazione); correlazione tra checkov, hadolint e trivy sugli stessi problemi senza cambiare `fp1` (gruppo di correlazione, non fusione); livello predefinito dei finding di qualità.
 - Spec: §7.3, §8. ADR: 0004, 0007, 0008, 0014.
 
 #### A-12 — ADR-0027: integrazioni CI
-- Agente: `architect`. Stato: `LIBERO` (stesura); D2-12 e D2-13 ne chiudono la parte di pubblicazione.
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-16**; ADR-0027 `Proposto`, D2-12 e D2-13 ne chiudono la parte di pubblicazione. Comandi nuovi `notify` ed `export` e `ca-cli` che importa `ca-integrations` (A-16). I fatti sui provider sono da verificare alla fonte in N-04 e N-07.
 - Percorsi: `doc/adr/0027-*.md`.
 - Dipende da: A-01, A-10.
 - Accettazione: forma dell'Action secondo ADR-0010 (`scan`, upload SARIF con `if: always()`, `gate`); commenti PR e check run: chi li scrive (CLI in CI o server), con quale token e permessi minimi; dove sta il codice che chiama le API di GitHub e GitLab e quale radice di composizione lo importa (emendamento di ADR-0001); un solo commento aggiornato per PR, solo finding nuovi; PR da fork e `pull_request_target`; report nativi GitLab; daemon necessario per GitLab (ADR-0004).
 - Spec: §12.1, §12.2. ADR: 0001, 0004, 0010, 0011.
 
 #### A-13 — ADR-0028: catalogo servizi
-- Agente: `architect`. Stato: `LIBERO` (stesura); la chiude D2-04.
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-16**; ADR-0028 `Accettato` (D2-04 decisa il 2026-11-16). Il contesto del servizio arriva a `scan` come file (`--service-context`); `GET /v1/service-context` per C-08. Per A-07: il valore di E senza registrazione proposto in sezione 3 premia chi non registra il repository.
 - Percorsi: `doc/adr/0028-*.md`.
 - Dipende da: A-03.
 - Accettazione: fonte di tier ed esposizione secondo D2-04, valori predefiniti, e come il report dichiara la fonte usata per C ed E di ogni finding.
@@ -396,7 +400,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §1, §4.1, §9.2, §13. ADR: 0017.
 
 #### A-15 — ADR-0030: componenti del server e object storage
-- Agente: `architect`. Stato: `LIBERO` (stesura); la chiude D2-07.
+- Agente: `architect`. Stato: **stesura chiusa il 2026-11-16**; ADR-0030 `Accettato` (D2-07 decisa il 2026-11-16): l'utente ha scelto l'adattatore S3 già in Fase 2, che la stesura rinviava. Driver proposto con licenza ammessa; quello di riferimento resta sostituibile se approvato in D2-14.
 - Percorsi: `doc/adr/0030-*.md`.
 - Dipende da: V-02, A-01.
 - Accettazione: porta `ArtifactStore` e adattatori; driver PostgreSQL scelto con la licenza verificata; nessun componente con licenza vietata da D-0013 incluso nel prodotto senza approvazione.
@@ -539,7 +543,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6.2, §13. ADR: 0020.
 
 #### F-02 — Fixture di qualità e IaC
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-16**; fixture `quality-python`, `quality-js-ts` e `iac-app` in `tests/fixtures/repos/`, con attesi osservati eseguendo ruff 0.17.5, eslint 10.14.0, checkov 3.4.5, hadolint 2.15.1 e trivy 0.76.2. Undici problemi di `iac-app` sono visti da due o tre strumenti e portano la chiave `correlation`, nuova nello schema degli attesi (K-21). Le tre fixture restano fuori dagli E2E finché i plugin non esistono: le collega T-03. Provate di passaggio: ruff accetta `--no-respect-gitignore` e `--ignore-noqa` con `--isolated`, hadolint accetta `--disable-ignore-pragma`, checkov con i file passati uno per uno risolve anche i controlli tra risorse del campione.
 - Percorsi: `tests/fixtures/repos/`.
 - Dipende da: V-03.
 - Accettazione: problemi noti per ruff, eslint, checkov (Dockerfile, Kubernetes, Terraform) e hadolint, con attesi; almeno un problema rilevato sia da trivy sia da checkov, per la correlazione.
@@ -567,7 +571,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6.3, §14. ADR: 0021, 0023.
 
 #### F-06 — Costruttore di repository per le PR
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-16**; `tests/fixtures/builders/pr_repository.py` con i suoi test. Copre anche le due aggiunte di ADR-0025: file rinominato con un finding e commit di `main` diverso dal base. La PR che indebolisce il gate è un secondo branch sopra il primo.
 - Percorsi: `tests/fixtures/builders/`.
 - Dipende da: A-10.
 - Accettazione: repository git con branch base e branch PR che contengono finding nuovi, esistenti, risolti e spostati di riga (stesso fingerprint), e una PR che modifica `.code-analyzer.yml` per indebolire il gate.
@@ -586,7 +590,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Agente: `backend`. Stato: `LIBERO`.
 - Percorsi: `packages/ca-graph/src/ca_graph/treesitter/`.
 - Dipende da: G-01, C-02.
-- Accettazione: import assoluti e relativi, pacchetti, `__init__`; import non risolvibili marcati, mai inventati; output conforme a C-02 sui fixture di F-01 e sui casi di V-07.
+- Accettazione: import assoluti e relativi, pacchetti con e senza `__init__.py` (V-07); import non risolvibili marcati, mai inventati; output conforme a C-02 sui fixture di F-01 e sui casi di V-07.
 - Spec: §3. ADR: 0020.
 
 #### G-03 — Estrattore JS/TS/TSX
@@ -674,7 +678,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `backend`. Stato: `IPOTESI` (D2-14).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/ruff/`.
 - Dipende da: A-11, F-02, T-02.
-- Accettazione: SARIF con `category: quality`, `tool_severity`, `uri` relativi, metriche delle regole di complessità e dimensione nell'evidenza; regole incluse e disattivazioni da `.code-analyzer.yml`; nessuna scrittura nel workspace; problemi di F-02 rilevati.
+- Accettazione: SARIF con `category: quality`, `tool_severity`, `uri` relativi, metriche delle regole di complessità e dimensione nell'evidenza; regole incluse e disattivazioni da `.code-analyzer.yml`; nessuna scrittura nel workspace; `ruff.toml` e `pyproject.toml` ostili nel workspace senza effetto (V-04); problemi di F-02 rilevati.
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-02 — eslint
@@ -688,14 +692,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Agente: `backend`. Stato: `IPOTESI` (D2-14).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/checkov/`.
 - Dipende da: A-11, F-02, T-02.
-- Accettazione: SARIF con `category: iac`, telemetria e controlli di versione disattivati, nessuna rete; Dockerfile, Kubernetes e Terraform di F-02 rilevati.
+- Accettazione: SARIF con `category: iac`, telemetria e controlli di versione disattivati, nessuna rete; `.checkov.yaml` ostile nel workspace senza effetto e nessun frammento di codice in `/out` (V-03, V-04); Dockerfile, Kubernetes e Terraform di F-02 rilevati.
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-04 — hadolint
 - Agente: `backend`. Stato: `IPOTESI` (D2-14; licenza da valutare, V-02).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/hadolint/`.
 - Dipende da: A-11, F-02, T-02.
-- Accettazione: SARIF con `category: iac`, Dockerfile trovati nel workspace, problemi di F-02 rilevati.
+- Accettazione: SARIF con `category: iac`, Dockerfile trovati nel workspace, `.hadolint.yaml` ostile nel workspace senza effetto (V-04), problemi di F-02 rilevati.
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-05 — coverage
@@ -787,14 +791,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1. ADR: 0021, 0022, 0024.
 
 #### K-04 — Fattore E
-- Agente: `backend`. Stato: `IPOTESI` (D2-04).
+- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`.
 - Dipende da: K-01, G-12, C-05.
 - Accettazione: valori 1,0, 0,6, 0,3, 0,2 secondo ADR-0022, esposizione dalla fonte di D2-04, fonte registrata nell'evidenza; comune alle due varianti.
 - Spec: §6.1, §6.2. ADR: 0022, 0028.
 
 #### K-05 — Variante A: C
-- Agente: `backend`. Stato: `IPOTESI` (D2-04).
+- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/variant_a.py`.
 - Dipende da: K-01, C-05.
 - Accettazione: tier dalla fonte di D2-04, default 0,7, fonte registrata.
@@ -975,14 +979,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §4.3, §9.2. ADR: 0016, 0018, 0019.
 
 #### B-04 — Autenticazione
-- Agente: `backend`. Stato: `IPOTESI` (D2-02).
+- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
 - Percorsi: `packages/ca-api/src/ca_api/auth/`.
 - Dipende da: B-01, A-04, C-08.
 - Accettazione: verifica dei token OIDC di utenti e pipeline (emittente, audience, scadenza, claim del repository), JWKS in cache; test con IdP finto, senza rete esterna.
 - Spec: §9.2. ADR: 0019.
 
 #### B-05 — Autorizzazione e tenant
-- Agente: `backend`. Stato: `IPOTESI` (D2-02).
+- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
 - Percorsi: `packages/ca-api/src/ca_api/auth/`.
 - Dipende da: B-04, B-02.
 - Accettazione: matrice ruoli ed endpoint di ADR-0019 verificata da test; nessun accesso tra tenant.
@@ -996,7 +1000,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017.
 
 #### B-07 — Archivio degli artefatti
-- Agente: `backend`. Stato: `IPOTESI` (D2-07).
+- Agente: `backend`. Stato: `LIBERO` (D2-07 decisa il 2026-11-16). Comprende l'adattatore S3, con libreria client e server di prova da verificare per licenza e manutenzione.
 - Percorsi: `packages/ca-api/src/ca_api/storage/`.
 - Dipende da: A-15, C-06.
 - Accettazione: adattatori su file system e S3 della porta di C-06, con contenimento dei percorsi; test dell'adattatore S3 su un server compatibile in container.
@@ -1010,14 +1014,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017, 0021, 0029.
 
 #### B-09 — Dettaglio e aggiornamento di un finding
-- Agente: `backend`. Stato: `IPOTESI` (D2-02).
+- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-08, A-03.
 - Accettazione: `GET /v1/findings/{id}` e `PATCH /v1/findings/{id}` per stato, owner ed eccezione con motivazione e scadenza, con `approved_by` dall'identità autenticata, registro delle modifiche e precedenza di ADR-0018 sulle eccezioni del repository.
 - Spec: §9.2. ADR: 0018, 0019.
 
 #### B-10 — Repository e scansioni
-- Agente: `backend`. Stato: `IPOTESI` (D2-04).
+- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-02, B-05, A-13.
 - Accettazione: elenco dei repository e delle loro scansioni (lacuna 2); registrazione di tier ed esposizione riservata all'`amministratore` secondo D2-04.
@@ -1047,7 +1051,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 ### W — Frontend
 
 #### W-01 — Nascita di `web/`
-- Agente: `frontend`. Stato: `LIBERO`.
+- Agente: `frontend`. Stato: **chiuso il 2026-11-16**; `web/` con React 19.3.1, TypeScript 6.0.3 in modalità strict, Vite 8.3.8, vitest 5.1.0, pnpm 12.18.0 con lockfile. `pnpm --dir web lint` e `pnpm --dir web test` verdi in locale; `AGENTS.md` li elenca, la CI li esegue da O-01. Le proprietà CSS si generano da `doc/ux/tokens.json` e il lint ne controlla la deriva. Licenze in `doc/verifiche/scanner-fase-2.md`, sezione W-01: nessuna vietata né da approvare. Da fare prima di X-07: auto-analisi con `web/pnpm-lock.yaml`.
 - Percorsi: `web/`.
 - Dipende da: U-02, V-01, V-02.
 - Accettazione: SPA React, TypeScript in modalità strict e Vite gestita con `pnpm` e lockfile; `pnpm --dir web lint` e `pnpm --dir web test` verdi; dipendenze con licenza verificata.
@@ -1061,7 +1065,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017.
 
 #### W-03 — Accesso nella SPA
-- Agente: `frontend`. Stato: `IPOTESI` (D2-02).
+- Agente: `frontend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
 - Percorsi: `web/`.
 - Dipende da: W-02, B-04.
 - Accettazione: flusso OIDC per la SPA secondo ADR-0019, token non in `localStorage` se l'ADR lo vieta, gestione della scadenza e dell'errore.
@@ -1082,7 +1086,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §6.2. ADR: 0021, 0029.
 
 #### W-06 — Triage ed eccezioni
-- Agente: `frontend`. Stato: `IPOTESI` (D2-15, D2-02).
+- Agente: `frontend`. Stato: `IPOTESI` (D2-15; D2-02 decisa il 2026-11-16).
 - Percorsi: `web/`.
 - Dipende da: W-05.
 - Accettazione: cambio di stato, owner, eccezione con motivazione e scadenza obbligatorie; azioni nascoste o disattivate secondo il ruolo; errori del server mostrati.
@@ -1186,7 +1190,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.2. ADR: 0004, 0005.
 
 #### I-03 — Immagine del server
-- Agente: `devops`. Stato: `IPOTESI` (D2-07).
+- Agente: `devops`. Stato: `LIBERO` (D2-07 decisa il 2026-11-16).
 - Percorsi: `deploy/docker/server/`.
 - Dipende da: B-01, W-01.
 - Accettazione: immagine dell'API con la SPA compilata, utente non root, nessun segreto, licenze e SBOM.
@@ -1207,7 +1211,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.3, §15. ADR: 0005, 0015.
 
 #### I-05 — Ambiente di sviluppo del server
-- Agente: `devops`. Stato: `IPOTESI` (D2-02, D2-07).
+- Agente: `devops`. Stato: `LIBERO` (D2-02 e D2-07 decise il 2026-11-16).
 - Percorsi: `deploy/compose/`.
 - Dipende da: A-15, A-04.
 - Accettazione: compose con PostgreSQL 16, archivio di ADR-0030, IdP finto, API e SPA; nessun segreto nel repository.
@@ -1283,7 +1287,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §12. ADR: 0004, 0027.
 
 #### S-05 — Feed e mirror
-- Agente: `security`. Stato: `LIBERO`.
+- Agente: `security`. Stato: **chiuso il 2026-11-16**; esito in `doc/verifiche/sicurezza-fase-2.md`: nessun critico, 1 alto, 7 medi, 5 bassi. L'alto (S5-A1: dopo il Gate 2 un feed alterato può abbassare i livelli di tutte le dipendenze) si risolve in ADR-0021 (A-06) con il limite dal CVSS scelto dall'utente il 2026-11-16; non ferma E-01..E-04. Richieste per E-02, E-03, E-05, E-06 e due emendamenti di ADR-0024 (A-16). Il rischio residuo lo decide l'utente.
 - Percorsi: lettura; esito in `doc/verifiche/sicurezza-fase-2.md`.
 - Dipende da: A-09.
 - Accettazione: snapshot avvelenato (rischio lasciato aperto da ADR-0006), firma, origine, effetto di un EPSS manipolato sul punteggio.
@@ -1306,7 +1310,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §14. ADR: 0021, 0023.
 
 #### T-02 — Harness di contratto per i nuovi plugin
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-16 salvo il grafo**; `tests/contract/plugins/test_recorded_samples_fase2.py` sui campioni di V-03: ruff, eslint, checkov, hadolint e i report di copertura. Il grafo non ha ancora uno schema (C-02): la sua prova passa a C-10. Emerso dai campioni e riportato in ADR-0026: il JSON di eslint contiene il testo intero dei file analizzati, il SARIF di ruff porta `fixes`, il testo di aiuto di checkov contiene il nome della risorsa.
 - Percorsi: `tests/contract/`, `tests/fixtures/plugin-output/`.
 - Dipende da: V-03.
 - Accettazione: l'harness di F1:T-04 copre ruff, eslint, checkov, hadolint, coverage e il grafo di `ca-graph` sui campioni reali di V-03.
@@ -1327,7 +1331,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §5, §14. ADR: 0025.
 
 #### T-05 — Integrazione del server
-- Agente: `test`. Stato: `IPOTESI` (D2-02).
+- Agente: `test`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
 - Percorsi: `tests/integration/`.
 - Dipende da: B-03, B-05, B-08, B-09, I-05.
 - Accettazione: ingestione e lettura su PostgreSQL e archivio in container, matrice di autorizzazione, isolamento dei tenant, report ostili rifiutati.

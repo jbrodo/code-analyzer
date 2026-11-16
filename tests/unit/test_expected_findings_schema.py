@@ -56,6 +56,7 @@ def test_valid_example_is_accepted() -> None:
         _with(path="../outside.py"),
         _with(start_line=0),
         _with(category="unknown"),
+        _with(correlation="Dockerfile Latest"),  # solo minuscole, cifre, punti e trattini
         {"version": 1, "expected": [{"category": "sast", "path": "a.py", "tools": ["bandit"]}]},
         {"version": 1, "expected": [{**VALID["expected"][1], "cve": "GHSA-xxxx-xxxx-xxxx"}]},
     ],
@@ -67,12 +68,17 @@ def test_valid_example_is_accepted() -> None:
         "dotdot-path",
         "line-zero",
         "bad-category",
+        "bad-correlation",
         "no-rule-or-cve",
         "not-a-cve",
     ],
 )
 def test_invalid_examples_are_rejected(instance: dict[str, Any]) -> None:
     assert not _validator().is_valid(instance)
+
+
+def test_correlation_label_is_accepted() -> None:
+    _validator().validate(_with(correlation="dockerfile.latest-tag"))
 
 
 def test_end_line_requires_start_line() -> None:

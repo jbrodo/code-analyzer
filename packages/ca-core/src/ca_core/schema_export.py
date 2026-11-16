@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from ca_core.models import CodeAnalyzerConfig, Finding, PluginManifest
+from ca_core.models.graph import Graph
 from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
 from ca_core.models.plugin_sarif import PluginSarifProperties
 from ca_core.models.scan_report import ScanReport
@@ -45,13 +46,14 @@ class Contract:
         return json.dumps(schema, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
-# I task C-01..C-05 registrano qui i contratti.
+# I task C-* registrano qui i contratti.
 CONTRACTS: tuple[Contract, ...] = (
     Contract("finding", "1.0", Finding),
-    Contract("code-analyzer-config", "1.0", CodeAnalyzerConfig),
-    Contract("plugin-manifest", "1.0", PluginManifest, {PACKAGED_DEF_NAME: PACKAGED_DEF}),
+    Contract("code-analyzer-config", "1.1", CodeAnalyzerConfig),
+    Contract("plugin-manifest", "1.1", PluginManifest, {PACKAGED_DEF_NAME: PACKAGED_DEF}),
     Contract("plugin-sarif-properties", "1.0", PluginSarifProperties),
     Contract("scan-report", "1.0", ScanReport),
+    Contract("graph", "1.0", Graph),
 )
 
 

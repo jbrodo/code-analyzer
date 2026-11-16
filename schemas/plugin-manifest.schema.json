@@ -134,9 +134,19 @@
           "required": [
             "cyclonedx"
           ]
+        },
+        {
+          "properties": {
+            "graph": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "graph"
+          ]
         }
       ],
-      "description": "File di output del plugin, in `/out`.\n\nVincolo non espresso dallo schema: `sarif` e `cyclonedx`, se entrambi presenti, devono\nessere percorsi diversi (altrimenti due uscite sovrascriverebbero lo stesso file).",
+      "description": "File di output del plugin, in `/out`.\n\nVincolo non espresso dallo schema: le uscite presenti devono essere percorsi diversi\n(altrimenti due uscite sovrascriverebbero lo stesso file).\n\n`graph` (ADR-0020, C-02): il grafo dei moduli nel contratto `graph`, emesso da `ca-graph`.",
       "else": {
         "properties": {
           "cyclonedx_version": {
@@ -184,6 +194,19 @@
             null
           ],
           "title": "Cyclonedx Version"
+        },
+        "graph": {
+          "anyOf": [
+            {
+              "pattern": "^/out/[A-Za-z0-9_][A-Za-z0-9._-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Graph"
         },
         "max_bytes": {
           "description": "Limite obbligatorio per ogni file di output (ADR-0004): oltre, il plugin è fallito. Il valore si fissa misurando le fixture.",
@@ -473,5 +496,5 @@
   },
   "title": "PluginManifest",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

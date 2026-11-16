@@ -78,6 +78,68 @@
       "title": "ConfigException",
       "type": "object"
     },
+    "CoverageFormat": {
+      "enum": [
+        "lcov",
+        "cobertura"
+      ],
+      "title": "CoverageFormat",
+      "type": "string"
+    },
+    "CoverageOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "reports": {
+          "items": {
+            "$ref": "#/$defs/CoverageReport"
+          },
+          "maxItems": 20,
+          "title": "Reports",
+          "type": "array"
+        }
+      },
+      "title": "CoverageOptions",
+      "type": "object"
+    },
+    "CoverageReport": {
+      "additionalProperties": false,
+      "description": "Un report prodotto dalla CI prima della scansione, come file del workspace.",
+      "properties": {
+        "base_dir": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "not": {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Dir"
+        },
+        "format": {
+          "$ref": "#/$defs/CoverageFormat"
+        },
+        "path": {
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "format"
+      ],
+      "title": "CoverageReport",
+      "type": "object"
+    },
     "Gate": {
       "additionalProperties": false,
       "allOf": [
@@ -230,7 +292,7 @@
       "type": "object"
     },
     "GateMode": {
-      "description": "IPOTESI D-0009-A: in Fase 1 `new-findings-only` è valutato come `all`. Togliere con essa.",
+      "description": "Modo richiesto. Quello effettivo lo registra il report (ADR-0009, ADR-0025):\n`new-findings-only` vale come `all` su una scansione completa o senza baseline valida.",
       "enum": [
         "all",
         "new-findings-only"
@@ -281,6 +343,23 @@
       "title": "Licenses",
       "type": "object"
     },
+    "LinterOptions": {
+      "additionalProperties": false,
+      "description": "ADR-0026: il repository può solo spegnere regole; il report le elenca.",
+      "properties": {
+        "disable_rules": {
+          "items": {
+            "pattern": "^[A-Za-z0-9@][A-Za-z0-9_./@-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "title": "Disable Rules",
+          "type": "array"
+        }
+      },
+      "title": "LinterOptions",
+      "type": "object"
+    },
     "Paths": {
       "additionalProperties": false,
       "properties": {
@@ -302,12 +381,67 @@
     "Plugins": {
       "additionalProperties": false,
       "properties": {
+        "checkov": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoverageOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "disable": {
           "items": {
             "type": "string"
           },
           "title": "Disable",
           "type": "array"
+        },
+        "eslint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hadolint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ruff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "semgrep": {
           "anyOf": [
@@ -360,6 +494,7 @@
     },
     "Service": {
       "additionalProperties": false,
+      "description": "Dichiarazione non verificata: vale solo se manca il file di contesto (ADR-0028).",
       "properties": {
         "catalog_id": {
           "anyOf": [
@@ -388,6 +523,7 @@
         "tier": {
           "anyOf": [
             {
+              "maximum": 3,
               "minimum": 1,
               "type": "integer"
             },
@@ -485,5 +621,5 @@
   ],
   "title": "CodeAnalyzerConfig",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

@@ -54,6 +54,11 @@
           "uniqueItems": true,
           "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
         },
+        "correlation": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$",
+          "description": "Nome del problema. Le voci con lo stesso valore e lo stesso percorso sono lo stesso problema visto da strumenti diversi: devono finire nello stesso gruppo di correlazione (ADR-0026). Assente = nessun gruppo atteso."
+        },
         "note": { "type": "string" }
       }
     }

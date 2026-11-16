@@ -305,7 +305,7 @@
       "type": "object"
     },
     "GateMode": {
-      "description": "IPOTESI D-0009-A: in Fase 1 `new-findings-only` è valutato come `all`. Togliere con essa.",
+      "description": "Modo richiesto. Quello effettivo lo registra il report (ADR-0009, ADR-0025):\n`new-findings-only` vale come `all` su una scansione completa o senza baseline valida.",
       "enum": [
         "all",
         "new-findings-only"

@@ -1,0 +1,475 @@
+{
+  "$defs": {
+    "Confidence": {
+      "description": "§4.3. `osservato` (dati di esecuzione) non è prodotto in Fase 2.",
+      "enum": [
+        "dichiarato",
+        "dedotto",
+        "osservato"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "Ecosystem": {
+      "enum": [
+        "pypi",
+        "npm"
+      ],
+      "title": "Ecosystem",
+      "type": "string"
+    },
+    "Edge": {
+      "additionalProperties": false,
+      "description": "Da un modulo a un modulo (`target` è un percorso) o a un pacchetto esterno (un nome).",
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "dynamic": {
+          "default": false,
+          "title": "Dynamic",
+          "type": "boolean"
+        },
+        "external": {
+          "default": false,
+          "title": "External",
+          "type": "boolean"
+        },
+        "imports": {
+          "description": "Import che sostengono l'arco.",
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Imports",
+          "type": "integer"
+        },
+        "source": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Source",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "type_only": {
+          "default": false,
+          "title": "Type Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "target",
+        "imports",
+        "confidence"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "Entrypoint": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "kind": {
+          "$ref": "#/$defs/EntrypointKind"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "kind",
+        "confidence"
+      ],
+      "title": "Entrypoint",
+      "type": "object"
+    },
+    "EntrypointKind": {
+      "enum": [
+        "package-metadata",
+        "main-module",
+        "web-application",
+        "html-entry",
+        "convention"
+      ],
+      "title": "EntrypointKind",
+      "type": "string"
+    },
+    "External": {
+      "additionalProperties": false,
+      "properties": {
+        "ecosystem": {
+          "$ref": "#/$defs/Ecosystem"
+        },
+        "name": {
+          "maxLength": 214,
+          "pattern": "^(?:@[A-Za-z0-9._~-]+/)?[A-Za-z0-9_][A-Za-z0-9._~-]*$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "ecosystem"
+      ],
+      "title": "External",
+      "type": "object"
+    },
+    "History": {
+      "additionalProperties": false,
+      "properties": {
+        "commits_read": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Commits Read",
+          "type": "integer"
+        },
+        "head_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Head Time"
+        },
+        "status": {
+          "$ref": "#/$defs/HistoryStatus"
+        },
+        "window_days": {
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Window Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "status",
+        "window_days"
+      ],
+      "title": "History",
+      "type": "object"
+    },
+    "HistoryStatus": {
+      "description": "ADR-0022: con `superficiale` e `assente` il churn è ignoto, mai un conteggio inventato.",
+      "enum": [
+        "completa",
+        "superficiale",
+        "assente"
+      ],
+      "title": "HistoryStatus",
+      "type": "string"
+    },
+    "Language": {
+      "enum": [
+        "python",
+        "javascript",
+        "typescript",
+        "tsx"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "Metrics": {
+      "additionalProperties": false,
+      "description": "Calcolate dall'host sul grafo (G-04, G-08). Solo archi interni al repository.",
+      "properties": {
+        "fan_in": {
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Fan In",
+          "type": "integer"
+        },
+        "fan_out": {
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Fan Out",
+          "type": "integer"
+        },
+        "instability": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Instability",
+          "type": "number"
+        },
+        "pagerank": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pagerank"
+        }
+      },
+      "required": [
+        "fan_in",
+        "fan_out",
+        "instability"
+      ],
+      "title": "Metrics",
+      "type": "object"
+    },
+    "Module": {
+      "additionalProperties": false,
+      "properties": {
+        "churn": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Churn"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "metrics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metrics"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parse": {
+          "$ref": "#/$defs/ParseStatus"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Path",
+          "type": "string"
+        },
+        "test": {
+          "default": false,
+          "title": "Test",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "language",
+        "parse"
+      ],
+      "title": "Module",
+      "type": "object"
+    },
+    "Package": {
+      "additionalProperties": false,
+      "description": "Una cartella con almeno un modulo (ADR-0020). Derivato dall'host.",
+      "properties": {
+        "metrics": {
+          "$ref": "#/$defs/Metrics"
+        },
+        "modules": {
+          "maximum": 200000,
+          "minimum": 1,
+          "title": "Modules",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "modules",
+        "metrics"
+      ],
+      "title": "Package",
+      "type": "object"
+    },
+    "ParseStatus": {
+      "enum": [
+        "completa",
+        "parziale"
+      ],
+      "title": "ParseStatus",
+      "type": "string"
+    },
+    "Stats": {
+      "additionalProperties": false,
+      "properties": {
+        "files_parsed": {
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Files Parsed",
+          "type": "integer"
+        },
+        "files_partial": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Files Partial",
+          "type": "integer"
+        },
+        "files_skipped_size": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Files Skipped Size",
+          "type": "integer"
+        },
+        "unresolved": {
+          "$ref": "#/$defs/Unresolved"
+        }
+      },
+      "required": [
+        "files_parsed"
+      ],
+      "title": "Stats",
+      "type": "object"
+    },
+    "Unresolved": {
+      "additionalProperties": false,
+      "description": "Import che non hanno prodotto archi, per motivo: contati, mai inventati.",
+      "properties": {
+        "computed": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Computed",
+          "type": "integer"
+        },
+        "config_extends": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Config Extends",
+          "type": "integer"
+        },
+        "entrypoint_missing": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Entrypoint Missing",
+          "type": "integer"
+        },
+        "missing": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Missing",
+          "type": "integer"
+        },
+        "outside_workspace": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Outside Workspace",
+          "type": "integer"
+        }
+      },
+      "title": "Unresolved",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:graph:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/Edge"
+      },
+      "maxItems": 2000000,
+      "title": "Edges",
+      "type": "array"
+    },
+    "entrypoints": {
+      "items": {
+        "$ref": "#/$defs/Entrypoint"
+      },
+      "maxItems": 10000,
+      "title": "Entrypoints",
+      "type": "array"
+    },
+    "externals": {
+      "items": {
+        "$ref": "#/$defs/External"
+      },
+      "maxItems": 50000,
+      "title": "Externals",
+      "type": "array"
+    },
+    "history": {
+      "$ref": "#/$defs/History"
+    },
+    "modules": {
+      "items": {
+        "$ref": "#/$defs/Module"
+      },
+      "maxItems": 200000,
+      "title": "Modules",
+      "type": "array"
+    },
+    "packages": {
+      "items": {
+        "$ref": "#/$defs/Package"
+      },
+      "maxItems": 200000,
+      "title": "Packages",
+      "type": "array"
+    },
+    "stats": {
+      "$ref": "#/$defs/Stats"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "stats",
+    "history"
+  ],
+  "title": "Graph",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

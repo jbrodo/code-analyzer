@@ -22,6 +22,7 @@ MINIMAL: Json = {
 }
 FEEDS: Json = {"ecosystems": ["npm", "PyPI"], "sync_command": ["osv-sync"], "sync_timeout": "900s"}
 CDX_ONLY: Json = {"max_bytes": 1, "cyclonedx": "/out/sbom.cdx.json", "cyclonedx_version": "1.7"}
+GRAPH_ONLY: Json = {"max_bytes": 1, "graph": "/out/graph.json"}  # ADR-0020, C-02
 
 
 def _with(**kv: object):
@@ -47,6 +48,8 @@ SOURCE_VALID = {
     "feeds-null": mutated(MINIMAL, _with(feeds=None)),
     "cyclonedx-only": mutated(MINIMAL, _with(outputs=CDX_ONLY)),
     "sarif-and-cyclonedx": mutated(MINIMAL, _with(outputs={**MINIMAL["outputs"], **CDX_ONLY})),
+    "graph-only": mutated(MINIMAL, _with(outputs=GRAPH_ONLY, categories=["architecture"])),
+    "sarif-and-graph": mutated(MINIMAL, _with(outputs={**MINIMAL["outputs"], **GRAPH_ONLY})),
     "version-prerelease-build": mutated(MINIMAL, _with(version="1.2.3-rc.1+build.5")),
     "cpu-fractional": mutated(MINIMAL, _in("resources", cpu="0.5")),
     "image-latest-as-repository-part": mutated(MINIMAL, _with(image="r/latest:1.0")),
@@ -114,6 +117,13 @@ SOURCE_INVALID = {
     "outputs-sarif-outside-out": mutated(MINIMAL, _in("outputs", sarif="/etc/passwd")),
     "outputs-sarif-traversal": mutated(MINIMAL, _in("outputs", sarif="/out/../etc/x")),
     "outputs-sarif-subdir": mutated(MINIMAL, _in("outputs", sarif="/out/a/b.sarif")),
+    "outputs-graph-outside-out": mutated(
+        MINIMAL, _with(outputs={**GRAPH_ONLY, "graph": "/g.json"})
+    ),
+    "outputs-graph-subdir": mutated(MINIMAL, _with(outputs={**GRAPH_ONLY, "graph": "/out/a/g"})),
+    "outputs-graph-with-cyclonedx-version": mutated(
+        MINIMAL, _with(outputs={**GRAPH_ONLY, "cyclonedx_version": "1.7"})
+    ),
     "outputs-cyclonedx-without-version": mutated(
         MINIMAL, _with(outputs={"max_bytes": 1, "cyclonedx": "/out/s.json"})
     ),
