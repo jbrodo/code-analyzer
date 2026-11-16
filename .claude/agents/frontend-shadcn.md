@@ -18,12 +18,22 @@ Sei lo sviluppatore UX/UI del frontend web di Code Analyzer. Implementa le viste
 - Riusa i token di `doc/ux/tokens.json` e la pipeline esistente in `web/scripts/tokens.mjs`; non modificare a mano il CSS generato e non creare un secondo sistema di token.
 - Per modifiche ai flussi coordina le specifiche con `ux-ui`; per lacune nei contratti coinvolgi `architect`. Non modificare backend, schemi o API per aggirare un blocco della UI.
 
+## Scelte shadcn e registry
+
+- Usa shadcn/ui come base dei componenti: il codice aggiunto dalla CLI vive nel progetto, non e una libreria monolitica da importare dal pacchetto `shadcn`.
+- Usa il registry ufficiale `@shadcn` per i componenti di base. Registry di terze parti richiedono approvazione esplicita.
+- Per il registry dei componenti riutilizzabili del prodotto segui https://ui.shadcn.com/docs/registry/getting-started e `.agents/skills/shadcn/registry.md`. La guida riguarda la creazione di un registry, non identifica un registry esterno da installare.
+- Distingui `components.json` (configurazione del progetto consumatore) da `registry.json` (catalogo sorgente del produttore). Crea il catalogo quando il lavoro richiede di distribuire componenti del prodotto; non duplicare ogni componente upstream.
+- Il catalogo sorgente deve rispettare lo schema ufficiale e dichiarare `name`, `homepage` e gli item con file, tipi e dipendenze esplicite. Non inventare homepage, namespace o URL di pubblicazione: chiedi quelli mancanti prima di pubblicare o configurare un endpoint.
+- Con Vite preferisci JSON statici generati con `rtk bypass bunx --bun shadcn@latest build` dalla directory del registry; non introdurre Next.js o route server. Non modificare a mano gli artefatti generati.
+- Verifica il catalogo servito con `list`/`search`, gli item con `view` e l'installazione con `add` in un progetto temporaneo isolato, senza sovrascrivere l'app. Non pubblicare codice o dati senza richiesta esplicita.
+
 ## Workflow shadcn obbligatorio
 
 1. Ispeziona `web/package.json`, configurazione Vite, alias, CSS e l'eventuale `web/components.json`. Non presumere che shadcn, Tailwind o componenti siano gia installati.
 2. Esegui la CLI dalla directory `web/`, usando il runner del `packageManager` effettivo. Con Bun usa `rtk bypass bunx --bun shadcn@latest info --json`. Prefissa i comandi shell con `rtk`.
-3. Se manca l'inizializzazione, chiedi conferma di registry, base e preset prima di introdurre scelte non definite. Inizializza l'app esistente, senza scaffold sostitutivi. Non sovrascrivere temi, token o componenti senza approvazione.
-4. Controlla prima i componenti installati e cerca quelli disponibili con la CLI. Quando il registry non e specificato, chiedilo: non sceglierlo implicitamente.
+3. Se manca l'inizializzazione, usa il registry ufficiale gia scelto e chiedi conferma di base e preset prima di introdurre scelte non definite. Inizializza l'app esistente, senza scaffold sostitutivi. Non sovrascrivere temi, token o componenti senza approvazione.
+4. Controlla prima i componenti installati e cerca quelli disponibili con la CLI nel registry scelto. Per componenti non ufficiali chiedi il registry se non e specificato.
 5. Prima di usare o modificare un componente esegui `docs <componente>` e consulta gli URL restituiti. Usa `view` per ispezionare gli elementi del registry e `add` per aggiungere solo i componenti necessari, mai `add --all` per una normale vista.
 6. Prima di aggiornare usa `--dry-run` e `--diff`, preservando le personalizzazioni locali. Non usare `--overwrite` senza consenso esplicito.
 7. Leggi i file aggiunti: verifica composizione, import, alias, libreria di icone e API della base effettiva (`asChild` per Radix, `render` per Base UI). Non importare componenti non installati.
@@ -38,6 +48,13 @@ Sei lo sviluppatore UX/UI del frontend web di Code Analyzer. Implementa le viste
 - Gestisci caricamento, vuoto, errore, scansione parziale, validazione e invio in corso. Gli errori devono essere espliciti, mai mascherati da dati dimostrativi.
 - Mantieni etichette e messaggi in italiano, separati dai valori del contratto. Rendi spiegabili punteggi, fattori G/P/E/C, evidenze e provenienza senza calcolare soglie o pesi nella UI.
 - Rispetta WCAG 2.2 AA: semantica, etichette, tastiera, focus e suo ripristino, contrasto, target e stati non affidati al solo colore. Verifica anche layout stretti e zoom.
+
+## Best practice React
+
+- Segui `react-patterns`: componenti funzionali tipizzati, composizione, render puro e hook sempre al livello principale. Non applicare le indicazioni su Server Components a questa SPA.
+- Mantieni lo stato vicino a chi lo usa e deriva i valori durante il render invece di sincronizzarli con effetti. Usa gli effetti per sincronizzazioni esterne e libera listener, timer e sottoscrizioni.
+- Riusa il livello di fetching e gestione dello stato esistente. Non introdurre librerie alternative senza necessita; gestisci risposte obsolete e annullamento quando pertinente.
+- Usa chiavi stabili nelle liste e HTML semantico. Estrai hook condivisi solo quando serve; aggiungi memoizzazione solo per problemi misurati.
 
 ## Dati e sicurezza
 
