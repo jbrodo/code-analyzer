@@ -469,11 +469,11 @@ Stessa procedura di D-0015, sugli SBOM della build di rilascio. V-02 copre solo 
 
 ## W-01 — Dipendenze di `web/`
 
-Verificato il 2026-11-16 installando con pnpm 12.18.0 e Node 24.11.1. Versioni esatte in `web/package.json`, integrità in `web/pnpm-lock.yaml`.
+La verifica del 2026-11-16 è stata eseguita con pnpm 12.18.0 e Node 24.11.1. Il lockfile è stato poi migrato a Bun 1.4.4; questa analisi non verifica il nuovo `web/bun.lock` né la licenza dello strumento Bun.
 
 ### TypeScript
 
-`web/` usa TypeScript 6.0.3, non la serie 7: typescript-eslint 8.72.2 non accetta la 7 (V-03) e il lint di `web/` usa typescript-eslint con le regole che leggono i tipi. Chiude il punto lasciato aperto da V-01. Vite 8.3.8, vitest 5.1.0 e `@vitejs/plugin-react` funzionano con la 6.0.3: `pnpm lint`, `pnpm test` e `pnpm build` sono verdi. openapi-typescript non è ancora installato: lo prova W-02.
+`web/` usa TypeScript 6.0.3, non la serie 7: typescript-eslint 8.72.2 non accetta la 7 (V-03) e il lint di `web/` usa typescript-eslint con le regole che leggono i tipi. Chiude il punto lasciato aperto da V-01. Vite 8.3.8, vitest 5.1.0 e `@vitejs/plugin-react` funzionano con la 6.0.3: i controlli lint, test e build erano verdi con pnpm; lint e test sono stati verificati anche dopo la migrazione a Bun. openapi-typescript non è ancora installato: lo prova W-02.
 
 ### Dipendenze dirette non elencate in V-01
 
@@ -490,7 +490,7 @@ File di licenza letto nel pacchetto installato, come in V-02. Tutte ammesse da D
 
 ### Albero completo
 
-`pnpm licenses list` sui 215 pacchetti installati, dalla licenza **dichiarata** nei metadati: il testo è stato letto solo per le dipendenze dirette.
+`pnpm licenses list` sui 215 pacchetti installati, dalla licenza **dichiarata** nei metadati: il testo è stato letto solo per le dipendenze dirette. Questa analisi è precedente alla migrazione a Bun.
 
 | Classe | Pacchetti | Nota |
 | --- | --- | --- |
@@ -505,5 +505,4 @@ Ciò che finisce nel prodotto distribuito è solo l'uscita di `vite build`: oggi
 ### Non fatto
 
 - `web/package.json` non dichiara una licenza: il pacchetto è privato e non si pubblica. Dichiararla aprirebbe un finding di licenza nell'auto-analisi, da coprire con un'eccezione approvata da Riccardo Roveda come per i `pyproject.toml`.
-- L'auto-analisi non è stata rieseguita con `web/`: syft, osv-scanner e trivy leggeranno `pnpm-lock.yaml`, e i finding che ne escono vanno guardati prima di X-07.
-- La CI non esegue ancora i comandi di `web/`: è O-01.
+- L'auto-analisi non è stata rieseguita con il lockfile Bun: syft, osv-scanner e trivy leggeranno `bun.lock`, e i finding che ne escono vanno guardati prima di X-07.

@@ -18,7 +18,7 @@ Verificato leggendo il codice e la configurazione:
 - `bandit_adapter.py`: `--skip B105,B106,B107`. B101 è attivo.
 - `tests/e2e/test_detection.py`: tre `xfail` strict, due con `LICENSE_LINES` (riga mancante nei finding di licenza su file) e uno sull'avviso di gitleaks letto da `invocations`.
 - `deploy/docker/`: solo `plugin-base/` e gli script di build, firma e impacchettamento. Non esiste `deploy/docker/cli/`.
-- `.github/workflows/`: `verify.yml`, `e2e.yml`, `feeds-snapshot.yml`. `verify.yml` dice in un commento che i comandi `pnpm --dir web` si aggiungono quando nasce `web/`.
+- `.github/workflows/`: `verify.yml`, `e2e.yml`, `feeds-snapshot.yml`. `verify.yml` esegue lint e test di `web/` con Bun.
 
 Dedotto dai documenti senza verificarlo: licenze di hadolint, psycopg, MinIO e delle grammatiche tree-sitter; termini d'uso di EPSS e KEV; requisiti di GitHub Marketplace e del catalogo CI/CD di GitLab. Li verificano V-02 e V-05.
 
@@ -56,7 +56,7 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 - Copertura ≥ 80% sul codice nuovo di `ca-core`: già imposta da `--cov-fail-under=80` in `pyproject.toml`. Va estesa a `ca-graph`, `ca-api` e `ca-integrations` in G-01, B-01 e N-01.
 - Telemetria: durate nel report come in Fase 1; per il server, strumentazione minima in B-13 (ADR-0016). Lo stack OpenTelemetry con Grafana resta in Fase 4 insieme a Helm (sezione 5, incoerenza 22).
 - Auto-analisi: con i livelli della Fase 2 va rifatta in X-07. D-0015 è approvata (2026-11-10), ma i 6 finding di licenza effettiva della Fase 1 restano aperti finché non sono coperti da eccezioni in `.code-analyzer.yml`: lo fa X-10, prima di X-07.
-- Comandi di §16 regola 5: `pnpm --dir web lint` e `pnpm --dir web test` si riattivano in `AGENTS.md` e nella CI appena esiste `web/` (O-01).
+- Comandi di §16 regola 5: `bun run --cwd web lint` e `bun run --cwd web test` sono elencati in `AGENTS.md` e in CI.
 
 ## 3. Decisioni dell'utente
 
@@ -245,7 +245,7 @@ Esito in `doc/verifiche/scanner-fase-2.md`. Questi task possono usare la rete (�
 - Agente: `devops`. Stato: **chiuso il 2026-11-13**; esito in `doc/verifiche/scanner-fase-2.md`. Da portare a D2-07 e D2-14: psycopg e hadolint hanno licenze che D-0013 mette tra quelle da approvare.
 - Percorsi: `doc/verifiche/scanner-fase-2.md`.
 - Dipende da: nessuno.
-- Accettazione: tabella con versione esatta, checksum o digest di rilascio, data e stato di manutenzione per ruff, eslint con typescript-eslint e un formattatore SARIF, checkov, hadolint, py-tree-sitter e le grammatiche Python, JavaScript, TypeScript e TSX, FastAPI, SQLAlchemy, Alembic, un driver PostgreSQL, una libreria JWT/OIDC, testcontainers, React, Vite, TypeScript, pnpm, un generatore di tipi dall'OpenAPI, una libreria di test dei componenti. Temporal SDK solo se D2-01 cade.
+- Accettazione: tabella con versione esatta, checksum o digest di rilascio, data e stato di manutenzione per ruff, eslint con typescript-eslint e un formattatore SARIF, checkov, hadolint, py-tree-sitter e le grammatiche Python, JavaScript, TypeScript e TSX, FastAPI, SQLAlchemy, Alembic, un driver PostgreSQL, una libreria JWT/OIDC, testcontainers, React, Vite, TypeScript, Bun, un generatore di tipi dall'OpenAPI, una libreria di test dei componenti. Temporal SDK solo se D2-01 cade.
 - Spec: §2, §7.3, §16 regola 2. ADR: 0007, 0015.
 
 #### V-02 — Licenze sul testo della versione fissata
@@ -1051,10 +1051,10 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 ### W — Frontend
 
 #### W-01 — Nascita di `web/`
-- Agente: `frontend`. Stato: **chiuso il 2026-11-16**; `web/` con React 19.3.1, TypeScript 6.0.3 in modalità strict, Vite 8.3.8, vitest 5.1.0, pnpm 12.18.0 con lockfile. `pnpm --dir web lint` e `pnpm --dir web test` verdi in locale; `AGENTS.md` li elenca, la CI li esegue da O-01. Le proprietà CSS si generano da `doc/ux/tokens.json` e il lint ne controlla la deriva. Licenze in `doc/verifiche/scanner-fase-2.md`, sezione W-01: nessuna vietata né da approvare. Da fare prima di X-07: auto-analisi con `web/pnpm-lock.yaml`.
+- Agente: `frontend`. Stato: **chiuso il 2026-11-16**; `web/` con React 19.3.1, TypeScript 6.0.3 in modalità strict, Vite 8.3.8 e vitest 5.1.0. Il lockfile pnpm è stato migrato a Bun 1.4.4; lint e test verificati con Bun. Le proprietà CSS si generano da `doc/ux/tokens.json` e il lint ne controlla la deriva. La verifica licenze W-01 precede la migrazione: rieseguire l'auto-analisi su `web/bun.lock` prima di X-07.
 - Percorsi: `web/`.
 - Dipende da: U-02, V-01, V-02.
-- Accettazione: SPA React, TypeScript in modalità strict e Vite gestita con `pnpm` e lockfile; `pnpm --dir web lint` e `pnpm --dir web test` verdi; dipendenze con licenza verificata.
+- Accettazione: SPA React, TypeScript in modalità strict e Vite gestita con Bun e lockfile; `bun run --cwd web lint` e `bun run --cwd web test` verdi; dipendenze con licenza verificata.
 - Spec: §2, §3, §16. ADR: 0017.
 
 #### W-02 — Client generato dall'OpenAPI
@@ -1230,7 +1230,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Agente: `devops`. Stato: `LIBERO`.
 - Percorsi: `.github/workflows/verify.yml`, `AGENTS.md`.
 - Dipende da: C-08, W-01.
-- Accettazione: `pnpm --dir web lint` e `pnpm --dir web test` riattivati in `AGENTS.md` e in `verify.yml`; export dell'OpenAPI con `--check` e controllo dei tipi generati; nuovi pacchetti in `lint-imports` e `ty`.
+- Accettazione: `bun run --cwd web lint` e `bun run --cwd web test` in `AGENTS.md` e in `verify.yml`; export dell'OpenAPI con `--check` e controllo dei tipi generati; nuovi pacchetti in `lint-imports` e `ty`.
 - Spec: §16. ADR: 0003, 0017.
 
 #### O-02 — E2E estesi

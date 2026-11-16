@@ -1,5 +1,5 @@
 // Genera src/styles/tokens.css da doc/ux/tokens.json (U-02), senza trascrizione a mano.
-// `--check` non scrive: esce con 1 se il file versionato non coincide (fa parte di `pnpm lint`).
+// `--check` non scrive: esce con 1 se il file versionato non coincide (fa parte di `bun run lint`).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -54,7 +54,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const expected = render(JSON.parse(readFileSync(SOURCE, "utf8")));
   if (process.argv.includes("--check")) {
     if (!existsSync(TARGET) || readFileSync(TARGET, "utf8") !== expected) {
-      console.error("src/styles/tokens.css non coincide con doc/ux/tokens.json: pnpm tokens");
+      console.error("src/styles/tokens.css non coincide con doc/ux/tokens.json: bun run tokens");
       process.exit(1);
     }
   } else {

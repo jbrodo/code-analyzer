@@ -1,5 +1,5 @@
 # O-01: verifica su ogni PR. Esegue i comandi di AGENTS.md (§16).
-# I comandi `pnpm --dir web` si aggiungono quando web/ esiste.
+# Verifica Python e web su ogni PR.
 name: verify
 
 on:
@@ -29,11 +29,11 @@ jobs:
           python-version: "3.14"
           enable-cache: true
 
-      # Unica fase con rete: installa le dipendenze dal lock.
+      # Installa le dipendenze Python dal lock.
       - name: Installa le dipendenze
         run: uv sync --frozen
 
-      # Da qui nessuna rete serve: uv non risolve né scarica nulla (--offline).
+      # I controlli Python non richiedono rete.
       - name: ruff check
         run: uv run --frozen --offline ruff check .
 
@@ -51,3 +51,16 @@ jobs:
 
       - name: schema_export --check
         run: uv run --frozen --offline python -m ca_core.schema_export --check
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Installa le dipendenze web
+        run: bun install --cwd web --frozen-lockfile
+
+      - name: lint web
+        run: bun run --cwd web lint
+
+      - name: test web
+        run: bun run --cwd web test

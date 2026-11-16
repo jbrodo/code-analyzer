@@ -723,7 +723,7 @@ Regola: nessun test in CI chiama LLM a pagamento; si usano fake deterministici.
    uv run pytest -q
    uv run lint-imports
    uv run python -m ca_core.schema_export --check
-   pnpm --dir web lint && pnpm --dir web test   # quando web/ esiste
+   bun run --cwd web lint && bun run --cwd web test
    ```
 6. Messaggi di commit: Conventional Commits.
 7. Nessuna chiamata a servizi esterni nei test.

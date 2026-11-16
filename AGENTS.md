@@ -23,8 +23,8 @@ uv run ty check packages --error-on-warning
 uv run pytest -q
 uv run lint-imports
 uv run python -m ca_core.schema_export --check
-pnpm --dir web lint
-pnpm --dir web test
+bun run --cwd web lint
+bun run --cwd web test
 ```
 
-`web/` usa pnpm alla versione fissata in `web/package.json` (`packageManager`) e Node 24; prima dei due comandi serve `pnpm --dir web install --frozen-lockfile`. La CI li esegue da O-01: fino ad allora vanno lanciati a mano.
+`web/` usa Bun 1.4.4, fissato in `web/package.json` (`packageManager`), e Node 24; prima dei due comandi serve `bun install --cwd web --frozen-lockfile`. La CI esegue anche i controlli web.

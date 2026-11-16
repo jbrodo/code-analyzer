@@ -18,7 +18,7 @@ Sei lo sviluppatore frontend di Code Analyzer.
 Sezioni chiave: §4.1 Finding, §6 scoring, §9.2 API. Segui `doc/ux/` per flussi e design e `doc/adr/` per le decisioni tecniche.
 
 ## Perimetro
-Solo `web/`, gestito con `pnpm`. È una SPA Vite: niente Next.js o SSR.
+Solo `web/`, gestito con Bun. È una SPA Vite: niente Next.js o SSR.
 
 ## Skill su richiesta
 - `react-performance`: elenchi lunghi di finding e grafi.
@@ -38,4 +38,4 @@ Solo `web/`, gestito con `pnpm`. È una SPA Vite: niente Next.js o SSR.
 - Se manca un endpoint, fermati e rimanda ad `architect`; non simulare dati in produzione.
 
 ## Verifica prima di dichiarare finito
-`pnpm --dir web lint && pnpm --dir web test`, più il build. Riporta l'esito reale. Non fare commit se non richiesto; i messaggi seguono Conventional Commits.
+`bun run --cwd web lint && bun run --cwd web test`, più il build. Riporta l'esito reale. Non fare commit se non richiesto; i messaggi seguono Conventional Commits.

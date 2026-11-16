@@ -37,3 +37,9 @@ repos:
         language: system
         files: ^(pyproject\.toml|uv\.lock)$
         pass_filenames: false
+      - id: bun-lock-check
+        name: bun lock check
+        entry: bun install --cwd web --frozen-lockfile --lockfile-only
+        language: system
+        files: ^(web/package\.json|web/bun\.lock)$
+        pass_filenames: false

@@ -31,12 +31,20 @@ uv run pre-commit install
 ```
 
 Gli hook validano JSON, YAML e TOML, rilevano chiavi private e marker di conflitto,
-controllano spazi finali, formattazione, Ruff, ty e la coerenza del lock `uv`. Ruff e
-ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su tutto il
-repository:
+controllano spazi finali, formattazione, Ruff, ty e la coerenza dei lock `uv` e Bun.
+Ruff e ty usano le versioni bloccate in `uv.lock`. Per eseguire i controlli su tutto
+il repository:
 
 ```bash
 uv run pre-commit run --all-files
+```
+
+La dashboard in `web/` usa Node 24 e Bun 1.4.4:
+
+```bash
+bun install --cwd web --frozen-lockfile
+bun run --cwd web lint
+bun run --cwd web test
 ```
 
 ## Licenza

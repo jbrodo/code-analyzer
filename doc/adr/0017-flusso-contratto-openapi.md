@@ -40,7 +40,7 @@ Opzione 3: è il flusso di ADR-0003 applicato all'API.
 
 - I tipi TypeScript dell'API si generano da `schemas/openapi.json`, mai dal server in esecuzione e mai a mano. Il generatore si sceglie in V-01, con licenza verificata in V-02.
 - Il file generato è versionato in `web/`, in un solo percorso, con un'intestazione che ne vieta la modifica manuale. È versionato perché il diff dei tipi si rivede insieme al diff del contratto, e perché `lint` e `test` di `web/` non richiedono un passo di generazione.
-- Controllo di deriva in CI: si rigenera e si confronta con il file versionato. Fa parte di `pnpm --dir web lint` (O-01).
+- Controllo di deriva in CI: si rigenera e si confronta con il file versionato. Fa parte di `bun run --cwd web lint` (O-01).
 - Nei test il frontend simula le risposte con gli esempi dell'OpenAPI. Gli esempi si validano contro i propri schemi nei test di contratto (C-10), così una risposta simulata non può divergere dal contratto.
 
 ### Versione e compatibilità
