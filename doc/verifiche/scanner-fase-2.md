@@ -506,3 +506,69 @@ Ciò che finisce nel prodotto distribuito è solo l'uscita di `vite build`: oggi
 
 - `web/package.json` non dichiara una licenza: il pacchetto è privato e non si pubblica. Dichiararla aprirebbe un finding di licenza nell'auto-analisi, da coprire con un'eccezione approvata da Riccardo Roveda come per i `pyproject.toml`.
 - L'auto-analisi non è stata rieseguita con il lockfile Bun: syft, osv-scanner e trivy leggeranno `bun.lock`, e i finding che ne escono vanno guardati prima di X-07.
+
+### Inizializzazione shadcn/ui (2026-11-16)
+
+Confermati dall'utente registry ufficiale `@shadcn`, base Radix e preset Nova.
+Inizializzata la SPA esistente con Bun 1.4.4, senza scaffold, viste dimostrative
+o componenti aggiunti. Tailwind 4 usa il plugin Vite; alias `@/` coerente tra
+TypeScript e Vite/Vitest. Le variabili shadcn riusano i token del prodotto:
+nessun font Geist incluso, palette aggiuntiva o tema scuro a classi.
+
+Verificati i testi `LICENSE` dei pacchetti installati e i metadati del registry
+npm (versione, data di pubblicazione, repository e assenza di deprecazione).
+Le nuove dipendenze dirette hanno versioni esatte nel manifest.
+
+| Componente | Versione | Licenza dal testo | Ultima pubblicazione della versione |
+| --- | --- | --- | --- |
+| `tailwindcss`, `@tailwindcss/vite` | 4.3.5 | MIT | 2026-11-06 |
+| `cn` | 0.5.2 | MIT | 2026-11-02 |
+| `class-variance-authority` | 0.7.1 | Apache-2.0 | 2024-11-26 |
+| `lucide-react` | 1.73.0 | ISC; MIT per le icone derivate da Feather | 2026-11-14 |
+| `radix-ui` | 1.8.1 | MIT | 2026-10-12 |
+| `shadcn` | 4.23.0 | MIT | 2026-10-27 |
+| `tw-animate-css` | 1.4.0 | MIT | 2025-09-24 |
+
+Per le due release meno recenti verificati anche i repository upstream:
+[`joe-bell/cva`](https://github.com/joe-bell/cva) non archiviato, ultimo push
+2026-11-16; [`Wombosvideo/tw-animate-css`](https://github.com/Wombosvideo/tw-animate-css)
+non archiviato, ultimo push 2026-02-28. La seconda ha una cadenza meno frequente:
+ricontrollare in occasione degli aggiornamenti.
+
+`bun pm --cwd web licenses --json`: 434 nomi di pacchetto installati.
+430 con licenze permissive, 3 con MPL-2.0 (`lightningcss` e i binari Linux
+GNU/musl), 1 con CC-BY-4.0 (`caniuse-lite`). Cinque voci opzionali del lockfile
+non sono installate su questa piattaforma e non sono coperte da questa lettura
+dei metadati. I testi delle dipendenze transitive non sono stati riletti tutti.
+
+Aggiornato [web.cdx.json](web.cdx.json): SBOM sorgente CycloneDX 1.7 da
+`web/bun.lock`, con 510 componenti, incluse dipendenze di sviluppo e voci
+opzionali delle altre piattaforme. Generato da syft 1.57.0, archivio verificato
+con il checksum ufficiale
+`9c077a7d43029b3b13e98a8db720661e700c4d58db6352153a06395ae4a2a704`.
+Validato offline con `SchemaStore.packaged()` contro lo schema CycloneDX 1.7
+fissato nel repository; tutte le dipendenze dirette del manifest sono presenti.
+Comando dalla root, con syft 1.57.0 disponibile:
+
+```sh
+rtk bypass env SYFT_CHECK_FOR_APP_UPDATE=false \
+  SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES=true \
+  SYFT_JAVASCRIPT_SEARCH_REMOTE_LICENSES=false \
+  syft scan dir:web --source-name code-analyzer-web --source-version 0.0.0 \
+  --override-default-catalogers javascript-lock-cataloger \
+  --exclude './node_modules/**' --exclude './dist/**' \
+  --output cyclonedx-json@1.7=doc/verifiche/web.cdx.json
+```
+
+Il catalogo da lockfile non arricchisce le licenze via rete e non sostituisce
+l'SBOM dell'immagine di rilascio, ne la valutazione D2-14.
+L'auto-analisi delle vulnerabilita con osv-scanner/trivy resta da eseguire.
+
+Verifiche eseguite: lint, 5 test e build verdi con Bun. Chromium headless
+sul bundle compilato: temi chiaro/scuro, desktop 1280 px, viewport 320 px e
+reflow equivalente al 200% (640 px con scala 2); alias semantici risolti sui
+token corretti senza cicli, nessun overflow orizzontale, nessun errore di
+console o richiesta esterna dalla pagina. Verificato con un controllo
+temporaneo il focus da tastiera (contorno e distanza di 2 px). Nessun flusso
+applicativo nuovo da provare; zoom nativo del browser e lettore di schermo
+non verificati. Questa prova non chiude W-08/U-05.
