@@ -22,8 +22,8 @@ test("i colori hanno un valore per tema", () => {
   expect(names(dark)).toEqual(names(light));
 });
 
-test("base.css usa solo proprietà definite dai token", () => {
-  const defined = new Set([...css.matchAll(/(--[\w-]+):/g)].map((m) => m[1]));
+test("base.css usa solo token e alias definiti", () => {
+  const defined = new Set([...`${css}\n${base}`.matchAll(/(--[\w-]+):/g)].map((m) => m[1]));
   const used = [...base.matchAll(/var\((--[\w-]+)\)/g)].map((m) => m[1]);
   expect(used.length).toBeGreaterThan(0);
   expect(used.filter((name) => !defined.has(name))).toEqual([]);

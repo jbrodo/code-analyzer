@@ -30,6 +30,25 @@ I livelli usano quattro tinte distinte anche in scala di grigi per luminosità d
 
 ## Componenti di base
 
+### Integrazione shadcn/ui
+
+Scelta confermata il 2026-11-16: registry ufficiale `@shadcn`, base Radix,
+stile Nova (`radix-nova`), nella SPA React/TypeScript/Vite esistente.
+`web/components.json` configura la CLI; non e un catalogo `registry.json`
+per pubblicare componenti del prodotto.
+
+Tailwind CSS 4 usa il plugin Vite. In `web/src/styles/base.css` le variabili
+semantiche shadcn sono alias dei token generati da `web/scripts/tokens.mjs`:
+nessuna seconda palette, font scaricato o tema `.dark`. Il tema continua a
+seguire `prefers-color-scheme`; anche le varianti `dark:` usano questa preferenza.
+Tipografia, spaziatura e raggi riusano le scale del prodotto.
+
+L'inizializzazione non aggiunge viste o componenti dimostrativi. Per aggiungere
+un componente, dalla directory `web/`, consultare prima
+`rtk bypass bunx --bun shadcn@latest docs <componente>` e gli URL restituiti,
+poi usare `search`, `view` e `add` sul registry ufficiale. Leggere il codice
+aggiunto e mantenere i requisiti seguenti; lo stile upstream non li sostituisce.
+
 Ogni componente elenca struttura, stati e i criteri di `doc/ux/accessibilita.md` che deve soddisfare.
 
 ### Badge di livello
