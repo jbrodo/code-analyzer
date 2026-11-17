@@ -3,18 +3,23 @@
 import uuid
 
 import pytest
+from apiauth import make_client
 from fastapi.testclient import TestClient
-
-from ca_api.app import create_app
-from ca_api.config import Settings
 
 ID = str(uuid.uuid4())
 PROBLEM = "application/problem+json"
 
 
+PIPELINE_ONLY = {("POST", "/v1/scans"), ("GET", "/v1/service-context")}
+
+
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(create_app(Settings()))
+    """Un client già autenticato: un utente con tutti i ruoli, o la pipeline dove serve."""
+    client, tokens = make_client()
+    client.headers["Authorization"] = tokens["tutti"]
+    client.pipeline = tokens["pipeline"]  # type: ignore[attr-defined]
+    return client
 
 
 ROUTES = [
@@ -44,7 +49,11 @@ BODIES = {
 def test_a_declared_route_answers_501_not_implemented_as_problem_json(
     client: TestClient, method: str, path: str
 ) -> None:
-    response = client.request(method, path, **BODIES.get((method, path), {}))
+    headers = {"Authorization": client.pipeline} if (method, path) in PIPELINE_ONLY else {}  # type: ignore[attr-defined]
+    response = client.request(method, path, headers=headers, **BODIES.get((method, path), {}))
+    if (method, path) == ("GET", "/v1/me"):
+        assert response.status_code == 200  # realizzato da B-04
+        return
     assert response.status_code == 501
     assert response.headers["content-type"].startswith(PROBLEM)
     body = response.json()

@@ -10,9 +10,17 @@ implemented` con il formato di errore unico. Le realizzano B-03 (ingestione), B-
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, File, Path, Query, Security, UploadFile
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Body, File, Path, Query, UploadFile
 
+from ca_api.auth.authorize import (
+    Admin,
+    Pipeline,
+    Reader,
+    ReaderOrPipeline,
+    User,
+    authorize_patch,
+)
+from ca_api.auth.deps import CurrentIdentity
 from ca_api.models import (
     FindingDetail,
     FindingPage,
@@ -30,17 +38,6 @@ from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode
 from ca_core.models.finding import Category, Level, Status
 from ca_core.models.graph import Graph
 from ca_core.models.service_context_file import ServiceContextFile
-
-bearer = HTTPBearer(
-    scheme_name="oidc",
-    bearerFormat="JWT",
-    auto_error=False,
-    description=(
-        "Token di accesso OIDC (ADR-0019): un JWT firmato da un emittente configurato, di un "
-        "utente o di una pipeline. Il server non emette token."
-    ),
-)
-Credentials = Annotated[HTTPAuthorizationCredentials | None, Security(bearer)]
 
 LIMIT_MAX = 200
 ID = Annotated[UUID, Path(description="Identificativo opaco.")]
@@ -78,10 +75,16 @@ READ = "lettore, triage, approvatore, amministratore"
     summary="Identità, ruoli e tenant",
     openapi_extra=roles("utente con qualunque ruolo, o senza ruoli"),
 )
-def get_me(credentials: Credentials) -> Me:
+def get_me(identity: User) -> Me:
     """L'unico endpoint che risponde 200 a un utente autenticato senza ruoli."""
-    _not_implemented()
-    raise AssertionError
+    return Me(
+        issuer=identity.issuer,
+        subject=identity.subject,
+        name=identity.name,
+        email=identity.email,
+        tenant=identity.tenant,
+        roles=sorted(identity.roles),
+    )
 
 
 @router.get(
@@ -92,7 +95,7 @@ def get_me(credentials: Credentials) -> Me:
     openapi_extra=roles(READ),
 )
 def list_repositories(
-    credentials: Credentials,
+    identity: Reader,
     limit: Annotated[int, Query(ge=1, le=LIMIT_MAX)] = 50,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> RepositoryPage:
@@ -107,7 +110,7 @@ def list_repositories(
     summary="Un repository, con tier ed esposizione se registrati",
     openapi_extra=roles(READ),
 )
-def get_repository(credentials: Credentials, id: ID) -> RepositorySummary:
+def get_repository(identity: Reader, id: ID) -> RepositorySummary:
     _not_implemented()
     raise AssertionError
 
@@ -120,7 +123,7 @@ def get_repository(credentials: Credentials, id: ID) -> RepositorySummary:
     openapi_extra=roles("amministratore"),
 )
 def patch_repository(
-    credentials: Credentials, id: ID, body: Annotated[RepositoryPatch, Body()]
+    identity: Admin, id: ID, body: Annotated[RepositoryPatch, Body()]
 ) -> RepositorySummary:
     _not_implemented()
     raise AssertionError
@@ -134,7 +137,7 @@ def patch_repository(
     openapi_extra=roles(READ),
 )
 def list_repository_scans(
-    credentials: Credentials,
+    identity: Reader,
     id: ID,
     limit: Annotated[int, Query(ge=1, le=LIMIT_MAX)] = 50,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
@@ -165,7 +168,7 @@ def list_repository_scans(
     openapi_extra=roles("P: solo il proprio repository"),
 )
 def create_scan(
-    credentials: Credentials,
+    identity: Pipeline,
     report: Annotated[UploadFile, File(description="`scan-report`")],
     sarif: UploadFile | None = None,
     sbom: UploadFile | None = None,
@@ -182,7 +185,7 @@ def create_scan(
     summary="Stato e riepilogo di una scansione",
     openapi_extra=roles(f"{READ}; P: solo il proprio repository"),
 )
-def get_scan(credentials: Credentials, id: ID) -> ScanDetail:
+def get_scan(identity: ReaderOrPipeline, id: ID) -> ScanDetail:
     _not_implemented()
     raise AssertionError
 
@@ -197,7 +200,7 @@ def get_scan(credentials: Credentials, id: ID) -> ScanDetail:
     },
     openapi_extra=roles(f"{READ}; P: solo il proprio repository"),
 )
-def get_scan_sarif(credentials: Credentials, id: ID) -> dict[str, Any]:
+def get_scan_sarif(identity: ReaderOrPipeline, id: ID) -> dict[str, Any]:
     _not_implemented()
     raise AssertionError
 
@@ -215,7 +218,7 @@ def get_scan_sarif(credentials: Credentials, id: ID) -> dict[str, Any]:
     openapi_extra=roles(READ),
 )
 def list_findings(
-    credentials: Credentials,
+    identity: Reader,
     id: ID,
     scan: Annotated[UUID | None, Query()] = None,
     level: Annotated[list[Level] | None, Query()] = None,
@@ -244,7 +247,7 @@ def list_findings(
     summary="Dettaglio di un finding",
     openapi_extra=roles(READ),
 )
-def get_finding(credentials: Credentials, id: ID) -> FindingDetail:
+def get_finding(identity: Reader, id: ID) -> FindingDetail:
     _not_implemented()
     raise AssertionError
 
@@ -264,8 +267,9 @@ def get_finding(credentials: Credentials, id: ID) -> FindingDetail:
     openapi_extra=roles("triage (stato, owner); approvatore (falso positivo, eccezioni)"),
 )
 def patch_finding(
-    credentials: Credentials, id: ID, body: Annotated[FindingPatch, Body()]
+    identity: CurrentIdentity, id: ID, body: Annotated[FindingPatch, Body()]
 ) -> FindingDetail:
+    authorize_patch(identity, body)
     _not_implemented()
     raise AssertionError
 
@@ -280,7 +284,7 @@ def patch_finding(
     },
     openapi_extra=roles(READ),
 )
-def get_repository_sbom(credentials: Credentials, id: ID) -> dict[str, Any]:
+def get_repository_sbom(identity: Reader, id: ID) -> dict[str, Any]:
     _not_implemented()
     raise AssertionError
 
@@ -292,7 +296,7 @@ def get_repository_sbom(credentials: Credentials, id: ID) -> dict[str, Any]:
     summary="Grafo dei moduli della scansione corrente",
     openapi_extra=roles(READ),
 )
-def get_repository_graph(credentials: Credentials, id: ID) -> Graph:
+def get_repository_graph(identity: Reader, id: ID) -> Graph:
     _not_implemented()
     raise AssertionError
 
@@ -304,6 +308,6 @@ def get_repository_graph(credentials: Credentials, id: ID) -> Graph:
     summary="Contesto del servizio del repository del token (ADR-0028)",
     openapi_extra=roles("P: solo il proprio repository"),
 )
-def get_service_context(credentials: Credentials) -> ServiceContextFile:
+def get_service_context(identity: Pipeline) -> ServiceContextFile:
     _not_implemented()
     raise AssertionError

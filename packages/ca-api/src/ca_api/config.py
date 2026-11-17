@@ -36,6 +36,7 @@ class Settings:
 
     max_part_bytes: int = 64 * MIB
     max_request_bytes: int = 160 * MIB
+    auth_file: str | None = None  # emittenti di ADR-0019; senza, ogni richiesta autenticata è 401
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -44,4 +45,5 @@ class Settings:
         request = _int(source, "MAX_REQUEST_BYTES", cls.max_request_bytes, minimum=1)
         if request < part:
             raise ConfigError(f"{PREFIX}MAX_REQUEST_BYTES: non inferiore a MAX_PART_BYTES")
-        return cls(max_part_bytes=part, max_request_bytes=request)
+        auth_file = source.get(PREFIX + "AUTH_FILE") or None
+        return cls(max_part_bytes=part, max_request_bytes=request, auth_file=auth_file)

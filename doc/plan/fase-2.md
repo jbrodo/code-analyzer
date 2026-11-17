@@ -981,14 +981,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §4.3, §9.2. ADR: 0016, 0018, 0019.
 
 #### B-04 — Autenticazione
-- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. Verifica dei token OIDC di utenti e pipeline con emittenti da configurazione (mai dal token), JWKS in cache con un solo aggiornamento e un limite di frequenza, tempo dal `Clock`, durata massima, `aud` esatta, algoritmi asimmetrici in elenco fisso (`none`, HS* e confusione di algoritmo provati), chiavi simmetriche del JWKS ignorate; claim dei provider confermati sulla documentazione (vedi ADR-0019). Tutti i casi obbligatori dell'ADR con un emittente finto in processo, senza rete. **Nuove dipendenze:** `PyJWT[crypto]` 2.15.1 (MIT) con `cryptography` 50.0.2 (Apache 2.0 o BSD), cffi e pycparser.
 - Percorsi: `packages/ca-api/src/ca_api/auth/`.
 - Dipende da: B-01, A-04, C-08.
 - Accettazione: verifica dei token OIDC di utenti e pipeline (emittente, audience, scadenza, claim del repository), JWKS in cache; test con IdP finto, senza rete esterna.
 - Spec: §9.2. ADR: 0019.
 
 #### B-05 — Autorizzazione e tenant
-- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per la matrice dei ruoli: ogni route e ogni ruolo provati (lettore, triage, approvatore, amministratore, senza ruolo, pipeline), `required_role` nel 403, nessun token ripetuto nelle risposte. **Non fatto:** il 404 tra tenant e il limite della pipeline al proprio repository, che richiedono l'accesso ai dati dalle route (B-06, B-03).
 - Percorsi: `packages/ca-api/src/ca_api/auth/`.
 - Dipende da: B-04, B-02.
 - Accettazione: matrice ruoli ed endpoint di ADR-0019 verificata da test; nessun accesso tra tenant.

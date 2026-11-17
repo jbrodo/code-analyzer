@@ -99,8 +99,10 @@ class ApiProblem(Exception):
         detail: str | None = None,
         required_role: str | None = None,
         errors: list[ProblemError] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(code.value)
+        self.headers = headers or {}
         self.problem = Problem(
             title=TITLES[code],
             status=status,
