@@ -1002,7 +1002,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017.
 
 #### B-07 — Archivio degli artefatti
-- Agente: `backend`. Stato: `LIBERO` (D2-07 decisa il 2026-11-16). Comprende l'adattatore S3, con libreria client e server di prova da verificare per licenza e manutenzione.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_api/storage/filesystem.py` e `s3.py` della porta `ArtifactStore` con una batteria di contratto comune (anche il fake in memoria): contenimento dei percorsi con `O_NOFOLLOW`, permessi privati, nessuna sovrascrittura nemmeno in corsa (`link` atomico; `If-None-Match` su S3, provato con scrittori concorrenti), tetto di byte con lettura limitata, digest verificato mentre si scrive. Client `boto3` 1.44.4 (Apache 2.0) e server di prova SeaweedFS (Apache 2.0), verificati e riportati in ADR-0030; MinIO resta escluso. **Non fatto:** la costruzione dell'archivio dalla configurazione (B-03); non provato su un servizio S3 reale.
 - Percorsi: `packages/ca-api/src/ca_api/storage/`.
 - Dipende da: A-15, C-06.
 - Accettazione: adattatori su file system e S3 della porta di C-06, con contenimento dei percorsi; test dell'adattatore S3 su un server compatibile in container.
