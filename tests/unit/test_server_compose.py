@@ -37,7 +37,28 @@ def test_api_runs_hardened() -> None:
     api = SERVICES["api"]
     assert api["read_only"] is True and api["cap_drop"] == ["ALL"]
     assert "no-new-privileges:true" in api["security_opt"]
-    assert api["depends_on"]["db"]["condition"] == "service_healthy"
+    # le tabelle esistono prima che l'API parta: lo garantisce `migrate`
+    assert api["depends_on"]["migrate"]["condition"] == "service_completed_successfully"
+
+
+def test_the_dev_idp_shares_the_api_network_and_every_service_is_hardened() -> None:
+    idp = SERVICES["idp"]
+    assert idp["network_mode"] == "service:api" and "ports" not in idp  # la porta è sull'API
+    assert idp["image"] == "ca-server-dev:local" and idp["pull_policy"] == "never"
+    for name in ("idp", "migrate", "api"):
+        service = SERVICES[name]
+        assert service["read_only"] is True and service["cap_drop"] == ["ALL"], name
+        assert "no-new-privileges:true" in service["security_opt"], name
+
+
+def test_the_dev_auth_file_trusts_only_the_loopback_idp_and_holds_no_secret() -> None:
+    import json
+
+    auth = json.loads((ROOT / "deploy/compose/dev-auth.json").read_text())
+    for issuer in auth["issuers"]:
+        assert issuer["issuer"].startswith("http://127.0.0.1:") and issuer["allow_insecure_dev"]
+        assert issuer["jwks_url"].startswith(issuer["issuer"].rsplit("/", 1)[0])
+    assert "key" not in json.dumps(auth).lower().replace("jwks", "")
 
 
 def test_artifacts_live_in_a_named_volume() -> None:

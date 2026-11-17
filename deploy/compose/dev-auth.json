@@ -1,0 +1,28 @@
+{
+  "issuers": [
+    {
+      "kind": "user",
+      "issuer": "http://127.0.0.1:9000/user",
+      "audience": "code-analyzer",
+      "jwks_url": "http://127.0.0.1:9000/user/jwks.json",
+      "allow_insecure_dev": true,
+      "tenant": "dev",
+      "roles_claim": "groups",
+      "roles_map": {
+        "readers": ["lettore"],
+        "triagers": ["lettore", "triage"],
+        "approvers": ["lettore", "triage", "approvatore"],
+        "admins": ["lettore", "amministratore"]
+      }
+    },
+    {
+      "kind": "pipeline",
+      "issuer": "http://127.0.0.1:9000/github",
+      "audience": "code-analyzer",
+      "jwks_url": "http://127.0.0.1:9000/github/jwks.json",
+      "allow_insecure_dev": true,
+      "provider": "github",
+      "owners": {"4242": "dev"}
+    }
+  ]
+}

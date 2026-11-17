@@ -10,12 +10,14 @@
 #
 # Porte: CA_API_PORT (default 8000) e CA_DB_PORT (default 55432, per non scontrarsi con un PostgreSQL locale), sempre su 127.0.0.1.
 #
-# Ancora assenti, per mancanza dei task che le usano:
-#  - IdP finto: arriva con B-04 (ADR-0019), da un emittente di prova in processo o da un servizio
-#    la cui licenza e manutenzione si verificano allora.
-#  - SPA: la serve l'immagine di rilascio (I-03); in sviluppo si usa `bun run --cwd web dev`.
-#  - Collegamento dell'API al database: arriva con B-02. Il servizio parte gia' con il database
-#    in attesa, cosi' B-02 non cambia questo file.
+# L'IdP finto (`idp`, deploy/docker/dev-idp/idp.py) rilascia a chiunque raggiunga la porta un token
+# con i gruppi richiesti: serve solo qui, su loopback. Le sue chiavi nascono a ogni avvio.
+# Sta nella rete dell'API (`network_mode`) perche' il verificatore ammette `http` solo su loopback.
+#   curl -s -X POST "http://127.0.0.1:9000/user/token?sub=ada&groups=admins,approvers"
+#   curl -s -X POST "http://127.0.0.1:9000/github/token?repository=acme/shop&repository_id=9001"
+# Il tenant `dev` lo crea il servizio `migrate`, che applica anche le migrazioni.
+# La SPA non e' qui: la serve l'immagine di rilascio (I-03); in sviluppo `bun run --cwd web dev`.
+
 name: ca-server-dev
 
 services:
@@ -38,19 +40,62 @@ services:
       timeout: 2s
       retries: 30
 
-  api:
-    # Costruita da deploy/docker/server/build-dev-image.sh: non si scarica da nessun registry.
+  idp:
+    # Stessa immagine dell'API (PyJWT e cryptography ci sono gia'): nessuna dipendenza in piu'.
+    image: ca-server-dev:local
+    pull_policy: never
+    entrypoint: ["python", "/idp/idp.py"]
+    # Nella rete dell'API: il verificatore ammette `http` solo verso loopback, e per l'API l'IdP
+    # e' 127.0.0.1:9000. La porta verso l'host e' dichiarata sull'API.
+    network_mode: "service:api"
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      ISSUER_BASE: http://127.0.0.1:9000
+    volumes:
+      - ../docker/dev-idp:/idp:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:9000/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  migrate:
     image: ca-server-dev:local
     pull_policy: never
     depends_on:
       db:
         condition: service_healthy
+    entrypoint: ["sh", "-c", "python -m ca_api.manage migrate && python -m ca_api.manage create-tenant dev"]
+    environment:
+      CA_API_DATABASE_URL: postgresql+pg8000://ca:${CA_DEV_DB_PASSWORD}@db:5432/code_analyzer
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  api:
+    # Costruita da deploy/docker/server/build-dev-image.sh: non si scarica da nessun registry.
+    image: ca-server-dev:local
+    pull_policy: never
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${CA_API_PORT:-8000}:8000"
+      - "127.0.0.1:${CA_IDP_PORT:-9000}:9000"  # IdP finto (servizio `idp`, stessa rete)
     environment:
-      CA_API_ARTIFACT_ROOT: /var/lib/ca/artifacts
+      CA_API_ARTIFACTS_DIR: /var/lib/ca/artifacts
+      CA_API_DATABASE_URL: postgresql+pg8000://ca:${CA_DEV_DB_PASSWORD}@db:5432/code_analyzer
+      CA_API_AUTH_FILE: /etc/ca/auth.json
     volumes:
       - artifacts:/var/lib/ca/artifacts
+      - ./dev-auth.json:/etc/ca/auth.json:ro
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

@@ -1213,7 +1213,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.3, §15. ADR: 0005, 0015.
 
 #### I-05 — Ambiente di sviluppo del server
-- Agente: `devops`. Stato: `LIBERO` (D2-02 e D2-07 decise il 2026-11-16); **parziale il 2026-11-17**: `deploy/compose/server-dev.yaml` con PostgreSQL 16 per digest, volume degli artefatti e API (immagine di sviluppo da `deploy/docker/server/build-dev-image.sh`), tutto su loopback, password dall'ambiente, API con file system in sola lettura e senza capability; provato avviando lo stack. **Mancano l'IdP finto (arriva con B-04) e la SPA (la serve l'immagine di rilascio, I-03)**; l'API non usa ancora il database (B-02).
+- Agente: `devops`. Stato: **chiuso il 2026-11-17 per l'ambiente senza SPA** (D2-02 e D2-07 decise il 2026-11-16): `deploy/compose/server-dev.yaml` con PostgreSQL 16 per digest, volume degli artefatti e API (immagine di sviluppo da `deploy/docker/server/build-dev-image.sh`), tutto su loopback, password dall'ambiente, API con file system in sola lettura e senza capability; provato avviando lo stack. Aggiunti l'IdP finto (`deploy/docker/dev-idp/idp.py`, stessa immagine dell'API, nella sua rete perché il verificatore ammette `http` solo su loopback; chiavi nuove a ogni avvio, nessun segreto nel repository), il servizio `migrate` (migrazioni e tenant `dev`) e `dev-auth.json`. Provato il percorso intero: token dell'IdP, `upload` della CLI (201, poi 200), lettura dei finding. **Resta la SPA** (la serve l'immagine di rilascio, I-03).
 - Percorsi: `deploy/compose/`.
 - Dipende da: A-15, A-04.
 - Accettazione: compose con PostgreSQL 16, archivio di ADR-0030, IdP finto, API e SPA; nessun segreto nel repository.

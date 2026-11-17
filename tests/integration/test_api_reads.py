@@ -637,3 +637,4 @@ def test_new_on_a_full_scan_means_first_seen_in_that_scan(env: Env) -> None:
     assert titles(page) == ["t-fresh", "t-old"]  # i nuovi prima, a parità di livello
     assert titles(listing(env, new=True)) == ["t-fresh"]
     assert titles(listing(env, new=False)) == ["t-old"]
+    assert [i["new"] for i in page["items"]] == [True, False]  # il campo coincide con il filtro

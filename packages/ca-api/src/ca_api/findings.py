@@ -237,9 +237,7 @@ def _list_item(
         start_line=(occurrence.start_line if occurrence else location.get("start_line")),
         status=row.eff,
         exception_origin=origin,
-        new=None
-        if occurrence is None or occurrence.baseline_state is None
-        else occurrence.baseline_state == "new",
+        new=_item_is_new(finding, occurrence, scope_row),
         first_seen=finding.first_seen,
         last_seen=finding.last_seen,
         owner=finding.owner,

@@ -12,9 +12,9 @@ COPY dist/ /dist/
 RUN pip install --no-cache-dir --require-hashes --no-deps -r /requirements.txt \
  && pip install --no-cache-dir --no-deps /dist/*.whl \
  && rm -rf /dist /requirements.txt \
- && mkdir -p /var/lib/ca/artifacts && chown 65532:65532 /var/lib/ca/artifacts
+ && mkdir -p /var/lib/ca/artifacts && chown 65532:65532 /var/lib/ca/artifacts && chmod 700 /var/lib/ca/artifacts
 
 USER 65532:65532
 EXPOSE 8000
-ENV CA_API_ARTIFACT_ROOT=/var/lib/ca/artifacts
+ENV CA_API_ARTIFACTS_DIR=/var/lib/ca/artifacts
 ENTRYPOINT ["python", "-m", "uvicorn", "ca_api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
