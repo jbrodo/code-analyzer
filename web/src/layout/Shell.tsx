@@ -3,6 +3,7 @@ import { Link, Route, Routes, useMatch, useNavigate } from "react-router";
 
 import type { Schemas } from "@/api/client";
 import { useClient } from "@/auth/session";
+import { FindingPanel } from "@/features/finding/FindingPanel";
 import { FindingsPage } from "@/features/findings/FindingsPage";
 import { RepositoriesPage } from "@/features/repositories/RepositoriesPage";
 import { age } from "@/lib/format";
@@ -85,7 +86,7 @@ export function Shell() {
       <Routes>
         <Route path="/" element={<RepositoriesPage />} />
         <Route path="/r/:repository" element={<FindingsPage />}>
-          <Route path="f/:finding" element={null} />
+          <Route path="f/:finding" element={<FindingPanel />} />
         </Route>
         <Route
           path="*"

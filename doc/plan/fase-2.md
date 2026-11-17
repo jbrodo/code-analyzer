@@ -452,7 +452,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §1. ADR: nessuno.
 
 #### U-04 — Punteggio spiegabile e confronto in ombra
-- Agente: `ux-ui`. Stato: `LIBERO`.
+- Agente: `ux-ui`. Stato: **chiuso il 2026-11-17**: `doc/ux/punteggio.md`. Le due varianti con la stessa struttura e ordine fisso, nessun giudizio di merito, formula con i numeri veri, ripiego di B dichiarato. **Lacuna per A-14:** soglie e pesi non sono nella risposta del finding (stanno nella configurazione di scoring, per tenant): la UI mostra la formula e il livello da punteggio, non gli intervalli.
 - Percorsi: `doc/ux/`.
 - Dipende da: U-01, A-06, A-08.
 - Accettazione: come si mostrano G, P, E, C, pesi, soglie, evidenze e fonte di ciascun fattore accanto al punteggio; come si distinguono livello attivo e punteggi in ombra di A e B senza suggerire quale sia migliore (serve al protocollo di G2.b).
@@ -1085,7 +1085,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §1, §9.2. ADR: 0029.
 
 #### W-05 — Dettaglio di un finding
-- Agente: `frontend`. Stato: `IPOTESI` (D2-15).
+- Agente: `frontend`. Stato: **chiuso il 2026-11-17** (D2-15 confermata, U-04 chiusa). `web/src/features/finding/`: pannello a destra della lista (regione col titolo del finding, fuoco al titolo, `Esc` o «Chiudi» lo chiude e riporta il fuoco alla riga; sotto i 768 px sostituisce la lista) con «Come risolvere» (testo, riferimenti non attivi), «Dove» (posizione, pacchetto e catena, SPDX, commit, CVE, CWE), «Perché questo livello» (origine del livello in parole; le due varianti con la stessa struttura e ordine fisso, fattori G P E C con evidenza e formula con i numeri veri, ripiego di B dichiarato, confronto neutro) e «Stato e storia» (eccezioni delle due origini, registro in elenco ordinato con `time`). **Provato:** 9 test del pannello e il browser vero contro lo stack con un finding con punteggi. Trovati e corretti con il browser: la colonna «Problema» a larghezza zero con il pannello aperto (ora le colonne meno decisive si nascondono con una container query) e un overflow della pagina a 390 px. **Limiti:** gli intervalli e i pesi non sono nella risposta (lacuna di U-04, per A-14); «Nuovo» nell'intestazione compare solo per le PR (il dettaglio non porta la novità rispetto alla scansione corrente); azioni di triage e dialogo dell'eccezione sono di W-06; nessun audit automatico (W-08).
 - Percorsi: `web/`.
 - Dipende da: W-04, U-04.
 - Accettazione: fattori G·P·E·C, pesi, soglie ed evidenze accanto al punteggio (§6.2), livello attivo e punteggi in ombra secondo U-04, posizione, passi di correzione come testo.

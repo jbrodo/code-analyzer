@@ -93,6 +93,20 @@ export function FindingsPage() {
     }
   }, [firstData, announce]);
 
+  // D2: Esc o "Chiudi" chiude il pannello e riporta il fuoco sulla riga di partenza
+  const returnFocusTo = useRef<string | null>(null);
+  const closePanel = (findingId: string) => {
+    returnFocusTo.current = findingId;
+    void navigate(`/r/${repository}${params.size > 0 ? `?${params.toString()}` : ""}`);
+  };
+  // il fuoco torna alla riga solo quando la lista è di nuovo visibile (sotto i 768 px era nascosta)
+  useEffect(() => {
+    const target = returnFocusTo.current;
+    if (finding !== null || target === null) return;
+    returnFocusTo.current = null;
+    document.querySelector<HTMLElement>(`a[data-row-link][href*="${CSS.escape(target)}"]`)?.focus();
+  }, [finding, items.length]);
+
   const change = (next: Filters) => {
     setParams(toParams(next), { replace: true });
   };
@@ -195,7 +209,7 @@ export function FindingsPage() {
           footer={footer}
         />
       </main>
-      <Outlet context={{ closeTo: () => { void navigate(`/r/${repository}${params.size > 0 ? `?${params.toString()}` : ""}`); } }} />
+      <Outlet context={{ close: closePanel }} />
     </div>
   );
 }
