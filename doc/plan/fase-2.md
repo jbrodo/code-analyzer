@@ -500,7 +500,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §8. ADR: 0014, 0025, 0026, 0028.
 
 #### C-06 — Porte nuove del nucleo
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**; `ca_core/ports.py` e `fakes.py`. Quattro porte con fake in memoria, `lint-imports` verde, modelli che passano un giro di JSON (ADR-0002): `EnrichmentFeeds` (EPSS e KEV con le tre risposte di ADR-0024 e l'identità degli snapshot), `GitHistory` (churn con stato della storia e `changed_files`), `BaselineSource` (dove sta il report del commit base, con la fonte; la validazione resta a K-16), `ArtifactStore` (put da flusso con tetto e digest, open, exists, delete idempotente, nessuna sovrascrittura; `validate_artifact_key` per gli adattatori). Invarianti nei modelli: un churn senza storia completa non ha conteggi (ADR-0022), un punteggio solo con `found`, una baseline `found` solo con posizione e fonte. **Sovrapposizione con E-01:** la porta dei feed è definita qui; E-01 la usa e ci mette gli adattatori e il modello dei dati in `scoring/feeds/`. I flussi di byte dell'archivio non sono serializzabili: l'archivio serve ai passi del server, non ai passi della pipeline. Nessun adattatore reale ancora: restano G-11 (storia), E-02..E-04 (feed), K-16/K-17/B-12 (baseline), B-07 (archivio).
 - Percorsi: `packages/ca-core/src/ca_core/ports.py`, `packages/ca-core/src/ca_core/fakes.py`.
 - Dipende da: A-05, A-07, A-09, A-10.
 - Accettazione: porte per feed di arricchimento, storia git (file cambiati, churn), fonte della baseline, archivio degli artefatti, ciascuna con un fake in memoria; ingressi e uscite serializzabili (ADR-0002); `lint-imports` verde.
