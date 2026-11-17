@@ -697,7 +697,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-04 — hadolint
-- Agente: `backend`. Stato: `LIBERO` per sviluppo e uso interno (2026-11-17, D2-14 per hadolint decisa). La pubblicazione dell'immagine resta in I-07 e richiede, oltre al resto, testo della licenza e offerta della sorgente del binario nell'immagine.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per sviluppo e uso interno. Plugin `builtin/hadolint/`: binario statico scaricato con controllo dell'SHA-256 durante la build, testo della licenza scaricato dal tag del sorgente e **non copiato nel repository** (così l'auto-analisi non apre un finding), offerta della sorgente scritta nelle note di terzi. Provato con hadolint 2.15.1 reale: `.hadolint.yaml` ostile (anche in sottocartella) e variabili `HADOLINT_*` senza effetto, `--disable-ignore-pragma` ignora `ignore` e `global ignore`, errori di sintassi come finding `DL1000`. Immagine costruita e provata nel profilo duro (175 MB, 8 risultati in 0,08 s). Stato precedente: `LIBERO` per sviluppo e uso interno (2026-11-17, D2-14 per hadolint decisa). La pubblicazione dell'immagine resta in I-07 e richiede, oltre al resto, testo della licenza e offerta della sorgente del binario nell'immagine.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/hadolint/`.
 - Dipende da: A-11, F-02, T-02.
 - Accettazione: SARIF con `category: iac`, Dockerfile trovati nel workspace, `.hadolint.yaml` ostile nel workspace senza effetto (V-04), problemi di F-02 rilevati.
