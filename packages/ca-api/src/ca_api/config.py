@@ -37,6 +37,15 @@ class Settings:
     max_part_bytes: int = 64 * MIB
     max_request_bytes: int = 160 * MIB
     auth_file: str | None = None  # emittenti di ADR-0019; senza, ogni richiesta autenticata è 401
+    database_url: str | None = (
+        None  # postgresql+pg8000://: può contenere la password, solo da ambiente
+    )
+    artifacts_dir: str | None = None  # archivio su file system (sviluppo, test, pilota)
+    s3_bucket: str | None = None  # archivio S3: con `s3_bucket` si usa S3 e non il file system
+    s3_endpoint: str | None = None
+    s3_region: str = "us-east-1"
+    s3_prefix: str = ""
+    default_branches: tuple[str, ...] = ("main", "master")  # branch che contano come principali
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -45,5 +54,20 @@ class Settings:
         request = _int(source, "MAX_REQUEST_BYTES", cls.max_request_bytes, minimum=1)
         if request < part:
             raise ConfigError(f"{PREFIX}MAX_REQUEST_BYTES: non inferiore a MAX_PART_BYTES")
-        auth_file = source.get(PREFIX + "AUTH_FILE") or None
-        return cls(max_part_bytes=part, max_request_bytes=request, auth_file=auth_file)
+        branches = tuple(
+            b.strip()
+            for b in source.get(PREFIX + "DEFAULT_BRANCHES", "main,master").split(",")
+            if b.strip()
+        )
+        return cls(
+            max_part_bytes=part,
+            max_request_bytes=request,
+            auth_file=source.get(PREFIX + "AUTH_FILE") or None,
+            database_url=source.get(PREFIX + "DATABASE_URL") or None,
+            artifacts_dir=source.get(PREFIX + "ARTIFACTS_DIR") or None,
+            s3_bucket=source.get(PREFIX + "S3_BUCKET") or None,
+            s3_endpoint=source.get(PREFIX + "S3_ENDPOINT") or None,
+            s3_region=source.get(PREFIX + "S3_REGION") or "us-east-1",
+            s3_prefix=source.get(PREFIX + "S3_PREFIX") or "",
+            default_branches=branches or ("main", "master"),
+        )

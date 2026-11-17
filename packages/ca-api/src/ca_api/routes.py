@@ -10,7 +10,8 @@ implemented` con il formato di errore unico. Le realizzano B-03 (ingestione), B-
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, File, Path, Query, UploadFile
+from fastapi import APIRouter, Body, File, Path, Query, Request, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from ca_api.auth.authorize import (
     Admin,
@@ -21,6 +22,7 @@ from ca_api.auth.authorize import (
     authorize_patch,
 )
 from ca_api.auth.deps import CurrentIdentity
+from ca_api.ingest import Parts, ingest
 from ca_api.models import (
     FindingDetail,
     FindingPage,
@@ -38,6 +40,7 @@ from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode
 from ca_core.models.finding import Category, Level, Status
 from ca_core.models.graph import Graph
 from ca_core.models.service_context_file import ServiceContextFile
+from ca_core.schema_validation import SchemaStore
 
 LIMIT_MAX = 200
 ID = Annotated[UUID, Path(description="Identificativo opaco.")]
@@ -167,15 +170,54 @@ def list_repository_scans(
     },
     openapi_extra=roles("P: solo il proprio repository"),
 )
-def create_scan(
+async def create_scan(
+    request: Request,
+    response: Response,
     identity: Pipeline,
     report: Annotated[UploadFile, File(description="`scan-report`")],
     sarif: UploadFile | None = None,
     sbom: UploadFile | None = None,
     graph: UploadFile | None = None,
 ) -> ScanRef:
-    _not_implemented()
-    raise AssertionError
+    state = request.app.state
+    if state.engine is None or state.store is None:
+        raise ApiProblem(
+            500, ProblemCode.INTERNAL_ERROR, detail="database o archivio non configurati"
+        )
+    limit = state.settings.max_part_bytes
+
+    async def read(part: UploadFile | None) -> bytes | None:
+        if part is None:
+            return None
+        data = await part.read(limit + 1)
+        if len(data) > limit:  # il corpo intero è già limitato dal middleware, mentre si legge
+            raise ApiProblem(413, ProblemCode.PAYLOAD_TOO_LARGE)
+        return data
+
+    parts = Parts(
+        report=await read(report) or b"",
+        sarif=await read(sarif),
+        sbom=await read(sbom),
+        graph=await read(graph),
+    )
+    schemas = state.schemas or _schemas(state)
+    result = await run_in_threadpool(
+        ingest,
+        state.engine,
+        state.store,
+        schemas,
+        state.settings,
+        identity,
+        parts,
+        now=state.clock.now(),
+    )
+    response.status_code = 201 if result.created else 200
+    return ScanRef(id=result.id)
+
+
+def _schemas(state: Any) -> SchemaStore:
+    state.schemas = SchemaStore.packaged()
+    return state.schemas  # type: ignore[no-any-return]
 
 
 @router.get(

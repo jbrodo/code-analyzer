@@ -31,6 +31,13 @@ def create_tenant(engine: Engine, name: str) -> Tenant:
     return found
 
 
+def list_tenants(engine: Engine) -> list[Tenant]:
+    with Session(engine) as session:
+        found = list(session.scalars(select(Tenant).order_by(Tenant.name)))
+        session.expunge_all()
+        return found
+
+
 def tenant_by_name(engine: Engine, name: str) -> Tenant | None:
     with Session(engine) as session:
         found = session.scalar(select(Tenant).where(Tenant.name == name))

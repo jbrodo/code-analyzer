@@ -136,7 +136,10 @@ def test_a_pipeline_cannot_read_what_users_read(method: str, path: str, body: ob
 
 @pytest.mark.parametrize(("method", "path", "body"), SCAN_READ_ROUTES + PIPELINE_ROUTES)
 def test_a_pipeline_reaches_its_own_routes(method: str, path: str, body: object) -> None:
-    assert call(method, path, "pipeline").status_code == 501
+    response = call(method, path, "pipeline")
+    # `POST /scans` è realizzato (B-03): senza database né archivio configurati risponde 500
+    expected = 500 if (method, path) == ("POST", "/v1/scans") else 501
+    assert response.status_code == expected
 
 
 @pytest.mark.parametrize("who", READ_ROLES + ["nessun ruolo"])

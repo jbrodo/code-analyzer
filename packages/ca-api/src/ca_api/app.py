@@ -9,14 +9,20 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import Engine
 
 from ca_api.auth.config import load_auth_settings
 from ca_api.auth.jwks import HttpsJwksFetcher, JwksCache
 from ca_api.auth.verify import TokenVerifier
 from ca_api.config import Settings
+from ca_api.db.engine import make_engine
+from ca_api.limits import BodyLimitMiddleware
 from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode, ProblemError
 from ca_api.routes import router
-from ca_core.ports import Clock
+from ca_api.storage.filesystem import FileSystemArtifactStore
+from ca_api.storage.s3 import S3ArtifactStore, make_client
+from ca_core.ports import ArtifactStore, Clock
+from ca_core.schema_validation import SchemaStore
 
 API_VERSION = "1.1.0"  # `info.version` del contratto: 1.MINORE.CORREZIONE (ADR-0017)
 
@@ -71,8 +77,28 @@ def _openapi(app: FastAPI) -> dict[str, Any]:
     return app.openapi_schema
 
 
+def build_engine(settings: Settings) -> Engine | None:
+    return make_engine(settings.database_url) if settings.database_url else None
+
+
+def build_store(settings: Settings) -> ArtifactStore | None:
+    """S3 con `s3_bucket`, altrimenti file system con `artifacts_dir`, altrimenti nessuno."""
+    if settings.s3_bucket:
+        client = make_client(endpoint_url=settings.s3_endpoint, region=settings.s3_region)
+        return S3ArtifactStore(client, settings.s3_bucket, prefix=settings.s3_prefix)
+    if settings.artifacts_dir:
+        return FileSystemArtifactStore(settings.artifacts_dir)
+    return None
+
+
 def create_app(
-    settings: Settings | None = None, *, verifier: TokenVerifier | None = None
+    settings: Settings | None = None,
+    *,
+    verifier: TokenVerifier | None = None,
+    engine: Engine | None = None,
+    store: ArtifactStore | None = None,
+    schemas: SchemaStore | None = None,
+    clock: Clock | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="Code Analyzer",
@@ -84,6 +110,11 @@ def create_app(
     )
     app.state.settings = settings or Settings.from_env()
     app.state.verifier = verifier if verifier is not None else build_verifier(app.state.settings)
+    app.state.engine = engine if engine is not None else build_engine(app.state.settings)
+    app.state.store = store if store is not None else build_store(app.state.settings)
+    app.state.schemas = schemas
+    app.state.clock = clock or SystemClock()
+    app.add_middleware(BodyLimitMiddleware, max_bytes=app.state.settings.max_request_bytes)
     app.include_router(router)
     app.openapi = lambda: _openapi(app)  # type: ignore[method-assign]
 
