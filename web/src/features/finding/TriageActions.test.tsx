@@ -32,10 +32,12 @@ function detail(over: Partial<Schemas["Finding"]> = {}, rest: Partial<Detail> = 
     },
     occurrence: { scan_id: "s", commit: "c".repeat(40), variant_scores: [] },
     exceptions: [], events: [], ...rest,
-  } as Detail;
+  };
 }
 
-function mount(current: Detail, user: Schemas["Me"], patch = vi.fn((_id: string, _body: unknown) => Promise.resolve(current)), route = `/r/${REPO}/f/${FID}`) {
+const reply = (value: Detail) => vi.fn<Client["patchFinding"]>(() => Promise.resolve(value));
+
+function mount(current: Detail, user: Schemas["Me"], patch = reply(current), route = `/r/${REPO}/f/${FID}`) {
   const client = {
     getFinding: vi.fn(() => Promise.resolve(current)),
     patchFinding: patch,
@@ -80,7 +82,7 @@ test("chi ha solo il triage vede le azioni da approvatore disattivate, con il mo
 test("Prendi in carico propone chi agisce, assegna, mette in corso e annuncia l'esito", async () => {
   const user = userEvent.setup();
   const after = detail({ status: "in_corso", owner: "Ada" });
-  const { patch } = mount(detail(), me("lettore", "triage"), vi.fn((_id: string, _b: unknown) => Promise.resolve(after)));
+  const { patch } = mount(detail(), me("lettore", "triage"), reply(after));
   await user.click((await actions()).getByRole("button", { name: "Prendi in carico" }));
   const dialog = await screen.findByRole("dialog", { name: "Prendi in carico" });
   const owner = within(dialog).getByLabelText(/Assegnato a/);
@@ -99,7 +101,7 @@ test("Prendi in carico propone chi agisce, assegna, mette in corso e annuncia l'
 test("la riga della lista segue il nuovo stato sul posto, anche se i filtri non la includerebbero più", async () => {
   const user = userEvent.setup();
   const after = detail({ status: "falso_positivo" });
-  mount(detail(), me("lettore", "triage", "approvatore"), vi.fn((_id: string, _b: unknown) => Promise.resolve(after)));
+  mount(detail(), me("lettore", "triage", "approvatore"), reply(after));
   await user.click((await actions()).getByRole("button", { name: "Segna come falso positivo" }));
   const dialog = await screen.findByRole("dialog");
   await user.type(within(dialog).getByLabelText(/Motivazione/), "validato a monte");
@@ -171,7 +173,7 @@ test("l'eccezione del frammento non rompe il YAML con una motivazione ostile", (
 
 test("un errore del server lascia il dialogo aperto con i dati e mostra titolo e codice", async () => {
   const user = userEvent.setup();
-  const failing = vi.fn((_id: string, _b: unknown) => Promise.reject(new ApiError(403, "forbidden", { ...example("Problem"), title: "Ruolo mancante", code: "forbidden", status: 403 })));
+  const failing = vi.fn<Client["patchFinding"]>(() => Promise.reject(new ApiError(403, "forbidden", { ...example("Problem"), title: "Ruolo mancante", code: "forbidden", status: 403 })));
   mount(detail(), me("lettore", "triage", "approvatore"), failing);
   await user.click((await actions()).getByRole("button", { name: "Segna come falso positivo" }));
   const dialog = await screen.findByRole("dialog");
@@ -180,7 +182,7 @@ test("un errore del server lascia il dialogo aperto con i dati e mostra titolo e
   const alert = await within(dialog).findByRole("alert");
   expect(alert.textContent).toContain("Ruolo mancante");
   expect(alert.textContent).toContain("forbidden");
-  expect((within(dialog).getByLabelText(/Motivazione/) as HTMLTextAreaElement).value).toBe("testo che non si perde");
+  expect(within(dialog).getByLabelText<HTMLTextAreaElement>(/Motivazione/).value).toBe("testo che non si perde");
   expect(screen.queryByRole("dialog")).not.toBeNull();
 });
 
@@ -207,7 +209,7 @@ test("Esc senza testo chiude; con testo chiede conferma prima di scartare", asyn
 test("Revoca l'eccezione è un'azione da approvatore e invia l'identificativo dell'eccezione", async () => {
   const user = userEvent.setup();
   const accepted = detail({ status: "accettato" }, { exceptions: [{ id: "ex-1", origin: "server", reason: "r", expires: "2999-01-01", approved_by: "x", approved_by_verified: true }] });
-  const { patch } = mount(accepted, me("lettore", "triage", "approvatore"), vi.fn((_id: string, _b: unknown) => Promise.resolve(detail())));
+  const { patch } = mount(accepted, me("lettore", "triage", "approvatore"), reply(detail()));
   await user.click((await actions()).getByRole("button", { name: "Revoca l'eccezione" }));
   await waitFor(() => { expect(patch).toHaveBeenCalledWith(FID, { action: "revoke-exception", exception_id: "ex-1" }); });
   cleanup();
@@ -233,7 +235,7 @@ test("un finding risolto non ha azioni", async () => {
 
 test("Riapri toglie un finding in corso dallo stato in corso con una sola richiesta", async () => {
   const user = userEvent.setup();
-  const { patch } = mount(detail({ status: "in_corso" }), me("lettore", "triage"), vi.fn((_id: string, _b: unknown) => Promise.resolve(detail())));
+  const { patch } = mount(detail({ status: "in_corso" }), me("lettore", "triage"), reply(detail()));
   await user.click((await actions()).getByRole("button", { name: "Riapri" }));
   await waitFor(() => { expect(patch).toHaveBeenCalledWith(FID, { action: "set-status", status: "aperto" }); });
   expect(patch).toHaveBeenCalledTimes(1);
