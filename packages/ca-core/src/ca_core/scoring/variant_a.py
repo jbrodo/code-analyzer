@@ -54,7 +54,9 @@ def _dependency_g(finding: Finding, config: ScoringConfig) -> Factor:
             {"rule": "cvss", "cvss": None, "fallback": "cvss-assente"},
         )
     score, version = entry
-    return Factor(score / 10.0, {"rule": "cvss", "cvss": {"score": score, "version": version}})
+    return Factor(
+        round(score / 10.0, 6), {"rule": "cvss", "cvss": {"score": score, "version": version}}
+    )
 
 
 def _license_g(finding: Finding, config: ScoringConfig) -> Factor:

@@ -842,7 +842,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.2. ADR: 0023.
 
 #### K-11 — Calcolo in ombra di entrambe le varianti
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per A e per la struttura di B. `scoring/models.py`: A completa; B coincide con A su qualità e architettura con il fallback `variante-b-non-definita` nell'evidenza finché ADR-0023 non esiste, e usa A per il resto. K-07..K-10 (Variante B) restano fermi su ADR-0023 e D2-11. Esempio di ADR-0021 verificato (49,00, alto).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`.
 - Dipende da: K-02, K-03, K-04, K-05, K-07, K-08, K-09, K-10, C-04.
 - Accettazione: per ogni finding fattori e punteggio di A e di B registrati come da ADR-0021, con la versione della configurazione; determinismo.
@@ -856,14 +856,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.3. ADR: 0009, 0021.
 
 #### K-13 — Override
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `scoring/overrides.py`: i sei override di ADR-0021 con livelli e soglie dalla configurazione, che alzano un minimo e mai il punteggio; nessuno scatta su un dato assente (raggiungibilità `ignota`, nessuno snapshot, nessun churn, esposizione solo di default); nessun override per il segreto valido (nessun campo di configurazione, provato). Il livello non scende mai.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/levels.py`.
 - Dipende da: K-12, K-04, E-01.
 - Accettazione: ogni override di §6.3 applicabile secondo ADR-0021, con `level_source: override` e motivo nell'evidenza; l'override sul segreto valido non scatta mai, verificato da test.
 - Spec: §6.3. ADR: 0012, 0013, 0021.
 
 #### K-14 — Passo `score`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** nel nucleo. `scoring/score.py`: A e B sempre, in `variant_scores`; livello e `level_source` cambiano solo con `levels.source: score` (D2-10), con `override` se un override ha alzato il livello; idempotente e deterministico, ordine per livello, punteggio decrescente, categoria e fingerprint. **Non fatto:** il collegamento alla CLI e al report (K-15, E-06, L-02, in corso).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: K-11, K-12, K-13, K-15.
 - Accettazione: passo idempotente; livello attivo secondo D2-10 (raccomandazione: provvisorio fino al Gate 2), punteggi in ombra sempre presenti; ordinamento dell'elenco per livello e punteggio, deterministico.
