@@ -11,7 +11,7 @@ test("la pagina ha un titolo e i punti di riferimento principali e, senza config
   expect(screen.getByRole("banner")).toBeDefined();
   expect(screen.getByRole("main")).toBeDefined();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Code Analyzer");
-  expect(screen.getByRole("status").textContent).toContain("Accesso in corso");
+  expect(screen.getByText("Accesso in corso…")).toBeDefined();
   expect((await screen.findByRole("heading", { level: 2 })).textContent).toBe("Accesso non riuscito");
   expect(screen.getByText("config-unavailable")).toBeDefined();
   expect(screen.getByRole("button", { name: "Riprova" })).toBeDefined();

@@ -19,9 +19,17 @@ export type SessionState =
   | { status: "signed-in"; client: Client; signOut: () => void }
   | { status: "error"; code: string; retry: () => void };
 
-const Context = createContext<SessionState>({ status: "loading" });
+export const SessionContext = createContext<SessionState>({ status: "loading" });
+const Context = SessionContext;
 
 export const useSession = (): SessionState => useContext(Context);
+
+/** Il client dell'API, per le viste che stanno dentro una sessione aperta. */
+export function useClient(): Client {
+  const session = useContext(Context);
+  if (session.status !== "signed-in") throw new Error("useClient fuori da una sessione aperta");
+  return session.client;
+}
 
 export interface SessionDeps {
   loadConfig: () => Promise<AuthConfig>;

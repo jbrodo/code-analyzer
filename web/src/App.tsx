@@ -1,58 +1,44 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter } from "react-router";
 
-import type { Schemas } from "@/api/client";
 import { SessionProvider, useSession } from "@/auth/session";
+import { AnnounceProvider } from "@/layout/announce";
+import { Shell } from "@/layout/Shell";
 
-/** Guscio della SPA: accesso e barra superiore. Le viste arrivano con W-04..W-07. */
+/** La SPA: accesso, poi le viste. Fuori da una sessione aperta si vede solo lo stato dell'accesso. */
 export function App() {
   return (
     <SessionProvider>
-      <Shell />
+      <AnnounceProvider>
+        <Gate />
+      </AnnounceProvider>
     </SessionProvider>
   );
 }
 
-function Shell() {
+function Gate() {
   const session = useSession();
-  const [me, setMe] = useState<Schemas["Me"] | null>(null);
-  const client = session.status === "signed-in" ? session.client : null;
-
-  useEffect(() => {
-    if (client === null) return;
-    const controller = new AbortController();
-    client
-      .me(controller.signal)
-      .then(setMe)
-      .catch(() => undefined); // l'errore di sessione lo gestisce il provider; qui basta non mostrare l'utente
-    return () => {
-      controller.abort();
-    };
-  }, [client]);
-
+  if (session.status === "signed-in") {
+    return (
+      <BrowserRouter>
+        <Shell />
+      </BrowserRouter>
+    );
+  }
   return (
     <>
       <header className="topbar">
-        <h1>Code Analyzer</h1>
-        {me !== null && (
-          <p className="topbar-user muted">
-            {me.name ?? me.subject} · {me.roles.join(", ") || "nessun ruolo"}
-          </p>
-        )}
+        <span className="brand">Code Analyzer</span>
       </header>
-      <main>
-        {session.status === "loading" && <p role="status">Accesso in corso…</p>}
+      <main id="contenuto">
+        <h1>Code Analyzer</h1>
+        {session.status === "loading" && <p className="muted">Accesso in corso…</p>}
         {session.status === "error" && (
-          <section aria-labelledby="signin-error">
+          <section aria-labelledby="signin-error" className="state-text" role="alert">
             <h2 id="signin-error">Accesso non riuscito</h2>
-            <p>
-              Codice: <code>{session.code}</code>
-            </p>
-            <button type="button" onClick={session.retry}>
-              Riprova
-            </button>
+            <p>Codice: <code>{session.code}</code></p>
+            <button type="button" className="button" onClick={session.retry}>Riprova</button>
           </section>
         )}
-        {session.status === "signed-in" && <p className="muted">Nessun repository selezionato.</p>}
         {session.status === "signed-out" && <p>Sessione terminata.</p>}
       </main>
     </>
