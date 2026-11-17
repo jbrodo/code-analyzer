@@ -60,7 +60,7 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Decisa il 2026-11-17: D2-14 per hadolint, solo per uso interno. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
 
 | Decisione | Esito |
 | --- | --- |
@@ -74,6 +74,7 @@ Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Deci
 | D2-02 | (2026-11-16) Come ADR-0019: OIDC generico, token in memoria nella SPA e server senza sessioni; ruoli `lettore`, `triage`, `approvatore`, `amministratore`; un tenant in esercizio |
 | D2-04 | (2026-11-16) Come ADR-0028: tier ed esposizione registrati sul server da un `amministratore` e passati a `scan` come file di contesto; il blocco `service` del repository vale solo se il file manca |
 | D2-07 | (2026-11-16) pg8000 come driver; `ArtifactStore` con adattatore su file system **e adattatore S3 già in Fase 2** (ADR-0030). Nessun server di object storage incluso nel prodotto |
+| D2-14 (hadolint) | (2026-11-17, Riccardo Roveda) hadolint approvato **per uso interno e per il registry locale**. Non è un'approvazione alla distribuzione: la licenza copyleft forte di hadolint, che D-0013 mette tra quelle da approvare, obbliga alla distribuzione di accompagnare l'immagine con il testo della licenza e l'offerta della sorgente. Quella decisione resta di I-07. Non è un parere legale. Gli altri motori e componenti nuovi restano da valutare in D2-14 sugli SBOM di rilascio |
 | S5-A1 | (2026-11-16) Limite inferiore al livello di una dipendenza in funzione del CVSS, in configurazione: i feed possono alzare un livello, non azzerarlo. Da scrivere in ADR-0021 (A-06) |
 
 Restano aperte: D2-05, D2-06, D2-12, D2-13, D2-14, e la conferma del perimetro di D2-15.
@@ -696,7 +697,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-04 — hadolint
-- Agente: `backend`. Stato: `IPOTESI` (D2-14; licenza da valutare, V-02).
+- Agente: `backend`. Stato: `LIBERO` per sviluppo e uso interno (2026-11-17, D2-14 per hadolint decisa). La pubblicazione dell'immagine resta in I-07 e richiede, oltre al resto, testo della licenza e offerta della sorgente del binario nell'immagine.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/hadolint/`.
 - Dipende da: A-11, F-02, T-02.
 - Accettazione: SARIF con `category: iac`, Dockerfile trovati nel workspace, `.hadolint.yaml` ostile nel workspace senza effetto (V-04), problemi di F-02 rilevati.
@@ -1207,7 +1208,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Agente: `devops`. Stato: `BLOCCATO` (decisione del 2026-11-10 sulla pubblicazione, D2-16, D2-14).
 - Percorsi: `deploy/docker/`, `.github/`.
 - Dipende da: I-02, O-02, I-04.
-- Accettazione: immagini di ruff, eslint, checkov, hadolint, coverage e `ca-graph` rese disponibili con la stessa procedura e la stessa destinazione di I-04, con immagini, digest e SBOM conservati insieme e la valutazione D2-14 registrata.
+- Accettazione: immagini di ruff, eslint, checkov, hadolint, coverage e `ca-graph` rese disponibili con la stessa procedura e la stessa destinazione di I-04, con immagini, digest e SBOM conservati insieme e la valutazione D2-14 registrata. Per hadolint, in più, testo della licenza e offerta della sorgente del binario esatto nell'immagine (decisione D2-14 del 2026-11-17: finora solo uso interno).
 - Spec: §7.3, §15. ADR: 0005, 0015.
 
 #### I-05 — Ambiente di sviluppo del server
