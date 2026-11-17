@@ -6,6 +6,8 @@ import { useClient } from "@/auth/session";
 import { FindingPanel } from "@/features/finding/FindingPanel";
 import { FindingsPage } from "@/features/findings/FindingsPage";
 import { RepositoriesPage } from "@/features/repositories/RepositoriesPage";
+import { ScanPage } from "@/features/scans/ScanPage";
+import { ScansPage } from "@/features/scans/ScansPage";
 import { age } from "@/lib/format";
 import { MeContext } from "./me";
 import { useResource } from "@/lib/useResource";
@@ -90,6 +92,8 @@ export function Shell() {
         <Route path="/r/:repository" element={<FindingsPage />}>
           <Route path="f/:finding" element={<FindingPanel />} />
         </Route>
+        <Route path="/r/:repository/scans" element={<ScansPage />} />
+        <Route path="/r/:repository/scans/:scan" element={<ScanPage />} />
         <Route
           path="*"
           element={

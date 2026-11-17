@@ -1099,7 +1099,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0019, 0029.
 
 #### W-07 — Repository e stato della scansione
-- Agente: `frontend`. Stato: `IPOTESI` (D2-15).
+- Agente: `frontend`. Stato: **chiuso il 2026-11-18** (D2-15 confermata). `web/src/features/scans/`: elenco delle scansioni (`/r/{repository}/scans`: tipo, ref, commit, inizio con la data esatta in `time`, durata, stato in parole, «Carica altri») e pagina di una scansione (riepilogo con gate e configurazione di scoring, fascia di scansione parziale in cima con i plugin falliti e cosa comporta, tabella dei plugin con esito, motivo, durata, firma, isolamento e snapshot dei feed con la data, avvisi uno per riga, e per una PR nuovi, esistenti, risolti, non valutati e il collegamento ai finding nuovi di quella scansione). Il selettore di repository e lo stato dell'ultima scansione stanno nella barra (W-04). Nessun aggregato né trend. **Provato:** 7 test e il browser vero. **Limiti:** gli avvisi del report si mostrano col codice e il messaggio come testo; il confronto tra due scansioni non c'è.
 - Percorsi: `web/`.
 - Dipende da: W-02, U-01.
 - Accettazione: selettore del repository, ultima scansione con stato, plugin falliti e avvisi; nessun aggregato né trend.
