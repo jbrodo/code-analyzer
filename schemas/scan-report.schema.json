@@ -83,6 +83,20 @@
         "category": {
           "$ref": "#/$defs/Category"
         },
+        "correlation": {
+          "anyOf": [
+            {
+              "pattern": "^cg1:[0-9a-f]{16}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gruppo di correlazione (K-21, ADR-0026): finding di strumenti diversi sullo stesso problema nello stesso file. Non cambia fingerprint, livello né esito del gate.",
+          "title": "Correlation"
+        },
         "cve": {
           "items": {
             "type": "string"
@@ -723,6 +737,20 @@
     ]
   },
   "properties": {
+    "correlation_version": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{1,4}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Versione della tabella di correlazione usata (K-21): un gruppo assegnato con una tabella diversa non è confrontabile.",
+      "title": "Correlation Version"
+    },
     "disabled_plugins": {
       "description": "Disattivati da `plugins.disable`; disgiunti dai nomi in `plugins` (vincolo del modello, non dello schema).",
       "items": {
@@ -820,5 +848,5 @@
   },
   "title": "ScanReport",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

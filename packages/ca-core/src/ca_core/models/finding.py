@@ -115,6 +115,12 @@ class Finding(_Strict):
     score: StrictFloat | None = Field(default=None, ge=0, le=100)  # null in Fase 1
     level: Level | None = None
     level_source: LevelSource | None = None  # IPOTESI D-0009-A
+    correlation: str | None = Field(
+        default=None,
+        pattern=r"^cg1:[0-9a-f]{16}$",
+        description="Gruppo di correlazione (K-21, ADR-0026): finding di strumenti diversi sullo "
+        "stesso problema nello stesso file. Non cambia fingerprint, livello né esito del gate.",
+    )
     status: Status = Status.OPEN
     owner: str | None = None
     due_date: AwareDatetime | None = None

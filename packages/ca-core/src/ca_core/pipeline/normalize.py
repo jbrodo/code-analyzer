@@ -23,6 +23,7 @@ Funzione pura rispetto alle porte: stessi ingressi e stesso `Clock`, stesso risu
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ca_core.correlation import assign_correlation
 from ca_core.dedup import deduplicate
 from ca_core.models.config import CodeAnalyzerConfig
 from ca_core.models.finding import Category, Finding
@@ -168,7 +169,7 @@ def normalize(
     excepted = apply_exceptions([*rest, *policy.findings], config.exceptions, clock)
     failed = any(p.outcome is Outcome.FAILED for p in plugins)
     return NormalizeResult(
-        findings=sort_findings(assign_levels(excepted.findings)),
+        findings=sort_findings(assign_levels(assign_correlation(excepted.findings))),
         plugins=plugins,
         status=ReportStatus.PARTIAL if failed else ReportStatus.COMPLETE,
         exceptions=excepted.applied,

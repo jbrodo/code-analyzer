@@ -35,6 +35,7 @@ from ca_cli.config_validate import (
     parse_config,
     semantic_checks,
 )
+from ca_core.correlation import TABLE_VERSION
 from ca_core.models import CodeAnalyzerConfig, PackagedPluginManifest
 from ca_core.models.config import GateMode
 from ca_core.models.plugin_manifest import InputMode
@@ -383,6 +384,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         plugins=plugins,
         disabled_plugins=ran.disabled,
         exclusions=normalized.exclusions,
+        correlation_version=TABLE_VERSION,
         exceptions=normalized.exceptions,
         inert_sections=[s for s in InertSection if getattr(config, s.value) is not None],
         warnings=warnings,

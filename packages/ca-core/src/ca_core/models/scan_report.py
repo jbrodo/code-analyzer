@@ -184,6 +184,12 @@ class ScanReport(_Strict):
     exclusions: list[str] = Field(
         default_factory=list, description="Glob effettivi: predefiniti più `paths.exclude`."
     )
+    correlation_version: str | None = Field(
+        default=None,
+        pattern=r"^[0-9]{1,4}$",
+        description="Versione della tabella di correlazione usata (K-21): un gruppo assegnato con "
+        "una tabella diversa non è confrontabile.",
+    )
     exceptions: list[AppliedException] = Field(default_factory=list)
     inert_sections: list[InertSection] = Field(default_factory=list)
     warnings: list[Warning_] = Field(default_factory=list)

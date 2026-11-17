@@ -186,6 +186,20 @@
     "category": {
       "$ref": "#/$defs/Category"
     },
+    "correlation": {
+      "anyOf": [
+        {
+          "pattern": "^cg1:[0-9a-f]{16}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Gruppo di correlazione (K-21, ADR-0026): finding di strumenti diversi sullo stesso problema nello stesso file. Non cambia fingerprint, livello né esito del gate.",
+      "title": "Correlation"
+    },
     "cve": {
       "items": {
         "type": "string"
@@ -358,5 +372,5 @@
   ],
   "title": "Finding",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

@@ -153,6 +153,11 @@ def assign_levels(
     return out
 
 
+def level_rank(level: Level | None) -> int:
+    """0 per critico, 3 per basso, 4 senza livello: più basso è più grave."""
+    return _RANK[level] if level is not None else len(_RANK)
+
+
 def sort_findings(findings: Iterable[Finding]) -> list[Finding]:
     """Livello (critico per primo, senza livello in fondo), categoria, fingerprint."""
     return sorted(

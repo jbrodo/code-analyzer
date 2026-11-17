@@ -57,6 +57,8 @@ VALID = {
     "minimal": MINIMAL,
     "full": FULL,
     "score-lower-bound": mutated(MINIMAL, _set("score", 0)),
+    "correlation": mutated(MINIMAL, _set("correlation", "cg1:0123456789abcdef")),
+    "correlation-null": mutated(MINIMAL, _set("correlation", None)),
     "score-upper-bound": mutated(MINIMAL, _set("score", 100)),
     "null-optionals": mutated(
         MINIMAL, _set("level", None), _set("score", None), _set("impact", None)
@@ -81,6 +83,10 @@ VALID = {
     },
 }
 INVALID = {
+    "correlation-not-a-group": mutated(MINIMAL, _set("correlation", "group-1")),
+    "correlation-wrong-length": mutated(MINIMAL, _set("correlation", "cg1:0123")),
+    "correlation-uppercase": mutated(MINIMAL, _set("correlation", "cg1:0123456789ABCDEF")),
+    "correlation-other-version": mutated(MINIMAL, _set("correlation", "cg2:0123456789abcdef")),
     **{
         f"missing-{k}": mutated(MINIMAL, _pop(k))
         for k in (

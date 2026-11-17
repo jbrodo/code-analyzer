@@ -911,7 +911,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §4.1. ADR: 0008, 0013.
 
 #### K-21 — Correlazione tra tool
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_core/correlation.py`. Tabella `(strumento, regola)` → problema con i problemi di F-02 (11 gruppi tra trivy, checkov e hadolint), versione `1`; gruppo `cg1:<16 esadecimali>` da categoria, file e problema, assegnato solo se almeno due strumenti concordano. `Finding.correlation` (finding 1.1) e `ScanReport.correlation_version` (scan-report 1.1); fingerprint, livello e ogni altro campo invariati (provato). `representatives` dà un finding per gruppo, il più grave, per i campioni di G2.b e i commenti PR. La tabella copre solo i casi di F-02: cresce con i dati di X-02. Nota: C-01 e C-04 contenevano già altri campi da aggiungere a questi due contratti; qui ne è entrato solo uno ciascuno.
 - Percorsi: `packages/ca-core/src/ca_core/`.
 - Dipende da: A-11, P-03, P-04.
 - Accettazione: i problemi di F-02 rilevati da più tool hanno un identificativo di gruppo comune e fingerprint invariati; l'elenco ordinato può raggrupparli.
