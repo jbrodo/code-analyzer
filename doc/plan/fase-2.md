@@ -935,7 +935,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1. ADR: 0010, 0021.
 
 #### L-03 — Invio del report al server
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `code-analyzer upload --server https://…`: invia il report e, se accanto ci sono, SARIF, SBOM (`code-analyzer.sbom.json`) e grafo. Token OIDC da `CA_OIDC_TOKEN` (GitLab `id_tokens`) o richiesto a GitHub Actions con l'audience `--audience`; mai un flag, mai stampato. Solo https (http su loopback per le prove), nessun redirect, un solo codice del problema in caso di rifiuto, exit 0 o 2. Senza `upload` la CLI è invariata e `ca_cli` non importa il server. **Limite:** provato con un trasporto finto; non provato contro il server reale né contro un provider vero.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: A-01, C-08, B-04.
 - Accettazione: comando o opzione secondo ADR-0016, con token OIDC del provider CI e nessun segreto a lunga durata; senza server la CLI funziona come prima; `ca_cli` continua a non importare server né database (`lint-imports`).
@@ -1037,14 +1037,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017, 0020.
 
 #### B-12 — Baseline dal server
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17 come non necessario**: ADR-0025 sceglie l'artefatto della CI e la scansione del branch base come fonti e rinvia il server a quando una pipeline non possa conservare artefatti. Nessun endpoint aggiunto.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03, A-10.
 - Accettazione: se ADR-0025 usa il server come fonte, endpoint per la baseline del branch base, consumato dalla porta di C-06; altrimenti il task si chiude come non necessario.
 - Spec: §5 passo 9. ADR: 0025.
 
 #### B-13 — Telemetria minima del server
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_api/telemetry.py`: durata delle richieste (metodo, modello del percorso, classe dello stato: mai valori né identificativi), durata delle ingestioni per esito, contatore degli errori 5xx; l'eccezione non gestita si registra senza messaggio né dati della richiesta. Esportazione OTLP solo se l'ambiente imposta l'endpoint standard (`OTEL_EXPORTER_OTLP_ENDPOINT`), altrimenti fornitore nullo e nessuna connessione (provato). Dipendenze OpenTelemetry 1.45.2 (licenza permissiva, rilasciate il 2026-10-29) verificate. **Non fatto:** tracce e log OTLP (solo metriche), nessun cruscotto.
 - Percorsi: `packages/ca-api/`.
 - Dipende da: B-01.
 - Accettazione: durata delle richieste e delle ingestioni, errori, esportazione OTLP opzionale e disattivata per default; nessun segreto né contenuto dei finding nei log.

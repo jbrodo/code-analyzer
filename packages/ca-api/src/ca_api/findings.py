@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session, aliased
 from ca_api.access import binding_of, decode_cursor, encode_cursor, not_found
 from ca_api.auth.verify import Identity
 from ca_api.db.models import ExceptionRow, Finding, FindingEvent, FindingOccurrence, Repository
+from ca_api.db.models import Scan as ScanRow
 from ca_api.models import (
     CreateException,
     ExceptionOrigin,
@@ -65,9 +66,7 @@ def _scope_scan(
 ) -> uuid.UUID | None:
     if scan is None:
         return repository.current_scan_id
-    from ca_api.db.models import Scan
-
-    row = session.get(Scan, scan)
+    row = session.get(ScanRow, scan)
     if row is None or row.repository_id != repository.id:
         raise not_found()
     return row.id
@@ -99,6 +98,7 @@ def list_findings(
     today: date,
 ) -> FindingPage:
     scope = _scope_scan(session, repository, scan)
+    scope_row = session.get(ScanRow, scope) if scope is not None else None
     f, o = Finding, aliased(FindingOccurrence)
     wanted_status = {s.value for s in status or []}
     active = _active_exception(f, scope, today)
@@ -118,12 +118,9 @@ def list_findings(
         conditions.append(effective.in_(wanted_status))
     if tool:
         conditions.append(or_(*[f.data["tools"].contains([t]) for t in tool]))
+    is_new = _is_new(f, o, scope_row)
     if new is not None:
-        conditions.append(
-            (o.baseline_state == "new")
-            if new
-            else or_(o.baseline_state.is_(None), o.baseline_state != "new")
-        )
+        conditions.append(is_new if new else ~is_new)
     if q:
         conditions.append(
             or_(
@@ -139,7 +136,7 @@ def list_findings(
     keys: dict[SortKey, list[ColumnElement[Any]]] = {
         SortKey.IMPACT: [
             rank,
-            case((o.baseline_state == "new", 0), else_=1),
+            case((is_new, 0), else_=1),
             first_seen_key,
             cast(f.id, String),
         ],
@@ -183,10 +180,10 @@ def list_findings(
         .outerjoin(o, and_(o.finding_id == f.id, o.scan_id == scope))
     )
     total = session.scalar(counted.where(*conditions)) or 0
-    total_new = session.scalar(counted.where(*conditions, o.baseline_state == "new")) or 0
+    total_new = session.scalar(counted.where(*conditions, is_new)) or 0
 
     page = rows[:limit]
-    items = [_list_item(session, row, scope) for row in page]
+    items = [_list_item(session, row, scope, scope_row) for row in page]
     next_cursor = None
     if len(rows) > limit:
         last = page[-1]
@@ -197,7 +194,29 @@ def list_findings(
     return FindingPage(items=items, next_cursor=next_cursor, total=total, total_new=total_new)
 
 
-def _list_item(session: Session, row: Any, scope: uuid.UUID | None) -> FindingListItem:
+def _is_new(f: Any, o: Any, scope_row: ScanRow | None) -> ColumnElement[bool]:
+    """Nuovo: in una scansione di PR è lo stato rispetto alla baseline; altrimenti la prima
+    rilevazione è la scansione in esame (ADR-0025, ADR-0018)."""
+    if scope_row is not None and scope_row.kind == "pr":
+        return o.baseline_state == "new"
+    if scope_row is None:
+        return literal(False)
+    return and_(o.id.is_not(None), f.first_seen == scope_row.started_at)
+
+
+def _item_is_new(
+    finding: Finding, occurrence: FindingOccurrence | None, scope_row: ScanRow | None
+) -> bool | None:
+    if occurrence is None or scope_row is None:
+        return None
+    if scope_row.kind == "pr":
+        return None if occurrence.baseline_state is None else occurrence.baseline_state == "new"
+    return finding.first_seen == scope_row.started_at
+
+
+def _list_item(
+    session: Session, row: Any, scope: uuid.UUID | None, scope_row: ScanRow | None
+) -> FindingListItem:
     finding: Finding = row[0]
     occurrence: FindingOccurrence | None = row[1]
     data = finding.data

@@ -8,6 +8,7 @@ ruoli), B-06 (scansioni), B-08 e B-09 (finding), B-10 (repository, contesto del 
 verifica con i test.
 """
 
+import time
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -208,15 +209,26 @@ async def create_scan(
         graph=await read(graph),
     )
     schemas = state.schemas or _schemas(state)
-    result = await run_in_threadpool(
-        ingest,
-        state.engine,
-        state.store,
-        schemas,
-        state.settings,
-        identity,
-        parts,
-        now=state.clock.now(),
+    started = time.perf_counter()
+    try:
+        result = await run_in_threadpool(
+            ingest,
+            state.engine,
+            state.store,
+            schemas,
+            state.settings,
+            identity,
+            parts,
+            now=state.clock.now(),
+        )
+    except ApiProblem:
+        state.telemetry.ingestion(time.perf_counter() - started, "refused")
+        raise
+    except Exception:
+        state.telemetry.ingestion(time.perf_counter() - started, "failed")
+        raise
+    state.telemetry.ingestion(
+        time.perf_counter() - started, "created" if result.created else "repeated"
     )
     response.status_code = 201 if result.created else 200
     return ScanRef(id=result.id)

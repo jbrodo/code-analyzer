@@ -21,12 +21,14 @@ GITHUB_IDP = Idp(PIPELINE)
 GITLAB_IDP = Idp(GITLAB, kid="gl1")
 
 
-def make_client() -> tuple[TestClient, dict[str, str]]:
+def make_client(
+    meter_provider: Any = None,
+) -> tuple[TestClient, dict[str, str]]:
     """Il client e un'intestazione `Authorization` per ogni tipo di identità."""
     auth, fetcher, _, verifier = build(user_issuer(), pipeline_issuer(), pipeline_issuer("gitlab"))
     for idp in (USER_IDP, GITHUB_IDP, GITLAB_IDP):
         fetcher.publish(idp.jwks_url, idp.jwk())
-    app = create_app(Settings(), verifier=verifier)
+    app = create_app(Settings(), verifier=verifier, meter_provider=meter_provider)
     client = TestClient(app, raise_server_exceptions=True)
 
     def bearer(token: str) -> str:

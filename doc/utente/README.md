@@ -2,7 +2,7 @@
 
 La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate. In Fase 2 sa anche confrontare una PR con una baseline, commentare la PR su GitHub e produrre i report nativi di GitLab.
 
-Altre pagine: [modalità PR e baseline](pull-request.md), [GitHub: Action, commento e check run](ci-github.md), [GitLab: componente e report nativi](ci-gitlab.md), [livelli, punteggi e varianti](livelli-e-punteggi.md).
+Altre pagine: [modalità PR e baseline](pull-request.md), [GitHub: Action, commento e check run](ci-github.md), [GitLab: componente e report nativi](ci-gitlab.md), [server](server.md), [livelli, punteggi e varianti](livelli-e-punteggi.md).
 
 **Stato.** Non esiste ancora un rilascio: il pacchetto si costruisce con `deploy/docker/package-cli.sh`, che firma le immagini con una chiave di prova su un registry locale (D-0005).
 

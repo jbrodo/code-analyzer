@@ -97,3 +97,7 @@ Aggiunte a `ca-api`: SQLAlchemy 2.0.58 (serie 2.0, MIT), Alembic 1.20.1 (MIT), p
 - Adattatore su file system: ogni componente del percorso si apre con `O_NOFOLLOW`, cartelle 0700 e file 0600, radice non privata rifiutata, scrittura su temporaneo e `link` atomico (nessuna sovrascrittura nemmeno in corsa). Adattatore S3: tetto di byte e digest mentre si legge, `PutObject` con `If-None-Match: *` (rifiuta la sovrascrittura in corsa: provato con sei scrittori concorrenti), digest nei metadati dell'oggetto per riconoscere una ripetizione con un `HEAD`.
 - Entrambi, più il fake in memoria, superano la stessa batteria di contratto (`tests/unit/api/store_battery.py`): roundtrip, vuoto, 4,6 MiB, digest dichiarato, tetto con lettura limitata, ripetizione contro conflitto, chiavi non valide, cancellazione idempotente.
 - **Non fatto:** la costruzione dell'archivio dalla configurazione del server (B-03); le variabili per indirizzo, bucket e regione; non provato su un servizio S3 reale (solo SeaweedFS); la crittografia lato server e il ciclo di vita degli oggetti sono di chi installa.
+
+## Dipendenza di B-13 (2026-11-17)
+
+OpenTelemetry (API, SDK ed esportatore OTLP su HTTP) alla versione 1.45.2, rilasciata il 2026-10-29: licenza permissiva e manutenzione attiva verificate sul registro dei pacchetti; il protocollo porta `protobuf` (licenza a tre clausole). Usate solo le metriche; le tracce e i log OTLP non sono realizzati.

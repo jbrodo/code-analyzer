@@ -24,6 +24,11 @@ dependencies = [
     # Adattatore S3 dell'archivio (B-07): boto3 1.44.4 (Apache 2.0, rilasciato il 2026-11-16) con
     # botocore, s3transfer e jmespath (MIT). Verificate il 2026-11-17.
     "boto3>=1.44.4,<2",
+    # Telemetria (B-13, ADR-0016): OpenTelemetry 1.45.2 (Apache 2.0, rilasciato il 2026-10-29; il
+    # protocollo OTLP porta protobuf, licenza a tre clausole). Verificate il 2026-11-17.
+    "opentelemetry-api>=1.45.2,<2",
+    "opentelemetry-sdk>=1.45.2,<2",
+    "opentelemetry-exporter-otlp-proto-http>=1.45.2,<2",
 ]
 
 [build-system]

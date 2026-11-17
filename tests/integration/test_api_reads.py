@@ -266,7 +266,7 @@ def test_the_default_order_is_level_then_new_then_recent_and_the_counts_are_the_
     seed(env)
     page = listing(env)
     assert titles(page) == ["t-crit", "t-high", "t-med", "t-low"]
-    assert (page["total"], page["total_new"]) == (4, 0) and page["next_cursor"] is None
+    assert (page["total"], page["total_new"]) == (4, 4) and page["next_cursor"] is None
     item = page["items"][0]
     assert (
         item["level"] == "critico"
@@ -627,3 +627,13 @@ def test_the_status_set_by_a_user_survives_the_next_scan(
     patch(env, f"/v1/findings/{fid}", {"action": "set-status", "status": "in_corso"}, *TRIAGE)
     ingest(env, [finding("a", level=Level.HIGH)], 10)
     assert get(env, f"/v1/findings/{fid}", *READER).json()["finding"]["status"] == "in_corso"
+
+
+def test_new_on_a_full_scan_means_first_seen_in_that_scan(env: Env) -> None:
+    ingest(env, [finding("old")], 0)
+    ingest(env, [finding("old"), finding("fresh")], 10)
+    page = listing(env)
+    assert (page["total"], page["total_new"]) == (2, 1)
+    assert titles(page) == ["t-fresh", "t-old"]  # i nuovi prima, a parità di livello
+    assert titles(listing(env, new=True)) == ["t-fresh"]
+    assert titles(listing(env, new=False)) == ["t-old"]

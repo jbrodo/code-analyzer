@@ -17,7 +17,7 @@ from collections.abc import Callable, Generator, Sequence
 from pathlib import Path
 from types import FrameType
 
-from ca_cli import config_validate, export, gate, notify, sbom, scan
+from ca_cli import config_validate, export, gate, notify, sbom, scan, upload
 from ca_cli.composition import Context, build_context
 from ca_core.models.scan_report import BaselineSourceKind, Isolation
 from ca_plugins.hostpaths import HostPathsError
@@ -33,6 +33,7 @@ HANDLERS: dict[tuple[str, str | None], Handler] = {
     ("gate", None): gate.handle,
     ("notify", None): notify.handle,
     ("export", None): export.handle,
+    ("upload", None): upload.handle,
     ("config", "validate"): config_validate.handle,
 }
 
@@ -97,6 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     notify.add_parser(commands)
     export.add_parser(commands)
+    upload.add_parser(commands)
     config = commands.add_parser("config", help="strumenti per .code-analyzer.yml")
     config_commands = config.add_subparsers(dest="config_command", metavar="COMMAND", required=True)
     validate = config_commands.add_parser("validate", help="valida .code-analyzer.yml offline")

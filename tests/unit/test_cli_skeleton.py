@@ -19,6 +19,7 @@ def test_only_the_known_commands_exist() -> None:
         ("gate", None),
         ("notify", None),  # Fase 2, ADR-0027
         ("export", None),  # Fase 2, N-06
+        ("upload", None),  # Fase 2, L-03
         ("config", "validate"),
     }
     for argv in (["explain"], ["plugin", "list"], ["config", "other"], []):

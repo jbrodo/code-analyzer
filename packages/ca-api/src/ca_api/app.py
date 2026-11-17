@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from opentelemetry.metrics import MeterProvider
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Engine
 
@@ -21,6 +22,7 @@ from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode,
 from ca_api.routes import router
 from ca_api.storage.filesystem import FileSystemArtifactStore
 from ca_api.storage.s3 import S3ArtifactStore, make_client
+from ca_api.telemetry import Telemetry, TelemetryMiddleware, build_meter_provider
 from ca_core.ports import ArtifactStore, Clock
 from ca_core.schema_validation import SchemaStore
 
@@ -99,6 +101,7 @@ def create_app(
     store: ArtifactStore | None = None,
     schemas: SchemaStore | None = None,
     clock: Clock | None = None,
+    meter_provider: MeterProvider | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="Code Analyzer",
@@ -114,7 +117,9 @@ def create_app(
     app.state.store = store if store is not None else build_store(app.state.settings)
     app.state.schemas = schemas
     app.state.clock = clock or SystemClock()
+    app.state.telemetry = Telemetry(meter_provider or build_meter_provider())
     app.add_middleware(BodyLimitMiddleware, max_bytes=app.state.settings.max_request_bytes)
+    app.add_middleware(TelemetryMiddleware, telemetry=app.state.telemetry)
     app.include_router(router)
     app.openapi = lambda: _openapi(app)  # type: ignore[method-assign]
 
