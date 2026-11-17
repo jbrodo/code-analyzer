@@ -11,8 +11,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "tokens": "node scripts/tokens.mjs",
-    "lint": "node scripts/tokens.mjs --check && tsc --noEmit && eslint .",
-    "test": "vitest run"
+    "lint": "node scripts/tokens.mjs --check && node scripts/api-types.mjs --check && tsc --noEmit && eslint .",
+    "test": "vitest run",
+    "types": "node scripts/api-types.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
@@ -36,6 +37,7 @@
     "eslint": "10.14.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "jsdom": "31.0.1",
+    "openapi-typescript": "7.13.0",
     "tailwindcss": "4.3.5",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",

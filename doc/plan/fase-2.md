@@ -1064,7 +1064,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §2, §3, §16. ADR: 0017.
 
 #### W-02 — Client generato dall'OpenAPI
-- Agente: `frontend`. Stato: `LIBERO`.
+- Agente: `frontend`. Stato: **chiuso il 2026-11-17**. `bun run types` genera `web/src/api/schema.d.ts` da `schemas/openapi.json` con openapi-typescript 7.13.0 (solo sviluppo, licenza permissiva verificata sul registro; ultimo rilascio l'11 febbraio 2026, quindi manutenzione lenta: i tipi generati restano nel repository e il generatore si può sostituire). `lint` fallisce se il file non coincide con il contratto (provato). Client in `web/src/api/client.ts` senza dipendenze di esecuzione: token solo nell'intestazione, nessun cookie, nessun redirect, errori come `ApiError` con il codice del problema+json, nessun indirizzo né testo del server nei messaggi di rete. Le risposte simulate dei test vengono dagli esempi dell'OpenAPI (`examples.ts`). **Limite:** gli esempi dichiarati nel contratto sono otto, quindi per gli altri schemi i test dovranno costruire i dati; da riprendere con le viste. Rieseguire l'auto-analisi su `web/bun.lock` (nota di W-01).
 - Percorsi: `web/`.
 - Dipende da: W-01, C-08.
 - Accettazione: tipi generati da `schemas/openapi.json`, mai scritti a mano; controllo che fallisce se i tipi non corrispondono al file; risposte simulate nei test ricavate dagli esempi dell'OpenAPI.
