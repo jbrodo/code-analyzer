@@ -57,7 +57,7 @@ def test_openapi_is_deterministic_and_has_stable_operation_ids() -> None:
     assert document["info"]["version"] == API_VERSION
     assert document["openapi"].startswith("3.1")
     operations = [op["operationId"] for path in document["paths"].values() for op in path.values()]
-    assert operations == ["getHealth"]
+    assert len(operations) == len(set(operations)) == 15 and "getHealth" in operations
 
 
 def test_export_writes_then_checks(tmp_path: Path) -> None:

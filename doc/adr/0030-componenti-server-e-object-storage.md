@@ -81,3 +81,7 @@ Non ancora verificate, da verificare in B-01 prima di aggiungerle: la libreria c
 - Il server con l'adattatore su file system gira su un solo host; con l'adattatore S3 può avere più repliche.
 - §14 citava un contenitore di object storage tra i test di integrazione: resta, ma con un server a licenza ammessa scelto in B-07.
 - §2 dopo la correzione di A-17: porta `ArtifactStore` con due adattatori, file system e S3; nessun server incluso.
+
+## Verifica del lettore di multipart (C-08, 2026-11-17)
+
+`python-multipart` 0.0.34 è il lettore di `multipart/form-data` che FastAPI richiede per `POST /v1/scans`: licenza permissiva dichiarata sul pacchetto (classificatore Apache Software License), rilasci regolari fino al 2026-11-16, Python 3.11 o successivo. Aggiunto a `ca-api`. I limiti di dimensione di ADR-0016 si applicano in B-03 mentre si legge il corpo; la libreria da sola non li impone. La libreria crittografica che serve a `pyjwt` per gli algoritmi asimmetrici resta da verificare in B-04.
