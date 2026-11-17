@@ -143,6 +143,9 @@ def test_forbidden_not_distributed_is_high_and_unspecified_is_conservative() -> 
 
     assert not_distributed.findings[0].level is Level.HIGH
     assert unspecified.findings[0].level is Level.CRITICAL
+    # lo scoring (ADR-0021, G) legge dall'evidenza se il prodotto è distribuito
+    assert not_distributed.findings[0].evidence["ca-core"]["distributed"] is False
+    assert unspecified.findings[0].evidence["ca-core"]["distributed"] is True
 
 
 def test_levels_are_a_table() -> None:

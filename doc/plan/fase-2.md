@@ -771,14 +771,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 ### K — Scoring, livelli, baseline nel nucleo
 
 #### K-01 — Interfaccia di scoring e configurazione
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per l'interfaccia: `scoring/base.py` (`ScoringModel`, `ScoringContext` con la sola configurazione, `Factor` con evidenza, `impact` e `round_score` a due decimali metà verso l'alto) e `resolve_config(flag, tenant)` (il file della riga di comando, poi quello del tenant, poi il pacchetto; mai fusi; un file invalido è un errore, mai un ripiego sul predefinito). **Non fatto:** la lettura del file da percorso o da variabile d'ambiente nella CLI (L-02) e dal server (B-*); `ScoringContext` cresce con i dati di K-03, K-04 e K-05.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/base.py`, `packages/ca-core/src/ca_core/scoring/`.
 - Dipende da: C-01, C-03, C-06.
 - Accettazione: `ScoringModel` e `ScoringContext` di §6; caricamento della configurazione di C-03 con precedenza tra pacchetto, tenant e flag; nessun valore di scoring nel codice.
 - Spec: §6. ADR: 0021.
 
 #### K-02 — Variante A: G
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `scoring/variant_a.py::factor_g` per ogni categoria secondo ADR-0021 (CVSS più recente per versione diviso 10, senza CVSS 0,75; severità con il G più alto tra le due scale degli strumenti, senza severità 0,5; licenze dal verdetto e dal flag `distributed` che la policy ora scrive nell'evidenza; segreto, salute). Fallback sempre nell'evidenza. 26 casi G ricavati a mano da ADR-0021 in `tests/fixtures/scoring/cases.json`, che copre anche F-05 per G, i sei punteggi dell'ADR e i bordi; non coperti da F-05: P, E, C, override e Variante B.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/variant_a.py`.
 - Dipende da: K-01, F-05.
 - Accettazione: G per ogni categoria secondo ADR-0021, fallback senza CVSS v4, casi di F-05 verdi.
@@ -848,7 +848,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6, §13. ADR: 0021, 0023.
 
 #### K-12 — Livelli da punteggio
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `levels.level_from_score(score, thresholds)`: intervalli semiaperti, arrotondamento a due decimali prima del confronto (69,995 diventa 70,00 e quindi critico), soglie dalla configurazione. Bordi 15, 40 e 70, 69,5 e 69,99 verdi. La tabella provvisoria di ADR-0009 è intatta. Gli override sono K-13.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/levels.py`.
 - Dipende da: K-01, F-05.
 - Accettazione: intervalli semiaperti con soglie da configurazione; la tabella provvisoria di ADR-0009 resta disponibile secondo D2-10; bordi di F-05 verdi.

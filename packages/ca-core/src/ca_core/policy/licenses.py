@@ -323,6 +323,7 @@ def evaluate_licenses(
                 evidence={
                     TOOL: {
                         "verdict": verdict.name.lower(),
+                        "distributed": licenses.distributed_product is not False,
                         "sources": sorted({o.source for o in group}),
                         "terms": [_printable(t) for t in terms],
                     }

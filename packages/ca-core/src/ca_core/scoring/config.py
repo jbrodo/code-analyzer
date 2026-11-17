@@ -48,3 +48,16 @@ def config_version(config: ScoringConfig) -> str:
     canonical = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode()).hexdigest()
     return f"{config.version}+{digest[:12]}"
+
+
+def resolve_config(*, flag: bytes | None = None, tenant: bytes | None = None) -> ScoringConfig:
+    """Configurazione effettiva: il file della riga di comando, altrimenti quello del tenant,
+    altrimenti il predefinito del pacchetto (ADR-0021). Mai fusi: vale un file solo, per intero.
+
+    Chi chiama legge i byte e sceglie da dove (un file fuori dal repository, il server): da
+    `.code-analyzer.yml` non arriva mai nulla (ADR-0014).
+    """
+    for raw in (flag, tenant):
+        if raw is not None:
+            return parse_config(raw)
+    return load_default()

@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ca_core.models.finding import Category, Finding, Level, LevelSource
+from ca_core.models.scoring_config import Thresholds
+from ca_core.scoring.base import round_score
 
 
 @dataclass(frozen=True)
@@ -75,9 +77,9 @@ def _tool_evidence(finding: Finding) -> Iterable[Mapping[str, Any]]:
             yield value
 
 
-def best_cvss(finding: Finding) -> float | None:
-    """Punteggio del CVSS più recente tra i tool del finding; `None` se non c'è."""
-    best: tuple[float, float] | None = None
+def best_cvss_entry(finding: Finding) -> tuple[float, str] | None:
+    """(punteggio, versione) del CVSS più recente tra i tool del finding; `None` se non c'è."""
+    best: tuple[float, float, str] | None = None
     for evidence in _tool_evidence(finding):
         cvss = evidence.get("cvss")
         if not isinstance(cvss, Mapping):
@@ -88,11 +90,17 @@ def best_cvss(finding: Finding) -> float | None:
         if not 0 <= score <= 10 or not isinstance(version, str):
             continue
         try:
-            key = (float(version), float(score))
+            key = (float(version), float(score), version)
         except ValueError:
             continue
         best = key if best is None else max(best, key)
-    return None if best is None else best[1]
+    return None if best is None else (best[1], best[2])
+
+
+def best_cvss(finding: Finding) -> float | None:
+    """Punteggio del CVSS più recente tra i tool del finding; `None` se non c'è."""
+    entry = best_cvss_entry(finding)
+    return None if entry is None else entry[0]
 
 
 def _from_cvss(score: float, table: LevelTable) -> Level:
@@ -168,3 +176,19 @@ def sort_findings(findings: Iterable[Finding]) -> list[Finding]:
             f.fingerprint,
         ),
     )
+
+
+def level_from_score(score: float, thresholds: Thresholds) -> Level:
+    """Livello da punteggio, a intervalli semiaperti (ADR-0021, K-12).
+
+    Il punteggio si arrotonda a due decimali (metà verso l'alto) prima del confronto: il numero
+    mostrato e il livello non si contraddicono. Soglie dalla configurazione, mai dal codice.
+    """
+    value = round_score(score)
+    if value >= thresholds.critico:
+        return Level.CRITICAL
+    if value >= thresholds.alto:
+        return Level.HIGH
+    if value >= thresholds.medio:
+        return Level.MEDIUM
+    return Level.LOW
