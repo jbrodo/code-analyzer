@@ -199,13 +199,13 @@ def test_missing_directory_exits_2(env: Env) -> None:
 
 def test_config_disable_exclude_and_inert_sections(env: Env) -> None:
     (env.repo / ".code-analyzer.yml").write_text(
-        "version: 1\nplugins:\n  disable: [bandit]\nscoring:\n  variant: A\n"
+        "version: 1\nplugins:\n  disable: [bandit]\nscoring:\n  variant: A\nagents: {}\n"
     )
     executor = FakePluginExecutor({"bandit": env.ok()})
     assert env.scan(env.context(executor)) == 0
     report = load(env)
     assert report["disabled_plugins"] == ["bandit"] and report["plugins"] == []
-    assert report["inert_sections"] == ["scoring"] and executor.runs == []
+    assert report["inert_sections"] == ["agents"] and executor.runs == []
 
 
 def test_git_commit_and_history_from_files_only(env: Env) -> None:

@@ -24,7 +24,7 @@ from ca_core.policy.licenses import SpdxSyntaxError, parse_expression
 CONFIG_NAME = ".code-analyzer.yml"
 MAX_CONFIG_BYTES = 262_144
 _SAFE_KEY = re.compile(r"[A-Za-z0-9_-]{1,64}")
-_INERT = ("service", "scoring", "agents")  # validate ma senza effetto in Fase 1 (ADR-0014)
+_INERT = ("agents",)  # validata ma senza effetto (ADR-0014); service e scoring sono attive
 
 
 class ConfigFileError(ValueError):
@@ -99,6 +99,8 @@ def semantic_checks(
     warnings.extend(
         f"{key}: chiave inerte in Fase 1" for key in _INERT if getattr(config, key) is not None
     )
+    if config.service is not None:
+        warnings.append("service: dichiarazione non verificata, vale solo senza file di contesto")
     if config.gate.mode.value == "new-findings-only":
         warnings.append("gate.mode: vale solo in una scansione PR con baseline valida")
     return errors, warnings

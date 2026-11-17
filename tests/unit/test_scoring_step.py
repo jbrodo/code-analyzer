@@ -202,10 +202,8 @@ def test_low_coverage_on_reachable_code_changed_often_is_at_least_medium() -> No
 def test_there_is_no_valid_secret_override_to_apply() -> None:
     secret = finding("k", category=Category.SECRET, tool="gitleaks", evidence={"validity": "valid"})
     assert ov.applicable_overrides(secret, ctx(service=service(True))) == []
-    assert not any(
-        "secret" in n or "valid" in n
-        for n in CONFIG.overrides.model_fields_set | set(CONFIG.overrides.model_fields)
-    )
+    fields = type(CONFIG.overrides).model_fields
+    assert not any("secret" in name or "valid" in name for name in fields)
 
 
 # --- le due varianti e il passo ---------------------------------------------------------------

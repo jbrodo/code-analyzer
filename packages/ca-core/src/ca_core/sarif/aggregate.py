@@ -5,7 +5,8 @@ Layout (contratto pubblico, coperto da `tests/contract/test_aggregate_sarif_cont
 - `tool.driver.name = "code-analyzer"`; gli scanner eseguiti in `tool.extensions` con versione.
 - un `result` per finding con posizione; `partialFingerprints["codeAnalyzer/v1"]` = fingerprint;
   `level`: critico e alto `error`, medio `warning`, basso `note`.
-- `properties`: `level`, `level_source`, `category`, `tools`, `status`, `purl` se c'è;
+- `properties`: `level`, `level_source`, `category`, `tools`, `status`, `purl` se c'è; con i
+  punteggi (ADR-0021) anche `score` e `variant_scores` (variante, punteggio, livello, G, P, E, C);
   `security-severity` solo con un CVSS, mai inventato.
 - finding senza `location.path` e avvisi del report: `invocations[0].toolExecutionNotifications`.
 - con una baseline valida (ADR-0025): `baselineState` su ogni risultato (`new`, `unchanged` o
@@ -74,6 +75,21 @@ def _properties(finding: Finding) -> dict[str, Any]:
     cvss = best_cvss(finding)
     if cvss is not None:
         props["security-severity"] = f"{cvss:.1f}"
+    if finding.score is not None:
+        props["score"] = finding.score
+    if finding.variant_scores:
+        props["variant_scores"] = [
+            {
+                "variant": v.variant,
+                "score": v.score,
+                "level": v.level.value,
+                "g": v.impact.g,
+                "p": v.impact.p,
+                "e": v.impact.e,
+                "c": v.impact.c,
+            }
+            for v in finding.variant_scores
+        ]
     return props
 
 

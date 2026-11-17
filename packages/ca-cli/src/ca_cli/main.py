@@ -70,6 +70,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="da dove viene la baseline, solo per il report",
     )
     scan_parser.add_argument("--pull-request", type=scan.parse_pr_number, help="numero della PR")
+    scan_parser.add_argument(
+        "--variant", choices=["A", "B"], help="variante di scoring attiva (ADR-0021)"
+    )
+    scan_parser.add_argument(
+        "--scoring-config",
+        help="configurazione di scoring, fuori dal repository (o CA_SCORING_CONFIG)",
+    )
+    scan_parser.add_argument(
+        "--service-context",
+        help="contesto del servizio (tier ed esposizione), fuori dal repository",
+    )
     sbom_parser = commands.add_parser("sbom", help="genera l'SBOM CycloneDX")
     sbom_parser.add_argument("path", nargs="?", default=".", help="directory (predefinito: .)")
     sbom_parser.add_argument("--format", choices=["cyclonedx"], default="cyclonedx")
@@ -154,7 +165,15 @@ def _confine_outputs(args: argparse.Namespace, root: Path) -> None:
     Un percorso relativo, predefiniti compresi, si legge rispetto a `root`: la directory
     corrente è il workspace, montato in sola lettura.
     """
-    for name in ("output_dir", "output", "report", "baseline", "sbom"):
+    for name in (
+        "output_dir",
+        "output",
+        "report",
+        "baseline",
+        "sbom",
+        "scoring_config",
+        "service_context",
+    ):
         value = getattr(args, name, None)
         if value is None:
             continue

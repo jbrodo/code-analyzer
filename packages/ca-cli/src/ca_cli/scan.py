@@ -273,6 +273,12 @@ def _table(report: ScanReport, refs: Sequence[ArtifactRef]) -> str:
     levels = Counter(f.level.value if f.level else "senza livello" for f in report.findings)
     lines.append(f"finding: {len(report.findings)}")
     lines += [f"  {level}: {count}" for level, count in sorted(levels.items())]
+    scores = [f.score for f in report.findings if f.score is not None]
+    if scores and report.scoring is not None:
+        lines.append(
+            f"punteggio (variante {report.scoring.active_variant}): massimo {max(scores):.2f}"
+            f" su {len(scores)} finding"
+        )
     if report.baseline is not None and report.baseline.status is BaselineStatus.VALID:
         b = report.baseline
         lines.append(
@@ -428,6 +434,16 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     if loaded is not None:
         diffed = diff_baseline(findings, plugins, loaded)
         findings, baseline = diffed.findings, diffed.baseline
+    # Punteggi in ombra (K-14, ADR-0021): il livello cambia solo con `levels.source: score`.
+    from ca_cli.scoring import (
+        run_scoring,
+    )  # import locale: `scoring` usa `ScanError` di questo modulo
+
+    scored = run_scoring(
+        args, context, config=config, workspace=root, findings=findings, graph=graph_step.graph
+    )
+    findings = scored.findings
+    warnings += scored.warnings
     effective = GateMode.ALL
     if config.gate.mode is GateMode.NEW_FINDINGS_ONLY:
         if baseline is not None and baseline.status is BaselineStatus.VALID:
@@ -457,12 +473,17 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         correlation_version=TABLE_VERSION,
         effective_config=config,  # ADR-0025: serve a chi userà questo report come baseline
         exceptions=normalized.exceptions,
-        inert_sections=[s for s in InertSection if getattr(config, s.value) is not None],
+        inert_sections=[
+            s for s in InertSection if s is InertSection.AGENTS and config.agents is not None
+        ],
         warnings=warnings,
         scan=ScanInfo(kind=ScanKind.PR, base_commit=args.base, pull_request=args.pull_request)
         if loaded
         else ScanInfo(),
         baseline=baseline,
+        scoring=scored.info,
+        service_context=scored.service,
+        enrichment=scored.enrichment,
         findings=findings,
     )
     sink = _CapturingSink(context, args.output_dir)

@@ -763,7 +763,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §13, §15. ADR: 0005, 0024.
 
 #### E-06 — Feed nel report
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `enrichment` nel report con feed, origine (`public` o `mirror`), ora di scaricamento, SHA-256 e identità del contenuto; avvisi `enrichment-feed-missing`, `feeds-stale` e `feeds-sync-failed` per feed; `scoring-with-fallbacks` col numero dei finding calcolati con un valore di ripiego. Senza un trasporto collegato (le prove) la scansione usa solo la cache e lo dichiara.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`, `packages/ca-cli/`.
 - Dipende da: E-02, E-03, C-04.
 - Accettazione: origine e data degli snapshot EPSS e KEV nel report; avviso se mancano o sono vecchi.
@@ -870,7 +870,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §5 passo 8, §6. ADR: 0002, 0009, 0021.
 
 #### K-15 — Passo `enrich`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** come composizione in `ca_cli/scoring.py`: il contesto di scoring si costruisce nella radice di composizione (feed EPSS e KEV dalla cache o dalla rete, raggiungibilità e churn dal grafo del plugin, contesto del servizio), il nucleo non fa I/O. L'evidenza di ogni fattore porta già i dati usati (CVE, stato del feed, entrypoint, fonte di C ed E), quindi non c'è un passo separato che riscriva l'evidenza dei finding. **Non fatto:** dipendenze di sviluppo o di test dichiarate da lockfile o SBOM (E = 0,2).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: E-02, E-03, G-12, K-05.
 - Accettazione: EPSS, KEV, raggiungibilità e fonte di C ed E aggiunti all'evidenza dei finding, senza rete nel nucleo; dati mancanti dichiarati.
@@ -928,7 +928,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.1. ADR: 0010, 0025.
 
 #### L-02 — `--variant` e punteggi in uscita
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `scan --variant A|B`, `--scoring-config FILE` (o `CA_SCORING_CONFIG`) e `--service-context FILE`, i due file solo da fuori dal repository (un percorso dentro la directory analizzata, anche tramite link, è rifiutato). Precedenza della variante: flag, poi `scoring.variant` della configurazione effettiva (in una PR quella del base), poi il file di scoring. `scoring`, `service_context` ed `enrichment` nel report; `variant_scores` nel JSON; `score` e `variant_scores` (G, P, E, C) nelle proprietà del SARIF; massimo del punteggio nella tabella. Le sezioni `scoring` e `service` di `.code-analyzer.yml` non sono più inerti (resta `agents`); il repository non ha chiavi per pesi o soglie. Il livello e il gate restano quelli provvisori finché la configurazione di scoring non dice `levels.source: score` (D2-10). **Non fatto:** il file di scoring in YAML (solo JSON); `--service-context` da `service-context` del server (B-10); le tabelle di `table` non elencano i punteggi per finding.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: K-14.
 - Accettazione: `--variant` con la precedenza di ADR-0021; punteggi e fattori in `json` e `sarif`, livello e punteggio in `table`.

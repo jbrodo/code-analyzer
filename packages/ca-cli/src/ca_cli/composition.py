@@ -21,7 +21,9 @@ from ca_core.ports import (
     SourceReader,
 )
 from ca_core.schema_validation import SchemaStore
+from ca_core.scoring.feeds.limits import FeedLimits
 from ca_integrations.github import Transport
+from ca_plugins.enrichment import Fetcher, UrllibFetcher
 from ca_plugins.hostpaths import IMAGE_MARKER, OUTPUT_ROOT, HostPaths, HostPathsError, from_env
 from ca_plugins.runner import DEFAULT_MAX_PARALLEL, OciExecutor
 from ca_plugins.sdk import list_packaged_plugins, load_packaged_manifest
@@ -106,6 +108,10 @@ class Context:
     output_root: Path | None = None  # immagine CLI: gli artefatti stanno solo qui sotto
     close: Callable[[], None] = lambda: None  # `main()` lo chiama sempre, in `finally`
     notify_transport: Transport | None = None  # None: trasporto reale (solo `notify`)
+    enrichment_fetcher: Fetcher | None = None  # None: nessuna rete per EPSS e KEV (solo la cache)
+    enrichment_limits: FeedLimits | None = (
+        None  # None: i tetti del pacchetto (le prove li sostituiscono)
+    )
 
     @staticmethod
     def artifact_sink(output_dir: str) -> ArtifactSink:
@@ -172,4 +178,5 @@ def build_context(
         feeds_cache=host_paths.roots["snapshot"] if host_paths is not None else None,
         output_root=Path(OUTPUT_ROOT) if in_image else None,
         close=executor.close,
+        enrichment_fetcher=UrllibFetcher(),
     )

@@ -37,13 +37,14 @@ def test_inert_keys_expired_exception_and_missing_rules_warn(
 ) -> None:
     code, out = run(
         tmp_path,
-        "version: 1\nservice: {tier: 1}\nplugins:\n  semgrep: {rules: [rules/]}\n"
+        "version: 1\nagents: {}\nservice: {tier: 1}\nplugins:\n  semgrep: {rules: [rules/]}\n"
         "exceptions:\n  - {fingerprint: 'sha256:" + "a" * 64 + "', reason: r, "
         "expires: 2000-01-01, approved_by: x}\n",
         capsys,
     )
     assert code == 0
-    assert "service: chiave inerte" in out and "exceptions[0].expires" in out
+    assert "agents: chiave inerte" in out and "exceptions[0].expires" in out
+    assert "service: dichiarazione non verificata" in out
     assert "plugins.semgrep.rules[0]: percorso_assente" in out
 
 
