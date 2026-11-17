@@ -138,3 +138,11 @@ Il confronto non legge la storia git: `fetch-depth: 1` basta. La profondità con
 - `scan-report` 1.2: `scan`, `baseline` e `effective_config`. `baseline.status` vale `valid`, `missing` o `rejected`; per `rejected` il campo `reason` è un codice come `baseline-commit-mismatch` o `baseline-partial`. I conteggi `new` ed `existing` devono coincidere con lo stato dei finding, e con una baseline non valida nessun finding ha uno stato. `not_evaluated` conta i finding della baseline il cui plugin è fallito.
 - **`effective_config` è facoltativo** e la CLI lo scrive da ora. Un report della Fase 1 non lo ha: usato come baseline non fornisce la configurazione del base, e K-16 deve trattarlo come tale (avviso e configurazione del file della PR, come per `pr-config-from-head`).
 - Lo `updated` del SARIF (ADR-0011) non ha un campo nel finding: lo ricava K-17 confrontando posizione e livello con la baseline.
+
+## Realizzazione di K-16 e K-17 (2026-11-17)
+
+- `load_baseline` (K-16) riceve l'esito della porta `BaselineSource`. Il confronto «dentro la directory» è sul percorso (normalizzato): il chiamante deve passare percorsi già risolti, altrimenti un link simbolico lo aggirerebbe. Lo farà la CLI in L-01.
+- `diff_baseline` (K-17). **Chi non è un plugin:** i finding della policy delle licenze (`ca-core`) dipendono dall'output di più plugin; si considerano valutabili solo se tutti i plugin sono riusciti.
+- **Chiave senza percorso, regola di accoppiamento:** `pk1` non contiene l'indice di occorrenza (dipende dal file). Per questo il secondo passaggio accoppia solo gruppi di uno contro uno. Un finding `code` senza contesto di codice non ha la chiave.
+- `updated` ha un campo (`baseline.updated`, i fingerprint) perché il SARIF si costruisce dal solo report. Il campo ha richiesto `scan-report` 1.3.
+- **Non ancora fatto:** collegare tutto alla CLI (L-01) e il gate sui nuovi (K-18). Finché non ci sono, nessun report reale ha uno stato rispetto alla baseline.

@@ -198,6 +198,12 @@ class Baseline(_Strict):
     new: int = Field(default=0, ge=0)
     existing: int = Field(default=0, ge=0)
     resolved: list[ResolvedFinding] = Field(default_factory=list, max_length=10_000)
+    updated: list[Annotated[str, Field(pattern=FINGERPRINT_PATTERN)]] = Field(
+        default_factory=list,
+        max_length=10_000,
+        description="Fingerprint degli `existing` con posizione o livello cambiati: il SARIF li "
+        "marca `updated` (ADR-0011, ADR-0025).",
+    )
     not_evaluated: int = Field(
         default=0,
         ge=0,
@@ -210,7 +216,7 @@ class Baseline(_Strict):
         if self.status is BaselineStatus.VALID:
             if self.commit is None or self.source is None:
                 raise ValueError("una baseline valida ha commit e fonte")
-        elif self.new or self.existing or self.resolved or self.not_evaluated:
+        elif self.new or self.existing or self.resolved or self.not_evaluated or self.updated:
             raise ValueError("conteggi senza una baseline valida")
         if self.status is not BaselineStatus.REJECTED and self.reason is not None:
             raise ValueError("reason solo per una baseline rifiutata")
@@ -351,3 +357,11 @@ class ScanReport(_Strict):
             raise ValueError("conteggio degli esistenti diverso dai finding")
         if any(state is None for state in states):
             raise ValueError("con una baseline valida ogni finding ha uno stato")
+        existing = {
+            f.fingerprint for f in self.findings if f.baseline_state is BaselineState.EXISTING
+        }
+        if (
+            len(set(self.baseline.updated)) != len(self.baseline.updated)
+            or not set(self.baseline.updated) <= existing
+        ):
+            raise ValueError("`updated` elenca finding che non sono esistenti")

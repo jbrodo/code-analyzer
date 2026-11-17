@@ -481,3 +481,61 @@ def test_coverage_result_needs_a_path(store: SchemaStore) -> None:
     plugin = manifest("coverage", "test")
     error = failure(store, [result("r", uri=None, line=None)], plugin=plugin)
     assert error.code is SarifErrorCode.MAPPING
+
+
+# --- chiave senza percorso (C-01, ADR-0025) -----------------------------------------------------
+
+
+def test_a_code_finding_has_a_pathless_key_that_ignores_the_path_and_the_occurrence(
+    store: SchemaStore,
+) -> None:
+    (finding,) = run(store, [result()])
+    key = fp.pathless_key_code(rule_id="B602", tool="bandit", source=SOURCE, start_line=2)
+    assert finding.pathless_key == key and key != finding.fingerprint
+    # stesso contesto in un altro file: stessa chiave, fingerprint diverso
+    moved = run(
+        store,
+        [result(uri="lib/other.py")],
+        reader=InMemorySourceReader({WS: {"lib/other.py": SOURCE.encode()}}),
+    )[0]
+    assert moved.pathless_key == key and moved.fingerprint != finding.fingerprint
+
+
+def test_a_pathless_key_depends_on_rule_tool_and_context() -> None:
+    base = {"rule_id": "B602", "tool": "bandit", "source": SOURCE, "start_line": 2}
+    key = fp.pathless_key_code(**base)
+    assert key.startswith("sha256:") and len(key) == 71
+    for change in ({"rule_id": "B603"}, {"tool": "semgrep"}, {"start_line": 3}):
+        assert fp.pathless_key_code(**{**base, **change}) != key
+    with pytest.raises(ValueError):
+        fp.pathless_key_code(**{**base, "rule_id": ""})
+    with pytest.raises(ValueError):
+        fp.pathless_key_secret(rule_id="r", value_sha256="XYZ")
+
+
+def test_a_code_finding_without_context_has_no_pathless_key(store: SchemaStore) -> None:
+    (no_region,) = run(store, [result(line=None)])
+    assert no_region.pathless_key is None
+
+    class Big(InMemorySourceReader):
+        def read_file(self, root: str, path: str, max_bytes: int) -> bytes:
+            raise SourceTooLarge(path)
+
+    (big,) = run(store, [result()], reader=Big())
+    assert big.pathless_key is None
+
+
+def test_a_secret_has_a_pathless_key_from_rule_and_value_and_other_kinds_have_none(
+    store: SchemaStore,
+) -> None:
+    raw = result("github-pat", uri="conf.py", category="secret", secret_sha256=SECRET_HASH)
+    (secret,) = run(store, [raw], plugin=manifest("gitleaks", "secret"))
+    assert secret.pathless_key == fp.pathless_key_secret(
+        rule_id="github-pat", value_sha256=SECRET_HASH
+    )
+    assert SECRET_HASH not in secret.model_dump_json()
+    dependency = result(
+        "CVE-2024-0001", uri=None, line=None, category="dependency", purl="pkg:pypi/x@1"
+    )
+    (dep,) = run(store, [dependency], plugin=manifest("osv-scanner", "dependency"))
+    assert dep.pathless_key is None

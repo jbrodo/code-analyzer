@@ -231,6 +231,9 @@ VALID.update(
                 },
             ),
         ),
+        "baseline-updated": mutated(
+            PR_REPORT, lambda i: i["baseline"].update(updated=[OLD["fingerprint"]])
+        ),
         "baseline-not-evaluated": mutated(
             PR_REPORT, lambda i: i["baseline"].update(not_evaluated=3)
         ),
@@ -291,6 +294,9 @@ INVALID.update(
             PR_REPORT, lambda i: i["baseline"]["resolved"][0].update(fingerprint="abc")
         ),
         "baseline-unknown-key": mutated(PR_REPORT, lambda i: i["baseline"].update(extra=1)),
+        "baseline-updated-not-a-fingerprint": mutated(
+            PR_REPORT, lambda i: i["baseline"].update(updated=["abc"])
+        ),
         "effective-config-unknown-key": mutated(
             MINIMAL, _set(effective_config={"version": 1, "image": "x"})
         ),

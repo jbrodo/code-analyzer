@@ -150,6 +150,16 @@
         },
         "status": {
           "$ref": "#/$defs/BaselineStatus"
+        },
+        "updated": {
+          "description": "Fingerprint degli `existing` con posizione o livello cambiati: il SARIF li marca `updated` (ADR-0011, ADR-0025).",
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Updated",
+          "type": "array"
         }
       },
       "required": [
@@ -1989,5 +1999,5 @@
   },
   "title": "ScanReport",
   "type": "object",
-  "x-schema-version": "1.2"
+  "x-schema-version": "1.3"
 }

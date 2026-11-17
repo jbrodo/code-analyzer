@@ -15,10 +15,10 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictFloat, m
 
 from ca_core.models.graph import HistoryStatus
 from ca_core.models.plugin_manifest import InputMode, PackagedPluginManifest
+from ca_core.models.scan_report import BaselineSourceKind, Isolation, Signature
 from ca_core.models.scan_report import (  # enum e modelli condivisi con il report
     EnrichmentSnapshot as FeedSnapshot,
 )
-from ca_core.models.scan_report import Isolation, Signature
 
 
 class _Frozen(BaseModel):
@@ -296,12 +296,6 @@ class GitHistory(Protocol):
 class BaselineOutcome(StrEnum):
     FOUND = "found"
     MISSING = "missing"  # nessun report per quel commit: la modalità PR avvisa e valuta tutto
-
-
-class BaselineSourceKind(StrEnum):
-    CI_ARTIFACT = "ci-artifact"  # fonte 1 di ADR-0025
-    BASE_SCAN = "base-scan"  # fonte 2: scansione del base nello stesso job
-    SERVER = "server"  # fonte 3, non necessaria in Fase 2
 
 
 class BaselineLookup(_Frozen):

@@ -221,6 +221,22 @@ def _fingerprint(draft: _Draft, tool: str, source: _Source | None, occurrence: i
     return fp.fingerprint_health(plugin=tool) if draft.kind == "health" else _unreachable(pointer)
 
 
+def _pathless_key(draft: _Draft, tool: str, source: _Source | None) -> str | None:
+    """Chiave senza percorso (ADR-0025) per i soli kind `code` e `secret`.
+
+    Un finding `code` senza contesto di codice (nessuna riga, o file oltre il limite) non ne ha:
+    la sola regola accoppierebbe finding non imparentati.
+    """
+    props = draft.properties
+    if draft.kind == "code" and source is not None and source.text:
+        return fp.pathless_key_code(
+            rule_id=draft.rule_id, tool=tool, source=source.text, start_line=source.start_line
+        )
+    if draft.kind == "secret" and props.secret_sha256:
+        return fp.pathless_key_secret(rule_id=draft.rule_id, value_sha256=props.secret_sha256)
+    return None
+
+
 def _unreachable(pointer: str) -> str:
     raise _fail(SarifErrorCode.MAPPING, "kind sconosciuto", pointer)
 
@@ -267,6 +283,7 @@ def _finding(
     *,
     tool: str,
     fingerprint: str,
+    pathless_key: str | None,
     repository: str,
     commit: str | None,
     now: Any,
@@ -309,6 +326,7 @@ def _finding(
             if draft.kind == "dependency"
             else [],
             license_spdx=props.license_spdx if draft.kind.startswith("license") else None,
+            pathless_key=pathless_key,
             evidence={tool: _evidence(draft)},
             first_seen=now,
             last_seen=now,
@@ -363,6 +381,7 @@ def normalize_sarif(
                 draft,
                 tool=tool,
                 fingerprint=fingerprint,
+                pathless_key=_pathless_key(draft, tool, sources.get(i)),
                 repository=repository,
                 commit=commit,
                 now=now,

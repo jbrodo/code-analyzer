@@ -876,14 +876,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §5 passo 6. ADR: 0022, 0024, 0028.
 
 #### K-16 — Passo `resolve_changed_files`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** come lettura della baseline (`pipeline/baseline.py`, `load_baseline`); il nome del passo resta quello del piano ma non calcola file cambiati (ADR-0025 §4). Prende il risultato della porta `BaselineSource`, rifiuta senza leggere una baseline dentro la directory analizzata (confronto sul percorso, il chiamante passa percorsi già risolti), legge con il limite di byte, valida con il modello del report, richiede scansione completa e commit uguale a `--base`. Ogni rifiuto ha un codice (`baseline-inside-workspace`, `-unreadable`, `-invalid`, `-commit-mismatch`, `-not-full`) e lascia la scansione andare avanti con `pr-config-from-head`. Una baseline parziale è valida con `baseline-partial`; la configurazione è quella registrata dalla baseline, con `config-changed-in-pr` che nomina solo le sezioni cambiate, o quella della PR (`baseline-without-config`) per un report della Fase 1. **Non ancora collegato alla CLI** (L-01).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`.
 - Dipende da: A-10, C-06, F-06.
 - Accettazione (rivista da ADR-0025 il 2026-11-13): lettura e validazione della baseline (percorso fuori dal workspace, schema, commit uguale a `--base`, scansione completa) e configurazione effettiva ricavata dalla baseline; nessun calcolo dei file cambiati e nessun plugin ristretto in Fase 2. Testo originale: file cambiati rispetto al base dalla porta della storia git; plugin limitati ai file cambiati solo dove ADR-0025 lo ammette; rinomine e cancellazioni gestite.
 - Spec: §5 passo 2. ADR: 0025.
 
 #### K-17 — Passo `diff_baseline`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `pipeline/diff_baseline.py`, `sarif/aggregate.py`, `fingerprint.py`, `normalize.py`; `scan-report` 1.3 (aggiunto `baseline.updated`). Nuovo, esistente e risolto per fingerprint; `updated` se cambiano posizione o livello. Un finding della baseline il cui strumento è fallito o non è girato non è risolto: `not_evaluated`; per i finding della policy (`ca-core`) contano tutti i plugin. **Secondo passaggio per i file rinominati:** la chiave senza percorso (`pk1`: regola, strumento, contesto o valore del segreto) è calcolata dalla normalizzazione per `code` e `secret`; si accoppia solo un `new` con un `resolved` della stessa chiave, su percorsi diversi, e solo se sono gli unici due. I casi ambigui restano nuovo più risolto: meglio un falso nuovo che un nuovo nascosto. Nel SARIF aggregato `baselineState` (`new`, `unchanged`, `updated`) e i risolti come `absent`. **Non ancora collegato alla CLI** (L-01).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`, `packages/ca-core/src/ca_core/sarif/aggregate.py`.
 - Dipende da: K-16, C-04, F-06.
 - Accettazione: finding nuovi, esistenti e risolti per fingerprint, `baselineState` nel SARIF aggregato, conteggi nel report; i casi spostati di riga di F-06 risultano esistenti.

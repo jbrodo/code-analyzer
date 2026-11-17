@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from test_scan_report_contract import (
     BASE,
     FINDING,
+    FP,
     INVALID,
     MINIMAL,
     NEW,
@@ -53,6 +54,17 @@ MODEL_ONLY: dict[str, Json] = {
     "finding-with-state-but-no-baseline": mutated(MINIMAL, lambda i: i.update(findings=[NEW])),
     "finding-without-state-with-valid-baseline": mutated(
         PR_REPORT, lambda i: i.update(findings=[NEW, {**OLD, "baseline_state": None}])
+    ),
+    "baseline-updated-not-existing": mutated(
+        PR_REPORT, lambda i: i["baseline"].update(updated=[NEW["fingerprint"]])
+    ),
+    "baseline-updated-duplicate": mutated(
+        PR_REPORT,
+        lambda i: i["baseline"].update(updated=[OLD["fingerprint"], OLD["fingerprint"]]),
+    ),
+    "baseline-missing-with-updated": mutated(
+        MINIMAL,
+        lambda i: i.update(scan=PR_SCAN, baseline={"status": "missing", "updated": [FP]}),
     ),
     "enrichment-same-feed-twice": mutated(
         MINIMAL, lambda i: i.update(enrichment=[SNAPSHOT, SNAPSHOT])
