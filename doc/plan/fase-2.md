@@ -60,7 +60,7 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Decise il 2026-11-17: D2-14 per hadolint, solo per uso interno, e D2-05. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Decise il 2026-11-17: D2-14 per hadolint, solo per uso interno, D2-05, D2-06, D2-12, D2-13 e la conferma di D2-15. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
 
 | Decisione | Esito |
 | --- | --- |
@@ -77,8 +77,12 @@ Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Deci
 | D2-07 | (2026-11-16) pg8000 come driver; `ArtifactStore` con adattatore su file system **e adattatore S3 già in Fase 2** (ADR-0030). Nessun server di object storage incluso nel prodotto |
 | D2-14 (hadolint) | (2026-11-17, Riccardo Roveda) hadolint approvato **per uso interno e per il registry locale**. Non è un'approvazione alla distribuzione: la licenza copyleft forte di hadolint, che D-0013 mette tra quelle da approvare, obbliga alla distribuzione di accompagnare l'immagine con il testo della licenza e l'offerta della sorgente. Quella decisione resta di I-07. Non è un parere legale. Gli altri motori e componenti nuovi restano da valutare in D2-14 sugli SBOM di rilascio |
 | S5-A1 | (2026-11-16) Limite inferiore al livello di una dipendenza in funzione del CVSS, in configurazione: i feed possono alzare un livello, non azzerarlo. Da scrivere in ADR-0021 (A-06) |
+| D2-15 (conferma) | (2026-11-17) Perimetro confermato: elenco finding con filtri, dettaglio con fattori e passi di correzione, triage ed eccezioni, stato della scansione (parziale compresa), selettore di repository. Esclusi aggregati, trend e grafici (portfolio in Fase 4). W-02 e seguenti possono partire |
+| D2-13 | (2026-11-17) Action nella sottocartella del monorepo (`integrations/github-action`), usata solo dalla CI di questo repository; nessun repository dedicato né Marketplace. Il nome dell'immagine CLI segue D2-16: per ora solo il registry locale |
+| D2-06 | (2026-11-17) Un solo host interno con il compose di I-05, nessun Kubernetes (Helm è in Fase 4). L'host lo indica l'utente quando si arriva a I-06 |
+| D2-12 | (2026-11-17) Rimandata: nessuna istanza GitLab indicata. N-08 e la parte GitLab di N-09 escono dal piano; il componente resta dichiarato non provato su un GitLab vero |
 
-Restano aperte: D2-06, D2-12, D2-13, D2-14, e la conferma del perimetro di D2-15.
+Restano aperte: D2-14 per gli altri motori e componenti nuovi (si valuta sugli SBOM di rilascio) e la destinazione delle immagini di D2-16 (solo registry locale).
 
 Testo originale della tabella, con opzioni e motivazioni: ordine consigliato **D2-01** e **D2-03** per prime. D2-01 determina se servono Temporal, l'esecuzione sul server e un adattatore Kubernetes; D2-03 è l'unica che blocca il Gate 2 fin dal primo task (X-01). Seguono D2-10 e D2-02, che fermano il percorso dello scoring e del server.
 
