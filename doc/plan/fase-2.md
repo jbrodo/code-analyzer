@@ -1131,7 +1131,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §12.1. ADR: 0027.
 
 #### N-04 — GitHub Action
-- Agente: `devops`. Stato: `LIBERO` per sviluppo e test sul registry locale; l'uso da repository esterni dipende da I-04 e quindi dalla decisione del 2026-11-10 e da D2-16.
+- Agente: `devops`. Stato: **chiuso il 2026-11-17** per `action.yml` e script (`integrations/github-action/`); l'uso da repository esterni dipende da I-04 e quindi dalla decisione del 2026-11-10 e da D2-16. Ordine: evento, baseline (artefatto del push sul branch principale, poi scansione del base, poi avviso), `scan` senza `--fail-on`, conservazione del report, SARIF con `always()` via `gh api`, `notify`, `gate` per ultimo; immagine e chiave pubblica come input senza valore predefinito; `pull_request_target` rifiutato; permessi minimi nel README. **Non fatto:** ingressi `variant` e `server-url` (la CLI non ha varianti né `upload`); prova con l'immagine reale su un runner (N-05); il test è su `docker` e `gh` finti.
 - Percorsi: `integrations/github-action/`.
 - Dipende da: I-01, L-01, L-04.
 - Accettazione: `action.yml` con `scan`, upload SARIF con `if: always()` e `gate` separati (ADR-0010), commento e check run; input `server-url` e `variant` effettivi; registry delle immagini come input, senza un registry pubblico predefinito nel codice; permessi minimi documentati; nessun `--fail-on` passato a `scan`.

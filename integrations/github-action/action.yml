@@ -1,0 +1,206 @@
+# GitHub Action di Code Analyzer (N-04, ADR-0027): scan, SARIF, notify e gate, in quest'ordine.
+# Composita: l'immagine CLI avvia i plugin come container fratelli e serve il daemon del runner.
+name: Code Analyzer
+description: Analizza il repository, carica il SARIF, commenta la pull request e valuta il gate
+
+inputs:
+  image:
+    description: Immagine della CLI (nome:tag o nome@digest). Nessun valore predefinito.
+    required: true
+  public-key:
+    description: Percorso, sul runner e fuori dal repository analizzato, della chiave pubblica cosign che verifica i plugin.
+    required: true
+  fail-on:
+    description: Livelli bloccanti per il gate, separati da virgola. Vuoto usa la configurazione.
+    default: ""
+  sarif:
+    description: Carica il SARIF in Code Scanning (serve security-events write).
+    default: "true"
+  comment:
+    description: Su una pull request, scrive il commento (serve pull-requests write).
+    default: "true"
+  check-run:
+    description: Su una pull request, crea la check run (serve checks write).
+    default: "true"
+  base-scan:
+    description: Se non c'è il report del base tra gli artefatti, analizza il base nello stesso job.
+    default: "true"
+  network:
+    description: Rete dei container (per esempio host, con il registry di prova su loopback). Vuoto per il default.
+    default: ""
+  github-token:
+    description: Token per SARIF, artefatti e notify.
+    default: ${{ github.token }}
+
+outputs:
+  report-dir:
+    description: Cartella con il report e il SARIF
+    value: ${{ steps.prepare.outputs.output }}
+
+runs:
+  using: composite
+  steps:
+    # pull_request_target darebbe a contenuto scelto da chi apre la PR un token con scrittura (ADR-0027).
+    - name: Controlla l'evento
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+      run: |
+        if [ "$EVENT" = pull_request_target ]; then
+          echo "::error::pull_request_target non è supportato: usa pull_request (vedi ADR-0027)"
+          exit 2
+        fi
+
+    - name: Prepara le cartelle
+      id: prepare
+      shell: bash
+      run: |
+        set -euo pipefail
+        root="$RUNNER_TEMP/code-analyzer"
+        rm -rf "$root"
+        mkdir -m 700 "$root" "$root/work" "$root/cache" "$root/output"
+        {
+          echo "root=$root"
+          echo "output=$root/output"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Trova il commit base
+      id: base
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Il commit di merge ha il base come primo genitore; senza, il checkout non è quello previsto.
+        git rev-parse --verify --quiet HEAD^2 > /dev/null \
+          || { echo "::error::HEAD non è il commit di merge della PR: usa actions/checkout con fetch-depth 2"; exit 2; }
+        echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
+
+    - name: Cerca la baseline tra gli artefatti
+      id: artifact
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        BASE_SHA: ${{ steps.base.outputs.sha }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        CA_BASELINE_DIR: ${{ steps.prepare.outputs.output }}/baseline
+      run: "$GITHUB_ACTION_PATH/fetch-baseline.sh"
+
+    - name: Analizza il base
+      id: basescan
+      if: github.event_name == 'pull_request' && steps.artifact.outputs.found != 'true' && inputs.base-scan == 'true'
+      shell: bash
+      env:
+        BASE_SHA: ${{ steps.base.outputs.sha }}
+        CA_BASELINE_DIR: ${{ steps.prepare.outputs.output }}/baseline
+        CA_SCAN_ROOT: ${{ steps.prepare.outputs.root }}
+        CA_WORKSPACE: ${{ github.workspace }}
+        CA_IMAGE: ${{ inputs.image }}
+        CA_PUBLIC_KEY: ${{ inputs.public-key }}
+        CA_WORK: ${{ steps.prepare.outputs.root }}/work
+        CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
+        CA_NETWORK: ${{ inputs.network }}
+      run: "$GITHUB_ACTION_PATH/scan-base.sh"
+
+    # Nessun --fail-on qui: scan non decide (ADR-0010). Il gate è l'ultimo passo.
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        CA_IMAGE: ${{ inputs.image }}
+        CA_PUBLIC_KEY: ${{ inputs.public-key }}
+        CA_WORKSPACE: ${{ github.workspace }}
+        CA_WORK: ${{ steps.prepare.outputs.root }}/work
+        CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
+        CA_OUTPUT: ${{ steps.prepare.outputs.output }}
+        CA_NETWORK: ${{ inputs.network }}
+        EVENT: ${{ github.event_name }}
+        BASE_SHA: ${{ steps.base.outputs.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        ARTIFACT_FOUND: ${{ steps.artifact.outputs.found }}
+        BASELINE: ${{ steps.prepare.outputs.output }}/baseline/code-analyzer.report.json
+      run: |
+        set -euo pipefail
+        extra=()
+        if [ "$EVENT" = pull_request ]; then
+          extra=(--pr --base "$BASE_SHA" --pull-request "$PR_NUMBER")
+          if [ -f "$BASELINE" ]; then
+            source=base-scan
+            [ "$ARTIFACT_FOUND" = true ] && source=ci-artifact
+            extra+=(--baseline /ca/output/baseline/code-analyzer.report.json --baseline-source "$source")
+          else
+            echo "::warning::nessuna baseline: il gate valuta tutti i finding"
+          fi
+        fi
+        "$GITHUB_ACTION_PATH/run-cli.sh" scan --output-dir /ca/output "${extra[@]}"
+
+    # Il report di un push sul branch principale è la baseline delle PR successive.
+    - name: Conserva il report del branch principale
+      if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.scan.outcome == 'success'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: code-analyzer-baseline
+        path: ${{ steps.prepare.outputs.output }}/code-analyzer.report.json
+        retention-days: 30
+        if-no-files-found: error
+
+    # Anche se scan è fallito: un SARIF parziale è meglio di nessuno (ADR-0010).
+    - name: Carica il SARIF
+      if: always() && inputs.sarif == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        SARIF: ${{ steps.prepare.outputs.output }}/code-analyzer.sarif
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+        REF: ${{ github.ref }}
+      run: |
+        set -euo pipefail
+        [ -f "$SARIF" ] || { echo "::notice::nessun SARIF da caricare"; exit 0; }
+        body="$(mktemp)"
+        trap 'rm -f "$body"' EXIT
+        python3 -I - "$SARIF" "$SHA" "$REF" > "$body" <<'PY'
+        import base64, gzip, json, sys
+        sarif, sha, ref = sys.argv[1:4]
+        data = base64.b64encode(gzip.compress(open(sarif, "rb").read())).decode()
+        print(json.dumps({"commit_sha": sha, "ref": ref, "sarif": data}))
+        PY
+        # Su una PR da fork il token è di sola lettura: si avvisa, non si fallisce.
+        if ! gh api "repos/$REPO/code-scanning/sarifs" --method POST --input "$body" > /dev/null; then
+          echo "::warning::caricamento del SARIF non riuscito (permesso security-events write mancante?)"
+        fi
+
+    - name: Notify
+      if: always() && github.event_name == 'pull_request' && steps.scan.outcome == 'success' && (inputs.comment == 'true' || inputs.check-run == 'true')
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        CA_IMAGE: ${{ inputs.image }}
+        CA_WORKSPACE: ${{ github.workspace }}
+        CA_WORK: ${{ steps.prepare.outputs.root }}/work
+        CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
+        CA_OUTPUT: ${{ steps.prepare.outputs.output }}
+        COMMENT: ${{ inputs.comment }}
+        CHECK_RUN: ${{ inputs.check-run }}
+      run: |
+        set -euo pipefail
+        flags=()
+        [ "$COMMENT" = true ] || flags+=(--no-comment)
+        [ "$CHECK_RUN" = true ] || flags+=(--no-check-run)
+        "$GITHUB_ACTION_PATH/run-cli.sh" notify --provider github --report /ca/output/code-analyzer.report.json "${flags[@]}"
+
+    # Ultimo: l'esito del job è quello del gate.
+    - name: Gate
+      shell: bash
+      env:
+        CA_IMAGE: ${{ inputs.image }}
+        CA_WORKSPACE: ${{ github.workspace }}
+        CA_WORK: ${{ steps.prepare.outputs.root }}/work
+        CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
+        CA_OUTPUT: ${{ steps.prepare.outputs.output }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -euo pipefail
+        flags=()
+        [ -z "$FAIL_ON" ] || flags+=(--fail-on "$FAIL_ON")
+        "$GITHUB_ACTION_PATH/run-cli.sh" gate "${flags[@]}"

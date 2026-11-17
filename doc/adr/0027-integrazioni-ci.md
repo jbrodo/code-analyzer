@@ -155,3 +155,12 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - Un permesso mancante (`forbidden`) scrive il commento nel riepilogo del job e esce con 0; ogni altro errore esce con 2 con il solo codice. Un commento fallito non ferma la check run.
 - Le annotazioni non sono neutralizzate per Markdown: GitHub le mostra come testo. Sono pulite da caratteri di controllo e bidirezionali e limitate in lunghezza.
 - **Da verificare alla fonte** (non fatto): limiti di GitHub su commenti, annotazioni e riepilogo; il fatto che un backslash davanti a `@` e `#` non basti, motivo per cui si aggiunge anche il carattere invisibile.
+
+## Realizzazione di N-04 (2026-11-17)
+
+- `integrations/github-action/`: `action.yml` composita, `run-cli.sh` (un solo punto che lancia l'immagine), `fetch-baseline.sh`, `scan-base.sh`, `README.md`. Ordine dei passi come sopra; `scan` non riceve `--fail-on`, `gate` è l'ultimo, il SARIF si carica con `always()`.
+- Il token di GitHub arriva solo ai passi che ne hanno bisogno; a `notify` nel container passa per nome (`-e GITHUB_TOKEN`), mai come argomento. `scan` e `gate` non lo ricevono; solo `scan` monta il socket. Nessuna espressione `${{ }}` dentro `run:`: i valori passano per `env:`.
+- **Il SARIF si carica con `gh api` (code-scanning/sarifs), non con un'action di terzi**, e la baseline si scarica con `gh api` dall'esecuzione `push` riuscita del branch principale; l'unica action di terzi è `actions/upload-artifact` (conserva il report del branch principale), fissata per hash del commit del tag v7.0.2 letto dall'API di GitHub il 2026-11-17.
+- Dallo zip dell'artefatto si estrae un solo nome scelto dall'Action, mai un percorso preso dallo zip; dimensione massima 100 MiB; ogni valore di ambiente è validato prima dell'uso.
+- **Ingressi `variant` e `server-url` non presenti**: la CLI non ha ancora le varianti di punteggio né `upload`. Si aggiungono con K-04/K-14 e il comando `upload`.
+- **Non fatto:** prova con l'immagine reale su un runner (i test usano `docker` e `gh` finti; è N-05); verifica alla fonte del formato dell'API `code-scanning/sarifs` e dei permessi; `notify` dentro l'immagine reale non è stato provato (potrebbe pretendere variabili che qui non passiamo).
