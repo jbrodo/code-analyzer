@@ -76,7 +76,10 @@ export function FindingsPage() {
   const extra = more?.key === key ? more : null;
 
   const firstData = first.status === "ready" ? first.data : null;
-  const items: readonly Item[] = firstData ? [...firstData.items, ...(extra?.items ?? [])] : [];
+  const loadedItems: readonly Item[] = firstData ? [...firstData.items, ...(extra?.items ?? [])] : [];
+  // dopo un'azione di triage la riga segue il nuovo stato sul posto e non sparisce dalla lista (U-01 §4.1)
+  const [edits, setEdits] = useState<{ key: string; byId: Record<string, Partial<Item>> }>({ key, byId: {} });
+  const items: readonly Item[] = loadedItems.map((it) => (edits.key === key ? { ...it, ...edits.byId[it.id] } : it));
   const cursor = extra ? extra.cursor : (firstData?.next_cursor ?? null);
 
   useEffect(() => {
@@ -94,6 +97,16 @@ export function FindingsPage() {
   }, [firstData, announce]);
 
   // D2: Esc o "Chiudi" chiude il pannello e riporta il fuoco sulla riga di partenza
+  const noteChange = (detail: Schemas["FindingDetail"]) => {
+    const active = (detail.exceptions ?? []).find((e) => !e.revoked_at && new Date(e.expires) >= new Date());
+    const patch: Partial<Item> = {
+      status: detail.finding.status,
+      owner: detail.finding.owner ?? null,
+      exception_origin: detail.finding.status === "accettato" ? (active?.origin ?? null) : null,
+    };
+    setEdits((previous) => ({ key, byId: { ...(previous.key === key ? previous.byId : {}), [detail.finding.id]: patch } }));
+  };
+
   const returnFocusTo = useRef<string | null>(null);
   const closePanel = (findingId: string) => {
     returnFocusTo.current = findingId;
@@ -209,7 +222,7 @@ export function FindingsPage() {
           footer={footer}
         />
       </main>
-      <Outlet context={{ close: closePanel }} />
+      <Outlet context={{ close: closePanel, changed: noteChange }} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOutletContext, useParams } from "react-router";
 
 import type { Schemas } from "@/api/client";
@@ -6,13 +6,17 @@ import { useClient } from "@/auth/session";
 import { LevelBadge } from "@/components/LevelBadge";
 import { CATEGORY_LABEL, STATUS_LABEL, dateTime, location } from "@/lib/format";
 import { useResource } from "@/lib/useResource";
+import type { Resource } from "@/lib/useResource";
 import { ScoreSection } from "./ScoreSection";
+import { TriageActions } from "./TriageActions";
 
 type Detail = Schemas["FindingDetail"];
 
 export interface PanelContext {
   /** Chiude il pannello e riporta il fuoco alla riga di partenza (D2). */
   close: (findingId: string) => void;
+  /** Dopo un'azione di triage: la riga della lista segue il nuovo stato senza ricaricare. */
+  changed: (detail: Schemas["FindingDetail"]) => void;
 }
 
 const REMEDIATION_SOURCE: Record<Schemas["RemediationSource"], string> = {
@@ -146,9 +150,12 @@ function History({ detail }: { detail: Detail }) {
 export function FindingPanel() {
   const { finding: id = "" } = useParams();
   const client = useClient();
-  const { close } = useOutletContext<PanelContext>();
+  const { close, changed } = useOutletContext<PanelContext>();
   const title = useRef<HTMLHeadingElement>(null);
-  const [detail] = useResource((signal) => client.getFinding(id, signal), [id]);
+  const [loaded] = useResource((signal) => client.getFinding(id, signal), [id]);
+  // dopo un'azione il pannello mostra la risposta del server, finché non cambia finding
+  const [updated, setUpdated] = useState<Detail | null>(null);
+  const detail: Resource<Detail> = updated?.finding.id === id ? { status: "ready", data: updated } : loaded;
 
   // D2: all'apertura il fuoco va al titolo del pannello
   useEffect(() => {
@@ -207,8 +214,14 @@ export function FindingPanel() {
           <ScoreSection level={f.level} source={f.level_source} scores={scores} />
         </Section>
         <Section id="sec-history" title="Stato e storia"><History detail={data} /></Section>
-        {/* le azioni di triage e le eccezioni arrivano con W-06 */}
       </div>
+      <TriageActions
+        detail={data}
+        onChanged={(next) => {
+          setUpdated(next);
+          changed(next);
+        }}
+      />
     </aside>
   );
 }

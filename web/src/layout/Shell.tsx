@@ -7,6 +7,7 @@ import { FindingPanel } from "@/features/finding/FindingPanel";
 import { FindingsPage } from "@/features/findings/FindingsPage";
 import { RepositoriesPage } from "@/features/repositories/RepositoriesPage";
 import { age } from "@/lib/format";
+import { MeContext } from "./me";
 import { useResource } from "@/lib/useResource";
 
 function RepositorySelect({ current }: { current: string | null }) {
@@ -83,6 +84,7 @@ export function Shell() {
           </p>
         )}
       </header>
+      <MeContext.Provider value={me}>
       <Routes>
         <Route path="/" element={<RepositoriesPage />} />
         <Route path="/r/:repository" element={<FindingsPage />}>
@@ -98,6 +100,7 @@ export function Shell() {
           }
         />
       </Routes>
+      </MeContext.Provider>
     </>
   );
 }
