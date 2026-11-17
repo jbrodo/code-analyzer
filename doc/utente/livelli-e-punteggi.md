@@ -1,6 +1,6 @@
 # Livelli, punteggi e varianti
 
-**Stato: i punteggi non sono ancora calcolati.** Questa pagina dice cosa cambia, quando, e cosa c'è oggi. Decisioni: ADR-0009 (livelli provvisori), ADR-0018 (le due varianti), D2-10. L'ADR sulla formula dei punteggi (ADR-0021) non è ancora scritto.
+**Stato: i punteggi non sono ancora calcolati.** Questa pagina dice cosa cambia, quando, e cosa c'è oggi. Decisioni: ADR-0009 (livelli provvisori), ADR-0018 (le due varianti), D2-10. La formula e gli override sono in ADR-0021 (proposto: i valori numerici sono ipotesi da calibrare sui repository pilota).
 
 ## Cosa c'è oggi
 
