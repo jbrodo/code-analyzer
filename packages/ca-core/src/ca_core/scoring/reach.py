@@ -53,6 +53,10 @@ class Reachability(Protocol):
         """`None` se il percorso non è un modulo del grafo (IaC, segreti, licenze su file)."""
         ...
 
+    def package(self, path: str) -> ReachResult | None:
+        """Stato migliore tra i moduli sotto una cartella (`.` per tutti); `None` se non ce n'è."""
+        ...
+
     def dependency(self, ecosystem: str, name: str) -> ReachResult:
         """Uso di un pacchetto: `raggiungibile`, `solo-test` o `ignota`, mai «non usata»."""
         ...
@@ -62,6 +66,9 @@ class NoReachability:
     """Grafo assente o fallito: tutto `ignota`, dichiarato (ADR-0022)."""
 
     def module(self, path: str) -> ReachResult | None:
+        return ReachResult(ReachState.UNKNOWN, reason="grafo-assente")
+
+    def package(self, path: str) -> ReachResult | None:
         return ReachResult(ReachState.UNKNOWN, reason="grafo-assente")
 
     def dependency(self, ecosystem: str, name: str) -> ReachResult:

@@ -792,7 +792,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1. ADR: 0021, 0022, 0024.
 
 #### K-04 — Fattore E
-- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per il fattore. `scoring/exposure.py::factor_e`: raggiungibilità dal protocollo `Reachability` (modulo, più membri come un ciclo con lo stato migliore, cartelle per gli smell di pacchetto, uso della dipendenza dal purl npm o PyPI anche per le licenze dei componenti), esposizione dal contesto del servizio (K-05), valori 1,0, 0,6, 0,3 e 0,2 dalla configurazione; esposizione assente come interno; finding senza modulo come raggiungibili salvo i percorsi di test (0,2); senza grafo `ignota` con il motivo `grafo-assente`. L'evidenza porta regola, stato, entrypoint, motivo ed esposizione con la sua fonte. `ScoringContext` porta ora anche `reachability`; `Reachability` ha in più `package`. **Non fatto:** le dipendenze di sviluppo o di test dichiarate da lockfile o SBOM (E = 0,2): servono dati che arrivano con K-15; un purl di un ecosistema diverso da npm e PyPI vale `ignota`; il collegamento al grafo vero nel passo `score` (K-14).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`.
 - Dipende da: K-01, G-12, C-05.
 - Accettazione: valori 1,0, 0,6, 0,3, 0,2 secondo ADR-0022, esposizione dalla fonte di D2-04, fonte registrata nell'evidenza; comune alle due varianti.

@@ -295,3 +295,17 @@ def test_the_extracted_fixture_graph_is_consistent(tmp_path: Path) -> None:
         if module.test:
             assert reach.module(module.path).state is T  # type: ignore[union-attr]
     assert {reach.module(m.path).state for m in document.modules} <= {R, T, N, U}  # type: ignore[union-attr]
+
+
+def test_a_package_takes_the_best_state_of_its_modules_and_none_for_an_empty_folder() -> None:
+    reach = graph(
+        [mod("main.py"), mod("lib/a.py"), mod("lib/b.py"), mod("other/c.py")],
+        [edge("main.py", "lib/a.py")],
+        [entry("main.py")],
+    )
+    assert reach.package("lib") == ReachResult(R, entrypoint="main.py")
+    assert reach.package("other") == ReachResult(N)
+    assert reach.package("lib/") == ReachResult(R, entrypoint="main.py")
+    assert reach.package(".") is not None and reach.package(".").state is R  # type: ignore[union-attr]
+    assert reach.package("nothing") is None
+    assert reach.package("li") is None  # un prefisso di testo non è una cartella

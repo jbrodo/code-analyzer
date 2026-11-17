@@ -99,6 +99,11 @@ class GraphReachability:
     def module(self, path: str) -> ReachResult | None:
         return self._modules.get(path)
 
+    def package(self, path: str) -> ReachResult | None:
+        prefix = "" if path in (".", "") else path.rstrip("/") + "/"
+        found = [r for p, r in self._modules.items() if p.startswith(prefix)]
+        return best(found) if found else None
+
     def dependency(self, ecosystem: str, name: str) -> ReachResult:
         """Stato migliore tra i moduli che importano il pacchetto; nessuno: `ignota`."""
         users: list[ReachResult] = []

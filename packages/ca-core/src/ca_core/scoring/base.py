@@ -11,6 +11,7 @@ from typing import Any, Protocol
 from ca_core.models.finding import Finding, ImpactFactors
 from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
+from ca_core.scoring.reach import NoReachability, Reachability
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class ScoringContext:
             internet_facing=ServiceValue(value=None, source="default"),
         )
     )
+    reachability: Reachability = field(default_factory=NoReachability)
 
 
 @dataclass(frozen=True)
