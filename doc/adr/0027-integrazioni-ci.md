@@ -137,3 +137,13 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - Su GitLab i finding che non entrano nei quattro report nativi si vedono solo negli artefatti, e senza un token dell'utente non c'è commento. È meno di quanto offre GitHub: va scritto nella documentazione.
 - Ogni pipeline deve conservare il report del branch principale come artefatto, o pagare una seconda scansione per PR.
 - S-04 rivede: token nell'ambiente della CLI, testi non fidati nel commento, fonte della baseline, rifiuto di `pull_request_target`.
+
+### Realizzazione del client GitHub (N-02, 2026-11-17)
+
+`ca_integrations.github`. Scostamenti e fatti nuovi:
+
+- **Identità dell'autore.** Con il token del job `GET /user` non è disponibile, quindi l'identità con cui riconoscere il proprio commento la dà il chiamante (predefinito `github-actions[bot]`), non l'API. Un commento con il marcatore ma di un altro autore si ignora.
+- **Marcatore iniziale.** Il commento si riconosce solo se *inizia* con il marcatore: un marcatore nel mezzo di un testo non conta.
+- **Trasporto.** Solo libreria standard, senza dipendenze nuove. Nessun redirect seguito (il token andrebbe a un altro host), HTTPS obbligatorio salvo loopback richiesto esplicitamente, tetto di 5 MiB sulla risposta, timeout, nessun nuovo tentativo.
+- **Ricerca del commento** al più su 20 pagine da 100; oltre si crea un commento nuovo invece di cercare all'infinito.
+- **Non verificato alla fonte:** i limiti di dimensione e le annotazioni per richiesta di GitHub, e i nomi esatti dei permessi, restano quelli scritti a memoria in `ca_integrations.limits`. Chi li legge alla fonte è N-03.

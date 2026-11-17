@@ -1117,7 +1117,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §3. ADR: 0001, 0027.
 
 #### N-02 — Commento PR e check run su GitHub
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per il client; `ca_integrations/github/` (trasporto e client). Un solo commento per PR ritrovato dal marcatore iniziale e dall'autore atteso, check run già conclusa con annotazioni, errori come codici stabili (`forbidden`, `rate-limited`, `redirect`…) che non portano mai corpo né token. Trasporto sulla sola libreria standard: nessun redirect (`urllib` inoltrerebbe il token), solo HTTPS tranne loopback su richiesta, tetto di 5 MiB e timeout. Provato con un trasporto finto e con un server in loopback. **Non fatto:** il comando `notify` della CLI che lo chiama (ADR-0027), la lettura dei limiti di GitHub alla fonte (restano a memoria, N-03) e la verifica alla fonte dei permessi.
 - Percorsi: `packages/ca-integrations/src/ca_integrations/github/`.
 - Dipende da: N-01, C-09.
 - Accettazione: creazione o aggiornamento di un unico commento e di una check run con il token e i permessi di ADR-0027; test su server finto, nessuna rete.
