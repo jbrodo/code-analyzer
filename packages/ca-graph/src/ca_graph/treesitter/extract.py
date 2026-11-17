@@ -2,14 +2,15 @@
 
 Produce un dizionario nel formato del contratto `graph` (C-02) senza importare `ca_core`: lo
 valida il test di contratto. Nodi, archi ed elenchi sono ordinati, così lo stesso workspace dà lo
-stesso file. Entrypoint, churn, metriche e pacchetti non sono qui: gli entrypoint e il churn
-arrivano con G-11 e G-12, metriche e pacchetti li ricava l'host (ADR-0020).
+stesso file. Il churn non è qui (G-11); metriche e pacchetti li ricava l'host (ADR-0020). Gli
+entrypoint sono dichiarati dai metadati o dedotti da convenzioni (G-12): vedi `entrypoints.py`.
 """
 
 import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from ca_graph.treesitter import entrypoints as ep
 from ca_graph.treesitter import files as fs
 from ca_graph.treesitter import javascript as js
 from ca_graph.treesitter import python as py
@@ -123,6 +124,7 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
     )
 
     state = _State()
+    inferred: dict[tuple[str, str], str] = {}
     modules: list[dict[str, Any]] = []
     parsed = partial = 0
     for path in sources:
@@ -142,6 +144,8 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
             _record_python(state, py_resolver, path, imports)
         else:
             _record_js(state, js_resolver, path, imports)
+        for kind, confidence in ep.inspect_source(path, language, data, imports):
+            inferred[(path, kind)] = confidence
         modules.append(
             {
                 "path": path,
@@ -150,6 +154,7 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
                 "test": fs.is_test_path(path),
             }
         )
+    declared = ep.declared_entrypoints(configs, frozenset(sources), read_config)
     edges = [
         {
             "source": source,
@@ -167,7 +172,7 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
         "modules": modules,
         "externals": [{"name": n, "ecosystem": e} for e, n in sorted(state.externals)],
         "edges": edges,
-        "entrypoints": [],
+        "entrypoints": ep.to_documents(declared, inferred),
         "packages": [],
         "stats": {
             "files_parsed": parsed,
@@ -179,7 +184,7 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
                 "missing": state.missing,
                 "outside_workspace": state.outside,
                 "config_extends": js_resolver.config_extends,
-                "entrypoint_missing": 0,
+                "entrypoint_missing": declared.missing,
             },
         },
         "history": {"status": "assente", "window_days": window_days},

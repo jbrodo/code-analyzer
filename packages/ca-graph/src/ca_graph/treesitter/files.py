@@ -138,7 +138,7 @@ def read_file(root: str, relative: str, limit: int = MAX_FILE_BYTES) -> bytes | 
 
 
 CONFIG_NAMES = frozenset(
-    {"package.json", "tsconfig.json", "jsconfig.json", "pyproject.toml", "setup.cfg"}
+    {"package.json", "tsconfig.json", "jsconfig.json", "pyproject.toml", "setup.cfg", "index.html"}
 )
 MAX_CONFIG_BYTES = 256 * 1024
 MAX_CONFIGS = 5_000

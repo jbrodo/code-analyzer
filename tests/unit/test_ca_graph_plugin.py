@@ -137,7 +137,15 @@ def test_the_staged_context_has_the_extractor_and_no_other_package_code(tmp_path
             "ca_graph/__init__.py",
             *(
                 f"ca_graph/treesitter/{n}.py"
-                for n in ("__init__", "extract", "files", "javascript", "python", "refs")
+                for n in (
+                    "__init__",
+                    "entrypoints",
+                    "extract",
+                    "files",
+                    "javascript",
+                    "python",
+                    "refs",
+                )
             ),
         }
         assert "context.sources" not in files and not any(
