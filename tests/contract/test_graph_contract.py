@@ -80,6 +80,9 @@ VALID = {
     "minimal": MINIMAL,
     "full": FULL,
     "module-js": _module(),
+    "stats-skipped-name": mutated(
+        MINIMAL, _with(stats={"files_parsed": 1, "files_skipped_name": 2})
+    ),
     "module-root-file": _module(path="setup.py", language="python"),
     "external-scoped-npm": mutated(
         MINIMAL, _with(externals=[{"name": "@scope/pkg.name", "ecosystem": "npm"}])
@@ -165,6 +168,9 @@ INVALID = {
         ),
     ),
     "stats-negative": mutated(MINIMAL, _with(stats={"files_parsed": -1})),
+    "stats-skipped-name-negative": mutated(
+        MINIMAL, _with(stats={"files_parsed": 0, "files_skipped_name": -1})
+    ),
     "stats-unknown-reason": mutated(
         MINIMAL, _with(stats={"files_parsed": 0, "unresolved": {"other": 1}})
     ),

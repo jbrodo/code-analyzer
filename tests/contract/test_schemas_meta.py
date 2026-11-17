@@ -13,7 +13,7 @@ VERSIONS = {
     "plugin-manifest": "1.1",  # C-02 della Fase 2: uscita `graph`
     "plugin-sarif-properties": "1.1",  # P-01 della Fase 2: `metric`
     "scan-report": "1.0",
-    "graph": "1.0",
+    "graph": "1.1",  # G-02: files_skipped_name
 }
 
 

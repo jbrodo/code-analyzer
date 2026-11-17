@@ -173,6 +173,7 @@ class Stats(_Strict):
     files_parsed: Count
     files_partial: Count = 0
     files_skipped_size: Count = 0
+    files_skipped_name: Count = 0  # nomi di file con caratteri di controllo (S-02)
     unresolved: Unresolved = Field(default_factory=Unresolved)
 
 
