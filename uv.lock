@@ -200,6 +200,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "ca-graph", extra = ["extract"] },
     { name = "httpx" },
     { name = "hypothesis" },
     { name = "import-linter" },
@@ -224,6 +225,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "ca-graph", extras = ["extract"], editable = "packages/ca-graph" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "hypothesis", specifier = ">=6.170.15" },
     { name = "import-linter", specifier = ">=2.16" },

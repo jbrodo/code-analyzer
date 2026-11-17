@@ -588,14 +588,14 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §3. ADR: 0001.
 
 #### G-02 — Estrattore Python
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/treesitter/python.py` e `extract.py`. Import assoluti e relativi, pacchetti con e senza `__init__.py` (arco `dedotto`), `TYPE_CHECKING`, `importlib.import_module` letterale come arco dinamico e calcolato contato; radici di sorgenti da `src` e dai file di progetto. Test sui casi di V-07 e su quelli ostili. Il grafo è valido contro lo schema e il modello. Mancano le fixture F-01 (i test costruiscono i workspace da soli) e le misure sui pilota.
 - Percorsi: `packages/ca-graph/src/ca_graph/treesitter/`.
 - Dipende da: G-01, C-02.
 - Accettazione: import assoluti e relativi, pacchetti con e senza `__init__.py` (V-07); import non risolvibili marcati, mai inventati; output conforme a C-02 sui fixture di F-01 e sui casi di V-07.
 - Spec: §3. ADR: 0020.
 
 #### G-03 — Estrattore JS/TS/TSX
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/treesitter/javascript.py`. Tutte le forme di import, alias di `tsconfig` letti come dati non fidati con `extends` limitato, pacchetti del workspace, convenzione `.js` → `.ts`, `import()` e `require()` letterali o contati. Limiti noti elencati in ADR-0020, «Realizzazione»; ognuno dà un arco mancante contato, mai uno inventato. Il contratto `graph` passa a 1.1 (`files_skipped_name`).
 - Percorsi: `packages/ca-graph/src/ca_graph/treesitter/`.
 - Dipende da: G-01, C-02.
 - Accettazione: `import`, `export … from`, `require` e `import()` con stringa letterale, alias di `tsconfig` letti come dati; output conforme a C-02.

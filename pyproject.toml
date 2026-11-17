@@ -8,6 +8,7 @@ dependencies = ["ca-core", "ca-plugins", "ca-cli", "ca-graph", "ca-integrations"
 
 [dependency-groups]
 dev = [
+    "ca-graph[extract]",
     "httpx>=0.28",
     "hypothesis>=6.170.15",
     "import-linter>=2.16",
@@ -50,6 +51,10 @@ src = ["packages/*/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Workspace di prova scritti come stringhe: righe lunghe volute.
+"tests/unit/graph/*" = ["E501"]
 
 # ADR-0001: dipendenze interne solo verso ca-core.
 [tool.importlinter]
