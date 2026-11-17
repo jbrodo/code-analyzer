@@ -1,23 +1,32 @@
 """K-01, K-02, K-12: interfaccia, G della Variante A e livelli da punteggio (casi di F-05)."""
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import pytest
 from builders import finding
+from test_scoring_exposure import Fake
 
-from ca_core.models.finding import Category, Level
+from ca_core.fakes import FakeEnrichmentFeeds
+from ca_core.models.finding import Category, Level, Location
+from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
-from ca_core.scoring.base import Factor, impact, round_score
+from ca_core.ports import FeedStatus, KevAnswer
+from ca_core.scoring.base import Factor, ScoringContext, impact, round_score
 from ca_core.scoring.config import (
     ScoringConfigError,
     default_bytes,
     load_default,
     resolve_config,
 )
+from ca_core.scoring.exposure import factor_e
 from ca_core.scoring.levels import best_cvss_entry, level_from_score
-from ca_core.scoring.variant_a import factor_g
+from ca_core.scoring.overrides import applicable_overrides, floor_of
+from ca_core.scoring.reach import ReachResult, ReachState
+from ca_core.scoring.service import factor_c
+from ca_core.scoring.variant_a import factor_g, factor_p
 
 CASES: dict[str, Any] = json.loads(
     (Path(__file__).resolve().parents[1] / "fixtures/scoring/cases.json").read_text()
@@ -142,3 +151,71 @@ def test_an_invalid_override_is_an_error_never_a_silent_fallback_to_the_default(
         resolve_config(flag=b"{}")
     with pytest.raises(ScoringConfigError):
         resolve_config(tenant=b"{")
+
+
+# --- F-05: P, E, C e override, dalla tabella di ADR-0021 e ADR-0022 ----------------------------
+
+
+def _dep_with(cve: str = "CVE-2024-0001"):
+    return finding("d", category=Category.DEPENDENCY, tool="osv-scanner").model_copy(
+        update={
+            "cve": [cve],
+            "location": Location(
+                repository="repo", path="requirements.txt", purl="pkg:pypi/django@3.2"
+            ),
+        }
+    )
+
+
+def _feeds(case: dict[str, Any]) -> FakeEnrichmentFeeds | None:
+    if not case["feeds"]:
+        return None
+    kev = {"CVE-2024-0001": KevAnswer(status=FeedStatus.FOUND, date_added=date(2024, 1, 1))}
+    epss = {} if case["epss"] is None else {"CVE-2024-0001": (case["epss"], 0.5)}
+    return FakeEnrichmentFeeds(epss=epss, kev=kev if case["kev"] else {})
+
+
+@pytest.mark.parametrize("case", CASES["p"], ids=[c["name"] for c in CASES["p"]])
+def test_p_matches_the_hand_derived_table(case: dict[str, Any]) -> None:
+    factor = factor_p(_dep_with(), ScoringContext(config=CONFIG, feeds=_feeds(case)))
+    assert factor.value == pytest.approx(case["expected"], abs=1e-9)
+    assert factor.evidence.get("fallback") == case.get("fallback")
+
+
+@pytest.mark.parametrize("case", CASES["e"], ids=[c["name"] for c in CASES["e"]])
+def test_e_matches_the_hand_derived_table(case: dict[str, Any]) -> None:
+    reach = Fake(modules={"app/x.py": ReachResult(ReachState(case["state"]))})
+    exposure = ServiceValue(
+        value=case["exposed"], source="catalog" if case["exposed"] is not None else "default"
+    )
+    context = ScoringContext(
+        config=CONFIG,
+        reachability=reach,
+        service=ServiceContext(
+            tier=ServiceValue(value=None, source="default"), internet_facing=exposure
+        ),
+    )
+    f = finding("x", category=Category.SAST, path="app/x.py")
+    assert factor_e(f, context).value == case["expected"]
+
+
+@pytest.mark.parametrize("case", CASES["c"], ids=[c["name"] for c in CASES["c"]])
+def test_c_matches_the_hand_derived_table(case: dict[str, Any]) -> None:
+    service = ServiceContext(
+        tier=ServiceValue(value=case["tier"], source="catalog" if case["tier"] else "default"),
+        internet_facing=ServiceValue(value=None, source="default"),
+    )
+    assert factor_c(service, CONFIG).value == case["expected"]
+
+
+@pytest.mark.parametrize("case", CASES["override"], ids=[c["name"] for c in CASES["override"]])
+def test_overrides_match_the_hand_derived_table(case: dict[str, Any]) -> None:
+    kev = {"CVE-2024-0001": KevAnswer(status=FeedStatus.FOUND, date_added=date(2024, 1, 1))}
+    epss = {} if case["kind"] == "kev" else {"CVE-2024-0001": (case["value"], 0.5)}
+    feeds = FakeEnrichmentFeeds(epss=epss, kev=kev if case["kind"] in ("kev", "both") else {})
+    reach = Fake(dependencies={("pypi", "django"): ReachResult(ReachState(case["reach"]))})
+    context = ScoringContext(config=CONFIG, feeds=feeds, reachability=reach)
+    found = applicable_overrides(_dep_with(), context)
+    assert [o.name for o in found] == case["expected"]
+    floor = floor_of(_dep_with(), context)
+    assert (floor.level.value if floor else None) == case["floor"]

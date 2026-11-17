@@ -566,7 +566,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §16 regola 7. ADR: 0024.
 
 #### F-05 — Tabella di regressione dello scoring
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **parziale, 2026-11-17**. `tests/fixtures/scoring/cases.json`, con valori ricavati a mano da ADR-0021 e ADR-0022 e non dal codice: G per ogni categoria (26 casi), P (6), E (7), C (4), override (5), i sei punteggi dell'ADR e i bordi 14,99, 15, 39,99, 40, 69,5, 69,99, 69,995 e 70. **Non fatto:** i casi della Variante B (ADR-0023 non esiste); i casi di P per qualità e SAST sono nei test unitari, non nella tabella.
 - Percorsi: `tests/fixtures/scoring/`.
 - Dipende da: C-03.
 - Accettazione: casi con fattori, punteggio e livello attesi per A e B, per ogni categoria, ogni override e i bordi 15, 40 e 70 (incluso 69,5); i valori attesi si ricavano da ADR-0021 e ADR-0023, non dal codice.
