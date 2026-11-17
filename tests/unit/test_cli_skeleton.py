@@ -12,8 +12,14 @@ from ca_plugins.runner import IsolationUnsatisfied, OciExecutor
 from ca_plugins.source import LocalSourceReader
 
 
-def test_only_the_four_commands_exist() -> None:
-    assert set(HANDLERS) == {("scan", None), ("sbom", None), ("gate", None), ("config", "validate")}
+def test_only_the_known_commands_exist() -> None:
+    assert set(HANDLERS) == {
+        ("scan", None),
+        ("sbom", None),
+        ("gate", None),
+        ("notify", None),  # Fase 2, ADR-0027
+        ("config", "validate"),
+    }
     for argv in (["explain"], ["plugin", "list"], ["config", "other"], []):
         with pytest.raises(SystemExit) as err:
             build_parser().parse_args(argv)

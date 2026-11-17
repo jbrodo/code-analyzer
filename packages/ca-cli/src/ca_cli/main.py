@@ -17,7 +17,7 @@ from collections.abc import Callable, Generator, Sequence
 from pathlib import Path
 from types import FrameType
 
-from ca_cli import config_validate, gate, sbom, scan
+from ca_cli import config_validate, gate, notify, sbom, scan
 from ca_cli.composition import Context, build_context
 from ca_core.models.scan_report import BaselineSourceKind, Isolation
 from ca_plugins.hostpaths import HostPathsError
@@ -31,6 +31,7 @@ HANDLERS: dict[tuple[str, str | None], Handler] = {
     ("scan", None): scan.handle,
     ("sbom", None): sbom.handle,
     ("gate", None): gate.handle,
+    ("notify", None): notify.handle,
     ("config", "validate"): config_validate.handle,
 }
 
@@ -82,6 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
     gate_parser.add_argument(
         "--allow-partial", action="store_true", help="valuta anche una scansione parziale"
     )
+    notify.add_parser(commands)
     config = commands.add_parser("config", help="strumenti per .code-analyzer.yml")
     config_commands = config.add_subparsers(dest="config_command", metavar="COMMAND", required=True)
     validate = config_commands.add_parser("validate", help="valida .code-analyzer.yml offline")

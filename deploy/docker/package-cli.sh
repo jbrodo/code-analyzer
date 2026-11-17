@@ -50,7 +50,7 @@ for manifest in "$WORK/$BUILTIN"/*/plugin.yaml; do
 done
 
 log "wheel"
-for package in ca-core ca-plugins ca-graph ca-cli; do
+for package in ca-core ca-plugins ca-graph ca-integrations ca-cli; do
   (cd "$WORK" && uv build --quiet --wheel --package "$package" --out-dir "$OUT/dist")
 done
 

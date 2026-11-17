@@ -21,6 +21,7 @@ from ca_core.ports import (
     SourceReader,
 )
 from ca_core.schema_validation import SchemaStore
+from ca_integrations.github import Transport
 from ca_plugins.hostpaths import IMAGE_MARKER, OUTPUT_ROOT, HostPaths, HostPathsError, from_env
 from ca_plugins.runner import DEFAULT_MAX_PARALLEL, OciExecutor
 from ca_plugins.sdk import list_packaged_plugins, load_packaged_manifest
@@ -104,6 +105,7 @@ class Context:
     feeds_cache: Path | None = None  # None: cache per utente (`feeds.default_cache_dir`)
     output_root: Path | None = None  # immagine CLI: gli artefatti stanno solo qui sotto
     close: Callable[[], None] = lambda: None  # `main()` lo chiama sempre, in `finally`
+    notify_transport: Transport | None = None  # None: trasporto reale (solo `notify`)
 
     @staticmethod
     def artifact_sink(output_dir: str) -> ArtifactSink:

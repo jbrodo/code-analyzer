@@ -147,3 +147,11 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - **Trasporto.** Solo libreria standard, senza dipendenze nuove. Nessun redirect seguito (il token andrebbe a un altro host), HTTPS obbligatorio salvo loopback richiesto esplicitamente, tetto di 5 MiB sulla risposta, timeout, nessun nuovo tentativo.
 - **Ricerca del commento** al più su 20 pagine da 100; oltre si crea un commento nuovo invece di cercare all'infinito.
 - **Non verificato alla fonte:** i limiti di dimensione e le annotazioni per richiesta di GitHub, e i nomi esatti dei permessi, restano quelli scritti a memoria in `ca_integrations.limits`. Chi li legge alla fonte è N-03.
+
+## Realizzazione di N-03 e di `notify` (2026-11-17)
+
+- `ca-cli` dipende ora da `ca-integrations` (consentito da `lint-imports`); il pacchetto entra nei wheel di `package-cli.sh`. **L'immagine della CLI non è stata ricostruita**: da provare prima dell'uso.
+- `notify --provider github` legge il token solo da `GITHUB_TOKEN`. Repository, PR e commit di testa vengono dai flag, poi dal report (`scan.pull_request`) e dal file `GITHUB_EVENT_PATH`, validati; un valore malformato vale come assente. Ordine per la PR: flag, report, evento.
+- Un permesso mancante (`forbidden`) scrive il commento nel riepilogo del job e esce con 0; ogni altro errore esce con 2 con il solo codice. Un commento fallito non ferma la check run.
+- Le annotazioni non sono neutralizzate per Markdown: GitHub le mostra come testo. Sono pulite da caratteri di controllo e bidirezionali e limitate in lunghezza.
+- **Da verificare alla fonte** (non fatto): limiti di GitHub su commenti, annotazioni e riepilogo; il fatto che un backslash davanti a `@` e `#` non basti, motivo per cui si aggiunge anche il carattere invisibile.

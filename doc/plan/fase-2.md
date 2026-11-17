@@ -1117,14 +1117,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §3. ADR: 0001, 0027.
 
 #### N-02 — Commento PR e check run su GitHub
-- Agente: `backend`. Stato: **chiuso il 2026-11-17** per il client; `ca_integrations/github/` (trasporto e client). Un solo commento per PR ritrovato dal marcatore iniziale e dall'autore atteso, check run già conclusa con annotazioni, errori come codici stabili (`forbidden`, `rate-limited`, `redirect`…) che non portano mai corpo né token. Trasporto sulla sola libreria standard: nessun redirect (`urllib` inoltrerebbe il token), solo HTTPS tranne loopback su richiesta, tetto di 5 MiB e timeout. Provato con un trasporto finto e con un server in loopback. **Non fatto:** il comando `notify` della CLI che lo chiama (ADR-0027), la lettura dei limiti di GitHub alla fonte (restano a memoria, N-03) e la verifica alla fonte dei permessi.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per il client (il comando `notify` è fatto il 2026-11-17: vedi N-03); `ca_integrations/github/` (trasporto e client). Un solo commento per PR ritrovato dal marcatore iniziale e dall'autore atteso, check run già conclusa con annotazioni, errori come codici stabili (`forbidden`, `rate-limited`, `redirect`…) che non portano mai corpo né token. Trasporto sulla sola libreria standard: nessun redirect (`urllib` inoltrerebbe il token), solo HTTPS tranne loopback su richiesta, tetto di 5 MiB e timeout. Provato con un trasporto finto e con un server in loopback. **Non fatto:** la lettura dei limiti di GitHub alla fonte (restano a memoria, N-03) e la verifica alla fonte dei permessi.
 - Percorsi: `packages/ca-integrations/src/ca_integrations/github/`.
 - Dipende da: N-01, C-09.
 - Accettazione: creazione o aggiornamento di un unico commento e di una check run con il token e i permessi di ADR-0027; test su server finto, nessuna rete.
 - Spec: §12.1. ADR: 0027.
 
 #### N-03 — Formato del commento e delle annotazioni
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per il formato; `ca_integrations/github/format.py`. Commento: solo i finding `new` con i conteggi (senza baseline valida lo dice ed elenca quelli che bloccano), ordine dell'elenco, un gruppo di correlazione una volta con tutti gli strumenti, tetto configurabile e numero dei rimanenti, corpo sotto il limite senza tagliare un finding. Testo del report neutralizzato: caratteri di controllo e bidirezionali tolti, ogni punteggiatura ASCII con backslash, menzioni, `#n`, indirizzi, `www.` e hash esadecimali interrotti da un carattere invisibile, nessun collegamento costruito dai testi; provato con contenuto ostile, marcatore contraffatto e un titolo che finge un'intestazione. Check run: conclusione dalla stessa funzione di `gate`; annotazioni solo per finding con posizione (livello critico e alto errore, medio avviso, basso nota), testo pulito ma non in Markdown perché non è reso come tale. **Non fatto:** la lettura dei limiti e dei permessi di GitHub alla fonte: restano a memoria in `limits.py` e non verificati (nessun accesso alla rete).
 - Percorsi: `packages/ca-integrations/`.
 - Dipende da: C-09.
 - Accettazione: solo finding nuovi, ordinati per impatto, con limite di lunghezza; contenuto dei finding neutralizzato per Markdown e menzioni; test con contenuto ostile.
