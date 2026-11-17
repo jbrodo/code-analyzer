@@ -14,6 +14,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    StrictBool,
     StrictFloat,
     StrictInt,
     field_validator,
@@ -88,6 +89,12 @@ class PluginSarifProperties(BaseModel):
         default=None, description="Identificativo o espressione SPDX."
     )
     purl: str | None = Field(default=None, pattern=r"^pkg:[a-z][a-z0-9.+-]*/\S+$", max_length=2048)
+    taint: StrictBool | None = Field(
+        default=None,
+        description="Il risultato viene da una regola di flusso dei dati (taint) del prodotto: "
+        "fonte e sink collegati (ADR-0021, «percorso confermato»). Solo per regole che il plugin "
+        "porta nell'immagine, mai per quelle del repository analizzato.",
+    )
 
     @field_validator("aliases")
     @classmethod

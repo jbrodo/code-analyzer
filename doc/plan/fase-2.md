@@ -728,28 +728,28 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 ### E — Feed di arricchimento
 
 #### E-01 — Modello e porta dei feed
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** (con C-06 per la porta). `ca_core/scoring/feeds/`: `limits.json` con i tetti di ADR-0024 (nella configurazione del pacchetto), `parse_epss` e `parse_kev` (lettura difensiva: intestazione, righe, intervalli, duplicati, numero di voci; di KEV si leggono solo `cveID`, `dateAdded` e `knownRansomwareCampaignUse`), controllo di plausibilità del calo, `SnapshotFeeds` con le tre risposte. Verificato sui file veri del 2026-11-17: 407.165 voci EPSS in 0,55 s e 1.781 voci KEV.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/feeds/`.
 - Dipende da: C-06.
 - Accettazione: modello dei dati EPSS e KEV e dello snapshot (origine, data, integrità), ricerca per CVE, nessun I/O nel nucleo (`lint-imports`).
 - Spec: §3, §6.1. ADR: 0001, 0024.
 
 #### E-02 — Adattatore EPSS
-- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17: fonti pubbliche, nessun mirror).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** insieme a E-03 in `ca_plugins/enrichment.py`: HTTPS con redirect solo verso lo stesso host (al massimo 5), tetto di byte durante la lettura, tetto sulla decompressione gzip (provato con una bomba), cache per utente con puntatore atomico, riconvalida e SHA-256 a ogni lettura, symlink mai seguiti, soglia di un giorno, `--offline` (`feeds-stale`), fallimento con snapshot precedente (`feeds-sync-failed`), nessuno snapshot (`enrichment-feed-missing`, risposte `snapshot-absent`). Provato contro i server veri il 2026-11-17 (1,9 s, poi dalla cache). **Non fatto:** il collegamento alla CLI (K-15/E-06).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/`.
 - Dipende da: E-01, A-09.
 - Accettazione: sincronizzazione senza workspace, controllo di integrità e di dimensione, cache con soglia di età, `--offline` la impedisce, lettura difensiva del file; test sullo snapshot di F-04 senza rete.
 - Spec: §6.1. ADR: 0006, 0024.
 
 #### E-03 — Adattatore KEV
-- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17: fonti pubbliche, nessun mirror).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**, vedi E-02.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/`.
 - Dipende da: E-01, A-09.
 - Accettazione: come E-02 per KEV.
 - Spec: §6.1. ADR: 0006, 0024.
 
 #### E-04 — Origine configurabile dei feed
-- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17). Si riduce alla configurazione dell'origine da pacchetto, flag o ambiente; nessuna verifica di firma dello snapshot perché non c'è un mirror.
+- Agente: `backend`. Stato: **chiuso in parte il 2026-11-17** (D2-05 decisa il 2026-11-17). Si riduce alla configurazione dell'origine; nessuna verifica di firma dello snapshot perché non c'è un mirror. Fatto per EPSS e KEV: `CA_FEEDS_EPSS_URL` e `CA_FEEDS_KEV_URL` (https, senza credenziali, un errore non ripete l'URL; l'origine nel report è `public` o `mirror`, mai l'URL). **Non fatto:** l'origine di OSV e trivy, il flag della CLI e il collegamento alla CLI.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/feeds.py`, `packages/ca-cli/`.
 - Dipende da: E-02, E-03.
 - Accettazione: origine di OSV, trivy, EPSS e KEV da pacchetto, flag o ambiente, mai da `.code-analyzer.yml`; con un mirror cambia solo l'origine (ADR-0006); verifica della firma dello snapshot se D2-05 la prevede.
@@ -786,7 +786,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1. ADR: 0021.
 
 #### K-03 — Variante A: P
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `variant_a.factor_p` per ogni categoria: dipendenze con KEV 1,0, altrimenti `max(epss, 0,01)`, una CVE non elencata vale il minimo, feed assente `feed_missing` (e mai sotto, anche con un solo feed assente), nessuna CVE valida `feed_missing`, più CVE il massimo con l'evidenza di ciascuna; SAST 0,8 con percorso confermato e 0,4 altrimenti; IaC, segreti, licenze e salute dalla configurazione; qualità, architettura e test dal percentile di churn con il minimo, e `churn unknown` se la storia non è completa. **«Percorso confermato» ridefinito:** il SARIF di semgrep non contiene `codeFlows` nemmeno con `--dataflow-traces` (provato sull'immagine il 2026-11-17), quindi la definizione di ADR-0021 non sarebbe mai scattata. Ora vale: il risultato viene da una regola `mode: taint` **del prodotto** (l'adattatore la riconosce dai file di regole dell'immagine e scrive `properties.taint`, contratto `plugin-sarif-properties` 1.2; la normalizzazione lo scrive come `path_confirmed`); i risultati delle regole del repository non lo ottengono mai. `ScoringContext` porta ora `feeds` e `churn`. **Non fatto:** l'immagine di semgrep non è stata ricostruita con la modifica; ADR-0021 va aggiornato su questo punto.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/variant_a.py`.
 - Dipende da: K-01, E-01, G-11.
 - Accettazione: KEV, EPSS con minimo 0,01, percorso SAST secondo ADR-0021, percentile di churn; feed assente dichiarato nell'evidenza; casi di F-05 verdi.

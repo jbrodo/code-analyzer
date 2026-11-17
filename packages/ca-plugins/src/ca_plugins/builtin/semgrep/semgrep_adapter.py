@@ -112,13 +112,35 @@ def _clean(value: Any, workspace: str) -> Any:
     return out
 
 
+def taint_rule_ids(rules_dir: str = RULES) -> frozenset[str]:
+    """Identificativi delle regole `mode: taint` del prodotto, dai file che l'immagine porta.
+
+    Solo le regole del prodotto: un risultato di una regola del repository analizzato non è mai
+    «percorso confermato». Lettura per righe, senza un parser YAML (l'adattatore usa il Python
+    dell'immagine): `- id: x` apre una regola, `mode: taint` la marca.
+    """
+    found: set[str] = set()
+    for path in sorted(Path(rules_dir).glob("*.yaml")):
+        current: str | None = None
+        for line in path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if stripped.startswith("- id:"):
+                current = stripped.removeprefix("- id:").strip()
+            elif stripped == "mode: taint" and current:
+                found.add(current)
+    return frozenset(found)
+
+
 def _rule_text(rule: dict[str, Any]) -> str | None:
     text = (rule.get("fullDescription") or {}).get("text")
     return text if isinstance(text, str) and text else None
 
 
-def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
-    """SARIF di semgrep -> SARIF del contratto, o `InvalidOutput`."""
+def adapt(raw: bytes, workspace: str = WORKSPACE, taint: frozenset[str] = frozenset()) -> bytes:
+    """SARIF di semgrep -> SARIF del contratto, o `InvalidOutput`.
+
+    `taint`: gli identificativi delle regole di flusso dei dati del prodotto; i loro risultati
+    portano `properties.taint`."""
     try:
         document = json.loads(raw)
     except (ValueError, RecursionError) as exc:
@@ -145,6 +167,8 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
         clean["message"] = {"text": text or str(result.get("ruleId"))}
         level = (rule.get("defaultConfiguration") or {}).get("level")
         clean["properties"] = {"tool_severity": level} if isinstance(level, str) and level else {}
+        if result.get("ruleId") in taint:
+            clean["properties"]["taint"] = True
         results.append(clean)
     adapted = {
         "version": "2.1.0",
@@ -224,7 +248,7 @@ def run(
         except OSError:
             return EXIT_TOOL
     try:
-        adapted = adapt(outputs[0], workspace)
+        adapted = adapt(outputs[0], workspace, taint_rule_ids())
         if rules:
             adapted = merge(adapted, adapt(outputs[1], workspace))
     except InvalidOutput:

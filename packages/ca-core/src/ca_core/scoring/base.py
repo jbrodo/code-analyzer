@@ -11,6 +11,8 @@ from typing import Any, Protocol
 from ca_core.models.finding import Finding, ImpactFactors
 from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
+from ca_core.ports import EnrichmentFeeds
+from ca_core.scoring.churn import ChurnIndex
 from ca_core.scoring.reach import NoReachability, Reachability
 
 
@@ -27,6 +29,8 @@ class ScoringContext:
         )
     )
     reachability: Reachability = field(default_factory=NoReachability)
+    feeds: EnrichmentFeeds | None = None  # EPSS e KEV; `None`: nessuno snapshot
+    churn: ChurnIndex | None = None  # `None`: nessun grafo
 
 
 @dataclass(frozen=True)

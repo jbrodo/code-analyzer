@@ -274,6 +274,7 @@ def _evidence(draft: _Draft) -> dict[str, Any]:
         "cvss": props.cvss.model_dump(mode="json") if props.cvss else None,
         "metric": props.metric.model_dump(mode="json") if props.metric else None,
         "aliases": sorted(set(props.aliases)) if props.aliases else None,
+        "path_confirmed": True if props.taint else None,  # regola taint del prodotto (ADR-0021)
     }
     return {k: v for k, v in evidence.items() if v is not None}
 

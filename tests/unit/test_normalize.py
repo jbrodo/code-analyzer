@@ -477,6 +477,16 @@ def test_coverage_result_without_a_region_gets_the_coverage_fingerprint(store: S
     assert finding.location.start_line is None
 
 
+def test_a_taint_result_is_recorded_as_a_confirmed_path_and_a_plain_one_is_not(
+    store: SchemaStore,
+) -> None:
+    plugin = manifest("semgrep")
+    (confirmed,) = run(store, [result("r", tool_severity="high", taint=True)], plugin=plugin)
+    (plain,) = run(store, [result("r", tool_severity="high")], plugin=plugin)
+    assert confirmed.evidence["semgrep"]["path_confirmed"] is True
+    assert "path_confirmed" not in plain.evidence["semgrep"]
+
+
 def test_coverage_result_needs_a_path(store: SchemaStore) -> None:
     plugin = manifest("coverage", "test")
     error = failure(store, [result("r", uri=None, line=None)], plugin=plugin)
