@@ -14,3 +14,9 @@ updates:
     directory: "/web"
     schedule:
       interval: "weekly"
+    ignore:
+      # TypeScript 7 è il compilatore nativo e non ha l'API JavaScript di cui hanno bisogno
+      # typescript-eslint (peer dichiarato fino alla 6.0) e openapi-typescript (W-02). Da riprendere
+      # quando entrambi lo supportano.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]

@@ -1106,7 +1106,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0029.
 
 #### W-08 — Test dei componenti e di accessibilità
-- Agente: `test`. Stato: `IPOTESI` (D2-15).
+- Agente: `test`. Stato: **chiuso il 2026-11-18** (D2-15 confermata). `web/src/a11y.test.tsx` con axe-core 4.14.0 (solo sviluppo; la sua licenza non è tra quelle vietate o da approvare di D-0013; non viene distribuito): 19 viste e stati di U-01 (caricamento, vuoto nei tre casi, errore, repository non trovato, scansione parziale, lista, dettaglio con azioni, scansioni, PR con baseline, repository), due dialoghi aperti con gli errori di validazione e un menu di filtro, tutti senza violazioni; più i criteri A che axe non copre (G1, G2 e il salto al contenuto come primo elemento, G13, L1, L2, L4, L5, L6, L8, L10, L12, D1, D3, D4, D5, D6, T1, T3, S1, S2, S4); il controllo è provato su un DOM difettoso. Il contenuto HTML ostile reso come testo è provato in W-04 e W-05. **Limiti:** jsdom non calcola né layout né colori, quindi il contrasto resta a `doc/ux/check_tokens.py` sui token e il resto (G4, G5 copertura, G8, G9, D7, G11 e i flussi da tastiera e con un lettore di schermo) è la revisione manuale di U-05; un test verde non dimostra la conformità. **TypeScript:** `web/package.json` torna a 6.0.3 perché la 7.0.2 portata dal merge di main non ha l'API JavaScript che servono a typescript-eslint e openapi-typescript; `dependabot.yml` ignora le major di TypeScript finché entrambi non la supportano.
 - Percorsi: `web/`.
 - Dipende da: W-04, W-05, W-06, W-07.
 - Accettazione: test dei componenti per ogni stato di U-01, controlli automatici di accessibilità sui criteri di U-03, contenuto HTML ostile in un finding reso come testo.
