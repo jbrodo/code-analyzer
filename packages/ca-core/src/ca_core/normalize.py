@@ -50,7 +50,7 @@ LICENSE_RULE_ID = "ca.license"
 _MAX_TEXT = 4096
 _PERCENT = re.compile(rb"%([0-9A-Fa-f]{2})")  # `urllib` è vietato in ca_core (lint-imports)
 _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
-_CODE_CATEGORIES = frozenset({Category.SAST, Category.IAC})
+_CODE_CATEGORIES = frozenset({Category.SAST, Category.IAC, Category.QUALITY})
 
 
 def _fail(code: SarifErrorCode, message: str, pointer: str) -> SarifError:
@@ -106,9 +106,11 @@ def _kind(category: Category, properties: PluginSarifProperties, pointer: str) -
         return "code"
     if category is Category.LICENSE:
         return "license-package" if properties.purl else "license-file"
+    if category is Category.TEST:
+        return "coverage"
     if category in (Category.DEPENDENCY, Category.SECRET, Category.HEALTH):
         return category.value
-    raise _fail(SarifErrorCode.MAPPING, "categoria senza kind in Fase 1", pointer)
+    raise _fail(SarifErrorCode.MAPPING, "categoria senza kind", pointer)
 
 
 def _draft(result: SarifResult, manifest: PluginManifest) -> _Draft:
@@ -199,6 +201,9 @@ def _fingerprint(draft: _Draft, tool: str, source: _Source | None, occurrence: i
             start_line=source.start_line,
             occurrence=occurrence,
         )
+    if draft.kind == "coverage":
+        assert draft.path is not None
+        return fp.fingerprint_coverage(rule_id=draft.rule_id, path=draft.path)
     if draft.kind == "dependency":
         assert props.purl is not None
         return fp.fingerprint_dependency(vuln_ids=_vuln_ids(draft), purl=props.purl)
@@ -224,7 +229,7 @@ def _require(draft: _Draft) -> None:
     """Campi obbligatori per kind: il fingerprint non si calcola senza."""
     props, pointer = draft.properties, _pointer(draft.result)
     missing: list[str] = []
-    if draft.kind in ("code", "secret", "license-file") and draft.path is None:
+    if draft.kind in ("code", "secret", "license-file", "coverage") and draft.path is None:
         missing.append("locations/0/physicalLocation/artifactLocation/uri")
     if draft.kind in ("dependency", "license-package") and not props.purl:
         missing.append("properties/purl")
@@ -251,6 +256,7 @@ def _evidence(draft: _Draft) -> dict[str, Any]:
         "sarif_level": draft.result.data.get("level"),
         "tool_severity": props.tool_severity,
         "cvss": props.cvss.model_dump(mode="json") if props.cvss else None,
+        "metric": props.metric.model_dump(mode="json") if props.metric else None,
         "aliases": sorted(set(props.aliases)) if props.aliases else None,
     }
     return {k: v for k, v in evidence.items() if v is not None}

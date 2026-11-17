@@ -9,10 +9,12 @@ Invarianti che lo schema non esprime, controllate dal modello: percorsi unici, a
 che citano solo nodi presenti, elenchi ordinati (lo stesso workspace dà lo stesso file).
 """
 
+import re
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import (
+    AfterValidator,
     AwareDatetime,
     BaseModel,
     BeforeValidator,
@@ -24,7 +26,7 @@ from pydantic import (
     model_validator,
 )
 
-from ca_core.models.config import RelativePath
+from ca_core.models.config import _NOT_RELATIVE, RelativePath
 
 # Tetti del contratto: oltre, il documento è rifiutato per intero, mai troncato (ADR-0020).
 MAX_MODULES = 200_000
@@ -39,7 +41,25 @@ MAX_COUNT = 10_000_000
 # nome con lo scope per npm. Nessuno spazio, nessun separatore di percorso oltre allo scope.
 EXTERNAL_NAME_PATTERN = r"^(?:@[A-Za-z0-9._~-]+/)?[A-Za-z0-9_][A-Za-z0-9._~-]*$"
 
-ModulePath = Annotated[RelativePath, Field(max_length=MAX_PATH_LENGTH)]
+# S-02: i percorsi arrivano in UI, commenti e log. Un a capo o un NUL in un nome di file
+# permetterebbe di iniettare righe (comandi del provider CI, Markdown): si rifiutano alla fonte.
+_CONTROL = r"[\x00-\x1f\x7f]"
+
+
+def _no_control(value: str) -> str:
+    if re.search(_CONTROL, value):
+        raise ValueError("carattere di controllo nel percorso")
+    return value
+
+
+ModulePath = Annotated[
+    RelativePath,
+    Field(
+        max_length=MAX_PATH_LENGTH,
+        json_schema_extra={"not": {"anyOf": [{"pattern": _NOT_RELATIVE}, {"pattern": _CONTROL}]}},
+    ),
+    AfterValidator(_no_control),
+]
 Count = Annotated[StrictInt, Field(ge=0, le=MAX_COUNT)]
 Unit = Annotated[StrictFloat, Field(ge=0.0, le=1.0)]
 

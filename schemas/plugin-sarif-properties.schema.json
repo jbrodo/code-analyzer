@@ -43,6 +43,30 @@
       ],
       "title": "Cvss",
       "type": "object"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "description": "Valore misurato e soglia superata, per le regole di complessità e dimensione (ADR-0026).\n\nLi estrae l'adattatore dal messaggio del motore, dove stanno come testo (V-03).",
+      "properties": {
+        "threshold": {
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Threshold",
+          "type": "integer"
+        },
+        "value": {
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "threshold"
+      ],
+      "title": "Metric",
+      "type": "object"
     }
   },
   "$id": "urn:code-analyzer:schema:plugin-sarif-properties:v1",
@@ -144,6 +168,17 @@
       "description": "Identificativo o espressione SPDX.",
       "title": "License Spdx"
     },
+    "metric": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Metric"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "purl": {
       "anyOf": [
         {
@@ -190,5 +225,5 @@
   },
   "title": "PluginSarifProperties",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

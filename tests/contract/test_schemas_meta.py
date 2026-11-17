@@ -11,7 +11,7 @@ VERSIONS = {
     "finding": "1.0",
     "code-analyzer-config": "1.1",  # C-05 della Fase 2: opzioni dei plugin nuovi
     "plugin-manifest": "1.1",  # C-02 della Fase 2: uscita `graph`
-    "plugin-sarif-properties": "1.0",
+    "plugin-sarif-properties": "1.1",  # P-01 della Fase 2: `metric`
     "scan-report": "1.0",
     "graph": "1.0",
 }

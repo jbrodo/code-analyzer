@@ -109,6 +109,11 @@ UNSAFE_PATHS = {
     "windows-drive": "C:/x.py",
     "backslash-absolute": "\\x.py",
     "too-long": "a/" * 2100 + "x.py",
+    "newline": "a/b\n::error::x.py",
+    "nul": "a\x00b.py",
+    "carriage-return": "a\rb.py",
+    "escape": "a\x1b[31m.py",
+    "delete": "a\x7fb.py",
 }
 
 INVALID = {

@@ -142,3 +142,31 @@ def test_sort_by_level_category_fingerprint_independent_of_input_order() -> None
     assert [f.category for f in expected[1:3]] == [Category.DEPENDENCY, Category.SECRET]
     assert sort_findings(reversed(items)) == expected
     assert sort_findings(sort_findings(items)) == expected
+
+
+@pytest.mark.parametrize(
+    ("severity", "level"),
+    [
+        ("critical", Level.MEDIUM),
+        ("high", Level.MEDIUM),
+        ("medium", Level.MEDIUM),
+        ("low", Level.LOW),
+    ],
+)
+def test_quality_findings_never_exceed_medium(severity: str, level: Level) -> None:
+    """ADR-0026: i problemi di qualità non bloccano il gate prima del Gate 2."""
+    item = finding(
+        "q", category=Category.QUALITY, tool="ruff", evidence={"tool_severity": severity}
+    )
+    [out] = assign_levels([item])
+    assert (out.level, out.level_source) == (level, LevelSource.TOOL_SEVERITY)
+
+
+def test_quality_without_severity_is_medium_by_default() -> None:
+    [out] = assign_levels([finding("q", category=Category.QUALITY, tool="ruff")])
+    assert (out.level, out.level_source) == (Level.MEDIUM, LevelSource.DEFAULT)
+
+
+def test_sast_is_not_capped() -> None:
+    item = finding("s", category=Category.SAST, tool="x", evidence={"tool_severity": "high"})
+    assert assign_levels([item])[0].level is Level.HIGH

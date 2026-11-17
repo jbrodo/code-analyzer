@@ -11,6 +11,9 @@ VALID = {
     "aliases-empty": {"aliases": []},
     "cvss": {"cvss": {"version": "3.1", "vector": "CVSS:3.1/AV:N", "score": 9.8}},
     "cvss-null": {"cvss": None},
+    "metric": {"metric": {"value": 18, "threshold": 10}},
+    "metric-null": {"metric": None},
+    "metric-zero": {"metric": {"value": 0, "threshold": 0}},
     "cvss-score-bounds-0": {"cvss": {"version": "2.0", "vector": "v", "score": 0}},
     "cvss-score-bounds-10": {"cvss": {"version": "4.0", "vector": "v", "score": 10}},
     "tool-severity": {"tool_severity": "HIGH"},
@@ -31,6 +34,12 @@ VALID = {
     },
 }
 INVALID = {
+    "metric-negative": {"metric": {"value": -1, "threshold": 3}},
+    "metric-float": {"metric": {"value": 1.5, "threshold": 3}},
+    "metric-string": {"metric": {"value": "18", "threshold": 3}},
+    "metric-missing-threshold": {"metric": {"value": 18}},
+    "metric-unknown-key": {"metric": {"value": 1, "threshold": 3, "unit": "lines"}},
+    "metric-too-large": {"metric": {"value": 10_000_001, "threshold": 3}},
     "scanner-key-security-severity": {"security-severity": "7.5"},
     "scanner-key-tags": {"tags": ["x"]},
     "unknown-key": {"anything": {"a": 1}},

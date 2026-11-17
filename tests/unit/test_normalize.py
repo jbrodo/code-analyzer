@@ -333,9 +333,13 @@ def test_category_rules(store: SchemaStore) -> None:
     assert failure(store, [undeclared], plugin=both).code is SarifErrorCode.MAPPING
     (iac,) = run(store, [result("AVD-1", category="iac")], plugin=both)
     assert iac.category is Category.IAC
-    assert failure(store, [result()], plugin=manifest("x", "quality")).code is (
-        SarifErrorCode.MAPPING
+    # `quality` e' `code` e `test` e' `coverage` dalla Fase 2 (ADR-0026); `architecture` con G-10.
+    assert (
+        failure(store, [result()], plugin=manifest("x", "architecture")).code
+        is SarifErrorCode.MAPPING
     )
+    (quality,) = run(store, [result("F401")], plugin=manifest("ruff", "quality"))
+    assert quality.category is Category.QUALITY
 
 
 def test_license_kinds(store: SchemaStore) -> None:
@@ -455,3 +459,25 @@ def test_fingerprints_do_not_depend_on_result_order(data: st.DataObject) -> None
     assert sorted(f.fingerprint for f in run(store, shuffled)) == sorted(
         f.fingerprint for f in run(store, results)
     )
+
+
+def test_coverage_result_without_a_region_gets_the_coverage_fingerprint(store: SchemaStore) -> None:
+    plugin = manifest("coverage", "test")
+    props = {"tool_severity": "medium", "metric": {"value": 20, "threshold": 50}}
+    (finding,) = run(
+        store,
+        [result("ca.coverage.low-file-coverage", uri="pkg/a.py", line=None, **props)],
+        plugin=plugin,
+    )
+    assert finding.category is Category.TEST
+    assert finding.fingerprint == fp.fingerprint_coverage(
+        rule_id="ca.coverage.low-file-coverage", path="pkg/a.py"
+    )
+    assert finding.evidence["coverage"]["metric"] == {"value": 20, "threshold": 50}
+    assert finding.location.start_line is None
+
+
+def test_coverage_result_needs_a_path(store: SchemaStore) -> None:
+    plugin = manifest("coverage", "test")
+    error = failure(store, [result("r", uri=None, line=None)], plugin=plugin)
+    assert error.code is SarifErrorCode.MAPPING

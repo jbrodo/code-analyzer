@@ -51,7 +51,7 @@ CONTRACTS: tuple[Contract, ...] = (
     Contract("finding", "1.0", Finding),
     Contract("code-analyzer-config", "1.1", CodeAnalyzerConfig),
     Contract("plugin-manifest", "1.1", PluginManifest, {PACKAGED_DEF_NAME: PACKAGED_DEF}),
-    Contract("plugin-sarif-properties", "1.0", PluginSarifProperties),
+    Contract("plugin-sarif-properties", "1.1", PluginSarifProperties),
     Contract("scan-report", "1.0", ScanReport),
     Contract("graph", "1.0", Graph),
 )

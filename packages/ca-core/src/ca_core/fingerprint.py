@@ -181,6 +181,12 @@ def fingerprint_secret(*, rule_id: str, path: str, value_sha256: str) -> str:
     )
 
 
+def fingerprint_coverage(*, rule_id: str, path: str) -> str:
+    """Kind `coverage` (ADR-0026): una regola e un file, senza righe né contesto di codice."""
+    _field("rule_id", rule_id, allow_empty=False)
+    return compute_fingerprint("coverage", rule_id, "coverage", _path(path), "")
+
+
 def fingerprint_health(*, plugin: str) -> str:
     _field("plugin", plugin, allow_empty=False)
     return compute_fingerprint("health", "ca.scanner-not-run", "ca", plugin, "")

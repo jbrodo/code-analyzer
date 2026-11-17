@@ -29,7 +29,7 @@ _SARIF_FILE = "sarif-schema-2.1.0.json"
 PACKAGED_DIR = "vendor_schemas"
 # Ancora nel codice: SOURCES.json è nella stessa cartella e prova solo la coerenza interna.
 # Aggiornare uno schema fissato tocca file, SOURCES.json e questa costante (ADR-0003).
-VENDOR_MANIFEST_SHA256 = "f585c7cf10428a2323bb03def6013bb20e5cac7497f52e1c3b97c3aadfa2035b"
+VENDOR_MANIFEST_SHA256 = "7121d377c85642b2914e9b1048eeffc00c88d6a6c871f34f65b75881c82eca4c"
 
 
 class SchemaRefusedError(ValueError):

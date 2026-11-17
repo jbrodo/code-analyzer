@@ -285,6 +285,29 @@ def test_secret_never_embeds_the_value() -> None:
     assert "FAKE-SECRET" not in fp().fingerprint_secret(**SECRET)
 
 
+# --- kind: coverage ------------------------------------------------------------------------
+
+
+def test_coverage_matches_formula_and_ignores_lines() -> None:
+    value = fp().fingerprint_coverage(rule_id="ca.coverage.low-file-coverage", path="pkg/calc.py")
+    assert value == expected_hash(
+        "coverage", "ca.coverage.low-file-coverage", "coverage", "pkg/calc.py", ""
+    )
+    assert value.startswith("sha256:") and len(value) == 71
+
+
+def test_coverage_differs_by_rule_and_path() -> None:
+    one = fp().fingerprint_coverage(rule_id="r", path="a.py")
+    assert one != fp().fingerprint_coverage(rule_id="r", path="b.py")
+    assert one != fp().fingerprint_coverage(rule_id="s", path="a.py")
+
+
+@pytest.mark.parametrize("path", ["", "/a.py", "a/../b.py", "a\x00b.py", "./a.py"])
+def test_coverage_rejects_unsafe_paths(path: str) -> None:
+    with pytest.raises(ValueError):
+        fp().fingerprint_coverage(rule_id="r", path=path)
+
+
 # --- kind: health --------------------------------------------------------------------------
 
 

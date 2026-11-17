@@ -49,7 +49,14 @@ class LevelTable:
     fixed: Mapping[Category, Level] = field(
         default_factory=lambda: {Category.SECRET: Level.HIGH, Category.HEALTH: Level.MEDIUM}
     )
-    code_categories: frozenset[Category] = frozenset({Category.SAST, Category.IAC})
+    code_categories: frozenset[Category] = frozenset(
+        {Category.SAST, Category.IAC, Category.QUALITY, Category.TEST}
+    )
+    # ADR-0026: prima della validazione dell'ordinamento (Gate 2) un problema di qualità o di
+    # copertura non supera `medio`, così non blocca una CI che blocca su critico e alto.
+    capped: Mapping[Category, Level] = field(
+        default_factory=lambda: {Category.QUALITY: Level.MEDIUM, Category.TEST: Level.MEDIUM}
+    )
 
 
 DEFAULT_LEVEL_TABLE = LevelTable()
@@ -119,6 +126,9 @@ def level_for(
     if finding.category in table.code_categories:
         level = _from_severity(finding, table)
         if level is not None:
+            cap = table.capped.get(finding.category)
+            if cap is not None and _RANK[level] < _RANK[cap]:
+                level = cap
             return level, LevelSource.TOOL_SEVERITY
     return table.without_severity, LevelSource.DEFAULT
 

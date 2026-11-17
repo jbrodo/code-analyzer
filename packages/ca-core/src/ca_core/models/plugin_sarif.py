@@ -15,6 +15,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictFloat,
+    StrictInt,
     field_validator,
     model_validator,
 )
@@ -30,6 +31,18 @@ class Cvss(BaseModel):
     version: str = Field(pattern=r"^(?:2\.0|3\.0|3\.1|4\.0)$")
     vector: str = Field(min_length=1, max_length=256)
     score: StrictFloat = Field(ge=0, le=10)  # stretto: lo schema rifiuta "9"
+
+
+class Metric(BaseModel):
+    """Valore misurato e soglia superata, per le regole di complessità e dimensione (ADR-0026).
+
+    Li estrae l'adattatore dal messaggio del motore, dove stanno come testo (V-03).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    value: StrictInt = Field(ge=0, le=10_000_000)
+    threshold: StrictInt = Field(ge=0, le=10_000_000)
 
 
 def _required_if(category: Category, key: str) -> dict[str, Any]:
@@ -61,6 +74,7 @@ class PluginSarifProperties(BaseModel):
         "più categorie (oggi trivy): lo schema non lo esprime, lo controlla la normalizzazione.",
     )
     cvss: Cvss | None = None
+    metric: Metric | None = None  # Fase 2, ADR-0026
     secret_sha256: str | None = Field(
         default=None,
         pattern=r"^[0-9a-f]{64}$",
