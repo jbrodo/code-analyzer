@@ -26,7 +26,7 @@ In alternativa all'installazione, la CLI gira in un container che avvia i plugin
 
 | Comando | Cosa fa | Exit |
 | --- | --- | --- |
-| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline] [--pr --base COMMIT --baseline FILE …]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
+| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline] [--pr --base COMMIT --baseline FILE …] [--variant A\|B] [--scoring-config FILE] [--service-context FILE]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
 | `gate [--report FILE] [--fail-on LIVELLI] [--allow-partial]` | Decide dal report | 0 superato; 1 fallito; 2 errore o scansione non valutabile |
 | `config validate [PATH]` | Controlla `.code-analyzer.yml` offline: schema, espressioni SPDX, date, percorsi | 0 valido; 2 non valido |
 | `sbom [PATH] [--format cyclonedx] [--output FILE]` | Genera con syft l'SBOM CycloneDX 1.7 di `PATH`, su stdout o in `FILE` | 0 SBOM prodotto; 2 errore |
@@ -116,13 +116,13 @@ exceptions:
 
 Sono esclusi per impostazione predefinita `node_modules`, `.venv`, `dist`, `.git` (non per gitleaks) e gli artefatti di output.
 
-`service`, `scoring` e `agents` vengono validati ma non hanno ancora effetto; il report li elenca come sezioni inerti (vedi [livelli-e-punteggi.md](livelli-e-punteggi.md)).
+`service` e `scoring` (solo `variant`) sono attive: vedi [livelli-e-punteggi.md](livelli-e-punteggi.md). `agents` viene validata ma non ha effetto; il report la elenca come sezione inerte.
 
 Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi dei plugin o origine dei feed.
 
 ## Limiti da conoscere
 
-**Livelli provvisori.** I livelli derivano ancora dalla severità degli scanner e dalle policy, senza punteggio né raggiungibilità: una vulnerabilità non raggiungibile con CVSS alto blocca comunque. Quando il livello da punteggio diventerà attivo molti finding cambieranno livello, una volta sola (vedi [livelli-e-punteggi.md](livelli-e-punteggi.md)).
+**Livelli provvisori.** I livelli che decidono il gate derivano ancora dalla severità degli scanner e dalle policy: una vulnerabilità non raggiungibile con CVSS alto blocca comunque. I punteggi A e B si calcolano in ombra e stanno nel report; quando il livello da punteggio diventerà attivo molti finding cambieranno livello, una volta sola (vedi [livelli-e-punteggi.md](livelli-e-punteggi.md)).
 
 **Isolamento.** Fuori da un server i plugin girano in container rafforzati, con isolamento inferiore a gVisor. Il rischio residuo è accettato per CI effimere e uso locale, non per runner persistenti condivisi senza gVisor.
 
