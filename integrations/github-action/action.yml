@@ -25,6 +25,9 @@ inputs:
   base-scan:
     description: Se non c'è il report del base tra gli artefatti, analizza il base nello stesso job.
     default: "true"
+  offline:
+    description: Non sincronizza i feed (per i job che li hanno già nella cache).
+    default: "false"
   network:
     description: Rete dei container (per esempio host, con il registry di prova su loopback). Vuoto per il default.
     default: ""
@@ -100,6 +103,7 @@ runs:
         CA_WORK: ${{ steps.prepare.outputs.root }}/work
         CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
         CA_NETWORK: ${{ inputs.network }}
+        CA_OFFLINE: ${{ inputs.offline }}
       run: "$GITHUB_ACTION_PATH/scan-base.sh"
 
     # Nessun --fail-on qui: scan non decide (ADR-0010). Il gate è l'ultimo passo.
@@ -114,6 +118,7 @@ runs:
         CA_CACHE: ${{ steps.prepare.outputs.root }}/cache
         CA_OUTPUT: ${{ steps.prepare.outputs.output }}
         CA_NETWORK: ${{ inputs.network }}
+        CA_OFFLINE: ${{ inputs.offline }}
         EVENT: ${{ github.event_name }}
         BASE_SHA: ${{ steps.base.outputs.sha }}
         PR_NUMBER: ${{ github.event.pull_request.number }}

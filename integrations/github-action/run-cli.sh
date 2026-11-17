@@ -23,12 +23,16 @@ case "$mode" in
       -v "$CA_WORK":/ca/work -v "$CA_CACHE":/ca/cache
       -v "$CA_PUBLIC_KEY":/ca/keys/cosign.pub:ro -e CA_COSIGN_PUBLIC_KEY=/ca/keys/cosign.pub
       -e CA_HOST_WORKSPACE="$CA_WORKSPACE" -e CA_HOST_WORK="$CA_WORK" -e CA_HOST_CACHE="$CA_CACHE")
+    # Feed già presenti in $CA_CACHE: nessuna sincronizzazione.
+    if [ "${CA_OFFLINE:-}" = true ]; then set -- --offline "$@"; fi
     ;;
   gate) ;;
   notify)
     need GITHUB_EVENT_PATH
     args+=(-e GITHUB_TOKEN -e GITHUB_REPOSITORY -e GITHUB_API_URL -e GITHUB_EVENT_PATH
       -v "$GITHUB_EVENT_PATH":"$GITHUB_EVENT_PATH":ro)
+    # Solo per le prove con un server finto su loopback (vedi `notify`).
+    if [ -n "${CA_NOTIFY_ALLOW_LOOPBACK_HTTP:-}" ]; then args+=(-e CA_NOTIFY_ALLOW_LOOPBACK_HTTP); fi
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
       args+=(-e GITHUB_STEP_SUMMARY -v "$GITHUB_STEP_SUMMARY":"$GITHUB_STEP_SUMMARY")
     fi

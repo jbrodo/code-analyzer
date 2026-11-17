@@ -164,3 +164,9 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - Dallo zip dell'artefatto si estrae un solo nome scelto dall'Action, mai un percorso preso dallo zip; dimensione massima 100 MiB; ogni valore di ambiente è validato prima dell'uso.
 - **Ingressi `variant` e `server-url` non presenti**: la CLI non ha ancora le varianti di punteggio né `upload`. Si aggiungono con K-04/K-14 e il comando `upload`.
 - **Non fatto:** prova con l'immagine reale su un runner (i test usano `docker` e `gh` finti; è N-05); verifica alla fonte del formato dell'API `code-scanning/sarifs` e dei permessi; `notify` dentro l'immagine reale non è stato provato (potrebbe pretendere variabili che qui non passiamo).
+
+## Realizzazione di N-05 (2026-11-17)
+
+- L'immagine CLI con `ca-integrations` è stata costruita e provata: scansione con plugin fratelli, `gate`, e gli script dell'Action (baseline dalla scansione del base, `scan --pr`, `notify`, `gate`) contro un server GitHub finto su loopback. `notify` accetta `http` su loopback solo con `CA_NOTIFY_ALLOW_LOOPBACK_HTTP=1`.
+- `.github/workflows/e2e-action.yml` esiste ma **non è mai stato eseguito su GitHub**: la sua prova è il primo push. Non è stato controllato con `actionlint`.
+- Il comportamento reale di GitHub (commento, check run, SARIF, permessi) resta quindi non provato.

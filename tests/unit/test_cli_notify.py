@@ -254,3 +254,17 @@ def test_a_hostile_event_file_is_ignored(tmp_path: Path, monkeypatch: pytest.Mon
 def test_an_unreadable_report_exits_two(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     env(monkeypatch)
     assert notify(Recorder(), tmp_path / "missing.json", "--pull-request", "3") == 2
+
+
+def test_plain_http_on_loopback_needs_the_explicit_variable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env(monkeypatch, GITHUB_API_URL="http://127.0.0.1:9")
+    flags = ("--pull-request", "12", "--head-sha", SHA)
+    refused = Recorder()
+    assert notify(refused, pr_report(tmp_path), *flags) == 2
+    assert refused.calls == []
+    monkeypatch.setenv("CA_NOTIFY_ALLOW_LOOPBACK_HTTP", "1")
+    allowed = Recorder(ok([]), ok({"id": 5}, 201), ok({"id": 9}, 201))
+    assert notify(allowed, pr_report(tmp_path), *flags) == 0
+    assert allowed.calls[0][1].startswith("http://127.0.0.1:9/")

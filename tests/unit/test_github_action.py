@@ -320,3 +320,45 @@ def test_scan_base_checks_out_the_base_in_a_separate_clone(tmp_path: Path, fake_
     assert f"{root / 'base'}:/ca/workspace:ro" in args
     assert "--pr" not in args and "--baseline" not in args
     assert oct((root / "base-output").stat().st_mode & 0o777) == "0o700"
+
+
+def test_run_cli_offline_only_for_scan_and_only_when_asked(tmp_path: Path, fake_bin: Path) -> None:
+    assert run("run-cli.sh", tmp_path, env_for(tmp_path, fake_bin), "scan").returncode == 0
+    assert "--offline" not in logged(tmp_path)
+    env = env_for(tmp_path, fake_bin, CA_OFFLINE="true")
+    assert run("run-cli.sh", tmp_path, env, "scan").returncode == 0
+    assert logged(tmp_path)[-2:] == ["scan", "--offline"]
+    assert run("run-cli.sh", tmp_path, env, "gate").returncode == 0
+    assert "--offline" not in logged(tmp_path)
+
+
+# --- workflow E2E (N-05) ----------------------------------------------------------------------
+
+WORKFLOW = yaml.safe_load((ROOT.parents[1] / ".github/workflows/e2e-action.yml").read_text())
+WORKFLOW_STEPS = WORKFLOW["jobs"]["action"]["steps"]
+
+
+def test_e2e_workflow_has_no_secrets_no_push_and_no_default_permissions() -> None:
+    text = (ROOT.parents[1] / ".github/workflows/e2e-action.yml").read_text()
+    assert WORKFLOW["permissions"] == {}
+    assert "secrets." not in text
+    assert "docker push" not in text and "docker login" not in text
+    assert "pull_request_target" not in text
+
+
+def test_e2e_workflow_uses_the_local_action_with_the_local_image() -> None:
+    use = next(s for s in WORKFLOW_STEPS if s.get("uses") == "./integrations/github-action")
+    assert use["with"]["image"].startswith("localhost/")
+    assert "fail-on" in use["with"]
+
+
+def test_e2e_workflow_pins_third_party_actions_by_hash() -> None:
+    for s in WORKFLOW_STEPS:
+        ref = s.get("uses", "./")
+        assert ref.startswith("./") or re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", ref), ref
+
+
+def test_e2e_workflow_checks_comment_and_check_run_even_after_a_failed_gate() -> None:
+    check = next(s for s in WORKFLOW_STEPS if "check run" in s.get("name", ""))
+    assert check["if"].startswith("always()")
+    assert "Code Analyzer" in check["run"] and "code-analyzer:1" in check["run"]

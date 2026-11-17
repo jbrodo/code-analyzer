@@ -7,7 +7,9 @@ contenuto del commento va nel riepilogo del job, se l'ambiente ne ha uno, e l'ex
 Il token viene solo dall'ambiente (`GITHUB_TOKEN`), mai da un flag, e non compare in nessun
 messaggio. Repository, numero della PR e commit di testa vengono dai flag o dall'ambiente del
 runner (`GITHUB_REPOSITORY`, file di `GITHUB_EVENT_PATH`); sono input non fidati e si validano.
-Un solo commento per PR (marcatore) e una check run per esecuzione, sul commit di testa.
+`CA_NOTIFY_ALLOW_LOOPBACK_HTTP=1` ammette `http` su loopback (solo per le prove con un server
+finto: il token non lascia la macchina). Un solo commento per PR (marcatore) e una check run per
+esecuzione, sul commit di testa.
 """
 
 import argparse
@@ -107,6 +109,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             api_url=env.get("GITHUB_API_URL", API_URL),
             author=args.author,
             transport=context.notify_transport,
+            allow_loopback_http=env.get("CA_NOTIFY_ALLOW_LOOPBACK_HTTP") == "1",
         )
     except ValueError as exc:
         raise ScanError(f"configurazione di GitHub non valida: {exc}") from exc

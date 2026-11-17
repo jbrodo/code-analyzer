@@ -33,7 +33,7 @@ ENV CA_CLI_IMAGE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Dipendenze con hash da uv.lock, poi i tre wheel del progetto senza risolvere altro.
+# Dipendenze con hash da uv.lock, poi i wheel del progetto senza risolvere altro.
 COPY requirements.txt /build/requirements.txt
 COPY dist/ /build/dist/
 RUN pip install --require-hashes --only-binary :all: -r /build/requirements.txt \
