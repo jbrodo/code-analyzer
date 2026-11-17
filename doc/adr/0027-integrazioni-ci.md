@@ -150,7 +150,7 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 
 ## Realizzazione di N-03 e di `notify` (2026-11-17)
 
-- `ca-cli` dipende ora da `ca-integrations` (consentito da `lint-imports`); il pacchetto entra nei wheel di `package-cli.sh`. **L'immagine della CLI non è stata ricostruita**: da provare prima dell'uso.
+- `ca-cli` dipende ora da `ca-integrations` (consentito da `lint-imports`); il pacchetto entra nei wheel di `package-cli.sh`. **L'immagine della CLI non era stata ricostruita**; lo è stata il 2026-11-17 e riprovata con l'E2E del pacchetto il 2026-11-18 (3 test verdi, compresi gli script dell'Action contro l'immagine vera).
 - `notify --provider github` legge il token solo da `GITHUB_TOKEN`. Repository, PR e commit di testa vengono dai flag, poi dal report (`scan.pull_request`) e dal file `GITHUB_EVENT_PATH`, validati; un valore malformato vale come assente. Ordine per la PR: flag, report, evento.
 - Un permesso mancante (`forbidden`) scrive il commento nel riepilogo del job e esce con 0; ogni altro errore esce con 2 con il solo codice. Un commento fallito non ferma la check run.
 - Le annotazioni non sono neutralizzate per Markdown: GitHub le mostra come testo. Sono pulite da caratteri di controllo e bidirezionali e limitate in lunghezza.
