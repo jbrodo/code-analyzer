@@ -60,7 +60,7 @@ Definition of Done in Fase 2 (§17), con gli adattamenti:
 
 ## 3. Decisioni dell'utente
 
-Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Decisa il 2026-11-17: D2-14 per hadolint, solo per uso interno. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
+Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Decisa il 2026-11-13: D2-08. Decise il 2026-11-16: D2-02, D2-04, D2-07, e la risposta a S5-A1. Decise il 2026-11-17: D2-14 per hadolint, solo per uso interno, e D2-05. Confermate il 2026-11-13 anche le eccezioni per i 6 finding di licenza (X-10). Le altre restano aperte.
 
 | Decisione | Esito |
 | --- | --- |
@@ -71,13 +71,14 @@ Decise dall'utente il 2026-11-10: D2-01, D2-03, D2-09, D2-10, D2-11, D2-16. Deci
 | D2-10 | Opzione 1: il gate resta sui livelli provvisori di ADR-0009 fino al Gate 2; A e B si calcolano entrambe in ombra |
 | D2-11 | Corpus fisso di repository pubblici con commit fissati, distribuzione versionata nel pacchetto. Corpus piccolo all'inizio, una decina di repository con i 3 pilota inclusi. ADI calcolato e servito dall'API, trend in Fase 4 |
 | D2-16 | Opzione 1: nessuna destinazione in Fase 2, solo il registry locale. I-04, I-07, E-05 e N-09 restano bloccati |
+| D2-05 | (2026-11-17) Solo fonti pubbliche e cache, come ADR-0024: EPSS dal file giornaliero di FIRST e KEV dal JSON di CISA, scaricati dalla CLI con i controlli di forma, dimensione e plausibilità. Nessun mirror in Fase 2: E-05 esce, il design resta nell'ADR. La ridistribuzione di EPSS (licenza dei dati non dichiarata, chiede attribuzione) si valuta in D2-14 solo se un mirror servirà. Rischio residuo accettato: le fonti non pubblicano firme né checksum, uno snapshot plausibile ma alterato non si riconosce (effetto massimo: P di una CVE a 1,0 o al minimo; nessun codice eseguito), riportato a S-01 |
 | D2-02 | (2026-11-16) Come ADR-0019: OIDC generico, token in memoria nella SPA e server senza sessioni; ruoli `lettore`, `triage`, `approvatore`, `amministratore`; un tenant in esercizio |
 | D2-04 | (2026-11-16) Come ADR-0028: tier ed esposizione registrati sul server da un `amministratore` e passati a `scan` come file di contesto; il blocco `service` del repository vale solo se il file manca |
 | D2-07 | (2026-11-16) pg8000 come driver; `ArtifactStore` con adattatore su file system **e adattatore S3 già in Fase 2** (ADR-0030). Nessun server di object storage incluso nel prodotto |
 | D2-14 (hadolint) | (2026-11-17, Riccardo Roveda) hadolint approvato **per uso interno e per il registry locale**. Non è un'approvazione alla distribuzione: la licenza copyleft forte di hadolint, che D-0013 mette tra quelle da approvare, obbliga alla distribuzione di accompagnare l'immagine con il testo della licenza e l'offerta della sorgente. Quella decisione resta di I-07. Non è un parere legale. Gli altri motori e componenti nuovi restano da valutare in D2-14 sugli SBOM di rilascio |
 | S5-A1 | (2026-11-16) Limite inferiore al livello di una dipendenza in funzione del CVSS, in configurazione: i feed possono alzare un livello, non azzerarlo. Da scrivere in ADR-0021 (A-06) |
 
-Restano aperte: D2-05, D2-06, D2-12, D2-13, D2-14, e la conferma del perimetro di D2-15.
+Restano aperte: D2-06, D2-12, D2-13, D2-14, e la conferma del perimetro di D2-15.
 
 Testo originale della tabella, con opzioni e motivazioni: ordine consigliato **D2-01** e **D2-03** per prime. D2-01 determina se servono Temporal, l'esecuzione sul server e un adattatore Kubernetes; D2-03 è l'unica che blocca il Gate 2 fin dal primo task (X-01). Seguono D2-10 e D2-02, che fermano il percorso dello scoring e del server.
 
@@ -734,28 +735,28 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §3, §6.1. ADR: 0001, 0024.
 
 #### E-02 — Adattatore EPSS
-- Agente: `backend`. Stato: `IPOTESI` (D2-05 per la fonte).
+- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17: fonti pubbliche, nessun mirror).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/`.
 - Dipende da: E-01, A-09.
 - Accettazione: sincronizzazione senza workspace, controllo di integrità e di dimensione, cache con soglia di età, `--offline` la impedisce, lettura difensiva del file; test sullo snapshot di F-04 senza rete.
 - Spec: §6.1. ADR: 0006, 0024.
 
 #### E-03 — Adattatore KEV
-- Agente: `backend`. Stato: `IPOTESI` (D2-05 per la fonte).
+- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17: fonti pubbliche, nessun mirror).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/`.
 - Dipende da: E-01, A-09.
 - Accettazione: come E-02 per KEV.
 - Spec: §6.1. ADR: 0006, 0024.
 
 #### E-04 — Origine configurabile dei feed
-- Agente: `backend`. Stato: `IPOTESI` (D2-05).
+- Agente: `backend`. Stato: `LIBERO` (D2-05 decisa il 2026-11-17). Si riduce alla configurazione dell'origine da pacchetto, flag o ambiente; nessuna verifica di firma dello snapshot perché non c'è un mirror.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/feeds.py`, `packages/ca-cli/`.
 - Dipende da: E-02, E-03.
 - Accettazione: origine di OSV, trivy, EPSS e KEV da pacchetto, flag o ambiente, mai da `.code-analyzer.yml`; con un mirror cambia solo l'origine (ADR-0006); verifica della firma dello snapshot se D2-05 la prevede.
 - Spec: §13. ADR: 0005, 0006, 0014, 0024.
 
 #### E-05 — Pubblicazione del mirror
-- Agente: `devops`. Stato: `BLOCCATO` (decisione del 2026-11-10 sulla pubblicazione, D2-16, D2-05, D2-14 per la ridistribuzione).
+- Agente: `devops`. Stato: **ESCE dalla Fase 2** (D2-05, 2026-11-17: nessun mirror). Resta qui il design di ADR-0024 per un lavoro futuro, che richiederebbe D2-16 e la valutazione di D2-14 sulla ridistribuzione.
 - Percorsi: `.github/workflows/`, `deploy/`.
 - Dipende da: E-04.
 - Accettazione: snapshot firmati secondo ADR-0024 resi disponibili sulla destinazione di D2-16, verificabili dalla CLI con E-04; nessuna pubblicazione senza approvazione esplicita.
