@@ -685,3 +685,43 @@ else:
     @pytest.mark.skip(reason="hypothesis non installato: aggiungerlo al gruppo dev")
     def test_properties_require_hypothesis() -> None:
         raise AssertionError("non raggiungibile")
+
+
+# --- kind: architecture ---------------------------------------------------------------------
+
+
+def test_architecture_matches_formula_and_ignores_lines() -> None:
+    value = fp().fingerprint_architecture(
+        rule_id="ca.arch.cyclic-dependency", scope="module", path="shop/billing/a.py"
+    )
+    assert value == expected_hash(
+        "architecture", "ca.arch.cyclic-dependency", "ca-graph", "module\x00shop/billing/a.py", ""
+    )
+
+
+def test_architecture_scope_and_path_change_the_fingerprint() -> None:
+    base = {"rule_id": "ca.arch.cyclic-dependency", "scope": "package", "path": "shop/billing"}
+    value = fp().fingerprint_architecture(**base)
+    assert value != fp().fingerprint_architecture(**{**base, "scope": "module"})
+    assert value != fp().fingerprint_architecture(**{**base, "path": "shop/ledger"})
+    assert value != fp().fingerprint_architecture(
+        **{**base, "rule_id": "ca.arch.hub-like-dependency"}
+    )
+
+
+def test_architecture_accepts_the_root_package_only_for_packages() -> None:
+    assert fp().fingerprint_architecture(rule_id="r", scope="package", path=".")
+    with pytest.raises(ValueError):
+        fp().fingerprint_architecture(rule_id="r", scope="module", path=".")
+
+
+@pytest.mark.parametrize("path", ["", "/a", "a/../b", "a\x00b"])
+@pytest.mark.parametrize("scope", ["module", "package"])
+def test_architecture_rejects_unsafe_paths(scope: str, path: str) -> None:
+    with pytest.raises(ValueError):
+        fp().fingerprint_architecture(rule_id="r", scope=scope, path=path)
+
+
+def test_architecture_rejects_an_unknown_scope() -> None:
+    with pytest.raises(ValueError):
+        fp().fingerprint_architecture(rule_id="r", scope="file", path="a.py")

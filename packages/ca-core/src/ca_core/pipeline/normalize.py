@@ -21,7 +21,7 @@ Funzione pura rispetto alle porte: stessi ingressi e stesso `Clock`, stesso risu
 `secret_sha256` serve solo al fingerprint e non entra nel report (lo garantisce `normalize_sarif`).
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ca_core.dedup import deduplicate
 from ca_core.models.config import CodeAnalyzerConfig
@@ -59,6 +59,9 @@ class NormalizeRequest(_Frozen):
     workspace: str  # radice letta per il contesto dei finding `code`
     executions: list[PluginExecution]
     config: CodeAnalyzerConfig
+    # Finding prodotti da un passo che non è un plugin SARIF, per esempio gli smell del grafo
+    # (G-10). Vanno nelle stesse esclusioni, eccezioni, livelli e ordinamento degli altri.
+    extra_findings: list[Finding] = Field(default_factory=list)
 
 
 class NormalizeResult(_Frozen):
@@ -123,7 +126,7 @@ def normalize(
 ) -> NormalizeResult:
     config = request.config
     plugins: list[PluginRun] = []
-    findings: list[Finding] = []
+    findings: list[Finding] = list(request.extra_findings)
     declared: list[DeclaredLicense] = []
     notes: list[Warning_] = []
     for execution in sorted(request.executions, key=lambda e: e.run.name):

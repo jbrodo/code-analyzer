@@ -52,6 +52,11 @@ class LevelTable:
     code_categories: frozenset[Category] = frozenset(
         {Category.SAST, Category.IAC, Category.QUALITY, Category.TEST}
     )
+    # ADR-0020: uno smell architetturale è `basso` finché l'ordinamento non è validato (Gate 2), con
+    # origine `default`: nessuno smell deve bloccare una CI prima.
+    defaults: Mapping[Category, Level] = field(
+        default_factory=lambda: {Category.ARCHITECTURE: Level.LOW}
+    )
     # ADR-0026: prima della validazione dell'ordinamento (Gate 2) un problema di qualità o di
     # copertura non supera `medio`, così non blocca una CI che blocca su critico e alto.
     capped: Mapping[Category, Level] = field(
@@ -130,6 +135,8 @@ def level_for(
             if cap is not None and _RANK[level] < _RANK[cap]:
                 level = cap
             return level, LevelSource.TOOL_SEVERITY
+    if finding.category in table.defaults:
+        return table.defaults[finding.category], LevelSource.DEFAULT
     return table.without_severity, LevelSource.DEFAULT
 
 

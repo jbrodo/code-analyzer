@@ -170,3 +170,10 @@ def test_quality_without_severity_is_medium_by_default() -> None:
 def test_sast_is_not_capped() -> None:
     item = finding("s", category=Category.SAST, tool="x", evidence={"tool_severity": "high"})
     assert assign_levels([item])[0].level is Level.HIGH
+
+
+def test_architecture_findings_are_low_with_the_default_source() -> None:
+    """ADR-0020: nessuno smell deve bloccare una CI prima del Gate 2."""
+    item = finding("g", category=Category.ARCHITECTURE, tool="ca-graph", path="shop/a.py")
+    [out] = assign_levels([item])
+    assert (out.level, out.level_source) == (Level.LOW, LevelSource.DEFAULT)

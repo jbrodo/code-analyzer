@@ -22,6 +22,7 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     "**/.git",
     "**/code-analyzer.report.json",  # artefatti di output di `scan` (ADR-0010)
     "**/code-analyzer.sarif",
+    "**/code-analyzer.graph.json",  # grafo dei moduli (G-10)
 )
 # Predefiniti che non valgono per un tool; i glob di `paths.exclude` valgono sempre.
 TOOL_EXEMPTIONS: Mapping[str, tuple[str, ...]] = {"gitleaks": ("**/.git",)}

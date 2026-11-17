@@ -187,6 +187,19 @@ def fingerprint_coverage(*, rule_id: str, path: str) -> str:
     return compute_fingerprint("coverage", rule_id, "coverage", _path(path), "")
 
 
+def fingerprint_architecture(*, rule_id: str, scope: str, path: str) -> str:
+    """Kind `architecture` (ADR-0008 emendato, ADR-0020): uno smell, il suo ambito e la sua ancora.
+
+    `path` è un file (ambito `module`) o una cartella (ambito `package`, `.` per la radice). Nessuna
+    riga e nessun contesto: spostare righe non cambia il fingerprint.
+    """
+    _field("rule_id", rule_id, allow_empty=False)
+    if scope not in ("module", "package"):
+        raise ValueError(f"scope non valido: {scope!r}")
+    anchor = "." if scope == "package" and path == "." else _path(path)
+    return compute_fingerprint("architecture", rule_id, "ca-graph", _NUL.join([scope, anchor]), "")
+
+
 def fingerprint_health(*, plugin: str) -> str:
     _field("plugin", plugin, allow_empty=False)
     return compute_fingerprint("health", "ca.scanner-not-run", "ca", plugin, "")
