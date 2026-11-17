@@ -9,6 +9,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol
 
 from ca_core.models.finding import Finding, ImpactFactors
+from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
 
 
@@ -18,6 +19,12 @@ class ScoringContext:
     (feed EPSS e KEV, raggiungibilità, servizio): K-03, K-04 e K-05."""
 
     config: ScoringConfig
+    service: ServiceContext = field(
+        default_factory=lambda: ServiceContext(
+            tier=ServiceValue(value=None, source="default"),
+            internet_facing=ServiceValue(value=None, source="default"),
+        )
+    )
 
 
 @dataclass(frozen=True)

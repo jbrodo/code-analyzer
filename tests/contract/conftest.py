@@ -24,6 +24,7 @@ SCHEMA_NAMES = (
     "scan-report",
     "graph",
     "scoring-config",
+    "service-context",
 )
 
 Json = dict[str, Any]

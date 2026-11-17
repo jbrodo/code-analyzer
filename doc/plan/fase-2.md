@@ -799,7 +799,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1, §6.2. ADR: 0022, 0028.
 
 #### K-05 — Variante A: C
-- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `scoring/service.py`: `resolve_service_context(file, service)` con la precedenza di ADR-0028 per singolo valore (file `catalog`, blocco `service` `repository`, predefinito `default`), avvisi `service-config-ignored` e `service-from-repository`, e `factor_c` (tier 1, 2, 3 dalla configurazione; assente: `c.missing`; fonte e tier nell'evidenza). Nuovo contratto `service-context` 1.0 (`models/service_context_file.py`, schema, test di contratto e di equivalenza): il file di ADR-0028 non aveva ancora uno schema, anche se l'ADR lo assegnava a C-05. `ScoringContext` porta ora il contesto del servizio (predefinito: tutto `default`). **Non fatto:** il flag `scan --service-context` con le regole del percorso come la baseline, il comando `service-context` verso il server (B-10), e il collegamento al report (`service_context`) nel passo `score`/`enrich` (K-14, K-15).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/variant_a.py`.
 - Dipende da: K-01, C-05.
 - Accettazione: tier dalla fonte di D2-04, default 0,7, fonte registrata.

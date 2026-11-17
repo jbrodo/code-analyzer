@@ -16,6 +16,7 @@ from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
 from ca_core.models.plugin_sarif import PluginSarifProperties
 from ca_core.models.scan_report import ScanReport
 from ca_core.models.scoring_config import ScoringConfig
+from ca_core.models.service_context_file import ServiceContextFile
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SUFFIX = ".schema.json"
@@ -56,6 +57,7 @@ CONTRACTS: tuple[Contract, ...] = (
     Contract("scan-report", "1.3", ScanReport),
     Contract("graph", "1.1", Graph),
     Contract("scoring-config", "1.0", ScoringConfig),
+    Contract("service-context", "1.0", ServiceContextFile),
 )
 
 
