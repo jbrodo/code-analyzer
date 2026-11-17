@@ -100,7 +100,7 @@ def semantic_checks(
         f"{key}: chiave inerte in Fase 1" for key in _INERT if getattr(config, key) is not None
     )
     if config.gate.mode.value == "new-findings-only":
-        warnings.append("gate.mode: in Fase 1 equivale a 'all'")
+        warnings.append("gate.mode: vale solo in una scansione PR con baseline valida")
     return errors, warnings
 
 

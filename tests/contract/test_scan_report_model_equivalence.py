@@ -55,6 +55,16 @@ MODEL_ONLY: dict[str, Json] = {
     "finding-without-state-with-valid-baseline": mutated(
         PR_REPORT, lambda i: i.update(findings=[NEW, {**OLD, "baseline_state": None}])
     ),
+    "new-findings-only-effective-without-baseline": mutated(
+        MINIMAL, lambda i: i["gate"].update(effective_mode="new-findings-only")
+    ),
+    "new-findings-only-effective-with-missing-baseline": mutated(
+        MINIMAL,
+        lambda i: (
+            i["gate"].update(effective_mode="new-findings-only"),
+            i.update(scan=PR_SCAN, baseline={"status": "missing"}),
+        ),
+    ),
     "baseline-updated-not-existing": mutated(
         PR_REPORT, lambda i: i["baseline"].update(updated=[NEW["fingerprint"]])
     ),

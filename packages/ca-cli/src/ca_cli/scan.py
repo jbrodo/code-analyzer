@@ -40,6 +40,7 @@ from ca_core.models import CodeAnalyzerConfig, PackagedPluginManifest
 from ca_core.models.config import GateMode
 from ca_core.models.plugin_manifest import InputMode
 from ca_core.models.scan_report import (
+    BaselineStatus,
     Gate,
     HistoryCoverage,
     InertSection,
@@ -47,11 +48,15 @@ from ca_core.models.scan_report import (
     PluginRun,
     ReportStatus,
     Repository,
+    ScanInfo,
+    ScanKind,
     ScanReport,
     Signature,
     Warning_,
 )
 from ca_core.pipeline import publish as publish_step
+from ca_core.pipeline.baseline import load_baseline
+from ca_core.pipeline.diff_baseline import diff_baseline
 from ca_core.pipeline.exclusions import coverage_exclusions, effective_exclusions
 from ca_core.pipeline.normalize import NormalizeRequest, normalize
 from ca_core.pipeline.publish import publish
@@ -59,6 +64,8 @@ from ca_core.pipeline.run_plugins import RunPluginsRequest, run_plugins
 from ca_core.pipeline.workspace import PrepareWorkspaceRequest, WorkspaceError, prepare_workspace
 from ca_core.ports import (
     ArtifactRef,
+    BaselineLookup,
+    BaselineOutcome,
     FeedsPurgeRequest,
     FeedsSyncRequest,
     PluginRunRequest,
@@ -266,15 +273,66 @@ def _table(report: ScanReport, refs: Sequence[ArtifactRef]) -> str:
     levels = Counter(f.level.value if f.level else "senza livello" for f in report.findings)
     lines.append(f"finding: {len(report.findings)}")
     lines += [f"  {level}: {count}" for level, count in sorted(levels.items())]
+    if report.baseline is not None and report.baseline.status is BaselineStatus.VALID:
+        b = report.baseline
+        lines.append(
+            f"baseline: {b.new} nuovi, {b.existing} esistenti, {len(b.resolved)} risolti"
+            + (f", {b.not_evaluated} non valutati" if b.not_evaluated else "")
+        )
     lines += [f"avviso {w.code}" for w in report.warnings]
     lines += [f"scritto {ref.location}" for ref in refs]
     return "\n".join(lines)
+
+
+_COMMIT = re.compile(r"[0-9a-f]{40,64}")
+MAX_PR_NUMBER = 2_147_483_647
+
+
+def parse_commit(value: str) -> str:
+    if not _COMMIT.fullmatch(value):
+        raise argparse.ArgumentTypeError("commit completo, 40-64 cifre esadecimali minuscole")
+    return value
+
+
+def parse_pr_number(value: str) -> int:
+    if not value.isascii() or not value.isdigit() or not 1 <= int(value) <= MAX_PR_NUMBER:
+        raise argparse.ArgumentTypeError("numero intero positivo")
+    return int(value)
+
+
+def check_pr_flags(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """`--base` serve alla modalità PR e solo a quella (ADR-0025): errore di sintassi, exit 2."""
+    if args.pr and args.base is None:
+        parser.error("--pr richiede --base")
+    if not args.pr and (args.base or args.baseline or args.pull_request):
+        parser.error("--base, --baseline e --pull-request valgono solo con --pr")
 
 
 def handle(args: argparse.Namespace, context: Context) -> int:
     started = context.clock.now()
     root = str(Path(args.path).resolve())
     config = load_config(root, context.source, context)
+    loaded = None
+    if args.pr:
+        # ADR-0025 §5: con una baseline valida la configurazione è quella del base, per tutto.
+        # Il percorso è risolto qui (nessun link simbolico) prima del confronto con il workspace.
+        lookup = (
+            BaselineLookup(
+                outcome=BaselineOutcome.FOUND,
+                location=str(Path(args.baseline).resolve()),
+                source=args.baseline_source,
+            )
+            if args.baseline
+            else None
+        )
+        loaded = load_baseline(
+            lookup,
+            base_commit=args.base,
+            workspace=root,
+            head_config=config,
+            reader=context.source,
+        )
+        config = loaded.config
     try:
         workspace = prepare_workspace(
             PrepareWorkspaceRequest(
@@ -316,7 +374,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             )
         except FeedsError as exc:
             raise ScanError(str(exc)) from exc
-    warnings: list[Warning_] = []
+    warnings: list[Warning_] = list(loaded.warnings) if loaded else []
     executions = []
     for execution in ran.executions:
         outcome = feeding.outcomes.get(execution.run.name)
@@ -364,11 +422,23 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     if not executions:
         warnings.append(Warning_(code="no-plugin-run", message="nessun plugin eseguito"))
         status = ReportStatus.PARTIAL
-    if config.gate.mode.value == "new-findings-only":
-        warnings.append(
-            Warning_(code="new-findings-only-as-all", message="in Fase 1 equivale a 'all'")
-        )
     plugins: list[PluginRun] = normalized.plugins
+    findings = normalized.findings
+    baseline = None
+    if loaded is not None:
+        diffed = diff_baseline(findings, plugins, loaded)
+        findings, baseline = diffed.findings, diffed.baseline
+    effective = GateMode.ALL
+    if config.gate.mode is GateMode.NEW_FINDINGS_ONLY:
+        if baseline is not None and baseline.status is BaselineStatus.VALID:
+            effective = GateMode.NEW_FINDINGS_ONLY
+        else:
+            warnings.append(
+                Warning_(
+                    code="new-findings-only-as-all",
+                    message="senza una baseline valida si valutano tutti i finding",
+                )
+            )
     report = ScanReport(
         version=1,
         status=status,
@@ -377,7 +447,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         repository=Repository(name=name[:500], commit=commit, history=history),
         gate=Gate(
             mode=config.gate.mode,
-            effective_mode=GateMode.ALL,
+            effective_mode=effective,
             block_on=config.gate.block_on,
             warn_on=config.gate.warn_on,
         ),
@@ -389,7 +459,11 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         exceptions=normalized.exceptions,
         inert_sections=[s for s in InertSection if getattr(config, s.value) is not None],
         warnings=warnings,
-        findings=normalized.findings,
+        scan=ScanInfo(kind=ScanKind.PR, base_commit=args.base, pull_request=args.pull_request)
+        if loaded
+        else ScanInfo(),
+        baseline=baseline,
+        findings=findings,
     )
     sink = _CapturingSink(context, args.output_dir)
     try:

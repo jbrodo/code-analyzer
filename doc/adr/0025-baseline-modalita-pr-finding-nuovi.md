@@ -146,3 +146,10 @@ Il confronto non legge la storia git: `fetch-depth: 1` basta. La profondità con
 - **Chiave senza percorso, regola di accoppiamento:** `pk1` non contiene l'indice di occorrenza (dipende dal file). Per questo il secondo passaggio accoppia solo gruppi di uno contro uno. Un finding `code` senza contesto di codice non ha la chiave.
 - `updated` ha un campo (`baseline.updated`, i fingerprint) perché il SARIF si costruisce dal solo report. Il campo ha richiesto `scan-report` 1.3.
 - **Non ancora fatto:** collegare tutto alla CLI (L-01) e il gate sui nuovi (K-18). Finché non ci sono, nessun report reale ha uno stato rispetto alla baseline.
+
+## Realizzazione del gate e della CLI (K-18, L-01, 2026-11-17)
+
+- `gate` legge il modo da `gate.effective_mode` e non da altro: il report è l'unico ingresso (ADR-0010). Il modello rifiuta `new-findings-only` effettivo senza una baseline valida.
+- La CLI sostituisce la configurazione con quella della baseline **prima** di preparare il workspace, così esclusioni, plugin, eccezioni e policy sono quelli del base per tutta la scansione.
+- Un file di baseline privato (0600) dentro il repository darebbe in più un avviso di workspace illeggibile: è comunque rifiutato prima.
+- `--baseline-source` dichiara la fonte per il report; la CLI non può verificarla.

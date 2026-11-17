@@ -19,7 +19,7 @@ from types import FrameType
 
 from ca_cli import config_validate, gate, sbom, scan
 from ca_cli.composition import Context, build_context
-from ca_core.models.scan_report import Isolation
+from ca_core.models.scan_report import BaselineSourceKind, Isolation
 from ca_plugins.hostpaths import HostPathsError
 
 PROG = "code-analyzer"
@@ -53,6 +53,21 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument(
         "--offline", action="store_true", help="non sincronizzare i feed: usa lo snapshot esistente"
     )
+    scan_parser.add_argument(
+        "--pr", action="store_true", help="scansione di PR: confronto con la baseline (ADR-0025)"
+    )
+    scan_parser.add_argument("--base", type=scan.parse_commit, help="commit base (con --pr)")
+    scan_parser.add_argument(
+        "--baseline", help="report della scansione completa del commit base, fuori dal repository"
+    )
+    scan_parser.add_argument(
+        "--baseline-source",
+        type=BaselineSourceKind,
+        choices=list(BaselineSourceKind),
+        default=BaselineSourceKind.CI_ARTIFACT,
+        help="da dove viene la baseline, solo per il report",
+    )
+    scan_parser.add_argument("--pull-request", type=scan.parse_pr_number, help="numero della PR")
     sbom_parser = commands.add_parser("sbom", help="genera l'SBOM CycloneDX")
     sbom_parser.add_argument("path", nargs="?", default=".", help="directory (predefinito: .)")
     sbom_parser.add_argument("--format", choices=["cyclonedx"], default="cyclonedx")
@@ -102,7 +117,10 @@ def _interruptible() -> Generator[None, None, None]:
 
 
 def main(argv: Sequence[str] | None = None, *, context: Context | None = None) -> int:
-    args = build_parser().parse_args(argv)  # errori di sintassi: exit 2 (argparse)
+    parser = build_parser()
+    args = parser.parse_args(argv)  # errori di sintassi: exit 2 (argparse)
+    if args.command == "scan":
+        scan.check_pr_flags(args, parser)
     handler = HANDLERS[(args.command, getattr(args, "config_command", None))]
     with _interruptible():
         ctx: Context | None = context
@@ -132,7 +150,7 @@ def _confine_outputs(args: argparse.Namespace, root: Path) -> None:
     Un percorso relativo, predefiniti compresi, si legge rispetto a `root`: la directory
     corrente è il workspace, montato in sola lettura.
     """
-    for name in ("output_dir", "output", "report"):
+    for name in ("output_dir", "output", "report", "baseline"):
         value = getattr(args, name, None)
         if value is None:
             continue

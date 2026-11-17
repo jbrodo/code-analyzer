@@ -890,7 +890,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §5 passo 9. ADR: 0008, 0011, 0025.
 
 #### K-18 — Gate su finding nuovi e configurazione dal branch base
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `pipeline/gate.py`. Con `gate.effective_mode` `new-findings-only` bloccano solo i finding `new`; `GateResult.mode` e riga `modo:` nell'uscita di `gate`. Il modello rifiuta un `effective_mode` `new-findings-only` senza baseline valida. L'avviso `new-findings-only-as-all` resta per scansione completa o baseline non valida. La configurazione dal base si applica in `scan` (L-01): provato il caso ostile, una PR che mette `mode: all`, `block_on: []` ed esclude `*.py` non cambia gate né esclusioni, e il finding nuovo blocca.
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/gate.py`.
 - Dipende da: K-17, C-05.
 - Accettazione: `new-findings-only` valutato davvero, l'avviso `new-findings-only-as-all` resta solo senza baseline; in modalità PR gate ed eccezioni si leggono dal branch base, e il caso ostile di F-06 non indebolisce il gate.
@@ -920,7 +920,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 ### L — CLI
 
 #### L-01 — `scan --pr --base`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_cli/scan.py`, `main.py`. Flag `--pr`, `--base` (commit completo), `--baseline`, `--baseline-source`, `--pull-request`; errori di sintassi con exit 2 prima di qualunque lavoro (`--pr` senza `--base` e viceversa). La baseline si risolve (realpath) prima del confronto con il workspace; nell'immagine CLI vale solo sotto la radice degli artefatti. Il report registra `scan`, `baseline`, stato dei finding e modo effettivo; la tabella riporta i conteggi. Exit code invariati. **Non coperto:** E2E con container reali (T-03) e la scelta della fonte nelle integrazioni (N-03); `--baseline-source` è solo un'etichetta del report, non verificata.
 - Percorsi: `packages/ca-cli/src/ca_cli/`.
 - Dipende da: K-16, K-17, K-18.
 - Accettazione: modalità PR secondo ADR-0025 con la fonte della baseline scelta; senza baseline disponibile, avviso e valutazione `all`; exit code invariati (ADR-0010).

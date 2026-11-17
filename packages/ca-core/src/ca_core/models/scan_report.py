@@ -335,6 +335,10 @@ class ScanReport(_Strict):
         if failed and self.status is ReportStatus.COMPLETE:
             raise ValueError("un plugin fallito rende la scansione partial")
         self._check_baseline()
+        if self.gate.effective_mode is GateMode.NEW_FINDINGS_ONLY and not (
+            self.baseline and self.baseline.status is BaselineStatus.VALID
+        ):
+            raise ValueError("new-findings-only effettivo richiede una baseline valida")
         feeds = [s.feed for s in self.enrichment]
         if len(set(feeds)) != len(feeds):
             raise ValueError("snapshot duplicati per feed")

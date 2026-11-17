@@ -8,7 +8,8 @@ omette: nei log CI permetterebbe di forzare offline un valore debole (N-27). Exi
 Gli avvisi del report vanno su stderr, uno per codice e soggetto, senza cambiare l'exit: una
 copertura ridotta resta visibile nel log della CI anche quando il gate è superato (D2-09). Si
 stampano il codice (validato dal modello) e il soggetto solo se ha la forma di un nome di plugin.
-Nessun `--pr` né `--base`. `--fail-on ""` è una scelta esplicita: nulla blocca.
+La modalità PR è di `scan`; qui conta solo `gate.effective_mode` del report.
+`--fail-on ""` è una scelta esplicita: nulla blocca.
 """
 
 import argparse
@@ -75,6 +76,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     result = evaluate_gate(report, fail_on=args.fail_on, allow_partial=args.allow_partial)
     verdict = {0: "superato", 1: "fallito", 2: "errore"}[result.exit_code]
     print(f"gate: {verdict}")
+    print(f"modo: {result.mode.value}")
     print(
         f"soglia: {','.join(level.value for level in result.block_on)} ({result.block_on_source})"
     )
