@@ -941,14 +941,14 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §9.2, §12.1. ADR: 0001, 0016, 0019.
 
 #### L-04 — Commenti PR e check run dalla CI
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** dal lavoro di N-02, N-03 e del comando `notify` (`ca_cli/notify.py`): commento aggiornato e check run con l'esito calcolato come `gate`, provati con un server finto, senza rete nei test. Legge solo il report, non il SARIF (il SARIF non serve alla composizione).
 - Percorsi: secondo ADR-0027 (`packages/ca-cli/` o `packages/ca-integrations/`).
 - Dipende da: N-02, N-03, A-12.
 - Accettazione: dal report e dal SARIF, un commento PR aggiornato e una check run con esito del gate; nessuna chiamata di rete nei test (server finto).
 - Spec: §12.1. ADR: 0027.
 
 #### L-05 — Documentazione utente della Fase 2
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **parziale, 2026-11-17**: scritto ciò che esiste. `doc/utente/README.md` aggiornato (comandi `notify` ed `export`, opzioni di PR, tabella dei plugin, `gate.mode`), più `pull-request.md`, `ci-github.md`, `ci-gitlab.md` e `livelli-e-punteggi.md`. **Non scritto, perché non esiste:** `--variant` e i punteggi in uscita (L-02), l'invio al server (L-03), la formula dei punteggi (ADR-0021 non esiste). `livelli-e-punteggi.md` dichiara che i punteggi non sono calcolati e riporta il cambio dei livelli (D2-10) e i limiti già noti (segreto valido non applicato; C ed E dichiarati dal repository senza server, con l'avviso `service-from-repository` che oggi non c'è). Da completare quando L-02 e L-03 sono fatti. Non verificato: le istruzioni di `ci-github.md` e `ci-gitlab.md` non sono state seguite da una persona su un'installazione pulita.
 - Percorsi: `doc/utente/`.
 - Dipende da: L-01, L-02, L-03, L-04, N-04.
 - Accettazione: modalità PR, varianti e punteggi, cambio dei livelli rispetto alla Fase 1 e quando avviene (D2-10), nuovi plugin, Action e componente GitLab, invio al server; limiti dichiarati: override del segreto valido non applicato, C ed E dichiarati dal repository se non c'è il server.
