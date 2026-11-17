@@ -23,6 +23,7 @@ uv run ty check packages --error-on-warning
 uv run pytest -q
 uv run lint-imports
 uv run python -m ca_core.schema_export --check
+uv run python -m ca_api.openapi_export --check
 bun run --cwd web lint
 bun run --cwd web test
 ```

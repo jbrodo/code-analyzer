@@ -1,0 +1,24 @@
+[project]
+name = "ca-graph"
+version = "0.0.0"
+description = "Grafo dei moduli e smell architetturali di Code Analyzer"
+license = "GPL-3.0-only"
+requires-python = ">=3.14"
+dependencies = ["ca-core"]
+
+# tree-sitter e le grammatiche servono solo all'immagine di estrazione (ADR-0020): non sono
+# dipendenze del pacchetto e non entrano nell'immagine della CLI.
+[project.optional-dependencies]
+extract = [
+    "tree-sitter==0.26.1",
+    "tree-sitter-python==0.25.0",
+    "tree-sitter-javascript==0.25.0",
+    "tree-sitter-typescript==0.23.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ca-core = { workspace = true }

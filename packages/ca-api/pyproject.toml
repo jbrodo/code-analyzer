@@ -1,0 +1,20 @@
+[project]
+name = "ca-api"
+version = "0.0.0"
+description = "Server di Code Analyzer: riceve i report della CLI e li serve all'API e alla UI"
+license = "GPL-3.0-only"
+requires-python = ">=3.14"
+# Versioni di V-01 (2026-11-13) come punto di partenza; sqlalchemy, alembic, pg8000, pyjwt e
+# opentelemetry entrano con i task che li usano (B-02, B-04, B-13), con licenza verificata.
+dependencies = [
+    "ca-core",
+    "fastapi>=0.162,<1",
+    "uvicorn>=0.54,<1",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ca-core = { workspace = true }
