@@ -113,6 +113,10 @@ name = "ca_graph senza rete né processi; il parser solo nell'immagine di estraz
 type = "forbidden"
 source_modules = ["ca_graph"]
 forbidden_modules = ["http", "httpx", "requests", "socket", "subprocess", "urllib", "urllib3"]
+# Un solo modulo avvia un processo: la lettura della storia git per il churn (G-11, ADR-0022), che
+# gira solo nell'immagine di estrazione, dalla git dir ombra di ADR-0012. Nessun altro modulo di
+# `ca_graph` deve poterlo fare: l'host non avvia processi.
+ignore_imports = ["ca_graph.treesitter.history -> subprocess"]
 
 [[tool.importlinter.contracts]]
 name = "il resto del mondo non importa il parser di ca_graph"

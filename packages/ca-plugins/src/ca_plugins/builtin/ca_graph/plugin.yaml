@@ -29,5 +29,5 @@ resources:
   cpu: "1"
   memory: 1Gi
   timeout: 300s
-  pids: 16
+  pids: 32  # Python e git: 16 non basta con git, come per gitleaks
 network: none

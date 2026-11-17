@@ -24,6 +24,14 @@ L'elenco completo e versionato dei pacchetti e' nell'SBOM CycloneDX associato al
 
 Nessuna oltre a quelle elencate: `requirements.lock` contiene solo i quattro pacchetti.
 
+## git
+
+- Pacchetto Debian `git`, licenza copyleft (con altre licenze dei suoi componenti), installato con
+  `apt` dal repository Debian 13: la versione non e' fissata dal `Dockerfile` ma e' nell'SBOM. Le
+  condizioni sono in `/usr/share/doc/git/copyright`. Il sorgente e' ottenibile dai repository
+  Debian. Serve a leggere la storia per il churn (G-11); non legge mai la configurazione git del
+  repository analizzato.
+
 ## Interprete Python
 
 - CPython 3.12, licenza PSF (Python Software Foundation License).

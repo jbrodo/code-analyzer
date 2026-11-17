@@ -33,6 +33,13 @@ ENV HOME=/tmp \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/opt/ca-plugin:/opt/venv/lib/python3.12/site-packages
 
+# git: l'estrazione del churn (G-11) legge la storia con un solo `git log`, dalla git dir ombra di
+# ADR-0012. Pacchetto Debian non fissato per versione (il digest della base fissa solo l'indice):
+# voce aperta, vedi THIRD-PARTY-NOTICES.md.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /opt/venv /opt/venv
 COPY --chmod=0755 ca_graph /opt/ca-plugin/ca_graph
 COPY --chmod=0644 ca_graph_adapter.py /opt/ca-plugin/ca_graph_adapter.py

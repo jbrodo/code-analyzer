@@ -2,8 +2,9 @@
 
 Produce un dizionario nel formato del contratto `graph` (C-02) senza importare `ca_core`: lo
 valida il test di contratto. Nodi, archi ed elenchi sono ordinati, così lo stesso workspace dà lo
-stesso file. Il churn non è qui (G-11); metriche e pacchetti li ricava l'host (ADR-0020). Gli
-entrypoint sono dichiarati dai metadati o dedotti da convenzioni (G-12): vedi `entrypoints.py`.
+stesso file. Il churn viene dalla storia git (G-11, `history.py`); metriche e pacchetti li
+ricava l'host (ADR-0020). Gli entrypoint sono dichiarati dai metadati o dedotti da convenzioni
+(G-12): vedi `entrypoints.py`.
 """
 
 import json
@@ -12,6 +13,7 @@ from typing import Any
 
 from ca_graph.treesitter import entrypoints as ep
 from ca_graph.treesitter import files as fs
+from ca_graph.treesitter import history as hist
 from ca_graph.treesitter import javascript as js
 from ca_graph.treesitter import python as py
 from ca_graph.treesitter.refs import FileImports
@@ -109,8 +111,15 @@ def _record_js(state: _State, resolver: js.Resolver, source: str, imports: FileI
             state.missing += 1
 
 
-def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
-    """Grafo del workspace nel formato di C-02. `LimitExceeded` se supera i limiti globali."""
+def extract_graph(
+    workspace: str, *, window_days: int = 90, history: hist.History | None = None
+) -> dict[str, Any]:
+    """Grafo del workspace nel formato di C-02. `LimitExceeded` se supera i limiti globali.
+
+    `history` si può passare già letta (le prove); altrimenti si legge dalla git dir del workspace,
+    con la git dir ombra di ADR-0012 (G-11).
+    """
+    history = history if history is not None else hist.read_history(workspace, window_days)
     listing = fs.list_sources(workspace)
     sources = listing.files
     configs = fs.list_configs(workspace)
@@ -146,14 +155,15 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
             _record_js(state, js_resolver, path, imports)
         for kind, confidence in ep.inspect_source(path, language, data, imports):
             inferred[(path, kind)] = confidence
-        modules.append(
-            {
-                "path": path,
-                "language": language,
-                "parse": "parziale" if imports.partial else "completa",
-                "test": fs.is_test_path(path),
-            }
-        )
+        module: dict[str, Any] = {
+            "path": path,
+            "language": language,
+            "parse": "parziale" if imports.partial else "completa",
+            "test": fs.is_test_path(path),
+        }
+        if history.status == hist.COMPLETE:
+            module["churn"] = history.churn.get(path, 0)
+        modules.append(module)
     declared = ep.declared_entrypoints(configs, frozenset(sources), read_config)
     edges = [
         {
@@ -187,7 +197,7 @@ def extract_graph(workspace: str, *, window_days: int = 90) -> dict[str, Any]:
                 "entrypoint_missing": declared.missing,
             },
         },
-        "history": {"status": "assente", "window_days": window_days},
+        "history": history.document(),
     }
 
 

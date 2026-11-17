@@ -142,6 +142,7 @@ def test_the_staged_context_has_the_extractor_and_no_other_package_code(tmp_path
                     "entrypoints",
                     "extract",
                     "files",
+                    "history",
                     "javascript",
                     "python",
                     "refs",
