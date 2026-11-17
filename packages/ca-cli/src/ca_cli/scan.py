@@ -217,11 +217,28 @@ class _FeedingExecutor:
 
 def _plugin_configs(config: CodeAnalyzerConfig, directory: Path) -> dict[str, str]:
     """File `/inputs/config.json` per plugin, con la sola parte che lo riguarda (ADR-0014)."""
-    if config.plugins.semgrep is None or not config.plugins.semgrep.rules:
-        return {}
-    path = directory / "semgrep.json"
-    path.write_text(json.dumps({"rules": config.plugins.semgrep.rules}))
-    return {"semgrep": str(path)}
+    configs: dict[str, str] = {}
+    if config.plugins.semgrep is not None and config.plugins.semgrep.rules:
+        path = directory / "semgrep.json"
+        path.write_text(json.dumps({"rules": config.plugins.semgrep.rules}))
+        configs["semgrep"] = str(path)
+    # ADR-0026: i linter ricevono solo le regole da spegnere. Il repository non può attivarne.
+    for name in ("ruff", "eslint", "checkov", "hadolint"):
+        options = getattr(config.plugins, name)
+        if options is not None and options.disable_rules:
+            path = directory / f"{name}.json"
+            path.write_text(json.dumps({"disable_rules": sorted(set(options.disable_rules))}))
+            configs[name] = str(path)
+    coverage = config.plugins.coverage
+    if coverage is not None and coverage.reports:
+        path = directory / "coverage.json"
+        reports = [
+            {"path": r.path, "format": r.format.value, "base_dir": r.base_dir}
+            for r in coverage.reports
+        ]
+        path.write_text(json.dumps({"reports": reports}))
+        configs["coverage"] = str(path)
+    return configs
 
 
 class _CapturingSink:

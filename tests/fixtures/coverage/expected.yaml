@@ -1,0 +1,70 @@
+# Esiti attesi dei report di copertura (F-03, ADR-0026). Formato: una voce per file.
+# `valid`: il plugin li legge. `hostile`: il plugin non esegue nulla di ciò che chiedono.
+#  - outcome `read`: report letto; `files` sono i percorsi risolti (rispetto a `base_dir`) e le
+#    righe misurabili/coperte per ciascuno. I percorsi che escono dal workspace si scartano e si
+#    contano in `discarded_paths`.
+#  - outcome `refused`: il plugin fallisce senza effetti (nessuna lettura di file fuori dal
+#    workspace, nessuna richiesta di rete, nessuna espansione di entità).
+#  - outcome `empty`: report valido senza file; non è un errore.
+# `base_dir` indicato è quello di `plugins.coverage.reports[].base_dir` usato nella prova.
+version: 1
+reports:
+  valid/lcov-coveragepy.info:
+    format: lcov
+    outcome: read
+    base_dir: .
+    files: {pkg/calc.py: {measurable: 3, covered: 2}}
+  valid/lcov-vitest.info:
+    format: lcov
+    outcome: read
+    base_dir: .
+    files: {src/calc.js: {measurable: 2, covered: 1}}
+  valid/cobertura.xml:
+    format: cobertura
+    outcome: read
+    base_dir: .
+    note: "<source> e' un percorso di un'altra macchina e si ignora"
+    files: {pkg/calc.py: {measurable: 4, covered: 2}}
+  valid/cobertura-doctype.xml:
+    format: cobertura
+    outcome: read
+    base_dir: .
+    note: "DOCTYPE con DTD esterna: ignorata senza scaricare nulla"
+    files: {src/calc.js: {measurable: 1, covered: 1}}
+  valid/cobertura-empty-nan.xml:
+    format: cobertura
+    outcome: empty
+    base_dir: .
+    note: "line-rate NaN vale 'assente'"
+    files: {}
+  hostile/cobertura-entity.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-billion-laughs.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-entity-utf16-bom.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-entity-utf16le-nobom.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-entity-after-comments.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-parameter-entity.xml: {format: cobertura, outcome: refused, reason: entity-declaration}
+  hostile/cobertura-external-dtd.xml:
+    format: cobertura
+    outcome: empty
+    note: "stesso trattamento di valid/cobertura-doctype.xml: DTD esterna ignorata, nessuna rete"
+    files: {}
+  hostile/cobertura-not-xml.xml: {format: cobertura, outcome: refused, reason: malformed}
+  hostile/lcov-garbage.info: {format: lcov, outcome: refused, reason: malformed}
+  hostile/lcov-path-escape.info:
+    format: lcov
+    outcome: read
+    base_dir: .
+    discarded_paths: 2
+    files: {pkg/inside.py: {measurable: 1, covered: 1}}
+  hostile/cobertura-path-escape.xml:
+    format: cobertura
+    outcome: read
+    base_dir: .
+    discarded_paths: 2
+    files: {pkg/inside.py: {measurable: 1, covered: 0}}
+# S-03 (S3-A1): le dichiarazioni di entita' si rifiutano con il parser sui byte, non cercando testo:
+# gli stessi documenti ostili sono presenti in UTF-16 con e senza BOM e dopo commenti e istruzioni.
+# Limiti di dimensione: provati con file generati dal test, non versionati (un file da molti MiB
+# non va nel repository). Casi: report oltre il tetto di byte, oltre il tetto di elementi XML,
+# oltre la profondita' XML, riga LCOV oltre il tetto di lunghezza.
+generated_limits: [bytes, xml-elements, xml-depth, lcov-line-length]

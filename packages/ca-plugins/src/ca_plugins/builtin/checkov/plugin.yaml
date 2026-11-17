@@ -1,0 +1,28 @@
+# Plugin checkov (P-03): configurazioni IaC (Dockerfile, Kubernetes, Terraform) in SARIF 2.1.0.
+# ADR-0004, 0005, 0007, 0014, 0026. Manifest sorgente: `image` senza digest e su un registry
+# inesistente (`.invalid`) perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il
+# rilascio dopo build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: checkov
+version: 1.0.0
+image: registry.invalid/ca-plugins/checkov:1.0.0
+capabilities: [detect]
+languages: []
+categories: [iac]
+inputs:
+  workspace: readonly
+  config: optional  # {"disable_rules": [...]} da `plugins.checkov.disable_rules`, ricontrollato dall'adattatore
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # Provvisorio, da confermare in X-04: un risultato pesa circa 270 byte (nessun frammento ne'
+  # nome di risorsa). 32 MiB reggono oltre 100 mila risultati.
+  max_bytes: 33554432
+resources:
+  # Provvisorie fino alla misura sui pilota (X-05): checkov e' Python con molte dipendenze; la
+  # copia di lavoro in /tmp (fino a 64 MiB) conta nel limite di memoria (tmpfs).
+  cpu: "1"
+  memory: 2Gi
+  timeout: 600s
+  pids: 64
+network: none

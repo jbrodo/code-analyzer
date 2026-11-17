@@ -1,0 +1,6 @@
+*
+!eslint_adapter.py
+!eslint.config.mjs
+!package.json
+!package-lock.json
+!licenses

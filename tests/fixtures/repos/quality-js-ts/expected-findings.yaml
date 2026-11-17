@@ -3,8 +3,9 @@
 # typescript 6.0.3 e Node 24:
 #   eslint --no-config-lookup --no-inline-config -c <configurazione di prova> -f json src
 # Configurazione di prova: regole raccomandate di eslint e di typescript-eslint, piu' complexity,
-# max-params, max-depth e max-lines-per-function con le soglie predefinite (20, 3, 4, 50).
-# I valori della fixture: complessita' 26, 6 parametri, annidamento 6.
+# max-params, max-depth e max-lines-per-function. Dal 2026-11-17 e' la configurazione dell'immagine
+# del plugin (builtin/eslint/eslint.config.mjs), con soglie 10, 5, 4, 50. I valori della fixture:
+# complessita' 26, 6 parametri, annidamento 6.
 # Fuori dagli attesi, di proposito:
 #  - la variabile non usata di src/plain.js: l'id della regola dipende dalla configurazione
 #    (quella di base o quella di typescript-eslint), che fissa P-02;

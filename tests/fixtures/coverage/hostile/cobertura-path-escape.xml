@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<coverage line-rate="0" version="1">
+  <sources><source>/home/ci/build</source></sources>
+  <packages><package name="p"><classes>
+    <class name="x" filename="../../outside.py"><lines><line number="1" hits="0"/></lines></class>
+    <class name="y" filename="/abs/outside.py"><lines><line number="1" hits="0"/></lines></class>
+    <class name="z" filename="pkg/inside.py"><lines><line number="1" hits="0"/></lines></class>
+  </classes></package></packages>
+</coverage>
