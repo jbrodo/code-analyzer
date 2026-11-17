@@ -479,7 +479,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §3, §4.3. ADR: 0003, 0020.
 
 #### C-03 — Contratto della configurazione di scoring
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**. `models/scoring_config.py` (nessun campo con un predefinito: i valori stanno solo nel file), `schemas/scoring-config.schema.json` versione 1.0, file predefinito `ca_core/scoring/default.json` (inserito nel wheel), `scoring/config.py` (`parse_config`, `load_default`, `config_version` = `<version>+<12 caratteri dell'impronta del contenuto normalizzato>`). Contiene soglie dei livelli, `levels.source` (`provisional` per D2-10), mappa di severità, G, P, E, C e i sei override con i loro parametri; nessun campo per «segreto valido». Il modello rifiuta soglie non decrescenti e mappe o fattori non monotoni. File di sovrascrittura completo, mai fuso. Il formato è JSON perché `ca-core` non ha un parser YAML; la CLI potrà accettare YAML (L-02). **Non fatto:** i parametri della Variante B (ADR-0023); la lettura da server per tenant (B-*); la tabella provvisoria di `scoring/levels.py` (ADR-0009) resta nel codice finché non esiste il livello da punteggio.
 - Percorsi: `packages/ca-core/src/ca_core/models/scoring_config.py`, `schemas/scoring-config.schema.json`, default nel pacchetto `ca-core`.
 - Dipende da: A-06, A-08.
 - Accettazione: pesi, soglie dei livelli, mappe di severità, override, parametri della Variante B, versione; il file predefinito supera lo schema; nessun valore di scoring resta nel codice di `scoring/`.

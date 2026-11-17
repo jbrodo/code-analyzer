@@ -14,6 +14,7 @@ VERSIONS = {
     "plugin-sarif-properties": "1.1",  # P-01 della Fase 2: `metric`
     "scan-report": "1.3",  # K-21 `correlation_version`; C-04 baseline, tipo, configurazione
     "graph": "1.1",  # G-02: files_skipped_name
+    "scoring-config": "1.0",  # C-03
 }
 
 

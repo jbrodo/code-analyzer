@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "variant": "A",
+  "levels": {
+    "source": "provisional",
+    "thresholds": {
+      "critico": 70.0,
+      "alto": 40.0,
+      "medio": 15.0
+    }
+  },
+  "g": {
+    "severity": {
+      "critical": 1.0,
+      "high": 0.75,
+      "medium": 0.5,
+      "low": 0.25,
+      "error": 0.75,
+      "warning": 0.5,
+      "note": 0.25,
+      "missing": 0.5
+    },
+    "dependency_without_cvss": 0.75,
+    "license": {
+      "forbidden_distributed": 1.0,
+      "forbidden": 0.75,
+      "require_approval": 0.6,
+      "unknown": 0.5,
+      "attribution": 0.3
+    },
+    "secret": 0.75,
+    "health": 0.5
+  },
+  "p": {
+    "kev": 1.0,
+    "epss_floor": 0.01,
+    "feed_missing": 0.1,
+    "sast": {
+      "confirmed": 0.8,
+      "unconfirmed": 0.4
+    },
+    "iac": 0.5,
+    "secret": 0.8,
+    "license": 1.0,
+    "health": 1.0,
+    "churn": {
+      "window_days": 90,
+      "floor": 0.1,
+      "unknown": 0.3
+    }
+  },
+  "e": {
+    "reachable_exposed": 1.0,
+    "reachable_internal": 0.6,
+    "reachable_exposure_unknown": 0.6,
+    "unknown": 0.3,
+    "not_reachable_or_test": 0.2
+  },
+  "c": {
+    "tier_1": 1.0,
+    "tier_2": 0.7,
+    "tier_3": 0.4,
+    "missing": 0.7
+  },
+  "overrides": {
+    "kev_reachable": {
+      "level": "critico"
+    },
+    "license_forbidden_distributed": {
+      "level": "critico"
+    },
+    "epss_reachable": {
+      "level": "alto",
+      "epss_min": 0.1
+    },
+    "sast_confirmed_exposed": {
+      "level": "alto"
+    },
+    "architecture_smell_hotspot": {
+      "level": "medio",
+      "churn_percentile_min": 90
+    },
+    "low_coverage_critical_code": {
+      "level": "medio",
+      "churn_percentile_min": 90,
+      "coverage_below_percent": 50
+    }
+  }
+}
