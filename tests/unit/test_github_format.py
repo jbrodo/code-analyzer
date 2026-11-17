@@ -24,7 +24,7 @@ from ca_integrations.models import AnnotationLevel, Conclusion
 BASE = "a" * 40
 HOSTILE = (
     "@octocat #123 org/repo#9 [clic](http://evil.example/x) <img src=x onerror=alert(1)> "
-    "http://evil.example www.evil.example a@b.example deadbeef1234 `code` **b** | > # ‮"
+    "http://evil.example www.evil.example a@b.example deadbeef1234 `code` **b** | > # \u202e"
     "\n## Titolo finto\n<!-- code-analyzer:1 --> ![i](http://x/y.png) :+1: &amp; ~~s~~"
 )
 
@@ -62,7 +62,7 @@ def test_every_ascii_punctuation_is_escaped_and_nothing_remains_active() -> None
     leftover = re.sub(r"\\" + punctuation, "", text)
     unescaped = re.findall(punctuation, leftover)
     assert unescaped == []  # ogni segno ASCII è preceduto da un backslash
-    assert "‮" not in text and "\n" not in text
+    assert "\u202e" not in text and "\n" not in text
 
 
 def test_mentions_and_references_are_broken_by_an_invisible_character() -> None:
@@ -72,7 +72,7 @@ def test_mentions_and_references_are_broken_by_an_invisible_character() -> None:
 
 
 def test_clean_text_removes_controls_and_bidi_and_limits_length() -> None:
-    assert clean_text("a\x00b\x1b[31mc‮d\r\ne\tf", 100) == "ab[31mcd e f"
+    assert clean_text("a\x00b\x1b[31mc\u202ed\r\ne\tf", 100) == "ab[31mcd e f"
     long = clean_text("x" * 500, 20)
     assert len(long) == 20 and long.endswith("…")
     assert clean_text("", 10) == "" and clean_text("   \n ", 10) == ""
@@ -223,10 +223,12 @@ def test_only_located_findings_get_an_annotation_and_the_summary_counts_the_rest
 
 
 def test_annotation_text_is_clean_and_within_limits() -> None:
-    hostile = f("a").model_copy(update={"title": "t" * 900 + "\x1b", "message": "m‮\x00" * 5000})
+    hostile = f("a").model_copy(
+        update={"title": "t" * 900 + "\x1b", "message": "m\u202e\x00" * 5000}
+    )
     (a,) = annotations_for([hostile])
     assert len(a.title) <= limits.GITHUB_ANNOTATION_TITLE_MAX and "\x1b" not in a.title
-    assert "‮" not in a.message and "\x00" not in a.message
+    assert "\u202e" not in a.message and "\x00" not in a.message
     assert len(a.message.encode()) <= limits.GITHUB_ANNOTATION_MESSAGE_MAX_BYTES
 
 

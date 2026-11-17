@@ -18,7 +18,7 @@ done
 
 CONTEXT="$(mktemp -d)"
 trap 'rm -rf "$CONTEXT"' EXIT
-cp -a "$HERE/Dockerfile" "$HERE/licenses" "$CONTEXT/"
+cp -a "$HERE/Dockerfile" "$HERE/licenses" "$HERE/collect_licenses.py" "$CONTEXT/"
 cp "$ROOT/LICENSE" "$CONTEXT/LICENSE"
 mkdir "$CONTEXT/dist"
 cp "$PACKAGE"/dist/ca_core-*.whl "$PACKAGE"/dist/ca_plugins-*.whl "$PACKAGE"/dist/ca_graph-*.whl "$PACKAGE"/dist/ca_integrations-*.whl "$PACKAGE"/dist/ca_cli-*.whl "$CONTEXT/dist/"
