@@ -116,9 +116,7 @@ def test_me_is_forbidden_to_a_pipeline() -> None:
 @pytest.mark.parametrize("who", READ_ROLES)
 @pytest.mark.parametrize(("method", "path", "body"), READ_ROUTES + SCAN_READ_ROUTES)
 def test_every_role_can_read(method: str, path: str, body: object, who: str) -> None:
-    assert (
-        call(method, path, who).status_code == 501
-    )  # autorizzato: arriva alla route non realizzata
+    assert call(method, path, who).status_code == 500  # autorizzato: arriva alla route
 
 
 @pytest.mark.parametrize(("method", "path", "body"), READ_ROUTES + SCAN_READ_ROUTES)
@@ -137,9 +135,8 @@ def test_a_pipeline_cannot_read_what_users_read(method: str, path: str, body: ob
 @pytest.mark.parametrize(("method", "path", "body"), SCAN_READ_ROUTES + PIPELINE_ROUTES)
 def test_a_pipeline_reaches_its_own_routes(method: str, path: str, body: object) -> None:
     response = call(method, path, "pipeline")
-    # `POST /scans` è realizzato (B-03): senza database né archivio configurati risponde 500
-    expected = 500 if (method, path) == ("POST", "/v1/scans") else 501
-    assert response.status_code == expected
+    # autorizzata: arriva alla route, che senza database né archivio configurati risponde 500
+    assert response.status_code == 500
 
 
 @pytest.mark.parametrize("who", READ_ROLES + ["nessun ruolo"])
@@ -157,7 +154,7 @@ def test_a_user_cannot_upload_scans_or_read_the_service_context(
         ("lettore", 403),
         ("triage", 403),
         ("approvatore", 403),
-        ("amministratore", 501),
+        ("amministratore", 500),
         ("pipeline", 403),
     ],
 )
@@ -179,10 +176,10 @@ PATCHES = {
     ("who", "patch", "expected"),
     [
         # triage: stato aperto o in corso e owner
-        *[("triage", p, 501) for p in ("owner", "in_corso", "aperto")],
+        *[("triage", p, 500) for p in ("owner", "in_corso", "aperto")],
         *[("triage", p, 403) for p in ("falso_positivo", "create-exception", "revoke-exception")],
         # approvatore: tutto
-        *[("approvatore", p, 501) for p in PATCHES],
+        *[("approvatore", p, 500) for p in PATCHES],
         # lettore, amministratore, pipeline e senza ruolo: nulla
         *[("lettore", p, 403) for p in PATCHES],
         *[("amministratore", p, 403) for p in PATCHES],
@@ -216,7 +213,7 @@ def test_administrator_does_not_include_approver_and_triage_includes_reader() ->
         ).status_code
         == 403
     )
-    assert call("GET", f"/v1/repositories/{ID}/findings", "triage").status_code == 501
+    assert call("GET", f"/v1/repositories/{ID}/findings", "triage").status_code == 500
 
 
 def test_a_forbidden_response_never_contains_the_token() -> None:

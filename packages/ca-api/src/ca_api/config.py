@@ -46,6 +46,7 @@ class Settings:
     s3_region: str = "us-east-1"
     s3_prefix: str = ""
     default_branches: tuple[str, ...] = ("main", "master")  # branch che contano come principali
+    exception_max_days: int = 365  # durata massima di un'eccezione (ADR-0029)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -70,4 +71,7 @@ class Settings:
             s3_region=source.get(PREFIX + "S3_REGION") or "us-east-1",
             s3_prefix=source.get(PREFIX + "S3_PREFIX") or "",
             default_branches=branches or ("main", "master"),
+            exception_max_days=_int(
+                source, "EXCEPTION_MAX_DAYS", cls.exception_max_days, minimum=1
+            ),
         )

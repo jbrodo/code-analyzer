@@ -46,7 +46,7 @@ BODIES = {
 
 
 @pytest.mark.parametrize(("method", "path"), ROUTES)
-def test_a_declared_route_answers_501_not_implemented_as_problem_json(
+def test_an_authorized_route_without_a_database_answers_500_as_problem_json(
     client: TestClient, method: str, path: str
 ) -> None:
     headers = {"Authorization": client.pipeline} if (method, path) in PIPELINE_ONLY else {}  # type: ignore[attr-defined]
@@ -54,13 +54,10 @@ def test_a_declared_route_answers_501_not_implemented_as_problem_json(
     if (method, path) == ("GET", "/v1/me"):
         assert response.status_code == 200  # realizzato da B-04
         return
-    if (method, path) == ("POST", "/v1/scans"):  # realizzato da B-03
-        assert response.status_code == 500 and response.json()["code"] == "internal-error"
-        return
-    assert response.status_code == 501
+    assert response.status_code == 500
     assert response.headers["content-type"].startswith(PROBLEM)
     body = response.json()
-    assert body["code"] == "not-implemented" and body["status"] == 501
+    assert body["code"] == "internal-error" and body["status"] == 500
     assert set(body) <= {"type", "title", "status", "code", "detail", "required_role", "errors"}
 
 

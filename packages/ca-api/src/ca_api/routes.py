@@ -1,10 +1,11 @@
 """Route dell'API v1 dichiarate dal contratto (C-08, ADR-0017, ADR-0019, ADR-0029).
 
 Il contratto precede il codice: ogni route ha modelli di richiesta e risposta, errori ed esempi, e
-`operationId` esplicito e stabile. Qui nessuna route è ancora realizzata: rispondono 501 `not-
-implemented` con il formato di errore unico. Le realizzano B-03 (ingestione), B-04 e B-05
-(autenticazione e ruoli), B-06, B-08..B-11. `x-required-roles` è la riga della matrice di ADR-0019
-(`P`: identità di una pipeline), che B-05 verifica con i test.
+`operationId` esplicito e stabile. Realizzate da B-03 (ingestione), B-04 e B-05 (autenticazione e
+ruoli), B-06 (scansioni), B-08 e B-09 (finding), B-10 (repository, contesto del servizio) e B-11
+(SBOM e grafo). Senza database o archivio configurati rispondono 500 `internal-error`.
+`x-required-roles` è la riga della matrice di ADR-0019 (`P`: identità di una pipeline), che B-05
+verifica con i test.
 """
 
 from typing import Annotated, Any
@@ -13,6 +14,8 @@ from uuid import UUID
 from fastapi import APIRouter, Body, File, Path, Query, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
+from ca_api import findings, reads
+from ca_api.access import session_for
 from ca_api.auth.authorize import (
     Admin,
     Pipeline,
@@ -59,10 +62,6 @@ COMMON: dict[int | str, dict[str, Any]] = {
 }
 
 
-def _not_implemented() -> None:
-    raise ApiProblem(501, ProblemCode.NOT_IMPLEMENTED)
-
-
 def roles(value: str) -> dict[str, Any]:
     return {"x-required-roles": value}
 
@@ -98,12 +97,13 @@ def get_me(identity: User) -> Me:
     openapi_extra=roles(READ),
 )
 def list_repositories(
+    request: Request,
     identity: Reader,
     limit: Annotated[int, Query(ge=1, le=LIMIT_MAX)] = 50,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> RepositoryPage:
-    _not_implemented()
-    raise AssertionError
+    with session_for(request, identity) as session:
+        return reads.list_repositories(session, limit=limit, cursor=cursor)
 
 
 @router.get(
@@ -113,9 +113,9 @@ def list_repositories(
     summary="Un repository, con tier ed esposizione se registrati",
     openapi_extra=roles(READ),
 )
-def get_repository(identity: Reader, id: ID) -> RepositorySummary:
-    _not_implemented()
-    raise AssertionError
+def get_repository(request: Request, identity: Reader, id: ID) -> RepositorySummary:
+    with session_for(request, identity) as session:
+        return reads.repository_summary(session, reads.get_repository(session, id))
 
 
 @router.patch(
@@ -126,10 +126,16 @@ def get_repository(identity: Reader, id: ID) -> RepositorySummary:
     openapi_extra=roles("amministratore"),
 )
 def patch_repository(
-    identity: Admin, id: ID, body: Annotated[RepositoryPatch, Body()]
+    request: Request, identity: Admin, id: ID, body: Annotated[RepositoryPatch, Body()]
 ) -> RepositorySummary:
-    _not_implemented()
-    raise AssertionError
+    with session_for(request, identity) as session:
+        row = reads.get_repository(session, id)
+        for name in ("tier", "internet_facing", "catalog_id"):
+            if name in body.model_fields_set:  # un campo `null` esplicito lo azzera
+                setattr(row, name, getattr(body, name))
+        row.updated_by, row.updated_at = identity.actor, request.app.state.clock.now()
+        session.flush()
+        return reads.repository_summary(session, row)
 
 
 @router.get(
@@ -140,13 +146,14 @@ def patch_repository(
     openapi_extra=roles(READ),
 )
 def list_repository_scans(
+    request: Request,
     identity: Reader,
     id: ID,
     limit: Annotated[int, Query(ge=1, le=LIMIT_MAX)] = 50,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> ScanPage:
-    _not_implemented()
-    raise AssertionError
+    with session_for(request, identity) as session:
+        return reads.list_scans(session, id, limit=limit, cursor=cursor)
 
 
 @router.post(
@@ -215,6 +222,13 @@ async def create_scan(
     return ScanRef(id=result.id)
 
 
+def _store(request: Request) -> Any:
+    store = request.app.state.store
+    if store is None:
+        raise ApiProblem(500, ProblemCode.INTERNAL_ERROR, detail="archivio non configurato")
+    return store
+
+
 def _schemas(state: Any) -> SchemaStore:
     state.schemas = SchemaStore.packaged()
     return state.schemas  # type: ignore[no-any-return]
@@ -227,9 +241,9 @@ def _schemas(state: Any) -> SchemaStore:
     summary="Stato e riepilogo di una scansione",
     openapi_extra=roles(f"{READ}; P: solo il proprio repository"),
 )
-def get_scan(identity: ReaderOrPipeline, id: ID) -> ScanDetail:
-    _not_implemented()
-    raise AssertionError
+def get_scan(request: Request, identity: ReaderOrPipeline, id: ID) -> ScanDetail:
+    with session_for(request, identity) as session:
+        return reads.scan_detail(session, _store(request), id, identity)
 
 
 @router.get(
@@ -242,9 +256,10 @@ def get_scan(identity: ReaderOrPipeline, id: ID) -> ScanDetail:
     },
     openapi_extra=roles(f"{READ}; P: solo il proprio repository"),
 )
-def get_scan_sarif(identity: ReaderOrPipeline, id: ID) -> dict[str, Any]:
-    _not_implemented()
-    raise AssertionError
+def get_scan_sarif(request: Request, identity: ReaderOrPipeline, id: ID) -> Response:
+    with session_for(request, identity) as session:
+        data = reads.scan_sarif(session, _store(request), id, identity)
+    return Response(data, media_type="application/sarif+json")
 
 
 @router.get(
@@ -260,6 +275,7 @@ def get_scan_sarif(identity: ReaderOrPipeline, id: ID) -> dict[str, Any]:
     openapi_extra=roles(READ),
 )
 def list_findings(
+    request: Request,
     identity: Reader,
     id: ID,
     scan: Annotated[UUID | None, Query()] = None,
@@ -278,8 +294,22 @@ def list_findings(
     limit: Annotated[int, Query(ge=1, le=LIMIT_MAX)] = 50,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> FindingPage:
-    _not_implemented()
-    raise AssertionError
+    with session_for(request, identity) as session:
+        return findings.list_findings(
+            session,
+            reads.get_repository(session, id),
+            scan=scan,
+            level=level,
+            category=category,
+            status=status,
+            tool=tool,
+            new=new,
+            q=q,
+            sort=sort,
+            limit=limit,
+            cursor=cursor,
+            today=request.app.state.clock.now().date(),
+        )
 
 
 @router.get(
@@ -289,9 +319,9 @@ def list_findings(
     summary="Dettaglio di un finding",
     openapi_extra=roles(READ),
 )
-def get_finding(identity: Reader, id: ID) -> FindingDetail:
-    _not_implemented()
-    raise AssertionError
+def get_finding(request: Request, identity: Reader, id: ID) -> FindingDetail:
+    with session_for(request, identity) as session:
+        return findings.get_finding(session, id, today=request.app.state.clock.now().date())
 
 
 @router.patch(
@@ -309,11 +339,20 @@ def get_finding(identity: Reader, id: ID) -> FindingDetail:
     openapi_extra=roles("triage (stato, owner); approvatore (falso positivo, eccezioni)"),
 )
 def patch_finding(
-    identity: CurrentIdentity, id: ID, body: Annotated[FindingPatch, Body()]
+    request: Request, identity: CurrentIdentity, id: ID, body: Annotated[FindingPatch, Body()]
 ) -> FindingDetail:
     authorize_patch(identity, body)
-    _not_implemented()
-    raise AssertionError
+    clock = request.app.state.clock
+    with session_for(request, identity) as session:
+        findings.patch_finding(
+            session,
+            id,
+            body,
+            identity,
+            now=clock.now(),
+            max_exception_days=request.app.state.settings.exception_max_days,
+        )
+        return findings.get_finding(session, id, today=clock.now().date())
 
 
 @router.get(
@@ -326,9 +365,10 @@ def patch_finding(
     },
     openapi_extra=roles(READ),
 )
-def get_repository_sbom(identity: Reader, id: ID) -> dict[str, Any]:
-    _not_implemented()
-    raise AssertionError
+def get_repository_sbom(request: Request, identity: Reader, id: ID) -> Response:
+    with session_for(request, identity) as session:
+        data = reads.repository_sbom(session, _store(request), id)
+    return Response(data, media_type="application/vnd.cyclonedx+json")
 
 
 @router.get(
@@ -338,18 +378,19 @@ def get_repository_sbom(identity: Reader, id: ID) -> dict[str, Any]:
     summary="Grafo dei moduli della scansione corrente",
     openapi_extra=roles(READ),
 )
-def get_repository_graph(identity: Reader, id: ID) -> Graph:
-    _not_implemented()
-    raise AssertionError
+def get_repository_graph(request: Request, identity: Reader, id: ID) -> Graph:
+    with session_for(request, identity) as session:
+        return reads.repository_graph(session, _store(request), id)
 
 
 @router.get(
     "/service-context",
     operation_id="getServiceContext",
     response_model=ServiceContextFile,
+    response_model_exclude_none=True,
     summary="Contesto del servizio del repository del token (ADR-0028)",
     openapi_extra=roles("P: solo il proprio repository"),
 )
-def get_service_context(identity: Pipeline) -> ServiceContextFile:
-    _not_implemented()
-    raise AssertionError
+def get_service_context(request: Request, identity: Pipeline) -> ServiceContextFile:
+    with session_for(request, identity) as session:
+        return ServiceContextFile.model_validate(reads.service_context_of(session, identity))

@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "unit"), str(ROOT / "unit" / "api")]
 from apiauth import GITHUB_IDP, USER_IDP  # noqa: E402
 from builders import finding, report  # noqa: E402
+
+builders_finding = finding
 from idp import build, pipeline_issuer, user_issuer  # noqa: E402
 
 from ca_api.app import create_app  # noqa: E402
@@ -101,6 +103,10 @@ class Env:
             + GITHUB_IDP.sign(GITHUB_IDP.claims(subject="repo", **claims))
         }
 
+    def user(self, *groups: str) -> dict[str, str]:
+        token = USER_IDP.sign(groups=list(groups), name="Ada", email="ada@example.org")
+        return {"Authorization": "Bearer " + token}
+
     def post(self, body: bytes, *, headers: dict[str, str] | None = None, **extra: bytes):
         files = {"report": ("anything.json", body, "application/json")}
         files.update({k: (f"{k}.json", v, "application/json") for k, v in extra.items()})
@@ -129,7 +135,7 @@ def env(database: Engine, tmp_path: Path) -> Env:
     # il proprietario 4242 delle pipeline va al tenant di questa prova (non a un nome fisso)
     auth_env = Env(database, tmp_path, name, schema)
     _, fetcher, _, verifier = build(
-        user_issuer(),
+        user_issuer().model_copy(update={"tenant": name}),
         pipeline_issuer().model_copy(update={"owners": {"4242": name}}),
     )
     fetcher.publish(USER_IDP.jwks_url, USER_IDP.jwk())

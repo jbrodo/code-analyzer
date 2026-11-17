@@ -995,7 +995,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0018, 0019.
 
 #### B-06 — Stato e SARIF di una scansione
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `GET /v1/scans/{id}` (campi del report che non sono finding, dal report conservato) e `GET /v1/scans/{id}/sarif` (byte come ricevuti). Una pipeline legge solo le scansioni del proprio repository; il resto è 404, come un tenant diverso. Limite: il dettaglio rilegge il report dall'archivio a ogni richiesta.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03.
 - Accettazione: `GET /v1/scans/{id}` e `GET /v1/scans/{id}/sarif` conformi a C-08.
@@ -1009,28 +1009,28 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §2. ADR: 0030.
 
 #### B-08 — Elenco dei finding
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `GET /v1/repositories/{id}/findings`: filtri per livello, categoria, stato (effettivo, con le eccezioni), tool, nuovi, ricerca come sottostringa senza jolly; ordinamenti totali (impatto, prima vista, percorso, punteggi A e B); cursore opaco legato ai filtri; totali; `scan` per la vista di una PR. I risolti compaiono solo se il filtro li chiede. **Non misurato:** le prestazioni su un volume pari a saleor (criterio di accettazione ancora aperto).
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-02, B-05, C-08.
 - Accettazione: `GET /v1/repositories/{id}/findings` con filtri per livello, categoria, stato e nuovi, ordinamento per livello attivo e punteggio, punteggi in ombra nella risposta, paginazione a cursore; prestazioni misurate su un volume pari a saleor.
 - Spec: §9.2. ADR: 0017, 0021, 0029.
 
 #### B-09 — Dettaglio e aggiornamento di un finding
-- Agente: `backend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `GET` e `PATCH /v1/findings/{id}`: stato, owner, eccezione e revoca, con `approved_by` dall'identità autenticata, evento per ogni modifica, durata massima configurabile (`CA_API_EXCEPTION_MAX_DAYS`, 365), `risolto` non assegnabile e finding risolti non modificabili. Le eccezioni del repository restano distinte, non verificate e non revocabili da qui.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-08, A-03.
 - Accettazione: `GET /v1/findings/{id}` e `PATCH /v1/findings/{id}` per stato, owner ed eccezione con motivazione e scadenza, con `approved_by` dall'identità autenticata, registro delle modifiche e precedenza di ADR-0018 sulle eccezioni del repository.
 - Spec: §9.2. ADR: 0018, 0019.
 
 #### B-10 — Repository e scansioni
-- Agente: `backend`. Stato: `LIBERO` (D2-04 decisa il 2026-11-16).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. Elenco e dettaglio dei repository con la scansione corrente, elenco delle scansioni, `PATCH` di tier, esposizione e catalogo solo `amministratore` (un `null` esplicito azzera), `GET /v1/service-context` per la pipeline del repository. Un tenant non vede le risorse di un altro (404).
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-02, B-05, A-13.
 - Accettazione: elenco dei repository e delle loro scansioni (lacuna 2); registrazione di tier ed esposizione riservata all'`amministratore` secondo D2-04.
 - Spec: §4.3, §9.2. ADR: 0028, 0029.
 
 #### B-11 — SBOM e grafo
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `GET /v1/repositories/{id}/sbom` e `/graph` dalla scansione corrente; 404 se non li ha.
 - Percorsi: `packages/ca-api/src/ca_api/`.
 - Dipende da: B-03, C-02.
 - Accettazione: `GET /v1/repositories/{id}/sbom` (CycloneDX) e `GET /v1/repositories/{id}/graph` conformi a C-08. Nessuna vista del grafo in UI.
