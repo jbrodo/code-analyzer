@@ -140,3 +140,47 @@ def test_the_extractor_never_executes_anything_from_the_workspace(tmp_path: Path
     )
     extract_graph(str(ws))
     assert not marker.exists()
+
+
+# --- fixture F-01: archi e metriche attesi, scritti dal progetto e non dall'estrattore ------------
+
+
+def expected_graph(fixture: str) -> dict:
+    import yaml
+
+    return yaml.safe_load((REPOS / fixture / "expected-graph.yaml").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("fixture", ["graph-python", "graph-js-ts"])
+def test_f01_internal_edges_match_the_designed_expectations(fixture: str) -> None:
+    expected = expected_graph(fixture)
+    document = extract_graph(str(REPOS / fixture))
+    conforms(document)
+    tests = {m["path"] for m in document["modules"] if m["test"]}
+    assert sorted(tests) == sorted(expected["test_modules"])
+    got = sorted(
+        [e["source"], e["target"]]
+        for e in document["edges"]
+        if not e["external"] and e["source"] not in tests
+    )
+    assert got == expected["internal_edges"]
+    assert document["externals"] == [] and document["stats"]["unresolved"]["missing"] == 0
+    assert {e["confidence"] for e in document["edges"]} <= {"dichiarato", "dedotto"}
+
+
+@pytest.mark.parametrize("fixture", ["graph-python", "graph-js-ts"])
+def test_f01_extractor_then_metrics_gives_the_designed_numbers(fixture: str) -> None:
+    from ca_graph.deps import with_metrics
+
+    expected = expected_graph(fixture)
+    result = with_metrics(Graph.model_validate(extract_graph(str(REPOS / fixture))))
+    modules = {m.path: m.metrics for m in result.modules}
+    for path, want in expected["metrics"]["modules"].items():
+        assert modules[path] is not None
+        assert (modules[path].fan_in, modules[path].fan_out) == (want["ca"], want["ce"]), path
+    packages = {p.path: p.metrics for p in result.packages}
+    assert set(packages) == set(expected["metrics"]["packages"])
+    for path, want in expected["metrics"]["packages"].items():
+        assert (packages[path].fan_in, packages[path].fan_out) == (want["ca"], want["ce"]), path
+        assert packages[path].instability == pytest.approx(want["instability"], abs=1e-4), path
+    assert all(modules[t] is None for t in expected["test_modules"])  # il test non conta

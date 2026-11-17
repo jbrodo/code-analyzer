@@ -45,8 +45,14 @@ exclude_also = ["if __name__ == .__main__.:"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-# quality-python: fixture con problemi di qualita' messi di proposito (F-02 della Fase 2).
-extend-exclude = [".agents", ".claude", "doc", "tests/fixtures/repos/quality-python"]
+# quality-python e graph-python: fixture con problemi messi di proposito (F-02 e F-01 della Fase 2).
+extend-exclude = [
+    ".agents",
+    ".claude",
+    "doc",
+    "tests/fixtures/repos/quality-python",
+    "tests/fixtures/repos/graph-python",
+]
 src = ["packages/*/src"]
 
 [tool.ruff.lint]

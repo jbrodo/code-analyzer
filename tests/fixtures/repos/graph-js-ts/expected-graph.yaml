@@ -1,0 +1,92 @@
+# Attesi della fixture F-01 della Fase 2. Formato: ../../expected-graph.schema.json
+# Scritti dal progetto della fixture (vedi README.md), NON copiati dall'output dell'estrattore:
+# li usano G-02/G-03 (archi), G-04 (metriche) e G-05..G-07 (smell).
+version: 1
+language: typescript
+internal_edges:
+- [src/apps/a1.tsx, src/util/helpers.ts]
+- [src/apps/a2.tsx, src/util/helpers.ts]
+- [src/apps/a3.tsx, src/util/helpers.ts]
+- [src/apps/a4.tsx, src/util/helpers.ts]
+- [src/apps/a5.tsx, src/util/helpers.ts]
+- [src/billing/a.ts, src/billing/b.ts]
+- [src/billing/a.ts, src/ledger/x.ts]
+- [src/billing/b.ts, src/billing/c.ts]
+- [src/billing/c.ts, src/billing/a.ts]
+- [src/catalog/item.ts, src/catalog/price.ts]
+- [src/catalog/price.ts, src/catalog/tax.ts]
+- [src/core/hub.ts, src/hubdeps/d1.ts]
+- [src/core/hub.ts, src/hubdeps/d2.ts]
+- [src/core/hub.ts, src/hubdeps/d3.ts]
+- [src/core/hub.ts, src/hubdeps/d4.ts]
+- [src/hubusers/u1.ts, src/core/hub.ts]
+- [src/hubusers/u2.ts, src/core/hub.ts]
+- [src/hubusers/u3.ts, src/core/hub.ts]
+- [src/hubusers/u4.ts, src/core/hub.ts]
+- [src/ledger/y.ts, src/billing/b.ts]
+- [src/main.ts, src/ext1/m.ts]
+- [src/main.ts, src/ext2/m.ts]
+- [src/main.ts, src/ext3/m.ts]
+- [src/main.ts, src/ext4/m.ts]
+- [src/stable/core.ts, src/volatile/glue.ts]
+- [src/svc1/main.ts, src/stable/core.ts]
+- [src/svc2/main.ts, src/stable/core.ts]
+- [src/svc3/main.ts, src/stable/core.ts]
+- [src/svc4/main.ts, src/stable/core.ts]
+- [src/volatile/glue.ts, src/ext1/m.ts]
+- [src/volatile/glue.ts, src/ext2/m.ts]
+- [src/volatile/glue.ts, src/ext3/m.ts]
+- [src/volatile/glue.ts, src/ext4/m.ts]
+test_modules: [src/stable/core.test.ts]
+metrics:
+  modules:
+    src/billing/a.ts: {ca: 1, ce: 2, instability: 0.6667}
+    src/billing/b.ts: {ca: 2, ce: 1, instability: 0.3333}
+    src/billing/c.ts: {ca: 1, ce: 1, instability: 0.5}
+    src/core/hub.ts: {ca: 4, ce: 4, instability: 0.5}
+    src/main.ts: {ca: 0, ce: 4, instability: 1.0}
+    src/stable/core.ts: {ca: 4, ce: 1, instability: 0.2}
+    src/svc1/main.ts: {ca: 0, ce: 1, instability: 1.0}
+    src/svc2/main.ts: {ca: 0, ce: 1, instability: 1.0}
+    src/svc3/main.ts: {ca: 0, ce: 1, instability: 1.0}
+    src/svc4/main.ts: {ca: 0, ce: 1, instability: 1.0}
+    src/util/helpers.ts: {ca: 5, ce: 0, instability: 0.0}
+    src/volatile/glue.ts: {ca: 1, ce: 4, instability: 0.8}
+  packages:
+    src: {ca: 0, ce: 4, instability: 1.0}
+    src/apps: {ca: 0, ce: 1, instability: 1.0}
+    src/billing: {ca: 1, ce: 1, instability: 0.5}
+    src/catalog: {ca: 0, ce: 0, instability: 0.0}
+    src/core: {ca: 1, ce: 1, instability: 0.5}
+    src/ext1: {ca: 2, ce: 0, instability: 0.0}
+    src/ext2: {ca: 2, ce: 0, instability: 0.0}
+    src/ext3: {ca: 2, ce: 0, instability: 0.0}
+    src/ext4: {ca: 2, ce: 0, instability: 0.0}
+    src/hubdeps: {ca: 1, ce: 0, instability: 0.0}
+    src/hubusers: {ca: 0, ce: 1, instability: 1.0}
+    src/ledger: {ca: 1, ce: 1, instability: 0.5}
+    src/stable: {ca: 4, ce: 1, instability: 0.2}
+    src/svc1: {ca: 0, ce: 1, instability: 1.0}
+    src/svc2: {ca: 0, ce: 1, instability: 1.0}
+    src/svc3: {ca: 0, ce: 1, instability: 1.0}
+    src/svc4: {ca: 0, ce: 1, instability: 1.0}
+    src/util: {ca: 1, ce: 0, instability: 0.0}
+    src/volatile: {ca: 1, ce: 4, instability: 0.8}
+smells:
+  config: {hub_min_degree: 6, unstable_min_degree: 0.3}
+  cycles:
+    module:
+    - [src/billing/a.ts, src/billing/b.ts, src/billing/c.ts]
+    package:
+    - [src/billing, src/ledger]
+    not_in_any_cycle: [src/catalog/item.ts, src/catalog/price.ts, src/catalog/tax.ts, src/core/hub.ts,
+      src/ledger/y.ts]
+  hubs:
+    present: [src/core/hub.ts]
+    absent: [src/billing/c.ts, src/catalog/price.ts, src/main.ts, src/stable/core.ts, src/util/helpers.ts,
+      src/volatile/glue.ts]
+  unstable_dependencies:
+    present:
+    - package: src/stable
+      depends_on: [src/volatile]
+    absent: [src/apps, src/billing, src/core, src/hubusers, src/ledger, src/svc1, src/volatile]

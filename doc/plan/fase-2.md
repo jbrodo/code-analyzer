@@ -537,7 +537,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 ### F — Fixture e attesi
 
 #### F-01 — Fixture del grafo
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-17**; `tests/fixtures/repos/graph-python` e `graph-js-ts` (33 archi interni ciascuna, 34 moduli) con `expected-graph.yaml` e `tests/fixtures/expected-graph.schema.json`. Un ciclo di moduli e uno di pacchetti, un hub, una dipendenza instabile e un negativo per ciascuno (utility molto importata, modulo che importa molto, chain aciclica, dipendenza verso un pacchetto più stabile), più un modulo di test che non deve contare. **Gli attesi sono scritti dal progetto e non copiati dall'output dell'estrattore**; i test confermano che l'estrattore dà gli stessi archi e che estrazione più metriche dà gli stessi numeri. Nota per G-06 e G-07: con la definizione di ADR-0020 e mediana pari a 0 qualunque modulo con un arco in entrata e uno in uscita supera la mediana, quindi gli attesi dell'hub valgono con `hub_min_degree: 6`, scritto nel file; è la guardia contro il rumore che l'ADR lascia in configurazione.
 - Percorsi: `tests/fixtures/repos/`.
 - Dipende da: C-02.
 - Accettazione: repository Python e JS/TS con un ciclo, un hub e una dipendenza instabile noti, più un caso negativo per ciascuno, e attesi in formato verificabile automaticamente.
@@ -602,7 +602,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §3. ADR: 0020.
 
 #### G-04 — Grafo delle dipendenze tra moduli
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/deps.py` sull'host, sui dati del grafo (nessun parser). `build` dà le adiacenze ordinate di moduli e pacchetti, `with_metrics` riempie `metrics` dei moduli e l'elenco `packages`. Ca e Ce contano nodi distinti, tra pacchetti solo gli archi tra cartelle diverse, `I = Ce/(Ca+Ce)` con 0 per un nodo isolato; i moduli di test fuori per default, gli archi di soli tipi dentro, entrambi opzioni. Deterministico in qualunque ordine di moduli e archi. Provato sulle fixture F-01.
 - Percorsi: `packages/ca-graph/src/ca_graph/deps.py`.
 - Dipende da: G-02, G-03.
 - Accettazione: grafo per modulo e per pacchetto, metriche di accoppiamento e instabilità; determinismo (stesso input, stesso grafo).

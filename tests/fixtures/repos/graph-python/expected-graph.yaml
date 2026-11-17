@@ -1,0 +1,92 @@
+# Attesi della fixture F-01 della Fase 2. Formato: ../../expected-graph.schema.json
+# Scritti dal progetto della fixture (vedi README.md), NON copiati dall'output dell'estrattore:
+# li usano G-02/G-03 (archi), G-04 (metriche) e G-05..G-07 (smell).
+version: 1
+language: python
+internal_edges:
+- [shop/apps/a1.py, shop/util/helpers.py]
+- [shop/apps/a2.py, shop/util/helpers.py]
+- [shop/apps/a3.py, shop/util/helpers.py]
+- [shop/apps/a4.py, shop/util/helpers.py]
+- [shop/apps/a5.py, shop/util/helpers.py]
+- [shop/billing/a.py, shop/billing/b.py]
+- [shop/billing/a.py, shop/ledger/x.py]
+- [shop/billing/b.py, shop/billing/c.py]
+- [shop/billing/c.py, shop/billing/a.py]
+- [shop/catalog/item.py, shop/catalog/price.py]
+- [shop/catalog/price.py, shop/catalog/tax.py]
+- [shop/core/hub.py, shop/hubdeps/d1.py]
+- [shop/core/hub.py, shop/hubdeps/d2.py]
+- [shop/core/hub.py, shop/hubdeps/d3.py]
+- [shop/core/hub.py, shop/hubdeps/d4.py]
+- [shop/hubusers/u1.py, shop/core/hub.py]
+- [shop/hubusers/u2.py, shop/core/hub.py]
+- [shop/hubusers/u3.py, shop/core/hub.py]
+- [shop/hubusers/u4.py, shop/core/hub.py]
+- [shop/ledger/y.py, shop/billing/b.py]
+- [shop/main.py, shop/ext1/m.py]
+- [shop/main.py, shop/ext2/m.py]
+- [shop/main.py, shop/ext3/m.py]
+- [shop/main.py, shop/ext4/m.py]
+- [shop/stable/core.py, shop/volatile/glue.py]
+- [shop/svc1/main.py, shop/stable/core.py]
+- [shop/svc2/main.py, shop/stable/core.py]
+- [shop/svc3/main.py, shop/stable/core.py]
+- [shop/svc4/main.py, shop/stable/core.py]
+- [shop/volatile/glue.py, shop/ext1/m.py]
+- [shop/volatile/glue.py, shop/ext2/m.py]
+- [shop/volatile/glue.py, shop/ext3/m.py]
+- [shop/volatile/glue.py, shop/ext4/m.py]
+test_modules: [tests/checks.py]
+metrics:
+  modules:
+    shop/billing/a.py: {ca: 1, ce: 2, instability: 0.6667}
+    shop/billing/b.py: {ca: 2, ce: 1, instability: 0.3333}
+    shop/billing/c.py: {ca: 1, ce: 1, instability: 0.5}
+    shop/core/hub.py: {ca: 4, ce: 4, instability: 0.5}
+    shop/main.py: {ca: 0, ce: 4, instability: 1.0}
+    shop/stable/core.py: {ca: 4, ce: 1, instability: 0.2}
+    shop/svc1/main.py: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc2/main.py: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc3/main.py: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc4/main.py: {ca: 0, ce: 1, instability: 1.0}
+    shop/util/helpers.py: {ca: 5, ce: 0, instability: 0.0}
+    shop/volatile/glue.py: {ca: 1, ce: 4, instability: 0.8}
+  packages:
+    shop: {ca: 0, ce: 4, instability: 1.0}
+    shop/apps: {ca: 0, ce: 1, instability: 1.0}
+    shop/billing: {ca: 1, ce: 1, instability: 0.5}
+    shop/catalog: {ca: 0, ce: 0, instability: 0.0}
+    shop/core: {ca: 1, ce: 1, instability: 0.5}
+    shop/ext1: {ca: 2, ce: 0, instability: 0.0}
+    shop/ext2: {ca: 2, ce: 0, instability: 0.0}
+    shop/ext3: {ca: 2, ce: 0, instability: 0.0}
+    shop/ext4: {ca: 2, ce: 0, instability: 0.0}
+    shop/hubdeps: {ca: 1, ce: 0, instability: 0.0}
+    shop/hubusers: {ca: 0, ce: 1, instability: 1.0}
+    shop/ledger: {ca: 1, ce: 1, instability: 0.5}
+    shop/stable: {ca: 4, ce: 1, instability: 0.2}
+    shop/svc1: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc2: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc3: {ca: 0, ce: 1, instability: 1.0}
+    shop/svc4: {ca: 0, ce: 1, instability: 1.0}
+    shop/util: {ca: 1, ce: 0, instability: 0.0}
+    shop/volatile: {ca: 1, ce: 4, instability: 0.8}
+smells:
+  config: {hub_min_degree: 6, unstable_min_degree: 0.3}
+  cycles:
+    module:
+    - [shop/billing/a.py, shop/billing/b.py, shop/billing/c.py]
+    package:
+    - [shop/billing, shop/ledger]
+    not_in_any_cycle: [shop/catalog/item.py, shop/catalog/price.py, shop/catalog/tax.py, shop/core/hub.py,
+      shop/ledger/y.py]
+  hubs:
+    present: [shop/core/hub.py]
+    absent: [shop/billing/c.py, shop/catalog/price.py, shop/main.py, shop/stable/core.py, shop/util/helpers.py,
+      shop/volatile/glue.py]
+  unstable_dependencies:
+    present:
+    - package: shop/stable
+      depends_on: [shop/volatile]
+    absent: [shop/apps, shop/billing, shop/core, shop/hubusers, shop/ledger, shop/svc1, shop/volatile]
