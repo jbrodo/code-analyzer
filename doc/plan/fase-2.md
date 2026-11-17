@@ -508,7 +508,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §5. ADR: 0001, 0002.
 
 #### C-07 — Modello relazionale e prima migrazione
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_api/db/models.py`: le nove tabelle di tenant di ADR-0018 (`repositories`, `scans`, `findings`, `finding_occurrences`, `components`, `graph_nodes`, `graph_edges`, `exceptions`, `finding_events`) senza schema esplicito, e `tenants` nello schema globale; nessuna tabella di Fase 3. Indice unico `(repository_id, fingerprint)`, digest del report unico per repository, vocabolari chiusi, formato di fingerprint e digest, `tier` 1..3, scansione `pr` con commit base, e un vincolo che impedisce a un'eccezione del repository di essere segnata come verificata. Identificativi UUID versione 7. Migrazioni Alembic con due rami (`global`, `tenant`), DDL esplicito e congelato (non legge i modelli), una tabella `alembic_version` per schema di tenant; applicate e annullate su PostgreSQL 16 in container. **Non fatto:** la conversione esplicita tra modello relazionale e modello Pydantic (B-03).
 - Percorsi: `packages/ca-api/src/ca_api/db/`, migrazioni Alembic.
 - Dipende da: A-03, A-04, A-13, C-01.
 - Accettazione: tabelle di ADR-0018 per schema di tenant, indice unico `(repository_id, fingerprint)`, migrazione applicata e annullata su un PostgreSQL di test; nessuna tabella di Fase 3.
@@ -967,7 +967,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §2, §3, §9.2. ADR: 0001, 0016, 0017.
 
 #### B-02 — Persistenza
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per l'accesso ai dati. `ca_api/db/engine.py` (engine pg8000, `tenant_session` con `schema_translate_map` e nome dello schema validato prima di ogni SQL), `migrate.py`, `stores.py` (creazione idempotente del tenant e del suo schema, repository per identità esterna `(provider, issuer, identificativo)` con il solo nome aggiornato a ogni caricamento, tier ed esposizione con chi e quando, scansioni per digest, elenchi con cursore). 23 test su PostgreSQL vero (`tests/integration/test_api_database.py`, `CA_TEST_DOCKER=1`) e 23 senza database. **Limite dichiarato:** non c'è un ruolo di database per tenant in Fase 2: l'isolamento sta nello schema scelto dalla sessione e nel divieto di SQL grezzo con identificativi; un SQL grezzo senza schema non trova le tabelle, ma uno con lo schema qualificato raggiungerebbe un altro tenant. Va in S-01. Dipendenze nuove: SQLAlchemy 2.0.58, Alembic 1.20.1, pg8000 1.31.6 e `testcontainers` per i test, verificate (vedi ADR-0030).
 - Percorsi: `packages/ca-api/src/ca_api/db/`.
 - Dipende da: B-01, C-07.
 - Accettazione: repository dei dati sul modello di C-07 con selezione dello schema del tenant per richiesta; test su PostgreSQL in container (testcontainers).

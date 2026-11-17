@@ -13,6 +13,11 @@ dependencies = [
     # Lettore di multipart/form-data di `POST /v1/scans` (ADR-0016): licenza permissiva e rilasci
     # recenti verificati il 2026-11-17 (C-08); i limiti di dimensione li applica B-03 mentre legge.
     "python-multipart>=0.0.34,<1",
+    # Persistenza (B-02, ADR-0030). Verificate il 2026-11-17: SQLAlchemy 2.0.58 (MIT, rilascio del
+    # 2026-11-16; si resta sulla serie 2.0), Alembic 1.20.1 (MIT), pg8000 1.31.6 (BSD a tre clausole).
+    "sqlalchemy>=2.0.58,<2.1",
+    "alembic>=1.20.1,<2",
+    "pg8000>=1.31.6,<2",
 ]
 
 [build-system]

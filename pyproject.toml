@@ -15,6 +15,7 @@ dev = [
     "pre-commit>=4.7.0",
     "pytest>=8",
     "pytest-cov>=7.1",
+    "testcontainers>=4.15,<5",  # solo test: PostgreSQL in container (ADR-0030, §14)
     "ruff>=0.17",
     "ty>=0.0.99",
     "types-jsonschema>=4.26.0.20261006",

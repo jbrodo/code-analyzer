@@ -85,3 +85,7 @@ Non ancora verificate, da verificare in B-01 prima di aggiungerle: la libreria c
 ## Verifica del lettore di multipart (C-08, 2026-11-17)
 
 `python-multipart` 0.0.34 è il lettore di `multipart/form-data` che FastAPI richiede per `POST /v1/scans`: licenza permissiva dichiarata sul pacchetto (classificatore Apache Software License), rilasci regolari fino al 2026-11-16, Python 3.11 o successivo. Aggiunto a `ca-api`. I limiti di dimensione di ADR-0016 si applicano in B-03 mentre si legge il corpo; la libreria da sola non li impone. La libreria crittografica che serve a `pyjwt` per gli algoritmi asimmetrici resta da verificare in B-04.
+
+## Verifica delle dipendenze di persistenza (B-02, 2026-11-17)
+
+Aggiunte a `ca-api`: SQLAlchemy 2.0.58 (serie 2.0, MIT), Alembic 1.20.1 (MIT), pg8000 1.31.6 (BSD a tre clausole); solo ai test, `testcontainers` 4.15.0 (Apache 2.0). Transitive nuove, tutte con licenza permissiva e lette dai metadati dei pacchetti: scramp (MIT-0), asn1crypto (MIT; ultimo rilascio del 2022, è una libreria stabile ma ferma: la usa pg8000 per l'autenticazione), Mako e MarkupSafe (MIT, BSD), greenlet (MIT e PSF), python-dateutil, docker, requests, urllib3, charset-normalizer, python-dotenv, wrapt, tzdata. La licenza di ogni pacchetto è quella dichiarata dal pacchetto, non un parere legale: D2-14 resta di Riccardo Roveda per la distribuzione dell'immagine del server, sull'SBOM della build.
