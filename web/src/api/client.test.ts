@@ -31,10 +31,12 @@ test("la risposta di /me coincide con l'esempio del contratto", async () => {
   expect(init.redirect).toBe("error");
 });
 
-test("senza token non c'è intestazione Authorization", async () => {
-  const { client, fetchMock } = setup(() => jsonResponse(example("Me")), null);
-  await client.me();
-  expect((lastCall(fetchMock).init.headers as Record<string, string>).Authorization).toBeUndefined();
+test("senza token la richiesta non parte e la SPA viene avvisata", async () => {
+  const { client, fetchMock, onUnauthenticated } = setup(() => jsonResponse(example("Me")), null);
+  const error = (await client.me().catch((e: unknown) => e)) as ApiError;
+  expect([error.status, error.code]).toEqual([401, "unauthenticated"]);
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(onUnauthenticated).toHaveBeenCalledTimes(1);
 });
 
 test("i filtri multipli si ripetono, i vuoti si omettono e i valori si codificano", async () => {

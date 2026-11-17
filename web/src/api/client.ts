@@ -38,7 +38,7 @@ export class ApiError extends Error {
 export interface ClientOptions {
   /** Indirizzo del server senza barra finale; vuoto per lo stesso host della SPA. */
   baseUrl?: string;
-  /** Il token OIDC corrente, o `null` se manca. */
+  /** Il token OIDC corrente, o `null` se manca o è scaduto: in quel caso nessuna richiesta parte. */
   getToken: () => string | null | Promise<string | null>;
   /** Chiamata una volta su un 401: la SPA riporta all'accesso e poi alla stessa vista. */
   onUnauthenticated?: () => void;
@@ -79,8 +79,13 @@ export function createClient(options: ClientOptions) {
     init: CallInit,
   ): Promise<Response> {
     const token = await options.getToken();
+    if (!token) {
+      // senza token valido la richiesta non parte: l'API risponderebbe 401 e il token non c'è da inviare
+      options.onUnauthenticated?.();
+      throw new ApiError(401, "unauthenticated", null);
+    }
     const headers: Record<string, string> = { Accept: init.accept ?? "application/json" };
-    if (token) headers.Authorization = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
     if (init.body !== undefined) headers["Content-Type"] = "application/json";
     let response: Response;
     try {

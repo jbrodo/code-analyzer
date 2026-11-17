@@ -147,3 +147,11 @@ Un token di pipeline rubato entro la sua validità permette di caricare un repor
 - Il 401 porta `WWW-Authenticate: Bearer` (con `error="invalid_token"` se il token c'è ma non vale) e un codice nel `detail`, mai un contenuto del token. Un proprietario fuori mappa è 403.
 - Ruoli: `lettore` è incluso da tutti, `triage` da `approvatore`, `amministratore` non include `approvatore`. Il corpo di un 403 per ruolo ha `required_role`. `PATCH /findings/{id}` richiede `triage` per owner e stato `aperto` o `in_corso`, `approvatore` per falso positivo ed eccezioni (un amministratore non può). `GET /v1/me` è realizzato: 200 a ogni utente, anche senza ruoli.
 - **Non fatto:** il 404 per una risorsa di un altro tenant e il limite della pipeline al proprio repository per `GET /scans/{id}` e `/sarif` (richiedono il livello dei dati, B-06 e B-03); la verifica che il repository del report coincida con quello del token (B-03); un IdP di prova nel compose di sviluppo (I-05). Provato con un emittente finto in processo, senza rete.
+
+## Realizzazione di W-03 (2026-11-17)
+
+- Client pubblico con authorization code e PKCE S256 scritto con la Web Crypto API (`web/src/auth/`), senza libreria OIDC: nessuna dipendenza nuova. La scoperta (`/.well-known/openid-configuration`) deve nominare lo stesso emittente della configurazione; gli indirizzi dell'IdP sono `https`, o `http` su loopback.
+- Il token di accesso sta solo in memoria. **Interpretazione da rivedere con S-01:** il divieto di `sessionStorage` vale per il token; lo stato transitorio del flusso (`state`, `nonce`, verificatore PKCE e la vista di ritorno) deve sopravvivere alla navigazione verso l'IdP e sta in `sessionStorage` per al più dieci minuti, si consuma a ogni ritorno (riuscito o no) e non è un token.
+- Un token scaduto (con un margine di 30 secondi) non parte verso l'API: la richiesta si ferma e la SPA rifà il flusso tornando alla stessa vista con i suoi filtri; lo stesso per un 401. L'indirizzo di ritorno è sempre un percorso della stessa origine.
+- La configurazione (`/config.json`: emittente, client, audience, indirizzo dell'API) si legge a runtime. Nessun token di aggiornamento.
+- L'IdP finto di sviluppo (I-05) parla questo flusso, con una pagina che sceglie un ruolo; è provato con un browser vero.

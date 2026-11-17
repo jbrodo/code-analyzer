@@ -1071,7 +1071,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017.
 
 #### W-03 — Accesso nella SPA
-- Agente: `frontend`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
+- Agente: `frontend`. Stato: **chiuso il 2026-11-17** (D2-02 decisa il 2026-11-16). `web/src/auth/`: authorization code con PKCE come client pubblico, token solo in memoria, ritorno alla stessa vista con i filtri, scadenza e 401 che rifanno l'accesso, errore con solo il codice. Nessuna libreria nuova. L'IdP finto di I-05 ora fa OIDC con PKCE. **Provato** con 31 test della SPA, 6 dell'IdP e un browser vero (Chrome, flusso completo contro lo stack: ritorno su `/?level=critico`, nessun dato in `localStorage`, `sessionStorage` e cookie). **Limiti:** nessun rinnovo silenzioso (alla scadenza si rifà il flusso); lo stato transitorio del flusso sta in `sessionStorage` (vedi ADR-0019, da rivedere con S-01); `signOut` non chiude la sessione dell'IdP; non provato con un IdP reale.
 - Percorsi: `web/`.
 - Dipende da: W-02, B-04.
 - Accettazione: flusso OIDC per la SPA secondo ADR-0019, token non in `localStorage` se l'ADR lo vieta, gestione della scadenza e dell'errore.

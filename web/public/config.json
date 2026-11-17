@@ -1,0 +1,5 @@
+{
+  "issuer": "http://127.0.0.1:9000/user",
+  "clientId": "code-analyzer-spa",
+  "audience": "code-analyzer"
+}
