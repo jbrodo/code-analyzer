@@ -54,6 +54,16 @@ Modifiche proposte al modello §4.1:
 - `Location.commit` diventa opzionale (cartella non git).
 - Senza database: `id` uguale al fingerprint, opaco per i consumatori; `first_seen` e `last_seen` uguali all'ora della scansione.
 
+## Emendamento per P-05 (2026-11-17): `kind` `coverage`
+
+Nuova riga della tabella, senza toccare la formula né i `kind` esistenti (ADR-0026):
+
+| `kind` | `rule_id` | `tool_family` | `normalized_location` | `component` |
+| --- | --- | --- | --- | --- |
+| `coverage` | `ca.coverage.low-file-coverage` | `coverage` | percorso | vuoto |
+
+Nessuna riga né contesto di codice: spostare righe non cambia il fingerprint. L'implementazione è `ca_core.fingerprint.fingerprint_coverage`. `architecture` (ADR-0020) avrà il suo `kind` con G-10.
+
 ## Conseguenze
 
 - Una futura `fp2` richiede una migrazione delle eccezioni; il prefisso `fp1` la rende rilevabile.

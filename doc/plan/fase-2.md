@@ -344,7 +344,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §6, §6.1, §6.3, §8, §9.1, §16 regola 3. ADR: 0009, 0012, 0013, 0014.
 
 #### A-07 — ADR-0022: esposizione e churn
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**; ADR-0022 `Proposto`. Scostamento dalla sezione 3 da far vedere all'utente: con esposizione assente E vale 0,6 e non 0,3, per non premiare chi non registra il repository; il valore sta nella configurazione di scoring.
 - Percorsi: `doc/adr/0022-*.md`.
 - Dipende da: A-05.
 - Accettazione: entrypoint per Python e JS/TS (dichiarati nei metadati del pacchetto, `__main__`, applicazioni web riconoscibili), raggiungibilità a livello di modulo sul grafo, uso di una dipendenza come import da un modulo raggiungibile; quando E vale 0,3 (ignota) e 0,2 (dipendenza di sviluppo); churn a 90 giorni come percentile per file, comportamento con clone superficiale (copertura ridotta dichiarata, mai un valore inventato).
@@ -471,7 +471,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §4.1. ADR: 0003, 0008, 0021, 0025, 0029.
 
 #### C-02 — Contratto `graph`
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**; `ca_core/models/graph.py`, `schemas/graph.schema.json` (1.0) e test di contratto e di equivalenza. Porta anche entrypoint, churn per modulo e stato della storia (ADR-0022). `plugin-manifest` passa a 1.1 con l'uscita `graph`; il runner la recupera come le altre.
 - Percorsi: `packages/ca-core/src/ca_core/models/graph.py`, `schemas/graph.schema.json`.
 - Dipende da: A-05.
 - Accettazione: nodi, archi con `confidence ∈ {dichiarato, dedotto, osservato}`, metriche per nodo, limiti di dimensione; è il formato emesso dal container di estrazione e letto dall'host.
@@ -492,7 +492,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §5, §9.1. ADR: 0010, 0024, 0025.
 
 #### C-05 — Contratto `code-analyzer-config` della Fase 2
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**; schema 1.1: `plugins.{ruff,eslint,checkov,hadolint}.disable_rules`, `plugins.coverage.reports`, `service.tier` limitato a 1..3. Il modo effettivo del gate resta nel report (C-04). Nessuna chiave per attivare regole, soglie, pesi o file di configurazione dei motori: i test lo provano.
 - Percorsi: `packages/ca-core/src/ca_core/models/config.py`, `schemas/code-analyzer-config.schema.json`.
 - Dipende da: A-10, A-11, A-13.
 - Accettazione: opzioni per ruff, eslint, coverage (percorsi dei report, regole disattivate); `gate.mode` effettivo; trattamento di `service` secondo D2-04; nessuna chiave che consenta al repository di cambiare immagini, rete, isolamento o pesi di scoring.
@@ -520,7 +520,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §9.2. ADR: 0017, 0019, 0029.
 
 #### C-09 — Formati in uscita delle integrazioni
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**. Schemi GitLab `sast` e `dependency_scanning` fissati al tag v15.2.5 in `vendor_schemas` (licenza permissiva, letta in V-02; manifest e ancora dell'hash aggiornati) con test di contratto; `ca_integrations.limits` e `ca_integrations.models` (commento con marcatore non falsificabile, check run, annotazioni, elemento `codequality`) con i limiti. **Non verificati:** i limiti di GitHub (a memoria, da leggere alla fonte in N-02 e N-03) e le versioni di CycloneDX che GitLab accetta (N-06). `codequality` non ha uno schema ufficiale: il modello è il formato Code Climate.
 - Percorsi: `packages/ca-integrations/`, schemi GitLab fissati in `vendor_schemas` se la licenza lo consente.
 - Dipende da: A-12, V-02.
 - Accettazione: versioni fissate dei formati GitLab `sast`, `dependency_scanning`, `codequality` e CycloneDX; modello del commento PR e del riepilogo della check run con i limiti di dimensione.
@@ -550,7 +550,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §7.3. ADR: 0026.
 
 #### F-03 — Fixture di copertura
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-17**; `tests/fixtures/coverage/` con report validi (LCOV di coverage.py e di vitest, Cobertura con e senza DTD, report vuoto con valori non numerici) e ostili (entità, espansione di entità, DTD esterna, percorsi che escono dal workspace, formato corrotto), più `expected.yaml` con gli esiti. I limiti di dimensione, di elementi e di profondità non sono versionati: li genera il test di P-05 (elencati in `generated_limits`).
 - Percorsi: `tests/fixtures/`.
 - Dipende da: A-11.
 - Accettazione: report LCOV e Cobertura validi, e ostili (entità XML, dimensione eccessiva, percorsi che escono dal workspace), con esiti attesi.
@@ -580,7 +580,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 ### G — `ca-graph`
 
 #### G-01 — Pacchetto `ca-graph`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; pacchetto nel workspace con scheletro (`deps`, `smells`, `pagerank`, `treesitter`). Contratti `import-linter`: indipendente da `ca_plugins` e `ca_integrations`, senza rete né processi, parser importabile solo da `ca_graph.treesitter`, che a sua volta non importa `ca_core`. tree-sitter è un extra `extract`, non una dipendenza.
 - Percorsi: `packages/ca-graph/`, `pyproject.toml`.
 - Dipende da: A-05.
 - Accettazione: pacchetto nel workspace, contratti `import-linter` (`ca_graph` verso `ca_core`, `ca_cli` verso `ca_graph`, nessuna rete né processi), copertura misurata.
@@ -675,21 +675,21 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 Ogni plugin include manifest, adattatore in Python standard senza importare `ca-core`, `Dockerfile`, licenze, SBOM e test di contratto su output reali (§16 regola 4), come in Fase 1. D2-14 ferma la pubblicazione delle loro immagini (I-07), non lo sviluppo né l'uso interno: per questo i P-* nuovi sono `IPOTESI` (D2-14).
 
 #### P-01 — ruff
-- Agente: `backend`. Stato: `IPOTESI` (D2-14).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per sviluppo e uso interno; la pubblicazione dell'immagine resta in I-07 (D2-14). Plugin `builtin/ruff/` con adattatore, manifest, Dockerfile con hash, licenze e fixture registrata; immagine costruita e provata nel profilo duro. Il nucleo guadagna `metric` e il livello di qualità limitato a `medio`; la CLI passa `disable_rules`. Dettagli in ADR-0026, «Realizzazione». Mancano firma, SBOM e misure sui pilota.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/ruff/`.
 - Dipende da: A-11, F-02, T-02.
 - Accettazione: SARIF con `category: quality`, `tool_severity`, `uri` relativi, metriche delle regole di complessità e dimensione nell'evidenza; regole incluse e disattivazioni da `.code-analyzer.yml`; nessuna scrittura nel workspace; `ruff.toml` e `pyproject.toml` ostili nel workspace senza effetto (V-04); problemi di F-02 rilevati.
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-02 — eslint
-- Agente: `backend`. Stato: `IPOTESI` (D2-14).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** alle stesse condizioni di P-01. Test con eslint reale e un repository ostile (configurazione eseguibile, `node_modules` ostile, direttive in linea): nulla del repository viene eseguito o letto.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/eslint/`.
 - Dipende da: A-11, F-02, T-02.
 - Accettazione: come P-01 per JS, TS e TSX, con configurazione e parser TypeScript inclusi nell'immagine; la configurazione del repository non viene caricata (test con un `eslint.config.js` ostile nel workspace).
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-03 — checkov
-- Agente: `backend`. Stato: `IPOTESI` (D2-14).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per sviluppo e uso interno; la pubblicazione resta in I-07 (D2-14). Plugin `builtin/checkov/`: l'adattatore copia nel tmpfs i soli file utili senza i nomi dei file di configurazione di checkov (la strada che V-04 indicava come sicura) e lo esegue sulla copia; i controlli saltati da un commento tornano finding. Provato con checkov 3.4.5 reale (configurazione ostile, collegamenti simbolici, file troppo grandi) e nell'immagine costruita (339 MB, 34 risultati sulla fixture in 3 s). Il JSON senza `--quiet` pesa 300 KB sulla fixture, perché porta anche i controlli superati: scartati dall'adattatore, la memoria la limita il container (X-05).
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/checkov/`.
 - Dipende da: A-11, F-02, T-02.
 - Accettazione: SARIF con `category: iac`, telemetria e controlli di versione disattivati, nessuna rete; `.checkov.yaml` ostile nel workspace senza effetto e nessun frammento di codice in `/out` (V-03, V-04); Dockerfile, Kubernetes e Terraform di F-02 rilevati.
@@ -703,7 +703,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §7.3. ADR: 0007, 0026.
 
 #### P-05 — coverage
-- Agente: `backend`. Stato: `IPOTESI` (D2-14).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per sviluppo e uso interno (I-07 resta fermo su D2-14, ma questo plugin non ha motori di terzi: solo l'interprete e Debian). Plugin `builtin/coverage/` con libreria standard sola: XML con `pyexpat` sui byte e rifiuto di ogni dichiarazione di entità in qualunque codifica (S3-A1), apertura del report senza seguire collegamenti simbolici e con contenimento anche dei percorsi intermedi, tetti su byte, elementi e profondità, unione riga per riga di più report. Nucleo: `kind` `coverage` (ADR-0008), categoria `test` con livello limitato a `medio`. Immagine costruita e provata nel profilo duro. **Lacuna:** l'avviso `coverage-report-missing` di ADR-0026 non esce, perché il contratto dei plugin non ha un canale per gli avvisi (solo SARIF); un report assente dà zero finding senza dirlo. Serve un'estensione del contratto, da decidere.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/coverage/`.
 - Dipende da: A-11, F-03, C-05, T-02.
 - Accettazione: LCOV e Cobertura letti dai percorsi di `plugins.coverage`, con contenimento nel workspace; finding `category: test` secondo ADR-0026; i report ostili di F-03 fanno fallire il plugin senza effetti; report assente dichiarato, non un fallimento.
@@ -958,7 +958,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3, questi restano.
 
 #### B-01 — Pacchetto `ca-api`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per lo scheletro: FastAPI con `/v1/health`, configurazione da ambiente con i limiti di ADR-0016, `python -m ca_api.openapi_export [--check]` e `schemas/openapi.json`. Contratti: `ca_api` non importa plugin, CLI, grafo né integrazioni e nessuno importa `ca_api`. Restano per i task che li usano le dipendenze di B-02, B-04 e B-13. Il comando di export è in `AGENTS.md`; è in `verify.yml`. Coperto da `--cov` insieme agli altri pacchetti.
 - Percorsi: `packages/ca-api/`, `pyproject.toml`.
 - Dipende da: A-01, A-02, A-15.
 - Accettazione: applicazione FastAPI nel workspace, contratti `import-linter` (`ca_api` verso `ca_core`), configurazione da ambiente, copertura misurata, export dell'OpenAPI disponibile per C-08.
@@ -1109,7 +1109,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 ### N — Integrazioni
 
 #### N-01 — Pacchetto `ca-integrations`
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; pacchetto nel workspace, contratti `import-linter` come sopra. Il contratto a strati ammette `ca_cli` sopra di lui: l'emendamento di ADR-0001 resta ad A-16.
 - Percorsi: `packages/ca-integrations/`, `pyproject.toml`.
 - Dipende da: A-12.
 - Accettazione: pacchetto nel workspace con i contratti `import-linter` di ADR-0027, copertura misurata.
@@ -1211,7 +1211,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.3, §15. ADR: 0005, 0015.
 
 #### I-05 — Ambiente di sviluppo del server
-- Agente: `devops`. Stato: `LIBERO` (D2-02 e D2-07 decise il 2026-11-16).
+- Agente: `devops`. Stato: `LIBERO` (D2-02 e D2-07 decise il 2026-11-16); **parziale il 2026-11-17**: `deploy/compose/server-dev.yaml` con PostgreSQL 16 per digest, volume degli artefatti e API (immagine di sviluppo da `deploy/docker/server/build-dev-image.sh`), tutto su loopback, password dall'ambiente, API con file system in sola lettura e senza capability; provato avviando lo stack. **Mancano l'IdP finto (arriva con B-04) e la SPA (la serve l'immagine di rilascio, I-03)**; l'API non usa ancora il database (B-02).
 - Percorsi: `deploy/compose/`.
 - Dipende da: A-15, A-04.
 - Accettazione: compose con PostgreSQL 16, archivio di ADR-0030, IdP finto, API e SPA; nessun segreto nel repository.
@@ -1259,28 +1259,28 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 `security` lavora in sola lettura: restituisce i finding e `architect` li registra in `doc/verifiche/sicurezza-fase-2.md`.
 
 #### S-01 — Modello delle minacce del server
-- Agente: `security`. Stato: `LIBERO`.
+- Agente: `security`. Stato: **chiuso il 2026-11-17** come revisione di progetto fatta dallo stesso agente che ha scritto gli ADR (non indipendente: la ripete S-06 sul codice). 2 alti, 6 medi, 3 bassi in `doc/verifiche/sicurezza-fase-2.md`. Alti: lo stato «scansione corrente» deve venire dal token e non dal report (B-03, ADR-0019); limiti per tenant a ingestione e archivio (B-03). Parere su D2-02: regge a quattro condizioni.
 - Percorsi: lettura di `doc/adr/`; esito in `doc/verifiche/sicurezza-fase-2.md`.
 - Dipende da: A-01, A-03, A-04.
 - Accettazione: finding per gravità su autenticazione delle pipeline, isolamento dei tenant, ingestione di report ostili, limiti di dimensione, CORS e CSRF per la SPA, C ed E dichiarati dal repository; parere su D2-02.
 - Spec: §9.2, §15. ADR: 0016, 0018, 0019.
 
 #### S-02 — `ca-graph` su input ostile
-- Agente: `security`. Stato: `LIBERO`.
+- Agente: `security`. Stato: **chiuso il 2026-11-17** (stessa avvertenza di S-01). Nessun alto, 4 medi, 3 bassi. La divisione di ADR-0020 regge. Corretto subito: i percorsi del grafo non ammettono caratteri di controllo (C-02).
 - Percorsi: lettura; esito in `doc/verifiche/sicurezza-fase-2.md`.
 - Dipende da: A-05.
 - Accettazione: parere su dove gira tree-sitter, sulla lettura della storia git per il churn e sui limiti del grafo emesso.
 - Spec: §7.2. ADR: 0004, 0012, 0020.
 
 #### S-03 — Linter, IaC e coverage su input ostile
-- Agente: `security`. Stato: `LIBERO`.
+- Agente: `security`. Stato: **chiuso il 2026-11-17** (stessa avvertenza di S-01). 1 alto, 4 medi, 3 bassi. Alto: il rifiuto delle entità XML non va fatto cercando testo ma con il parser sui byte (P-05, F-03 da estendere con codifiche diverse). La configurazione del repository non si legge mai: confermato.
 - Percorsi: lettura; esito in `doc/verifiche/sicurezza-fase-2.md`.
 - Dipende da: A-11.
 - Accettazione: parere sulla configurazione dei linter (codice eseguibile del repository), sui parser XML dei report di copertura, sui percorsi indicati dal repository.
 - Spec: §7.2, §8. ADR: 0014, 0026.
 
 #### S-04 — Integrazioni CI
-- Agente: `security`. Stato: `LIBERO`.
+- Agente: `security`. Stato: **chiuso il 2026-11-17** (stessa avvertenza di S-01). 1 alto (token OIDC mintabile da una PR dello stesso repository, si chiude sul server), 5 medi, 3 bassi. Da fare in N-02..N-04: neutralizzare `::` a inizio riga in ciò che la CLI stampa.
 - Percorsi: lettura; esito in `doc/verifiche/sicurezza-fase-2.md`.
 - Dipende da: A-12.
 - Accettazione: PR da fork, permessi dei token, injection nei commenti, claim OIDC verso il server, uso del socket nell'immagine CLI in CI.

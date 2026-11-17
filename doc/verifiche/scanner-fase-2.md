@@ -572,3 +572,15 @@ console o richiesta esterna dalla pagina. Verificato con un controllo
 temporaneo il focus da tastiera (contorno e distanza di 2 px). Nessun flusso
 applicativo nuovo da provare; zoom nativo del browser e lettore di schermo
 non verificati. Questa prova non chiude W-08/U-05.
+
+## P-03 — Dipendenze dell'immagine checkov
+
+Verificato il 2026-11-17. `uv pip compile --generate-hashes` da `checkov==3.4.5` per Python 3.12 e Linux x86_64 dà 96 pacchetti, tutti con wheel e hash (`requirements.lock`). Licenze **dichiarate** nei metadati dei pacchetti installati, non lette sui testi (V-02 copre solo checkov):
+
+| Classe | Pacchetti | Nota |
+| --- | --- | --- |
+| Permissive | 91 | MIT, Apache-2.0, BSD, PSF |
+| Reciprocità limitata ai file modificati | 3 | `certifi`, `tqdm`, `orjson` (con un'alternativa permissiva per `orjson`). Non sono tra le licenze vietate o da approvare di D-0013 |
+| Nessuna dichiarata nei metadati | 2 | `cloudsplaining`, `networkx`: testi da procurarsi in D2-14 |
+
+Nessuna licenza vietata o da approvare. Per D2-14 il materiale è l'SBOM dell'immagine, come per le altre.

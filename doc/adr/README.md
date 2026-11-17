@@ -24,6 +24,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Proposto | No (D2-02 per l'esercizio dei tenant) |
 | [0019](0019-autenticazione-e-rbac.md) | Autenticazione e RBAC | Accettato | Presa il 2026-11-16 (D2-02) |
 | [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto | No |
+| [0022](0022-esposizione-e-churn.md) | Esposizione e churn | Proposto | No |
 | [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto | Sì, D2-05 (aperta) per il mirror |
 | [0025](0025-baseline-modalita-pr-finding-nuovi.md) | Baseline, modalità PR e finding nuovi | Proposto | No |
 | [0026](0026-plugin-qualita-iac-coverage.md) | Plugin di qualità, IaC e coverage | Proposto | No |
