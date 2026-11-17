@@ -60,8 +60,10 @@ def test_finding_rejects_naive_dates_and_unknown_keys() -> None:
 
 def test_finding_level_source_and_line_order() -> None:
     assert finding(level="alto", level_source="tool_severity").level_source
+    for source in ("score", "override"):  # Fase 2 (C-01): aggiunte compatibili
+        assert finding(level_source=source).level_source.value == source
     with pytest.raises(ValidationError):
-        finding(level_source="score")
+        finding(level_source="bogus")
     with pytest.raises(ValidationError):
         finding(location={"repository": "r", "start_line": 5, "end_line": 4})
 

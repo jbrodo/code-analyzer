@@ -385,6 +385,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         disabled_plugins=ran.disabled,
         exclusions=normalized.exclusions,
         correlation_version=TABLE_VERSION,
+        effective_config=config,  # ADR-0025: serve a chi userà questo report come baseline
         exceptions=normalized.exceptions,
         inert_sections=[s for s in InertSection if getattr(config, s.value) is not None],
         warnings=warnings,

@@ -131,3 +131,10 @@ Il confronto non legge la storia git: `fetch-depth: 1` basta. La profondità con
 - Ogni pipeline deve conservare il report del branch principale, o pagare una seconda scansione per PR.
 - Il report contiene la configurazione per intero. È già un artefatto riservato (ADR-0010) e la configurazione è un file del repository: nessun dato nuovo esce.
 - L'approvazione di un'eccezione richiede una PR separata. È un passo in più, ed è il punto.
+
+## Realizzazione dei contratti (C-01, C-04, 2026-11-17)
+
+- `finding` 1.2: `baseline_state` (`new` o `existing`; `risolto` non è un valore, perché un finding risolto non è più nel report), `previous_path` (solo con `existing`, percorso relativo senza caratteri di controllo) e `pathless_key` (impronta degli ingredienti del fingerprint senza il percorso, per il secondo passaggio).
+- `scan-report` 1.2: `scan`, `baseline` e `effective_config`. `baseline.status` vale `valid`, `missing` o `rejected`; per `rejected` il campo `reason` è un codice come `baseline-commit-mismatch` o `baseline-partial`. I conteggi `new` ed `existing` devono coincidere con lo stato dei finding, e con una baseline non valida nessun finding ha uno stato. `not_evaluated` conta i finding della baseline il cui plugin è fallito.
+- **`effective_config` è facoltativo** e la CLI lo scrive da ora. Un report della Fase 1 non lo ha: usato come baseline non fornisce la configurazione del base, e K-16 deve trattarlo come tale (avviso e configurazione del file della PR, come per `pr-config-from-head`).
+- Lo `updated` del SARIF (ADR-0011) non ha un campo nel finding: lo ricava K-17 confrontando posizione e livello con la baseline.

@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "BaselineState": {
+      "description": "Stato rispetto alla baseline (ADR-0025). Un finding `risolto` non è nel report: sta nella\nsezione `baseline` di `scan-report`. Assente: nessuna baseline valida.",
+      "enum": [
+        "new",
+        "existing"
+      ],
+      "title": "BaselineState",
+      "type": "string"
+    },
     "Category": {
       "enum": [
         "quality",
@@ -78,7 +87,9 @@
       "enum": [
         "tool_severity",
         "policy",
-        "default"
+        "default",
+        "score",
+        "override"
       ],
       "title": "LevelSource",
       "type": "string"
@@ -167,6 +178,46 @@
       "title": "Location",
       "type": "object"
     },
+    "Remediation": {
+      "additionalProperties": false,
+      "description": "I passi per risolvere un finding (ADR-0029). Sempre testo semplice: né l'API né la UI lo\ninterpretano come HTML o Markdown. È della regola, non del risultato: nessun contenuto del\nrepository analizzato. Nessun testo generato (gli LLM sono della Fase 3).",
+      "properties": {
+        "references": {
+          "items": {
+            "pattern": "^https?://[^\\s\\x00-\\x1f\\x7f]{1,2040}$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "References",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source": {
+          "$ref": "#/$defs/RemediationSource"
+        },
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source"
+      ],
+      "title": "Remediation",
+      "type": "object"
+    },
+    "RemediationSource": {
+      "enum": [
+        "tool",
+        "rule",
+        "derived"
+      ],
+      "title": "RemediationSource",
+      "type": "string"
+    },
     "Status": {
       "enum": [
         "aperto",
@@ -177,12 +228,57 @@
       ],
       "title": "Status",
       "type": "string"
+    },
+    "VariantScore": {
+      "additionalProperties": false,
+      "description": "Punteggio in ombra di una variante (D2-10, ADR-0018): si calcolano A e B insieme, e ciascuna\nporta i suoi fattori con la loro evidenza. La forma esatta dei fattori è di ADR-0021 (A-06,\nancora da scrivere): qui solo ciò che ADR-0018 già fissa.",
+      "properties": {
+        "impact": {
+          "$ref": "#/$defs/ImpactFactors"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "variant": {
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variant",
+        "score",
+        "level",
+        "impact"
+      ],
+      "title": "VariantScore",
+      "type": "object"
     }
   },
   "$id": "urn:code-analyzer:schema:finding:v1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "baseline_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BaselineState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "category": {
       "$ref": "#/$defs/Category"
     },
@@ -315,6 +411,49 @@
       "default": null,
       "title": "Owner"
     },
+    "pathless_key": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Impronta degli ingredienti del fingerprint senza il percorso (ADR-0025): serve ad accoppiare un finding dopo un cambio di percorso. Non è un identificativo.",
+      "title": "Pathless Key"
+    },
+    "previous_path": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])|[\\x00-\\x1f\\x7f]"
+          },
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Percorso nella baseline di un finding accoppiato dopo uno spostamento di file (ADR-0025, secondo passaggio). Solo con `baseline_state` `existing`.",
+      "title": "Previous Path"
+    },
+    "remediation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Remediation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "rule_id": {
       "title": "Rule Id",
       "type": "string"
@@ -355,6 +494,15 @@
       "title": "Tools",
       "type": "array",
       "uniqueItems": true
+    },
+    "variant_scores": {
+      "description": "Punteggi in ombra di A e B (D2-10). Varianti uniche (vincolo del modello).",
+      "items": {
+        "$ref": "#/$defs/VariantScore"
+      },
+      "maxItems": 2,
+      "title": "Variant Scores",
+      "type": "array"
     }
   },
   "required": [
@@ -372,5 +520,5 @@
   ],
   "title": "Finding",
   "type": "object",
-  "x-schema-version": "1.1"
+  "x-schema-version": "1.2"
 }

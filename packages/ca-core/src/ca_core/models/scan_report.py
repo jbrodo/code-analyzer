@@ -10,7 +10,7 @@ si registrano solo versione, digest, esito della verifica (`signature`) e isolam
 
 from datetime import date
 from enum import StrEnum
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import (
     AwareDatetime,
@@ -22,8 +22,8 @@ from pydantic import (
     model_validator,
 )
 
-from ca_core.models.config import GateMode, SchemaVersion1
-from ca_core.models.finding import FINGERPRINT_PATTERN, Finding, Level
+from ca_core.models.config import CodeAnalyzerConfig, GateMode, SchemaVersion1
+from ca_core.models.finding import FINGERPRINT_PATTERN, BaselineState, Finding, Level
 
 DIGEST_PATTERN = r"^sha256:[0-9a-f]{64}$"
 _PLUGIN_NAME = r"^[a-z][a-z0-9-]{0,62}$"
@@ -142,6 +142,118 @@ class Warning_(_Strict):  # noqa: N801 - `Warning` è un builtin
     subject: _TEXT | None = None  # plugin, fingerprint o altra voce a cui si riferisce
 
 
+class ScanKind(StrEnum):
+    FULL = "full"
+    PR = "pr"  # scansione completa più confronto con la baseline (ADR-0025)
+
+
+class ScanInfo(_Strict):
+    """Tipo di scansione (ADR-0025, ADR-0018): servono a `scans` sul server."""
+
+    kind: ScanKind = ScanKind.FULL
+    base_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40,64}$")
+    pull_request: int | None = Field(default=None, ge=1, le=2_147_483_647)
+
+    @model_validator(mode="after")
+    def _pr_fields_only_for_pr(self) -> Self:
+        if self.kind is ScanKind.PR and self.base_commit is None:
+            raise ValueError("una scansione pr ha un commit base")
+        if self.kind is ScanKind.FULL and (self.base_commit or self.pull_request):
+            raise ValueError("commit base e PR solo per una scansione pr")
+        return self
+
+
+class BaselineStatus(StrEnum):
+    VALID = "valid"
+    MISSING = "missing"  # nessuna baseline: avviso `baseline-missing`, il gate valuta tutto
+    REJECTED = "rejected"  # trovata ma non utilizzabile: `reason` dice perché
+
+
+class BaselineSourceKind(StrEnum):
+    CI_ARTIFACT = "ci-artifact"
+    BASE_SCAN = "base-scan"
+    SERVER = "server"
+
+
+class ResolvedFinding(_Strict):
+    """Un finding della baseline assente ora, con tutti i suoi strumenti riusciti (ADR-0025)."""
+
+    fingerprint: str = Field(pattern=FINGERPRINT_PATTERN)
+    rule_id: _TEXT
+    title: _TEXT
+    path: str | None = Field(default=None, max_length=4096)
+
+
+class Baseline(_Strict):
+    """Esito del confronto con la baseline (ADR-0025, §7). I conteggi quadrano con i finding."""
+
+    status: BaselineStatus
+    commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40,64}$")
+    source: BaselineSourceKind | None = None
+    reason: str | None = Field(
+        default=None,
+        pattern=r"^[a-z][a-z0-9-]{0,62}$",
+        description="Codice dell'avviso (`baseline-commit-mismatch`, `baseline-partial`...).",
+    )
+    new: int = Field(default=0, ge=0)
+    existing: int = Field(default=0, ge=0)
+    resolved: list[ResolvedFinding] = Field(default_factory=list, max_length=10_000)
+    not_evaluated: int = Field(
+        default=0,
+        ge=0,
+        description="Finding della baseline che mancano perché il loro plugin è fallito: non "
+        "sono né risolti né esistenti e il report lo dice (ADR-0025).",
+    )
+
+    @model_validator(mode="after")
+    def _consistent(self) -> Self:
+        if self.status is BaselineStatus.VALID:
+            if self.commit is None or self.source is None:
+                raise ValueError("una baseline valida ha commit e fonte")
+        elif self.new or self.existing or self.resolved or self.not_evaluated:
+            raise ValueError("conteggi senza una baseline valida")
+        if self.status is not BaselineStatus.REJECTED and self.reason is not None:
+            raise ValueError("reason solo per una baseline rifiutata")
+        if self.status is BaselineStatus.REJECTED and self.reason is None:
+            raise ValueError("una baseline rifiutata ha un motivo")
+        return self
+
+
+class ScoringInfo(_Strict):
+    """Quale configurazione di scoring ha prodotto i punteggi (G2.a, D2-10)."""
+
+    active_variant: Literal["A", "B"]
+    config_version: Annotated[str, Field(min_length=1, max_length=64)]
+    shadow: StrictBool = Field(
+        default=True, description="A e B calcolate entrambe: la seconda non decide il livello."
+    )
+
+
+class ServiceValue(_Strict):
+    value: Annotated[int, Field(ge=1, le=3)] | StrictBool | None = None
+    source: Literal["catalog", "repository", "default"]
+
+
+class ServiceContext(_Strict):
+    """Fonte di C ed E (ADR-0028): da dove venivano tier ed esposizione di un punteggio."""
+
+    tier: ServiceValue
+    internet_facing: ServiceValue
+    catalog_id: Annotated[str, Field(max_length=200)] | None = None
+
+
+class EnrichmentSnapshot(_Strict):
+    """Snapshot EPSS o KEV usato (ADR-0024): basta a riprodurre un punteggio a posteriori."""
+
+    feed: Literal["epss", "kev"]
+    origin: Literal["public", "mirror", "cache"]  # un'etichetta, non un indirizzo
+    downloaded_at: AwareDatetime
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    content: dict[str, Annotated[str, Field(max_length=128)]] = Field(
+        default_factory=dict, max_length=8
+    )
+
+
 class ScanReport(_Strict):
     """Un plugin `failed` rende `status` `partial` (un solo verso, anche nello schema).
 
@@ -193,6 +305,17 @@ class ScanReport(_Strict):
     exceptions: list[AppliedException] = Field(default_factory=list)
     inert_sections: list[InertSection] = Field(default_factory=list)
     warnings: list[Warning_] = Field(default_factory=list)
+    scan: ScanInfo = Field(default_factory=ScanInfo)
+    baseline: Baseline | None = None
+    effective_config: CodeAnalyzerConfig | None = Field(
+        default=None,
+        description="Configurazione con cui la scansione è stata eseguita, per intero (ADR-0025): "
+        "serve a una scansione di PR che usa questo report come baseline. Assente nei report "
+        "della Fase 1, che quindi non valgono come baseline per la configurazione.",
+    )
+    scoring: ScoringInfo | None = None
+    service_context: ServiceContext | None = None
+    enrichment: list[EnrichmentSnapshot] = Field(default_factory=list, max_length=2)
     findings: list[Finding]
 
     @model_validator(mode="after")
@@ -205,4 +328,26 @@ class ScanReport(_Strict):
         failed = any(plugin.outcome is Outcome.FAILED for plugin in self.plugins)
         if failed and self.status is ReportStatus.COMPLETE:
             raise ValueError("un plugin fallito rende la scansione partial")
+        self._check_baseline()
+        feeds = [s.feed for s in self.enrichment]
+        if len(set(feeds)) != len(feeds):
+            raise ValueError("snapshot duplicati per feed")
         return self
+
+    def _check_baseline(self) -> None:
+        """Lo stato rispetto alla baseline e i conteggi quadrano tra loro (ADR-0025)."""
+        states = [f.baseline_state for f in self.findings]
+        valid = self.baseline is not None and self.baseline.status is BaselineStatus.VALID
+        if not valid:
+            if any(state is not None for state in states):
+                raise ValueError("stato rispetto alla baseline senza una baseline valida")
+            return
+        assert self.baseline is not None
+        if self.scan.kind is not ScanKind.PR:
+            raise ValueError("una baseline vale solo per una scansione pr")
+        if states.count(BaselineState.NEW) != self.baseline.new:
+            raise ValueError("conteggio dei nuovi diverso dai finding")
+        if states.count(BaselineState.EXISTING) != self.baseline.existing:
+            raise ValueError("conteggio degli esistenti diverso dai finding")
+        if any(state is None for state in states):
+            raise ValueError("con una baseline valida ogni finding ha uno stato")

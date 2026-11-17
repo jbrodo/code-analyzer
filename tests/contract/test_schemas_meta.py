@@ -8,11 +8,11 @@ CLOSED_ROOTS = tuple(SCHEMA_NAMES)
 # Dentro la versione maggiore 1 solo aggiunte compatibili (ADR-0003). Chi cambia uno schema
 # aggiorna qui la sua versione minore.
 VERSIONS = {
-    "finding": "1.1",  # K-21: `correlation`
+    "finding": "1.2",  # K-21 `correlation`; C-01 baseline, correzione, punteggi in ombra
     "code-analyzer-config": "1.1",  # C-05 della Fase 2: opzioni dei plugin nuovi
     "plugin-manifest": "1.1",  # C-02 della Fase 2: uscita `graph`
     "plugin-sarif-properties": "1.1",  # P-01 della Fase 2: `metric`
-    "scan-report": "1.1",  # K-21: `correlation_version`
+    "scan-report": "1.2",  # K-21 `correlation_version`; C-04 baseline, tipo, configurazione
     "graph": "1.1",  # G-02: files_skipped_name
 }
 

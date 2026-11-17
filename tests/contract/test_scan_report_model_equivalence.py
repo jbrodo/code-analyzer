@@ -7,7 +7,19 @@ vedi `test_finding_model_equivalence.py`. Ogni differenza non elencata in `MODEL
 import pytest
 from conftest import Json, case_params, errors_of, make_validator, mutated
 from pydantic import ValidationError
-from test_scan_report_contract import FINDING, INVALID, MINIMAL, PLUGIN_OK, VALID
+from test_scan_report_contract import (
+    BASE,
+    FINDING,
+    INVALID,
+    MINIMAL,
+    NEW,
+    OLD,
+    PLUGIN_OK,
+    PR_REPORT,
+    PR_SCAN,
+    SNAPSHOT,
+    VALID,
+)
 
 from ca_core.models import ScanReport
 
@@ -17,6 +29,34 @@ VALIDATOR = make_validator("scan-report")
 MODEL_ONLY: dict[str, Json] = {
     "plugin-names-not-unique": mutated(MINIMAL, lambda i: i.update(plugins=[PLUGIN_OK, PLUGIN_OK])),
     "disabled-plugin-also-run": mutated(MINIMAL, lambda i: i.update(disabled_plugins=["bandit"])),
+    # C-04: invarianti tra sezioni, che lo schema non esprime
+    "pr-scan-without-base-commit": mutated(MINIMAL, lambda i: i.update(scan={"kind": "pr"})),
+    "full-scan-with-base-commit": mutated(
+        MINIMAL, lambda i: i.update(scan={"kind": "full", "base_commit": BASE})
+    ),
+    "baseline-valid-without-commit": mutated(PR_REPORT, lambda i: i["baseline"].pop("commit")),
+    "baseline-missing-with-counts": mutated(
+        MINIMAL,
+        lambda i: i.update(scan=PR_SCAN, baseline={"status": "missing", "new": 2}),
+    ),
+    "baseline-rejected-without-reason": mutated(
+        MINIMAL, lambda i: i.update(scan=PR_SCAN, baseline={"status": "rejected"})
+    ),
+    "baseline-valid-with-reason": mutated(
+        PR_REPORT, lambda i: i["baseline"].update(reason="baseline-partial")
+    ),
+    "baseline-on-a-full-scan": mutated(PR_REPORT, lambda i: i.update(scan={"kind": "full"})),
+    "baseline-count-of-new-wrong": mutated(PR_REPORT, lambda i: i["baseline"].update(new=5)),
+    "baseline-count-of-existing-wrong": mutated(
+        PR_REPORT, lambda i: i["baseline"].update(existing=0)
+    ),
+    "finding-with-state-but-no-baseline": mutated(MINIMAL, lambda i: i.update(findings=[NEW])),
+    "finding-without-state-with-valid-baseline": mutated(
+        PR_REPORT, lambda i: i.update(findings=[NEW, {**OLD, "baseline_state": None}])
+    ),
+    "enrichment-same-feed-twice": mutated(
+        MINIMAL, lambda i: i.update(enrichment=[SNAPSHOT, SNAPSHOT])
+    ),
     "embedded-finding-tool-not-first": mutated(
         MINIMAL,
         lambda i: i.update(findings=[{**FINDING, "tool": "z", "tools": ["a", "z"]}]),

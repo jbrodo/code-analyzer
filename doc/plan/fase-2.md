@@ -465,7 +465,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_core` è il generatore, il file in `schemas/` è l'artefatto per i consumatori, `schema_export --check` verde.
 
 #### C-01 — Contratto `finding` della Fase 2
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**, con una parte da rivedere; `finding` 1.2. `LevelSource` con `score` e `override`; `baseline_state` (`new`, `existing`: un finding risolto non è un finding, sta nel report), `previous_path` solo con `existing`, `pathless_key`; `remediation` (testo semplice, fonte `tool`, `rule` o `derived`, al più 10 riferimenti http o https, nessun carattere di controllo) come ADR-0029; `variant_scores` (al più uno per variante, con fattori della stessa variante). **Da rivedere con ADR-0021 (A-06, non ancora scritto):** la forma dei punteggi in ombra è il minimo che ADR-0018 già fissa (punteggio, livello da punteggio, fattori con evidenza); la definizione dei fattori e dei livelli può cambiarla. Dipendenza formale non soddisfatta: C-01 dipende da A-06.
 - Percorsi: `packages/ca-core/src/ca_core/models/finding.py`, `schemas/finding.schema.json`.
 - Dipende da: A-06, A-10, A-14.
 - Accettazione: `LevelSource` con `score` e `override` (aggiunta compatibile); punteggi in ombra per variante secondo ADR-0021; stato rispetto alla baseline; campo dei passi di correzione; `id` opaco. Casi validi e non validi in `tests/contract/`.
@@ -486,7 +486,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6, §16 regola 3. ADR: 0021, 0023.
 
 #### C-04 — Contratto `scan-report` della Fase 2
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-17**; `scan-report` 1.2, tutti i campi nuovi facoltativi (i report della Fase 1 restano validi). `scan` (tipo `full` o `pr`, commit base, numero della PR), `baseline` (stato `valid`, `missing` o `rejected` con codice del motivo, fonte, conteggi di nuovi ed esistenti, elenco dei risolti, quelli non valutati perché il loro plugin è fallito), `effective_config` (la configurazione per intero: la CLI la scrive già), `scoring` (variante attiva, versione della configurazione, ombra), `service_context` (valore e fonte di tier ed esposizione, ADR-0028), `enrichment` (snapshot EPSS e KEV con origine, data e SHA-256). Invarianti nel modello e provate: i conteggi quadrano con lo stato dei finding, nessuno stato senza una baseline valida, una baseline solo per una scansione `pr`. `service` e `scoring` restano tra le sezioni inerti finché non esistono K-04 e K-14: non le tolgo da `inert_sections` prima.
 - Percorsi: `packages/ca-core/src/ca_core/models/scan_report.py`, `schemas/scan-report.schema.json`.
 - Dipende da: C-01, A-09, A-10.
 - Accettazione: modalità `full | pr`, commit base, conteggi nuovi, esistenti e risolti; variante attiva e versione della configurazione di scoring; snapshot EPSS e KEV con origine e data; fonte di C ed E; `service` e `scoring` non più tra le sezioni inerti.

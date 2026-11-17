@@ -15,7 +15,10 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictFloat, m
 
 from ca_core.models.graph import HistoryStatus
 from ca_core.models.plugin_manifest import InputMode, PackagedPluginManifest
-from ca_core.models.scan_report import Isolation, Signature  # enum condivisi con il report
+from ca_core.models.scan_report import (  # enum e modelli condivisi con il report
+    EnrichmentSnapshot as FeedSnapshot,
+)
+from ca_core.models.scan_report import Isolation, Signature
 
 
 class _Frozen(BaseModel):
@@ -215,17 +218,6 @@ class KevAnswer(_Frozen):
         ):
             raise ValueError("valori di KEV solo con status found")
         return self
-
-
-class FeedSnapshot(_Frozen):
-    """Identità di uno snapshot usato: basta a riprodurre un punteggio a posteriori (ADR-0024)."""
-
-    feed: Literal["epss", "kev"]
-    origin: Literal["public", "mirror", "cache"]  # un'etichetta, non un indirizzo
-    downloaded_at: AwareDatetime
-    sha256: str = Field(pattern=_SHA256.pattern)
-    # `score_date` e `model_version` per EPSS, `catalogVersion` e `dateReleased` per KEV.
-    content: dict[str, str] = Field(default_factory=dict, max_length=8)
 
 
 @runtime_checkable

@@ -180,6 +180,154 @@ INVALID = {
 }
 
 
+# --- Fase 2 (C-04): tipo di scansione, baseline, configurazione effettiva, scoring ---------------
+
+BASE = "a" * 40
+HEAD = "b" * 40
+PR_SCAN: Json = {"kind": "pr", "base_commit": BASE, "pull_request": 12}
+BASELINE_OK: Json = {
+    "status": "valid",
+    "commit": BASE,
+    "source": "ci-artifact",
+    "new": 1,
+    "existing": 1,
+    "resolved": [{"fingerprint": FP, "rule_id": "B602", "title": "t", "path": "a.py"}],
+}  # noqa: E501
+NEW = {**FINDING, "baseline_state": "new"}
+OLD = {**FINDING, "fingerprint": "sha256:" + "d" * 64, "id": "f2", "baseline_state": "existing"}
+PR_REPORT: Json = mutated(MINIMAL, _set(scan=PR_SCAN, baseline=BASELINE_OK, findings=[NEW, OLD]))
+CONFIG: Json = {
+    "version": 1,
+    "gate": {"mode": "new-findings-only", "block_on": ["critico"]},
+    "paths": {"exclude": ["dist"]},
+    "licenses": {"forbidden": ["X"]},
+}  # noqa: E501
+SNAPSHOT: Json = {
+    "feed": "epss",
+    "origin": "cache",
+    "downloaded_at": NOW,
+    "sha256": "e" * 64,
+    "content": {"score_date": "2026-11-13"},
+}  # noqa: E501
+
+VALID.update(
+    {
+        "full-scan-explicit": mutated(MINIMAL, _set(scan={"kind": "full"})),
+        "pr-scan-with-baseline": PR_REPORT,
+        "pr-scan-without-pull-request-number": mutated(
+            MINIMAL, _set(scan={"kind": "pr", "base_commit": BASE})
+        ),
+        "baseline-missing": mutated(
+            MINIMAL, _set(scan={"kind": "pr", "base_commit": BASE}, baseline={"status": "missing"})
+        ),
+        "baseline-rejected": mutated(
+            MINIMAL,
+            _set(
+                scan={"kind": "pr", "base_commit": BASE},
+                baseline={
+                    "status": "rejected",
+                    "commit": HEAD,
+                    "reason": "baseline-commit-mismatch",
+                },
+            ),
+        ),
+        "baseline-not-evaluated": mutated(
+            PR_REPORT, lambda i: i["baseline"].update(not_evaluated=3)
+        ),
+        "effective-config": mutated(MINIMAL, _set(effective_config=CONFIG)),
+        "scoring": mutated(
+            MINIMAL,
+            _set(scoring={"active_variant": "B", "config_version": "2026-11-17", "shadow": False}),
+        ),
+        "service-context": mutated(
+            MINIMAL,
+            _set(
+                service_context={
+                    "tier": {"value": 1, "source": "catalog"},
+                    "internet_facing": {"value": True, "source": "default"},
+                    "catalog_id": "payments-api",
+                }
+            ),
+        ),
+        "service-context-unknown-values": mutated(
+            MINIMAL,
+            _set(
+                service_context={
+                    "tier": {"source": "default"},
+                    "internet_facing": {"value": None, "source": "repository"},
+                }
+            ),
+        ),
+        "enrichment-both-feeds": mutated(
+            MINIMAL,
+            _set(
+                enrichment=[
+                    SNAPSHOT,
+                    {**SNAPSHOT, "feed": "kev", "content": {"catalogVersion": "1"}},
+                ]
+            ),
+        ),
+        "correlation-version": mutated(MINIMAL, _set(correlation_version="1")),
+    }
+)
+INVALID.update(
+    {
+        "scan-kind-unknown": mutated(MINIMAL, _set(scan={"kind": "nightly"})),
+        "scan-base-commit-short": mutated(MINIMAL, _set(scan={"kind": "pr", "base_commit": "abc"})),
+        "scan-pull-request-zero": mutated(
+            MINIMAL, _set(scan={"kind": "pr", "base_commit": BASE, "pull_request": 0})
+        ),
+        "scan-unknown-key": mutated(MINIMAL, _set(scan={"kind": "full", "branch": "main"})),
+        "baseline-status-unknown": mutated(MINIMAL, _set(baseline={"status": "stale"})),
+        "baseline-source-unknown": mutated(
+            PR_REPORT, lambda i: i["baseline"].update(source="email")
+        ),
+        "baseline-negative-count": mutated(PR_REPORT, lambda i: i["baseline"].update(new=-1)),
+        "baseline-reason-not-a-code": mutated(
+            MINIMAL,
+            _set(baseline={"status": "rejected", "reason": "Commit diverso!"}),
+        ),
+        "baseline-resolved-bad-fingerprint": mutated(
+            PR_REPORT, lambda i: i["baseline"]["resolved"][0].update(fingerprint="abc")
+        ),
+        "baseline-unknown-key": mutated(PR_REPORT, lambda i: i["baseline"].update(extra=1)),
+        "effective-config-unknown-key": mutated(
+            MINIMAL, _set(effective_config={"version": 1, "image": "x"})
+        ),
+        "effective-config-bad-version": mutated(MINIMAL, _set(effective_config={"version": 2})),
+        "scoring-variant-c": mutated(
+            MINIMAL, _set(scoring={"active_variant": "C", "config_version": "1"})
+        ),
+        "scoring-without-version": mutated(MINIMAL, _set(scoring={"active_variant": "A"})),
+        "service-tier-4": mutated(
+            MINIMAL,
+            _set(
+                service_context={
+                    "tier": {"value": 4, "source": "catalog"},
+                    "internet_facing": {"source": "default"},
+                }
+            ),
+        ),
+        "service-source-unknown": mutated(
+            MINIMAL,
+            _set(
+                service_context={
+                    "tier": {"value": 1, "source": "guess"},
+                    "internet_facing": {"source": "default"},
+                }
+            ),
+        ),
+        "enrichment-three": mutated(MINIMAL, _set(enrichment=[SNAPSHOT, SNAPSHOT, SNAPSHOT])),
+        "enrichment-origin-is-a-url": mutated(
+            MINIMAL, _set(enrichment=[{**SNAPSHOT, "origin": "https://evil.example"}])
+        ),
+        "enrichment-bad-sha": mutated(MINIMAL, _set(enrichment=[{**SNAPSHOT, "sha256": "xyz"}])),
+        "enrichment-unknown-feed": mutated(MINIMAL, _set(enrichment=[{**SNAPSHOT, "feed": "osv"}])),
+        "correlation-version-not-a-number": mutated(MINIMAL, _set(correlation_version="v1")),
+    }
+)
+
+
 @pytest.mark.parametrize("instance", VALID.values(), ids=VALID.keys())
 def test_valid_report_is_accepted(instance: Json) -> None:
     assert errors_of(VALIDATOR, instance) == []
