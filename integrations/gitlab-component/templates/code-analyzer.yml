@@ -1,0 +1,164 @@
+# Componente GitLab CI di Code Analyzer (N-07, ADR-0027, §12.2).
+#
+# Passi: controllo del daemon, scansione completa (o, in una merge request, scansione del base come
+# baseline e `scan --pr`), SBOM, `export` verso i report nativi, e `gate` per ultimo: il job
+# fallisce secondo il gate. `scan` non riceve `--fail-on`: decide solo `gate` (ADR-0010).
+#
+# Requisiti, da ADR-0004 e ADR-0027: un runner con un daemon di container raggiungibile dal job e
+# in cui la directory di build ha lo STESSO percorso per il job e per il daemon (per esempio un
+# runner con `/var/run/docker.sock` e `/builds` montati alla pari). La CLI lo prova prima di
+# avviare i plugin e, se i percorsi non coincidono, esce con 2. Un `DOCKER_HOST` remoto non è
+# supportato. Nessun commento sulla merge request: il token del job non può scriverlo.
+spec:
+  inputs:
+    image:
+      type: string
+      description: Immagine della CLI (nome:tag o nome@digest). Nessun valore predefinito.
+    public_key:
+      type: string
+      description: Percorso, visibile al daemon e fuori dal repository, della chiave pubblica cosign dei plugin.
+    job_image:
+      type: string
+      default: "docker:28.5.2-cli@sha256:625d9431a9f54c5a2bc90f24f0e1c3d55b1349fd857dd85035f98c2c9acbdd4d"
+      description: Immagine del job, con il client Docker.
+    stage:
+      type: string
+      default: test
+    fail_on:
+      type: string
+      default: ""
+      description: Livelli bloccanti per il gate, separati da virgola. Vuoto usa la configurazione.
+    sbom:
+      type: boolean
+      default: true
+      description: Produce anche il report cyclonedx.
+    offline:
+      type: boolean
+      default: false
+      description: Non sincronizza i feed (già presenti nella cache).
+    network:
+      type: string
+      default: ""
+      description: Rete dei container (per esempio host, con un registry di prova su loopback).
+    git_depth:
+      type: number
+      default: 200
+      description: Storia da scaricare. In una merge request il commit base deve esserci.
+    tags:
+      type: array
+      default: []
+      description: Tag del runner con il daemon.
+---
+code-analyzer:
+  stage: $[[ inputs.stage ]]
+  image: $[[ inputs.job_image ]]
+  tags: $[[ inputs.tags ]]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  variables:
+    GIT_DEPTH: $[[ inputs.git_depth ]]
+    CA_IMAGE: $[[ inputs.image ]]
+    CA_PUBLIC_KEY: $[[ inputs.public_key ]]
+    CA_FAIL_ON: $[[ inputs.fail_on ]]
+    CA_SBOM: $[[ inputs.sbom ]]
+    CA_OFFLINE: $[[ inputs.offline ]]
+    CA_NETWORK: $[[ inputs.network ]]
+  script:
+    - |
+      set -eu
+      fail() { echo "errore: $*" >&2; exit 2; }
+      docker info > /dev/null 2>&1 || fail "nessun daemon di container raggiungibile: serve un runner con il socket (ADR-0004)"
+      [ -n "$CA_IMAGE" ] && [ -f "$CA_PUBLIC_KEY" ] || fail "immagine o chiave pubblica mancanti"
+      # La CLI non gira da root (l'uid 0 darebbe ai file di lavoro il proprietario sbagliato).
+      uid=1000
+      if ! command -v git > /dev/null; then
+        { command -v apk > /dev/null && apk add --no-cache git > /dev/null; } || fail "serve git nell'immagine del job"
+      fi
+
+      root="$CI_BUILDS_DIR/ca-$CI_JOB_ID"
+      rm -rf "$root"
+      mkdir -m 700 "$root" "$root/work" "$root/cache" "$root/output"
+      chown -R "$uid:$uid" "$root"
+      trap 'rm -rf "$root"' EXIT
+
+      # Un solo punto che lancia l'immagine. Il token del job non entra nel container.
+      ca() {
+        mode="$1"; shift
+        workspace="$CA_WORKSPACE"
+        sock=/var/run/docker.sock
+        set -- "$mode" "$@"
+        case "$mode" in
+          scan|sbom)
+            [ "$CA_OFFLINE" = true ] && [ "$mode" = scan ] && set -- "$@" --offline
+            docker run --rm --user "$uid:$uid" --group-add "$(stat -c %g "$sock")" \
+              --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp \
+              ${CA_NETWORK:+--network "$CA_NETWORK"} \
+              -v "$sock:$sock" -v "$workspace":/ca/workspace:ro -v "$root/work":/ca/work \
+              -v "$root/cache":/ca/cache -v "$out":/ca/output \
+              -v "$CA_PUBLIC_KEY":/ca/keys/cosign.pub:ro -e CA_COSIGN_PUBLIC_KEY=/ca/keys/cosign.pub \
+              -e CA_HOST_WORKSPACE="$workspace" -e CA_HOST_WORK="$root/work" -e CA_HOST_CACHE="$root/cache" \
+              "$CA_IMAGE" "$@" ;;
+          *)
+            docker run --rm --user "$uid:$uid" --cap-drop ALL \
+              --security-opt no-new-privileges --read-only --tmpfs /tmp \
+              -v "$workspace":/ca/workspace:ro -v "$out":/ca/output "$CA_IMAGE" "$@" ;;
+        esac
+      }
+
+      CA_WORKSPACE="$CI_PROJECT_DIR"
+      out="$root/output"
+      status=0
+      if [ "$CI_PIPELINE_SOURCE" = merge_request_event ]; then
+        base="$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+        case "$base" in *[!0-9a-f]*|"") fail "commit base non valido";; esac
+        git cat-file -e "$base^{commit}" 2> /dev/null || fail "il commit base non è nella storia scaricata: aumenta git_depth"
+        # Baseline: scansione completa del base, in una copia a parte con la sua configurazione.
+        git clone --quiet --no-checkout --local "$CI_PROJECT_DIR" "$root/base"
+        git -C "$root/base" checkout --quiet --detach "$base"
+        mkdir -m 700 "$root/base-output"
+        chown "$uid:$uid" "$root/base-output"
+        (CA_WORKSPACE="$root/base"; out="$root/base-output"; ca scan --output-dir /ca/output) || status=$?
+        if [ "$status" -eq 0 ]; then
+          mkdir -p "$out/baseline"
+          chown "$uid:$uid" "$out/baseline"
+          cp "$root/base-output/code-analyzer.report.json" "$out/baseline/code-analyzer.report.json"
+          ca scan --output-dir /ca/output --pr --base "$base" --pull-request "$CI_MERGE_REQUEST_IID" \
+            --baseline /ca/output/baseline/code-analyzer.report.json --baseline-source base-scan || status=$?
+        else
+          echo "avviso: scansione del base non riuscita, nessuna baseline" >&2
+          ca scan --output-dir /ca/output --pr --base "$base" --pull-request "$CI_MERGE_REQUEST_IID" || status=$?
+        fi
+      else
+        ca scan --output-dir /ca/output || status=$?
+      fi
+
+      # Report nativi e artefatti: anche se il passo precedente è fallito, se il report c'è.
+      if [ -f "$out/code-analyzer.report.json" ]; then
+        if [ "$CA_SBOM" = true ] && ca sbom --output /ca/output/sbom.cdx.json; then
+          ca export --format gitlab --sbom /ca/output/sbom.cdx.json --output-dir /ca/output || status=$?
+        else
+          ca export --format gitlab --output-dir /ca/output || status=$?
+        fi
+        # Gli artefatti si leggono solo dentro CI_PROJECT_DIR: ci si copia dopo la scansione.
+        for name in code-analyzer.report.json code-analyzer.sarif gl-sast-report.json \
+          gl-dependency-scanning-report.json gl-code-quality-report.json gl-sbom-code-analyzer.cdx.json; do
+          [ -f "$out/$name" ] && cp "$out/$name" "$CI_PROJECT_DIR/$name"
+        done
+      fi
+
+      # Il gate è l'ultimo e decide l'esito del job.
+      [ "$status" -eq 0 ] || exit "$status"
+      if [ -n "$CA_FAIL_ON" ]; then ca gate --fail-on "$CA_FAIL_ON"; else ca gate; fi
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - code-analyzer.report.json
+      - code-analyzer.sarif
+    reports:
+      sast: gl-sast-report.json
+      dependency_scanning: gl-dependency-scanning-report.json
+      codequality: gl-code-quality-report.json
+      cyclonedx:
+        - gl-sbom-*.cdx.json

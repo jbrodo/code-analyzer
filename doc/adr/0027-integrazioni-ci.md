@@ -170,3 +170,11 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - L'immagine CLI con `ca-integrations` è stata costruita e provata: scansione con plugin fratelli, `gate`, e gli script dell'Action (baseline dalla scansione del base, `scan --pr`, `notify`, `gate`) contro un server GitHub finto su loopback. `notify` accetta `http` su loopback solo con `CA_NOTIFY_ALLOW_LOOPBACK_HTTP=1`.
 - `.github/workflows/e2e-action.yml` esiste ma **non è mai stato eseguito su GitHub**: la sua prova è il primo push. Non è stato controllato con `actionlint`.
 - Il comportamento reale di GitHub (commento, check run, SARIF, permessi) resta quindi non provato.
+
+## Realizzazione di N-06 e N-07 (2026-11-17)
+
+- `code-analyzer export --format gitlab` scrive `sast`, `dependency_scanning` e `codequality` dal report, più il CycloneDX con `--sbom`. I tre report di sicurezza e qualità si validano contro gli schemi fissati prima di scrivere.
+- **Correzione a §12.2: GitLab accetta CycloneDX 1.4, 1.5 e 1.6, non 1.7**, e il report `cyclonedx` è del livello Ultimate (documentazione di GitLab, letta il 2026-11-17). L'SBOM del prodotto (1.7) si riporta alla 1.6 cambiando la dichiarazione di versione e si valida contro lo schema 1.6, fissato in `vendor_schemas`; se usa qualcosa di esclusivo della 1.7 non si scrive. La 1.6 è ammessa solo in uscita.
+- **Correzione al passo «Docker-in-Docker»:** la CLI non accetta un `DOCKER_HOST` remoto e richiede la stessa directory di build per il job e per il daemon (ADR-0004). Il componente richiede quindi un runner con il socket e la directory di build montati alla pari; il solo servizio Docker-in-Docker non basta.
+- Il componente usa sempre la scansione del base come baseline; la baseline dall'artefatto del branch principale resta da fare. Nessun commento sulla merge request.
+- **Mai eseguito su GitLab** (nessuna istanza, D2-12); non controllato con il linter CI.

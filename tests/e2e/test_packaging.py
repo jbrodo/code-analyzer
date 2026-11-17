@@ -315,6 +315,24 @@ def test_action_scripts_run_against_the_real_image(
 
         gate = cli("run-cli.sh", "gate")
         assert gate.returncode == 1  # il gate è l'unico a decidere
+
+        # N-06 con dati veri: l'SBOM 1.7 di syft riportato alla 1.6 e i report su finding reali.
+        sbom = cli("run-cli.sh", "sbom", "--output", "/ca/output/sbom.cdx.json")
+        assert sbom.returncode == 0, sbom.stderr[-2000:]
+        export = cli(
+            "run-cli.sh", "export", "--format", "gitlab",
+            "--sbom", "/ca/output/sbom.cdx.json", "--output-dir", "/ca/output",
+        )  # fmt: skip
+        assert export.returncode == 0, export.stderr[-2000:]
+        assert (
+            json.loads((reports / "gl-sbom-code-analyzer.cdx.json").read_text())["specVersion"]
+            == "1.6"
+        )
+        sast = json.loads((reports / "gl-sast-report.json").read_text())
+        dependency = json.loads((reports / "gl-dependency-scanning-report.json").read_text())
+        assert any(v["location"]["file"] == "app/pr_added.py" for v in sast["vulnerabilities"])
+        assert dependency["vulnerabilities"], export.stderr
+        assert (reports / "gl-code-quality-report.json").is_file()
     finally:
         github.close()
     assert container_leftovers() == []

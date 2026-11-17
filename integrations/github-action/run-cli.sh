@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lancia l'immagine CLI per un comando dell'Action (ADR-0004, ADR-0027). Uso: run-cli.sh scan|gate|notify [argomenti]
+# Lancia l'immagine CLI per un comando dell'Action (ADR-0004, ADR-0027). Uso: run-cli.sh scan|sbom|gate|export|notify [argomenti]
 #
 # Il token di GitHub arriva solo a `notify`, per nome (`-e GITHUB_TOKEN`: il valore non compare
 # negli argomenti). `scan` e `gate` non lo ricevono. Solo `scan` monta il socket del daemon.
@@ -16,7 +16,7 @@ args=(run --rm --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-p
   -v "$CA_WORKSPACE":/ca/workspace:ro -v "$CA_OUTPUT":/ca/output)
 
 case "$mode" in
-  scan)
+  scan | sbom)
     need CA_PUBLIC_KEY
     sock=/var/run/docker.sock
     args+=(--group-add "$(stat -c %g "$sock")" -v "$sock":"$sock"
@@ -24,9 +24,9 @@ case "$mode" in
       -v "$CA_PUBLIC_KEY":/ca/keys/cosign.pub:ro -e CA_COSIGN_PUBLIC_KEY=/ca/keys/cosign.pub
       -e CA_HOST_WORKSPACE="$CA_WORKSPACE" -e CA_HOST_WORK="$CA_WORK" -e CA_HOST_CACHE="$CA_CACHE")
     # Feed già presenti in $CA_CACHE: nessuna sincronizzazione.
-    if [ "${CA_OFFLINE:-}" = true ]; then set -- --offline "$@"; fi
+    if [ "$mode" = scan ] && [ "${CA_OFFLINE:-}" = true ]; then set -- --offline "$@"; fi
     ;;
-  gate) ;;
+  gate | export) ;;
   notify)
     need GITHUB_EVENT_PATH
     args+=(-e GITHUB_TOKEN -e GITHUB_REPOSITORY -e GITHUB_API_URL -e GITHUB_EVENT_PATH

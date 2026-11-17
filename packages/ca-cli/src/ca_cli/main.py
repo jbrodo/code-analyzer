@@ -17,7 +17,7 @@ from collections.abc import Callable, Generator, Sequence
 from pathlib import Path
 from types import FrameType
 
-from ca_cli import config_validate, gate, notify, sbom, scan
+from ca_cli import config_validate, export, gate, notify, sbom, scan
 from ca_cli.composition import Context, build_context
 from ca_core.models.scan_report import BaselineSourceKind, Isolation
 from ca_plugins.hostpaths import HostPathsError
@@ -32,6 +32,7 @@ HANDLERS: dict[tuple[str, str | None], Handler] = {
     ("sbom", None): sbom.handle,
     ("gate", None): gate.handle,
     ("notify", None): notify.handle,
+    ("export", None): export.handle,
     ("config", "validate"): config_validate.handle,
 }
 
@@ -84,6 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-partial", action="store_true", help="valuta anche una scansione parziale"
     )
     notify.add_parser(commands)
+    export.add_parser(commands)
     config = commands.add_parser("config", help="strumenti per .code-analyzer.yml")
     config_commands = config.add_subparsers(dest="config_command", metavar="COMMAND", required=True)
     validate = config_commands.add_parser("validate", help="valida .code-analyzer.yml offline")
@@ -152,7 +154,7 @@ def _confine_outputs(args: argparse.Namespace, root: Path) -> None:
     Un percorso relativo, predefiniti compresi, si legge rispetto a `root`: la directory
     corrente è il workspace, montato in sola lettura.
     """
-    for name in ("output_dir", "output", "report", "baseline"):
+    for name in ("output_dir", "output", "report", "baseline", "sbom"):
         value = getattr(args, name, None)
         if value is None:
             continue

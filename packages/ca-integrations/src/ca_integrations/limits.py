@@ -17,10 +17,11 @@ GITLAB_SCHEMA_VERSION: Final = "15.2.5"  # `version` dei report sast e dependenc
 GITLAB_NAME_MAX: Final = 255
 GITLAB_DESCRIPTION_MAX: Final = 1_048_576
 GITLAB_SOLUTION_MAX: Final = 7000
-# CycloneDX: il file è quello di `syft`, già 1.7 (ADR-0007). Le versioni che GitLab accetta per
-# l'analisi delle dipendenze non sono state verificate: N-06 le legge dalla documentazione e, se
-# 1.7 non è tra quelle, il report `cyclonedx` si pubblica comunque come artefatto generico.
-GITLAB_CYCLONEDX_VERIFIED: Final = False
+# CycloneDX: il file del prodotto è 1.7 (ADR-0007), ma GitLab accetta 1.4, 1.5 e 1.6
+# (documentazione di GitLab letta il 2026-11-17). L'export riporta il documento alla 1.6
+# (`EXPORT_CYCLONEDX_VERSIONS`) e lo valida contro lo schema 1.6 fissato; se usa qualcosa di
+# esclusivo della 1.7 non si scrive.
+GITLAB_CYCLONEDX_VERIFIED: Final = True
 
 # Gravità del formato `codequality` (Code Climate) e del formato dei report di sicurezza.
 CODEQUALITY_SEVERITIES: Final = ("info", "minor", "major", "critical", "blocker")

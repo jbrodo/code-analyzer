@@ -1145,14 +1145,14 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §14. ADR: 0005, 0027.
 
 #### N-06 — Report nativi di GitLab
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_integrations/gitlab/export.py` e comando `code-analyzer export --format gitlab [--sbom]`: `sast` (finding `sast`), `dependency_scanning` (`dependency`, con percorso e versione dal purl), `codequality` (`quality`, con percorso e riga) e CycloneDX. Ogni file è validato contro lo schema fissato prima di scrivere (nessun file se uno è invalido); i finding senza il dato richiesto o senza formato (segreti, licenze, IaC, architettura, test, salute) si contano e si dichiarano su stderr, mai inventati. **CycloneDX:** GitLab accetta 1.4, 1.5 e 1.6 (documentazione letta il 2026-11-17), il prodotto è 1.7: lo schema 1.6 è fissato in `vendor_schemas` (stesso commit di 1.7, manifest e ancora dell'hash aggiornati), il documento è riportato alla 1.6 e validato; se usa qualcosa di esclusivo della 1.7 non si scrive. La 1.6 vale solo in uscita (`EXPORT_CYCLONEDX_VERSIONS`), non come ingresso né per i plugin. Provato con dati veri nell'E2E dell'immagine: l'SBOM di syft riportato alla 1.6 e validato, `sast` col finding della PR simulata, `dependency_scanning` non vuoto. **Non fatto:** prova dei report su un'istanza GitLab (D2-12); il report `cyclonedx` è del livello Ultimate; versione e identificativi dello scanner sono provvisori (`ca-cli` come versione).
 - Percorsi: `packages/ca-integrations/src/ca_integrations/gitlab/`.
 - Dipende da: N-01, C-09.
 - Accettazione: report `sast`, `dependency_scanning`, `codequality` e `cyclonedx` dal report e dal SARIF, validati sugli schemi fissati di C-09.
 - Spec: §12.2. ADR: 0027.
 
 #### N-07 — Componente GitLab
-- Agente: `devops`. Stato: `IPOTESI` (D2-12).
+- Agente: `devops`. Stato: **scritto il 2026-11-17, mai eseguito su GitLab** (D2-12 resta aperta). `integrations/gitlab-component/templates/code-analyzer.yml`: controllo del daemon, scansione del base come baseline in una merge request, `scan --pr`, SBOM, `export`, `gate` per ultimo; registry delle immagini come input senza valore predefinito; artefatti nativi anche dopo un gate fallito. Provato come struttura e con lo script eseguito con `docker` finto (14 test). **Non fatto:** esecuzione su un'istanza, linter CI di GitLab, baseline da artefatto del branch principale, merge request da fork. **Vincolo scoperto:** la CLI non accetta un `DOCKER_HOST` remoto e vuole la stessa directory per job e daemon, quindi il solo Docker-in-Docker di ADR-0027 non basta: serve un runner con socket e `/builds` alla pari (scritto nel README del componente).
 - Percorsi: `integrations/gitlab-component/templates/code-analyzer.yml`.
 - Dipende da: N-06, I-01, L-01.
 - Accettazione: componente con il daemon di ADR-0027, registry delle immagini come input, artefatti nativi di N-06, job che fallisce secondo `gate.block_on`.
