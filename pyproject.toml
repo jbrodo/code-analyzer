@@ -61,6 +61,7 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # Workspace di prova scritti come stringhe: righe lunghe volute.
 "tests/unit/graph/*" = ["E501"]
+"tests/unit/test_ca_graph_plugin.py" = ["E501"]  # hash lunghi
 
 # ADR-0001: dipendenze interne solo verso ca-core.
 [tool.importlinter]

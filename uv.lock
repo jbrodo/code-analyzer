@@ -76,6 +76,7 @@ version = "0.0.0"
 source = { editable = "packages/ca-cli" }
 dependencies = [
     { name = "ca-core" },
+    { name = "ca-graph" },
     { name = "ca-plugins" },
     { name = "pyyaml" },
 ]
@@ -83,6 +84,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ca-core", editable = "packages/ca-core" },
+    { name = "ca-graph", editable = "packages/ca-graph" },
     { name = "ca-plugins", editable = "packages/ca-plugins" },
     { name = "pyyaml", specifier = ">=6" },
 ]

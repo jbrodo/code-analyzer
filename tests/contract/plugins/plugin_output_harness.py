@@ -23,6 +23,7 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parents[3]
 VENDOR = ROOT / "schemas" / "vendor"
 PROPERTIES_SCHEMA = ROOT / "schemas" / "plugin-sarif-properties.schema.json"
+GRAPH_SCHEMA = ROOT / "schemas" / "graph.schema.json"
 BUILTIN = ROOT / "packages" / "ca-plugins" / "src" / "ca_plugins" / "builtin"
 SAMPLES = ROOT / "tests" / "fixtures" / "plugin-output"
 
@@ -39,9 +40,11 @@ def load_json(path: Path) -> Any:
 
 
 def kind_of(path: Path) -> str:
-    """Formato dall'estensione: `.sarif`, `.cdx.json` (CycloneDX), altro = nativo del tool."""
+    """Formato dall'estensione: `.sarif`, `.cdx.json`, `.graph.json`, altro = nativo del tool."""
     if path.name.endswith(".sarif"):
         return "sarif"
+    if path.name.endswith(".graph.json"):
+        return "graph"
     if path.name.endswith(".cdx.json"):
         return "cyclonedx"
     return "native"
@@ -67,6 +70,11 @@ def _bom_validator() -> Draft7Validator:
         resources += [(contents["$id"], resource), (name, resource)]
     registry: Registry[Any] = Registry().with_resources(resources)
     return Draft7Validator(load_json(VENDOR / "bom-1.7.schema.json"), registry=registry)
+
+
+@cache
+def _graph_validator() -> Draft202012Validator:
+    return Draft202012Validator(load_json(GRAPH_SCHEMA))
 
 
 @cache
@@ -220,6 +228,12 @@ def cyclonedx_problems(
     )
 
 
+def graph_problems(document: Any) -> list[str]:
+    """Contratto `graph` (C-02), che rifiuta anche i percorsi con caratteri di controllo."""
+    problems = [f"{_where(e)}: {e.message[:120]}" for e in _graph_validator().iter_errors(document)]
+    return _limited(problems)
+
+
 def plugin_of(path: Path) -> str:
     """Nome del plugin dal campione: `bandit.sarif` -> `bandit`, `syft.cdx.json` -> `syft`."""
     return path.name.split(".", 1)[0]
@@ -234,6 +248,9 @@ def check_output(path: Path) -> dict[str, list[str]]:
     if kind == "cyclonedx":
         found = cyclonedx_problems(document)
         return {"cyclonedx": found} if found else {}
+    if kind == "graph":
+        found = graph_problems(document)
+        return {"graph": found} if found else {}
     raise ValueError(f"{path.name}: formato nativo, non e' un output di plugin conforme")
 
 
@@ -249,5 +266,9 @@ def discover_adapter_outputs(builtin: Path = BUILTIN) -> list[Path]:
     for plugin_dir in sorted(p for p in builtin.iterdir() if p.is_dir()):
         output = plugin_dir / "fixtures" / "output"
         if output.is_dir():
-            found += sorted(p for p in output.iterdir() if p.name.endswith((".sarif", ".cdx.json")))
+            found += sorted(
+                p
+                for p in output.iterdir()
+                if p.name.endswith((".sarif", ".cdx.json", ".graph.json"))
+            )
     return found

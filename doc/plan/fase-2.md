@@ -637,14 +637,14 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6.2. ADR: 0020, 0023.
 
 #### G-09 — Esecuzione isolata dell'estrazione
-- Agente: `devops`, con `backend`. Stato: `LIBERO`.
+- Agente: `devops`, con `backend`. Stato: **chiuso il 2026-11-17** per sviluppo e uso interno (firma e SBOM non fatti: servono cosign e syft). `builtin/ca_graph/`, immagine costruita e provata nel profilo duro con uscita identica all'estrazione in processo, 126 MB, circa 0,15 s sulle fixture. Il contesto di build include l'estrattore da `packages/ca-graph` tramite `deploy/docker/stage-context.sh` e `context.sources`, senza copiare il codice. Il manifest e l'adattatore condividono lo stesso limite di 64 MiB; un grafo oltre il limite è exit 5, un limite di file superato è exit 3. Il harness di contratto dei plugin ora conosce `.graph.json`.
 - Percorsi: `packages/ca-plugins/src/ca_plugins/builtin/ca_graph/`, `deploy/docker/`.
 - Dipende da: G-02, G-03.
 - Accettazione: immagine firmata con manifest, licenze e SBOM; gira con `network: none` e workspace in sola lettura; emette il grafo nel formato di C-02 entro `max_bytes`; test di contratto sul grafo emesso. Se ADR-0020 sceglie l'esecuzione sull'host, il task diventa la sola misura dei limiti sui pilota.
 - Spec: §7.2, §7.3. ADR: 0004, 0005, 0020.
 
 #### G-10 — Passo `build_graph` e finding di architettura
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/step.py`, agganciato in `ca_cli/scan.py` e a `normalize` con `extra_findings`. Fingerprint `kind` `architecture` stabile al variare delle righe e quando un ciclo cresce (provato), livello provvisorio `basso`/`default`, esclusioni applicate al grafo, passo idempotente e puro rispetto alle porte, fallimento dell'estrazione come finding `health` e scansione parziale. `scan` scrive `code-analyzer.graph.json`. ADR-0008 emendato. Gli smell usano ancora i predefiniti, senza la guardia dell'hub (X-02).
 - Percorsi: `packages/ca-core/src/ca_core/pipeline/`, `packages/ca-graph/`.
 - Dipende da: G-05, G-06, G-07, G-09, C-06, A-16.
 - Accettazione: passo idempotente e serializzabile come gli altri (ADR-0002); smell normalizzati in `Finding` con `category: architecture`, fingerprint stabile al variare delle righe; fallimento dell'estrazione come finding `health`.

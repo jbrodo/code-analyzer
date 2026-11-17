@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Comando code-analyzer"
 license = "GPL-3.0-only"
 requires-python = ">=3.14"
-dependencies = ["ca-core", "ca-plugins", "pyyaml>=6"]
+dependencies = ["ca-core", "ca-plugins", "ca-graph", "pyyaml>=6"]
 
 [project.scripts]
 code-analyzer = "ca_cli.main:main"
@@ -16,3 +16,4 @@ build-backend = "uv_build"
 [tool.uv.sources]
 ca-core = { workspace = true }
 ca-plugins = { workspace = true }
+ca-graph = { workspace = true }

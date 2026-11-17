@@ -13,8 +13,8 @@ mai nel codice. Il calcolo è deterministico: nodi e vicini in ordine lessicogra
 
 from dataclasses import dataclass
 
-from ca_core.models.graph import Graph, Metrics
-from ca_graph.deps import DependencyGraph, Options, build, instability
+from ca_core.models.graph import Graph
+from ca_graph.deps import DependencyGraph, Options, build, with_metrics
 
 
 @dataclass(frozen=True)
@@ -68,20 +68,14 @@ def normalized(raw: dict[str, float]) -> dict[str, float]:
 def with_pagerank(
     graph: Graph, options: Options | None = None, config: PageRankConfig | None = None
 ) -> Graph:
-    """Copia del grafo con `metrics` (G-04) e `pagerank` dei moduli considerati."""
-    deps = build(graph, options)
-    scores = normalized(pagerank(deps, config))
+    """Copia del grafo con `metrics` e `packages` (G-04) e il `pagerank` dei moduli considerati."""
+    base = with_metrics(graph, options)
+    scores = normalized(pagerank(build(graph, options), config))
     modules = []
-    for module in graph.modules:
-        if module.path not in scores:
-            modules.append(module.model_copy(update={"metrics": None}))
+    for module in base.modules:
+        if module.metrics is None or module.path not in scores:
+            modules.append(module)
             continue
-        fan_in, fan_out = len(deps.module_in[module.path]), len(deps.module_out[module.path])
-        metrics = Metrics(
-            fan_in=fan_in,
-            fan_out=fan_out,
-            instability=instability(fan_in, fan_out),
-            pagerank=scores[module.path],
-        )
+        metrics = module.metrics.model_copy(update={"pagerank": scores[module.path]})
         modules.append(module.model_copy(update={"metrics": metrics}))
-    return graph.model_copy(update={"modules": modules})
+    return base.model_copy(update={"modules": modules})

@@ -51,7 +51,7 @@ from ca_core.models.scan_report import (
     Warning_,
 )
 from ca_core.pipeline import publish as publish_step
-from ca_core.pipeline.exclusions import coverage_exclusions
+from ca_core.pipeline.exclusions import coverage_exclusions, effective_exclusions
 from ca_core.pipeline.normalize import NormalizeRequest, normalize
 from ca_core.pipeline.publish import publish
 from ca_core.pipeline.run_plugins import RunPluginsRequest, run_plugins
@@ -66,10 +66,12 @@ from ca_core.ports import (
     SourceError,
     SourceReader,
 )
+from ca_graph.step import BuildGraphRequest, build_graph
 from ca_plugins.feeds import FeedsError, FeedsOutcome, default_cache_dir, ensure_snapshot
 from ca_plugins.runner import require_isolation
 from ca_plugins.source import count_skipped_symlinks, count_unreadable
 
+GRAPH_FILE = "code-analyzer.graph.json"  # grafo con metriche e PageRank (G-10)
 REPORT_FILE = publish_step.REPORT_NAME  # alias (ADR-0010): `gate.DEFAULT_REPORT` non cambia
 _COMMIT = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 _REF = re.compile(r"refs/[A-Za-z0-9._/-]{1,200}")
@@ -322,6 +324,19 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             run = execution.run.model_copy(update={"feed": outcome.feed})
             execution = execution.model_copy(update={"run": run})
         executions.append(execution)
+    # G-10: dal grafo del plugin `ca-graph` agli smell; se il grafo non serve il plugin diventa
+    # fallito e `normalize` ne fa un finding `health` (scansione parziale).
+    graph_step = build_graph(
+        BuildGraphRequest(
+            repository=name,
+            commit=commit,
+            executions=executions,
+            exclude=effective_exclusions(config.paths.exclude),
+        ),
+        context.source,
+        context.clock,
+    )
+    executions = graph_step.executions
     normalized = normalize(
         NormalizeRequest(
             repository=name,
@@ -329,6 +344,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             workspace=root,
             executions=executions,
             config=config,
+            extra_findings=graph_step.findings,
         ),
         context.source,
         store,
@@ -379,6 +395,11 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         raise ScanError(f"report non valido: {exc.__class__.__name__}") from exc
     except OSError as exc:
         raise ScanError("scrittura degli artefatti non riuscita") from exc
+    if graph_step.graph is not None:
+        try:
+            sink.write(GRAPH_FILE, graph_step.graph.model_dump_json(exclude_none=True).encode())
+        except OSError as exc:
+            raise ScanError("scrittura degli artefatti non riuscita") from exc
 
     if args.format == "json":
         sys.stdout.write(sink.contents[REPORT_FILE].decode())

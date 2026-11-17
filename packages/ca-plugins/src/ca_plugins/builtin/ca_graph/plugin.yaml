@@ -1,0 +1,33 @@
+# Plugin ca-graph (G-09): grafo dei moduli di Python, JS, TS e TSX con tree-sitter. ADR-0004, 0005,
+# 0007, 0020. Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`)
+# perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e
+# sign-local.sh.
+#
+# Il parser e' un componente in C che legge file non fidati: gira solo qui, in un container firmato
+# senza rete, con il workspace in sola lettura (ADR-0020, S-02). Emette un dato (`outputs.graph`,
+# contratto `graph`); metriche e smell li calcola l'host.
+apiVersion: code-analyzer/v1
+name: ca-graph
+version: 1.0.0
+image: registry.invalid/ca-plugins/ca-graph:1.0.0
+capabilities: [detect]
+languages: [python, javascript, typescript]
+categories: [architecture]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  graph: /out/graph.json
+  # Provvisorio, da confermare in X-04 sui pilota: un modulo con i suoi archi pesa nell'ordine delle
+  # centinaia di byte (saleor: 4.384 moduli e circa 26 mila archi, qualche MB). 64 MiB coprono oltre
+  # 100 mila moduli; l'adattatore usa lo stesso valore.
+  max_bytes: 67108864
+resources:
+  # Provvisorie fino alla misura sui pilota (X-05): V-07 ha misurato 42 MB e meno di 6 s sul pilota
+  # piu' grande con una visita semplice; la risoluzione degli import non e' ancora misurata.
+  cpu: "1"
+  memory: 1Gi
+  timeout: 300s
+  pids: 16
+network: none

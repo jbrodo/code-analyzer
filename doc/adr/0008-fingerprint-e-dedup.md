@@ -62,7 +62,17 @@ Nuova riga della tabella, senza toccare la formula né i `kind` esistenti (ADR-0
 | --- | --- | --- | --- | --- |
 | `coverage` | `ca.coverage.low-file-coverage` | `coverage` | percorso | vuoto |
 
-Nessuna riga né contesto di codice: spostare righe non cambia il fingerprint. L'implementazione è `ca_core.fingerprint.fingerprint_coverage`. `architecture` (ADR-0020) avrà il suo `kind` con G-10.
+Nessuna riga né contesto di codice: spostare righe non cambia il fingerprint. L'implementazione è `ca_core.fingerprint.fingerprint_coverage`. `architecture` ha il suo `kind` dal 2026-11-17 (G-10), qui sotto.
+
+## Emendamento per G-10 (2026-11-17): `kind` `architecture`
+
+Nuova riga della tabella, senza toccare la formula né i `kind` esistenti (ADR-0020):
+
+| `kind` | `rule_id` | `tool_family` | `normalized_location` | `component` |
+| --- | --- | --- | --- | --- |
+| `architecture` | `ca.arch.cyclic-dependency`, `ca.arch.hub-like-dependency` o `ca.arch.unstable-dependency` | `ca-graph` | `ambito` NUL `ancora` | vuoto |
+
+`ambito` è `module` o `package`; `ancora` è il percorso del file o della cartella (`.` per il pacchetto radice, ammesso solo con ambito `package`). Nessuna riga né contesto di codice. Per un ciclo l'ancora è il primo membro in ordine lessicografico: un membro in più non cambia il fingerprint, ma un membro che precede l'ancora lo cambia (limite accettato, ADR-0020). L'implementazione è `ca_core.fingerprint.fingerprint_architecture`.
 
 ## Conseguenze
 

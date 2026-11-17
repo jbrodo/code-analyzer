@@ -1,0 +1,6 @@
+# File di altri pacchetti che il contesto di build include (deploy/docker/stage-context.sh).
+# L'estrattore e' un solo: `ca_graph.treesitter` vive in packages/ca-graph e non si copia nel
+# repository. `ca_graph/__init__.py` e' solo un docstring: il resto del pacchetto (deps, smells,
+# pagerank, step) importa `ca_core` e resta sull'host (ADR-0020).
+packages/ca-graph/src/ca_graph/__init__.py ca_graph/__init__.py
+packages/ca-graph/src/ca_graph/treesitter ca_graph/treesitter
