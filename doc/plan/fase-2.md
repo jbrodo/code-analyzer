@@ -609,28 +609,28 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §3, §6.2. ADR: 0020.
 
 #### G-05 — Smell Cyclic Dependency
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/smells/cycles.py`. Componenti fortemente connesse (Tarjan iterativo, provato su 20.000 nodi e contro un algoritmo ingenuo su grafi casuali) a livello di modulo e di pacchetto, dimensione minima e livelli attivi in `SmellConfig`, evidenza con livello, dimensione, archi e membri (al più 20). Le fixture F-01 danno il ciclo di 3 moduli e quello di 2 pacchetti in entrambe le lingue, e nessuno dei negativi. **Le definizioni degli smell sono ancora trascritte a memoria** (nota di ADR-0020, richiesta di A-05): vanno confrontate con le pubblicazioni prima di fidarsi dei primi risultati.
 - Percorsi: `packages/ca-graph/src/ca_graph/smells/`.
 - Dipende da: G-04, F-01.
 - Accettazione: cicli di F-01 trovati, casi negativi assenti, soglie lette dalla configurazione, dimensione del ciclo nell'evidenza.
 - Spec: §6.2. ADR: 0020.
 
 #### G-06 — Smell Hub-Like Dependency
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `smells/hub.py`: fan-in e fan-out entrambi sopra la mediana (stretta), sbilanciamento sotto `hub_balance` e grado minimo `hub_min_degree`, tutti in `SmellConfig`. Provato che senza la guardia il rumore di grado 1/1 compare (`billing/c`, `catalog/price`), e che con la guardia a 6 resta solo l'hub vero; utility e punti d'ingresso non lo sono mai. Stessa avvertenza sulla definizione trascritta a memoria.
 - Percorsi: `packages/ca-graph/src/ca_graph/smells/`.
 - Dipende da: G-04, F-01.
 - Accettazione: come G-05 per gli hub.
 - Spec: §6.2. ADR: 0020.
 
 #### G-07 — Smell Unstable Dependency
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `smells/unstable.py`: un pacchetto con una dipendenza verso uno con instabilità *maggiore*; l'uguaglianza non conta, quindi un ciclo tra pacchetti pari non genera questo smell. Grado e dipendenze minime in `SmellConfig`. F-01: `stable → volatile` trovata, negativi assenti. Stessa avvertenza.
 - Percorsi: `packages/ca-graph/src/ca_graph/smells/`.
 - Dipende da: G-04, F-01.
 - Accettazione: come G-05 per le dipendenze instabili.
 - Spec: §6.2. ADR: 0020.
 
 #### G-08 — PageRank
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**; `ca_graph/pagerank.py`. Arco A→B = «A dipende da B», nodi pendenti con massa distribuita su tutti, parametri in `PageRankConfig`, uscita grezza che somma a 1 e `normalized` che divide per il massimo (il più critico vale 1). Provato su valori noti (due moduli, ciclo, stella, assenza di archi), su proprietà con hypothesis (distribuzione, intervallo, indipendenza dall'ordine byte per byte) e su F-01. **La normalizzazione per il massimo è una mia scelta**: §6.2 dice solo «normalizzato in [0,1]» e ADR-0023 (A-08) non esiste ancora; min-max darebbe 0 a un grafo uniforme.
 - Percorsi: `packages/ca-graph/src/ca_graph/pagerank.py`.
 - Dipende da: G-04.
 - Accettazione: PageRank normalizzato in [0,1], parametri in configurazione, verificato su grafi con risultato noto e con test di proprietà.

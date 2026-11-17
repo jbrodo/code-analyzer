@@ -25,3 +25,8 @@ def edges(document: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
 
 def modules(document: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {m["path"]: m for m in document["modules"]}
+
+
+def extract(root: Path) -> dict[str, Any]:
+    """Grafo di un repository già scritto su disco (le fixture)."""
+    return extract_graph(str(root))

@@ -146,3 +146,13 @@ Scritta il 2026-11-17, a codice provato. L'estrazione sta in `ca_graph/treesitte
 `ca_graph.deps` calcola sui dati del grafo: Ca e Ce sono il numero di nodi *distinti* che dipendono dal nodo e da cui dipende (cinque import verso lo stesso modulo sono un arco), tra pacchetti contano solo gli archi tra cartelle diverse, e `I = Ce / (Ca + Ce)` vale 0 per un nodo isolato. Una cartella con soli moduli di test non è un pacchetto. Le metriche già presenti in un grafo non si conservano: dipendono dalle opzioni (moduli di test, archi di soli tipi) e le ricalcola sempre l'host.
 
 **Nota per gli smell (G-06).** Con la definizione di Hub-Like scritta sopra e una mediana di fan-in e fan-out pari a 0 (la norma, perché la maggior parte dei moduli è foglia o isolata), basta un arco in entrata e uno in uscita per superare la mediana: un modulo di catena con grado 2 risulta un hub. La guardia «grado totale minimo», che sopra vale 0 e quindi è spenta, serve a questo: le fixture di F-01 la fissano a 6, e X-02 la tara sui dati reali. Va tenuto presente prima di leggere i primi risultati.
+
+### Smell e PageRank sull'host (G-05..G-08, 2026-11-17)
+
+`ca_graph.smells` restituisce `Smell` (regola, ambito, ancora, membri, evidenza), che G-10 trasformerà in `Finding`; `ca_graph.pagerank` calcola la criticità. Tutte le soglie sono in `SmellConfig` e `PageRankConfig`, con i valori predefiniti di questo ADR, finché non esiste la configurazione di scoring (C-03).
+
+- **Cicli.** Tarjan iterativo, quindi nessun limite alla lunghezza di una catena. Un modulo che importa se stesso non arriva agli smell: il contratto `graph` lo rifiuta. L'evidenza porta livello, dimensione, numero di archi nel ciclo e i primi 20 membri.
+- **Hub.** Mediana stretta su tutti i moduli considerati, isolati compresi.
+- **Dipendenza instabile.** Stretta: `I(D) > I(P)`. L'uguaglianza non basta, quindi `billing` e `ledger` nelle fixture, in ciclo con la stessa instabilità, non sono una dipendenza instabile.
+- **PageRank.** Il valore grezzo somma a 1; il valore del grafo (`metrics.pagerank`) è il grezzo diviso per il massimo, quindi il modulo più critico vale 1 e un grafo senza archi vale 1 per tutti. È una scelta di questa realizzazione: ADR-0023 potrà sceglierne un'altra (per esempio min-max) senza toccare l'algoritmo.
+- **Ancora da fare.** Le definizioni di Cyclic, Hub-Like e Unstable Dependency restano quelle trascritte a memoria: nessuna delle tre è stata confrontata con le pubblicazioni di §19. Gli attesi di F-01 provano che il codice fa ciò che questo testo dice, non che questo testo sia quello delle pubblicazioni.
