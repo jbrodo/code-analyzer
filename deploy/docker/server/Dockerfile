@@ -8,13 +8,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY requirements.txt /requirements.txt
 COPY dist/ /dist/
+COPY web/ /srv/web/
 # Dipendenze di terzi dal lock del repository, con hash: mai risolte durante la build.
 RUN pip install --no-cache-dir --require-hashes --no-deps -r /requirements.txt \
  && pip install --no-cache-dir --no-deps /dist/*.whl \
  && rm -rf /dist /requirements.txt \
+ && chmod -R a=rX /srv/web \
  && mkdir -p /var/lib/ca/artifacts && chown 65532:65532 /var/lib/ca/artifacts && chmod 700 /var/lib/ca/artifacts
 
 USER 65532:65532
 EXPOSE 8000
-ENV CA_API_ARTIFACTS_DIR=/var/lib/ca/artifacts
+ENV CA_API_ARTIFACTS_DIR=/var/lib/ca/artifacts \
+    CA_API_WEB_DIR=/srv/web
 ENTRYPOINT ["python", "-m", "uvicorn", "ca_api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

@@ -6,6 +6,7 @@
 #   export CA_DEV_DB_PASSWORD="$(openssl rand -hex 16)"
 #   docker compose -f deploy/compose/server-dev.yaml up -d --wait
 #   curl -s http://127.0.0.1:8000/v1/health
+#   CA_UPLOAD_ALLOW_LOOPBACK_HTTP=1 uv run python deploy/compose/seed_dev.py   # dati di prova
 #   docker compose -f deploy/compose/server-dev.yaml down --volumes
 #
 # Porte: CA_API_PORT (default 8000) e CA_DB_PORT (default 55432, per non scontrarsi con un PostgreSQL locale), sempre su 127.0.0.1.
@@ -16,7 +17,8 @@
 #   curl -s -X POST "http://127.0.0.1:9000/user/token?sub=ada&groups=admins,approvers"
 #   curl -s -X POST "http://127.0.0.1:9000/github/token?repository=acme/shop&repository_id=9001"
 # Il tenant `dev` lo crea il servizio `migrate`, che applica anche le migrazioni.
-# La SPA non e' qui: la serve l'immagine di rilascio (I-03); in sviluppo `bun run --cwd web dev`.
+# La SPA e' nell'immagine di sviluppo: dopo `up`, aprire http://127.0.0.1:8000 (l'IdP finto va lasciato
+# sulla porta 9000, quella di web/public/config.json). Con le modifiche alla SPA: `bun run --cwd web dev`.
 
 name: ca-server-dev
 
@@ -93,6 +95,8 @@ services:
       CA_API_ARTIFACTS_DIR: /var/lib/ca/artifacts
       CA_API_DATABASE_URL: postgresql+pg8000://ca:${CA_DEV_DB_PASSWORD}@db:5432/code_analyzer
       CA_API_AUTH_FILE: /etc/ca/auth.json
+      # la SPA parla con l'IdP finto: l'origine che la CSP deve ammettere (porta 9000, come web/public/config.json)
+      CA_API_CSP_CONNECT: http://127.0.0.1:${CA_IDP_PORT:-9000}
     volumes:
       - artifacts:/var/lib/ca/artifacts
       - ./dev-auth.json:/etc/ca/auth.json:ro

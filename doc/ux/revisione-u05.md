@@ -7,13 +7,15 @@ gravità e criterio, e l'utente decide se correggerlo o accettarlo.
 ## Preparazione
 
 ```
-deploy/docker/server/build-dev-image.sh
+deploy/docker/server/build-dev-image.sh        # richiede uv, bun 1.4.4 e docker
 export CA_DEV_DB_PASSWORD="$(openssl rand -hex 16)"
 docker compose -f deploy/compose/server-dev.yaml up -d --wait
 CA_UPLOAD_ALLOW_LOOPBACK_HTTP=1 uv run python deploy/compose/seed_dev.py
-bun install --cwd web --frozen-lockfile
-bun run --cwd web dev          # http://localhost:5173
 ```
+
+Poi aprire `http://127.0.0.1:8000`: l'immagine di sviluppo serve anche la SPA (l'IdP finto resta sulla porta 9000).
+Per rivedere modifiche alla SPA senza ricostruire l'immagine: `bun install --cwd web --frozen-lockfile` e
+`bun run --cwd web dev` (poi `http://localhost:5173`).
 
 All'accesso l'IdP finto fa scegliere un ruolo: usare «tutti i ruoli» per il triage, «lettore» per verificare
 che le azioni non si vedano, «triage» per vedere le azioni da approvatore disattivate con il motivo.
