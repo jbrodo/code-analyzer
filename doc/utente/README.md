@@ -2,7 +2,7 @@
 
 La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate. In Fase 2 sa anche confrontare una PR con una baseline, commentare la PR su GitHub e produrre i report nativi di GitLab.
 
-Altre pagine: [modalità PR e baseline](pull-request.md), [GitHub: Action, commento e check run](ci-github.md), [GitLab: componente e report nativi](ci-gitlab.md), [server](server.md), [livelli, punteggi e varianti](livelli-e-punteggi.md).
+Altre pagine: [modalità PR e baseline](pull-request.md), [GitHub: Action, commento e check run](ci-github.md), [GitLab: componente e report nativi](ci-gitlab.md), [invio al server](server.md), [la dashboard](dashboard.md), [livelli, punteggi e varianti](livelli-e-punteggi.md).
 
 **Stato.** Non esiste ancora un rilascio: il pacchetto si costruisce con `deploy/docker/package-cli.sh`, che firma le immagini con una chiave di prova su un registry locale (D-0005).
 
@@ -32,8 +32,9 @@ In alternativa all'installazione, la CLI gira in un container che avvia i plugin
 | `sbom [PATH] [--format cyclonedx] [--output FILE]` | Genera con syft l'SBOM CycloneDX 1.7 di `PATH`, su stdout o in `FILE` | 0 SBOM prodotto; 2 errore |
 | `notify --provider github [--report FILE] [--no-comment] [--no-check-run] [--max-findings N] [--max-annotations N]` | Scrive il commento sulla PR e la check run dal report (token in `GITHUB_TOKEN`) | 0 fatto o saltato con avviso; 2 errore; mai 1 |
 | `export --format gitlab [--report FILE] [--sbom FILE] [--output-dir DIR]` | Scrive i report nativi di GitLab dal report | 0 fatto; 2 errore |
+| `upload --server URL [--report FILE] [--audience A]` | Invia report, SARIF, SBOM e grafo al server con il token OIDC della CI (facoltativo, [server.md](server.md)) | 0 inviato o già presente; 2 errore |
 
-Le opzioni di PR sono in [pull-request.md](pull-request.md). `scan`, `notify` ed `export` non escono mai con 1: a decidere è solo `gate`. Un'interruzione o un errore inatteso danno sempre 2.
+Le opzioni di PR sono in [pull-request.md](pull-request.md). `scan`, `notify`, `export` e `upload` non escono mai con 1: a decidere è solo `gate`. Un'interruzione o un errore inatteso danno sempre 2.
 
 ### `scan`
 
