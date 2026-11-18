@@ -191,6 +191,36 @@ Trovate durante la stesura. Ognuna ha un ADR o una decisione nella tabella prece
 24. **`--variant` e `scoring.variant`.** §9.1 ha un flag, §8 una chiave del repository; manca la precedenza. ADR-0021 e A-16 su ADR-0010.
 25. **Duplicati tra tool.** ADR-0008 non fonde SAST di scanner diversi sulla stessa riga. Con checkov, hadolint e trivy sugli stessi Dockerfile e manifest il problema cresce e falsa l'ordinamento di G2.b. ADR-0026, K-21.
 
+Esito di A-16 e A-17 al 2026-11-18, voce per voce:
+
+| # | Dove è risolta | Stato |
+| --- | --- | --- |
+| 1 | D2-01, ADR-0016, ADR-0002 (emendamento), `PROJECT.md` §2 e §5 | Risolta: Temporal non è in Fase 2 |
+| 2 | `PROJECT.md` §13 (G2.d nel testo del Gate 2), sezione 2 di questo piano | Risolta |
+| 3 | D2-10, ADR-0021, `PROJECT.md` §6 | Risolta: ombra con `levels.source: provisional` fino al Gate 2 |
+| 4 | ADR-0021, `PROJECT.md` §6.3, regola 3 di `AGENTS.md` | Risolta: soglie nel file di scoring |
+| 5 | ADR-0021 e ADR-0022; «segreto valido» non applicabile (§6.3) | Risolta per la Variante A |
+| 6 | ADR-0023, D2-11 | **Aperta**: la Variante B coincide con A (K-06..K-10) |
+| 7 | ADR-0022, K-04, G-12 | Risolta |
+| 8 | ADR-0028, D2-04, `PROJECT.md` §8 | Risolta: fonte attendibile = server o `--service-context` |
+| 9 | ADR-0029, C-01 (`remediation`) | Risolta |
+| 10 | ADR-0018 (schema per tenant); pgvector in Fase 3 (`PROJECT.md` §2) | Risolta |
+| 11 | ADR-0018, ADR-0029, `PROJECT.md` §9.2 | Risolta |
+| 12 | ADR-0027, D2-13, ADR-0010 (emendamento), `PROJECT.md` §12.1 | Risolta |
+| 13 | D2-12 (rimandata), `PROJECT.md` §12.2 | **Aperta**: componente mai eseguito su GitLab |
+| 14 | ADR-0020, `PROJECT.md` §3 (`builtin/ca_graph`) | Risolta |
+| 15 | ADR-0026 | Risolta |
+| 16 | D2-07, ADR-0030, `PROJECT.md` §2 | Risolta: nessun server di object storage |
+| 17 | `PROJECT.md` §2; `requires-python` e `target-version` di ruff a 3.14 | Risolta |
+| 18 | ADR-0027, ADR-0001 (emendamento) | Risolta: `ca-cli` importa `ca-integrations` |
+| 19 | D2-03 | Risolta con un validatore unico; **G2.b ancora da fare** (X-02, X-03) |
+| 20 | `PROJECT.md` §6.2, sezione 6 di questo piano | Rinviata alla Fase 4 |
+| 21 | Sezione 6 di questo piano | Fuori ambito |
+| 22 | ADR-0016 (metriche), `PROJECT.md` §2 | Risolta: Grafana in Fase 4 |
+| 23 | ADR-0006 (emendamento D2-09) | Risolta |
+| 24 | ADR-0021, ADR-0010 (emendamento), `PROJECT.md` §6 | Risolta |
+| 25 | ADR-0026, K-21 (`ca_core/correlation.py`), ADR-0008 (verifica) | Risolta; la misura sull'ordinamento di G2.b resta |
+
 ## 6. Fuori ambito (Fase 3 e successive)
 
 - Dashboard portfolio, aggregati e trend in UI, grafici del grafo: Fase 4 (decisione dell'utente).
@@ -413,14 +443,14 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §2, §15. ADR: 0001, 0013.
 
 #### A-16 — Emendamenti agli ADR esistenti
-- Agente: `architect`. Stato: `LIBERO`; la parte su ADR-0006 è `IPOTESI` (D2-09).
+- Agente: `architect`. Stato: **chiuso il 2026-11-18**. Emendamenti con data e motivo in ADR-0001 (pacchetti e nove contratti `import-linter`), 0002 (D2-01), 0006 (origine dei feed e mirror), 0009 (superata solo con `levels.source: score`), 0010 (comandi e opzioni di Fase 2), 0015 (motori e componenti nuovi, D2-14); verificati 0008 e 0013 (nessun cambiamento oltre ai `kind` e alla riga già aggiunti). `doc/adr/README.md` aggiornato: ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove nel codice (0020, 0021, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione); lacune 1–6, 11 e 12 marcate come risolte con l'ADR che le chiude, salvo la 5 per la sola Variante B. La parte su ADR-0006 non è più `IPOTESI`: D2-09 è decisa.
 - Percorsi: `doc/adr/0001-*.md`, `0002`, `0006`, `0008`, `0009`, `0010`, `0013`, `doc/adr/README.md`.
 - Dipende da: A-01, A-05, A-06, A-09, A-10, A-11.
 - Accettazione: gli emendamenti elencati in sezione 4, ciascuno con data e motivo; `README.md` aggiornato; lacune 1–6, 11 e 12 marcate come risolte con l'ADR che le chiude.
 - Spec: §3, §5, §9.1. ADR: tutti.
 
 #### A-17 — Allineare `doc/PROJECT.md`
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-18**. `doc/PROJECT.md` allineato: §2 (Python 3.14, niente Temporal, archivio degli artefatti senza MinIO, osservabilità), §3 (albero dei pacchetti e delle cartelle com'è), §5 (passi in sequenza, PR non ristretta ai file cambiati), §6 (variante attiva, ombra, intervalli semiaperti e soglie nel file di scoring), §8 (che cosa il file del repository non porta), §9 (comandi e percorsi veri, ruoli), §12.1 e §12.2 (Action composita nel monorepo, `export` e `gate`), §13 (stato voce per voce e G2.d) e §14. Tabella con l'esito di ognuna delle venticinque voci della sezione 5 qui sopra. Anche `target-version` di ruff a 3.14, con le sole correzioni automatiche di stile (47 righe). Le voci 6, 13 e 19 restano aperte.
 - Percorsi: `doc/PROJECT.md`.
 - Dipende da: A-01..A-16.
 - Accettazione: §2 (Temporal, MinIO, versione di Python), §3 (pacchetti e cartelle nuovi), §5, §6.3, §8, §9, §12.1 (forma dell'Action), §13 (Gate 2 con G2.d) e §14 coerenti con gli ADR; nessuna incoerenza della sezione 5 lasciata senza riferimento.
@@ -1196,7 +1226,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.2. ADR: 0004, 0005.
 
 #### I-03 — Immagine del server
-- Agente: `devops`. Stato: **chiuso il 2026-11-18** (D2-07 decisa il 2026-11-16), senza firma né pubblicazione (D2-16). `Dockerfile.release` e `build-release-image.sh`: l'API con la SPA compilata, utente non root, file system in sola lettura, nessun segreto, licenze e SBOM verificati da `image-gate.sh`. Nuovo `ca_api/spa.py` (indirizzi delle viste, nessuna uscita dalla cartella, configurazione dell'ambiente, Content-Security-Policy con nonce per gli stili iniettati); 19 test e il browser vero contro l'immagine. Vedi ADR-0030. **Limiti:** insieme delle licenze della SPA più largo del bundle (una senza file di licenza); parere di S-01 sulla politica non c'è; non firmata; non provata con S3 né dietro un proxy.
+- Agente: `devops`. Stato: **chiuso il 2026-11-18** (D2-07 decisa il 2026-11-16), senza firma né pubblicazione (D2-16). `Dockerfile.release` e `build-release-image.sh`: l'API con la SPA compilata, utente non root, file system in sola lettura, nessun segreto, licenze e SBOM verificati da `image-gate.sh`. Nuovo `ca_api/spa.py` (indirizzi delle viste, nessuna uscita dalla cartella, configurazione dell'ambiente, Content-Security-Policy con nonce per gli stili iniettati); 19 test e il browser vero contro l'immagine. Vedi ADR-0030. **Limiti:** insieme delle licenze della SPA più largo del bundle (una senza file di licenza); la CSP realizza S1-M2 di S-01 (revisione di progetto non indipendente), manca la revisione sul codice di S-06; non firmata; non provata con S3 né dietro un proxy.
 - Percorsi: `deploy/docker/server/`.
 - Dipende da: B-01, W-01.
 - Accettazione: immagine dell'API con la SPA compilata, utente non root, nessun segreto, licenze e SBOM.

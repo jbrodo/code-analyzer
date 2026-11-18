@@ -27,16 +27,16 @@ Ambito MVP: **Python e JavaScript/TypeScript**. Fasi successive: Java/Kotlin, Go
 
 | Livello | Scelta | Note |
 | --- | --- | --- |
-| Linguaggio core | Python 3.12+ | Gestione dipendenze con `uv` |
-| Orchestrazione | Temporal (Python SDK) | Workflow durevoli, retry, ripresa |
-| API | FastAPI + Pydantic v2 | OpenAPI generata automaticamente |
-| UI | React + TypeScript + Vite | Pacchetto separato `web/` |
-| Database | PostgreSQL 16 + pgvector | Migrazioni con Alembic |
-| Object storage | S3 / MinIO | SARIF, SBOM, report grezzi |
+| Linguaggio core | Python 3.14 (`requires-python >= 3.14`) | Gestione dipendenze con `uv`; la CI usa la stessa versione |
+| Orchestrazione | La CLI esegue i passi del nucleo in sequenza (ADR-0002); il server non esegue scansioni (ADR-0016) | Temporal non è in Fase 2: tornerebbe solo se una fase futura lo richiedesse |
+| API | FastAPI + Pydantic v2 | OpenAPI generata e verificata in CI (ADR-0017); nessuna sessione: token OIDC (ADR-0019) |
+| UI | React + TypeScript + Vite, gestita con Bun | Pacchetto separato `web/`; in Fase 2 la serve lo stesso processo dell'API (I-03, ADR-0030) |
+| Database | PostgreSQL 16, uno schema per tenant (ADR-0018); pgvector dalla Fase 3 | SQLAlchemy 2 e pg8000; migrazioni con Alembic |
+| Archivio degli artefatti | Porta `ArtifactStore`: file system (sviluppo e pilota) o S3 generico con il client `boto3` (ADR-0030) | Report, SARIF, SBOM e grafo; nessun server di object storage incluso nel prodotto (MinIO escluso per la sua licenza) |
 | Parsing codice | tree-sitter (py-tree-sitter) | Grammatiche Python, JS, TS, TSX |
-| Isolamento plugin | Sul server gVisor (runsc) o Firecracker; in CI e in locale `hardened-container` (ADR-0004) | Rete disattivata per default |
-| Deploy | Kubernetes + Helm; immagine CLI unica | Stesso motore in CI, server e locale |
-| Osservabilità (interna) | OpenTelemetry → Collector → Tempo / Loki / Prometheus → Grafana | |
+| Isolamento plugin | `hardened-container` in CI e in locale, gVisor (runsc) dove disponibile; Firecracker non è in Fase 2 (ADR-0004) | Rete disattivata per default |
+| Deploy | Fase 2: immagine CLI, immagine del server (API e SPA) e compose di sviluppo; Kubernetes e Helm in Fase 4 | Stesso motore in CI e in locale; il server riceve i report |
+| Osservabilità (interna) | Fase 2: metriche OpenTelemetry del server con esportazione OTLP opzionale e spenta (ADR-0016); Collector, Tempo, Loki, Prometheus e Grafana in Fase 4 | |
 | Modello decisionale | Laya (Apache 2.0) dietro interfaccia astratta | Alternative: jevos (CPU), Jev (API) |
 | LLM generativi | Interfaccia astratta; provider a zero retention o self-hosted | Configurabile per tenant |
 
@@ -51,77 +51,84 @@ code-analyzer/
 ├── packages/
 │   ├── ca-core/                   # modello dati, scoring, normalizzazione
 │   │   └── src/ca_core/
-│   │       ├── models/            # Finding, Component, Graph, Scan (Pydantic)
-│   │       ├── pipeline/          # passi della scansione (Fase 1, senza Temporal)
+│   │       ├── models/            # finding, scan_report, graph, config, scoring_config, plugin_manifest, ...
+│   │       ├── pipeline/          # passi della scansione, senza Temporal (ADR-0002): workspace,
+│   │       │                      #   run_plugins, normalize, exceptions, baseline, diff_baseline, gate, publish
 │   │       ├── policy/            # licenze
-│   │       ├── ports.py           # interfacce verso esecutore, sorgenti, artefatti
+│   │       ├── ports.py           # interfacce verso esecutore, sorgenti, artefatti, feed, storia git, baseline
 │   │       ├── sarif/             # parser/serializer SARIF 2.1.0
-│   │       ├── sbom/              # CycloneDX 1.7, SPDX 3.0
-│   │       ├── fingerprint.py
-│   │       ├── normalize.py       # SARIF+CycloneDX → modello comune
-│   │       ├── dedup.py
-│   │       ├── vex.py
+│   │       ├── sbom/              # CycloneDX 1.7 (SPDX 3.0 non in Fase 2)
+│   │       ├── fingerprint.py  normalize.py  dedup.py  correlation.py
+│   │       ├── schema_export.py  schema_validation.py  vendor_schemas/
 │   │       └── scoring/
-│   │           ├── base.py        # interfaccia ScoringModel
-│   │           ├── variant_a.py   # G·P·E·C generico
-│   │           ├── variant_b.py   # G·P·E·C basato sulle pubblicazioni
-│   │           ├── levels.py      # soglie e override
-│   │           └── feeds/         # EPSS, KEV (Fase 2)
+│   │           ├── base.py        # ScoringContext, Factor, impatto e arrotondamento
+│   │           ├── variant_a.py   # G e P della Variante A; exposure.py (E), service.py (C)
+│   │           ├── models.py      # A e B in ombra; B coincide con A dove non è definita (ADR-0021)
+│   │           ├── levels.py  overrides.py  score.py   # livelli da configurazione, override, ordinamento
+│   │           ├── churn.py  reach.py  config.py  default.json   # configurazione di scoring completa
+│   │           └── feeds/         # limiti, lettura difensiva e istantanea di EPSS e KEV (ADR-0024)
 │   ├── ca-graph/                  # grafo del codice e dell'architettura
 │   │   └── src/ca_graph/
-│   │       ├── treesitter/        # estrattori per linguaggio
-│   │       ├── deps.py            # grafo dipendenze tra moduli
+│   │       ├── treesitter/        # estrattori per linguaggio, entrypoint, storia git; solo nell'immagine
+│   │       ├── deps.py            # grafo dipendenze tra moduli e pacchetti
 │   │       ├── smells/            # cyclic, hub-like, unstable dependency
-│   │       ├── pagerank.py
-│   │       └── reconstruct/       # (Fase 4) codice + Helm/K8s/Terraform/CI
+│   │       ├── pagerank.py  reachability.py  step.py  import_names.py
+│   │       └── (reconstruct/)     # Fase 4: codice + Helm/K8s/Terraform/CI
 │   ├── ca-plugins/                # adattatori verso gli scanner esterni
 │   │   └── src/ca_plugins/
-│   │       ├── sdk.py             # contratto plugin (§7)
-│   │       ├── runner.py          # esecuzione in sandbox
+│   │       ├── sdk.py  runner.py  signature.py  source.py  hostpaths.py   # contratto (§7), sandbox, firma
 │   │       ├── feeds.py           # database offline di osv-scanner e trivy (ADR-0006)
+│   │       ├── enrichment.py      # EPSS e KEV: scarico e cache (ADR-0024)
 │   │       └── builtin/
 │   │           ├── syft/  osv_scanner/  trivy/  scancode/
 │   │           ├── semgrep/  bandit/  gitleaks/   # trufflehog fuori da Fase 1 (ADR-0012)
-│   │           ├── ruff/  eslint/  checkov/  hadolint/
-│   │           └── coverage/      # import LCOV / Cobertura
-│   ├── ca-decision/               # motore decisionale (§10)
+│   │           ├── ruff/  eslint/  checkov/  hadolint/  coverage/   # ADR-0026
+│   │           └── ca_graph/      # il grafo gira in un contenitore come gli altri (ADR-0020)
+│   ├── ca-cli/                    # comando `code-analyzer`: scan, sbom, gate, notify, export, upload, config validate
+│   ├── ca-integrations/           # github/ (client, commento, check run), gitlab/ (report nativi), ADR-0027
+│   ├── ca-api/                    # FastAPI (ADR-0016..0019, 0029, 0030)
+│   │   └── src/ca_api/
+│   │       ├── app.py  routes.py  models.py  problem.py  config.py
+│   │       ├── auth/              # token OIDC, ruoli, tenant dall'emittente (ADR-0019)
+│   │       ├── db/                # modello, migrazioni (global e per tenant), sessioni per tenant
+│   │       ├── storage/           # archivio degli artefatti: file system e S3
+│   │       ├── ingest.py  reads.py  findings.py   # ingestione, letture, elenco e triage
+│   │       ├── spa.py  telemetry.py  limits.py  manage.py  openapi_export.py
+│   ├── ca-decision/               # (Fase 3) motore decisionale (§10)
 │   │   └── src/ca_decision/
 │   │       ├── interface.py       # DecisionEngine (astratto)
 │   │       ├── laya_engine.py
 │   │       ├── jevos_engine.py
 │   │       ├── jev_engine.py
 │   │       └── routing.py         # instradamento per confidenza
-│   ├── ca-agents/                 # agenti LLM sulle 8 fasi (§11)
+│   ├── ca-agents/                 # (Fase 3) agenti LLM sulle 8 fasi (§11)
 │   │   └── src/ca_agents/
 │   │       ├── contracts/         # schemi JSON input/output per fase
 │   │       ├── phases/            # p0_engage … p7_learn
 │   │       ├── context/           # contesto persistente (prompt, skill, ADR)
 │   │       ├── controls/          # guard, gate, probe
 │   │       └── llm.py             # interfaccia provider LLM
-│   ├── ca-workflows/              # workflow e activity Temporal
-│   ├── ca-api/                    # FastAPI
-│   ├── ca-cli/                    # comando `code-analyzer`
-│   └── ca-integrations/           # GitHub, GitLab, Renovate, Dependabot
-├── web/                           # UI React
+│   └── ca-workflows/              # (non in Fase 2, ADR-0016) workflow e activity Temporal
+├── web/                           # SPA React: src/{api,auth,features,layout}, token da doc/ux/tokens.json
 ├── deploy/
-│   ├── helm/code-analyzer/
-│   ├── docker/                    # Dockerfile server, worker, cli, plugin base
-│   └── compose/                   # ambiente di sviluppo locale
+│   ├── docker/                    # cli/, server/ (sviluppo e rilascio), plugin-base/, dev-idp/, image-gate.sh, package-cli.sh
+│   ├── compose/                   # server-dev.yaml, registry.yaml, dati di prova
+│   └── helm/code-analyzer/        # (Fase 4)
 ├── integrations/
-│   ├── github-action/             # action.yml
+│   ├── github-action/             # action.yml composita (ADR-0027)
 │   └── gitlab-component/          # template CI/CD component
-├── schemas/                       # JSON Schema pubblici
-│   ├── finding.schema.json
-│   ├── plugin-manifest.schema.json
-│   ├── code-analyzer-config.schema.json
-│   ├── scan-report.schema.json
-│   ├── plugin-sarif-properties.schema.json
+├── schemas/                       # JSON Schema pubblici, generati dai modelli (ADR-0003)
+│   ├── finding.schema.json  scan-report.schema.json  graph.schema.json
+│   ├── plugin-manifest.schema.json  plugin-sarif-properties.schema.json
+│   ├── code-analyzer-config.schema.json  scoring-config.schema.json  service-context.schema.json
+│   ├── openapi.json               # il contratto dell'API (ADR-0017)
 │   ├── vendor/                    # SARIF e CycloneDX fissati
-│   └── phases/*.schema.json
-├── golden-set/                    # finding annotati per valutazione e training
+│   └── phases/*.schema.json       # (Fase 3)
+├── doc/                           # PROJECT.md, adr/, plan/, utente/, ux/, verifiche/
+├── golden-set/                    # (Fase 3) finding annotati per valutazione e training
 └── tests/
-    ├── unit/  integration/  e2e/
-    └── fixtures/repos/            # repository di prova (Python, JS/TS)
+    ├── unit/  contract/  integration/  e2e/
+    └── fixtures/                  # repository di prova (Python, JS/TS), casi dello scoring
 ```
 
 ---
@@ -243,26 +250,26 @@ Multi-tenancy SaaS: uno schema PostgreSQL per tenant + bucket separato.
 
 ## 5. Pipeline di scansione
 
-In Fase 1 i passi 1, 3, 5 e 10 sono funzioni del nucleo chiamate in sequenza dalla CLI, senza Temporal (ADR-0002). Dalla Fase 2 il workflow Temporal `ScanWorkflow`:
+I passi sono funzioni del nucleo chiamate in sequenza dalla CLI, senza Temporal (ADR-0002). In Fase 2 non c'è `ScanWorkflow`: il server non esegue scansioni, riceve il report di una già fatta in CI e ne tiene lo stato (ADR-0016, ADR-0018). Il workflow Temporal tornerebbe solo se una fase futura lo richiedesse. La sequenza è la stessa nelle due letture:
 
 ```
 1. prepare_workspace     clone (shallow per PR, full per notturna), rilevamento linguaggi
-2. resolve_changed_files solo per PR: diff rispetto alla baseline del branch principale
+2. resolve_changed_files solo per PR: in Fase 2 non restringe i plugin ai file cambiati (ADR-0025): la PR si scansiona per intero e si legge la baseline
 3. run_plugins           in parallelo, ognuno in sandbox; output SARIF / CycloneDX su object storage
 4. build_graph           tree-sitter → grafo moduli; smell architetturali
 5. normalize             SARIF + CycloneDX → Finding; fingerprint; dedup; applica VEX ed eccezioni
-6. enrich                feed EPSS/KEV/OSV; raggiungibilità; catalogo servizi (C, E)
-7. classify              motore decisionale (§10) sui finding che lo richiedono
+6. enrich                feed EPSS/KEV/OSV; raggiungibilità (ADR-0022); contesto del servizio (C, E: ADR-0028)
+7. classify              motore decisionale (§10) sui finding che lo richiedono (Fase 3)
 8. score                 variante A o B (§6); livello; override
 9. diff_baseline         separa finding nuovi / esistenti / risolti
-10. publish              DB, SARIF aggregato, commenti PR, check run, ticket
-11. trigger_agents       solo per finding sopra soglia (§11)
+10. publish              report e SARIF aggregato (CLI); commenti PR e check run (`notify`); invio al server (`upload`); ticket (Fase 3)
+11. trigger_agents       solo per finding sopra soglia (§11, Fase 3)
 ```
 
 Requisiti non funzionali:
 
-- Scansione completa **< 10 minuti** sui repository pilota (Gate 1); scansione PR incrementale **< 10 minuti** (Gate 2, ADR-0009).
-- Ogni activity idempotente; un plugin che fallisce non blocca gli altri e produce un finding di tipo `health` ("scanner non eseguito").
+- Scansione completa **< 10 minuti** sui repository pilota (Gate 1); scansione PR **< 10 minuti** (Gate 2, condizione G2.d, ADR-0009, ADR-0025): la PR non è ristretta ai file cambiati, e il tempo si misura sull'intera scansione con il confronto con la baseline.
+- Ogni passo idempotente; un plugin che fallisce non blocca gli altri, rende la scansione `partial` e produce un finding di tipo `health` ("scanner non eseguito"); `gate` esce con 2 su una scansione parziale (ADR-0009).
 - Timeout per plugin configurabile (default 10 min).
 
 ---
@@ -282,9 +289,11 @@ class ScoringModel(Protocol):
     def factors(self, f: Finding, ctx: ScoringContext) -> ImpactFactors: ...
 ```
 
-La variante si sceglie per repository in `.code-analyzer.yml` (`scoring.variant: A | B`). Entrambe calcolano sempre i punteggi in modalità "ombra" durante il pilota, così da confrontarle (Gate 2).
+La variante attiva si sceglie con `--variant`, poi con `scoring.variant` di `.code-analyzer.yml` (A | B), poi con il file di configurazione di scoring (ADR-0021). Entrambe calcolano sempre i punteggi in modalità "ombra", così da confrontarle (Gate 2): finché la configurazione di scoring ha `levels.source: provisional` (D2-10) i livelli e il gate restano quelli provvisori di ADR-0009 e A e B stanno solo in `variant_scores`. Per `quality` e `architecture` la Variante B coincide con A finché ADR-0023 non la definisce, e il report lo dichiara.
 
 ### 6.1 Variante A — generica
+
+I valori numerici sono quelli predefiniti del file di scoring (`ca_core/scoring/default.json`), ipotesi da calibrare in X-02; le definizioni operative di «raggiungibile», «percorso confermato» e churn sono in ADR-0021 e ADR-0022. Un «percorso confermato» è un risultato di una regola `mode: taint` del prodotto, non un `codeFlow` di SARIF.
 
 | Fattore | Calcolo |
 | --- | --- |
@@ -314,14 +323,14 @@ Vincoli di implementazione:
 
 ### 6.3 Livelli e override
 
-| Livello | Soglia | Override che forzano il livello |
+| Livello | Intervallo | Override che alzano il livello minimo |
 | --- | --- | --- |
-| Critico | ≥ 70 | CVE in KEV e raggiungibile; segreto valido esposto; licenza vietata in prodotto distribuito |
-| Alto | 40–69 | CVE con EPSS ≥ 0.1 raggiungibile; SAST con percorso confermato in servizio esposto |
-| Medio | 15–39 | Architectural smell in un hotspot; copertura < 50% su codice critico modificato spesso |
-| Basso | < 15 | — |
+| Critico | [70, 100] | CVE in KEV e raggiungibile; licenza vietata in prodotto distribuito |
+| Alto | [40, 70) | CVE con EPSS ≥ 0.1 raggiungibile; SAST con percorso confermato in servizio esposto |
+| Medio | [15, 40) | Architectural smell in un hotspot; copertura < 50% su codice critico modificato spesso |
+| Basso | [0, 15) | — |
 
-Soglie in `scoring/levels.py`, sovrascrivibili per tenant. Test di regressione con tabella di casi attesi.
+Il punteggio si arrotonda a due decimali prima di confrontarlo con gli intervalli, che sono semiaperti. Le soglie, i pesi e gli override stanno nel file di configurazione di scoring (`scoring-config`, schema versionato), mai nel codice di `scoring/` e mai in `.code-analyzer.yml`, che è modificabile da chi modifica il branch (ADR-0014): lo cambia il tenant sul server o chi lancia la CLI con `--scoring-config`. Un override alza il livello, non lo abbassa, e non scatta su un dato mancante. L'override «segreto valido esposto» non è applicabile in Fase 2: richiede una verifica online vietata da ADR-0006 e ADR-0012. Test di regressione con la tabella di casi attesi in `tests/fixtures/scoring/cases.json` e proprietà con hypothesis (ADR-0021).
 
 ---
 
@@ -395,16 +404,16 @@ Verificare la licenza d'uso di ogni motore prima dell'inclusione nell'immagine d
 # .code-analyzer.yml
 version: 1
 languages: [python, typescript]
-service:
-  catalog_id: payments-api          # per C ed E dal catalogo servizi
+service:                            # dichiarazione non verificata: vale solo se manca il file di contesto
+  catalog_id: payments-api          # (ADR-0028); la fonte attendibile è il server o `--service-context`
   tier: 1
   internet_facing: true
 paths:
   exclude: ["tests/fixtures/**"]    # glob relativi; predefiniti per node_modules, .venv, dist, .git
 scoring:
-  variant: A                        # A | B
+  variant: A                        # A | B: solo la scelta; soglie e pesi non stanno qui (ADR-0021)
 gate:
-  mode: all                         # all | new-findings-only; in Fase 1 si valuta sempre all
+  mode: all                         # all | new-findings-only: con una baseline valida blocca solo i nuovi (ADR-0025)
   block_on: [critico, alto]
   warn_on: [medio]
 licenses:
@@ -420,13 +429,13 @@ exceptions:
     reason: "Falso positivo confermato: input sanificato a monte"
     expires: 2027-03-31
     approved_by: "@security-lead"
-agents:
+agents:                             # accettata e inerte fino alla Fase 3
   enabled: true
   max_phase: 5                      # oltre la 5 serve abilitazione esplicita
   llm_provider: self-hosted
 ```
 
-Il file è validato da `schemas/code-analyzer-config.schema.json` (controllo che chiude la fase 0).
+Il file è validato da `schemas/code-analyzer-config.schema.json` (`config validate`, ADR-0014). È un input non fidato, modificabile da chi modifica il branch: per questo non porta le soglie né i pesi dello scoring, il tier o l'esposizione attendibili, la fonte della baseline né il percorso dei file di contesto. Nelle PR vale quello del branch base (ADR-0025). Le eccezioni valgono per il gate della CI; quelle approvate sul server non le legge (ADR-0018).
 
 ---
 
@@ -435,31 +444,40 @@ Il file è validato da `schemas/code-analyzer-config.schema.json` (controllo che
 ### 9.1 CLI
 
 ```
-code-analyzer scan [PATH] [--pr --base main] [--format sarif|json|table] [--variant A|B]
-code-analyzer sbom [PATH] --format cyclonedx|spdx
-code-analyzer explain FINDING_ID
-code-analyzer gate --fail-on critico,alto
+code-analyzer scan [PATH] [--output-dir DIR] [--format table|json|sarif] [--min-isolation L] [--offline]
+                   [--pr [--base COMMIT] [--baseline FILE] [--baseline-source S] [--pull-request N]]
+                   [--variant A|B] [--scoring-config FILE] [--service-context FILE]
+code-analyzer sbom [PATH] --format cyclonedx [--output FILE]
+code-analyzer gate [--report FILE] [--fail-on critico,alto] [--allow-partial]
+code-analyzer notify --provider github [--report FILE] [--repo O/N] [--pull-request N] [--head-sha SHA]
+code-analyzer export --format gitlab [--report FILE] [--sbom FILE] [--output-dir DIR]
+code-analyzer upload --server URL [--report FILE] [--audience A]
 code-analyzer config validate
-code-analyzer plugin list|verify|run NAME
 ```
 
-Exit code: 0 ok, 1 gate fallito, 2 errore di esecuzione.
+Exit code: 0 ok, 1 gate fallito (solo `gate`), 2 errore di esecuzione; `notify` esce con 0 o 2, mai 1. Fuori dalla Fase 2: `sbom --format spdx`, `explain FINDING_ID`, `plugin list|verify|run NAME`, e il comando `service-context` di ADR-0028 (l'endpoint del server c'è, il comando della CLI no). Dettagli in ADR-0010 e nei suoi emendamenti.
 
 ### 9.2 API REST (FastAPI)
 
-| Metodo | Percorso | Scopo |
-| --- | --- | --- |
-| POST | `/v1/scans` | Avvia una scansione |
-| GET | `/v1/scans/{id}` | Stato e riepilogo |
-| GET | `/v1/scans/{id}/sarif` | SARIF aggregato |
-| GET | `/v1/repositories/{id}/findings` | Filtri: livello, categoria, stato, nuovi |
-| PATCH | `/v1/findings/{id}` | Stato, owner, eccezione |
-| GET | `/v1/repositories/{id}/sbom` | CycloneDX / SPDX |
-| GET | `/v1/repositories/{id}/graph` | Grafo moduli/servizi |
-| POST | `/v1/findings/{id}/agents/run` | Avvia il ciclo agenti fino a `max_phase` |
-| POST | `/v1/webhooks/github`, `/v1/webhooks/gitlab` | Eventi PR, push, alert |
+Il contratto è `schemas/openapi.json`, generato dal codice e verificato in CI (ADR-0017); gli errori sono tutti `application/problem+json` (ADR-0017). Percorsi di Fase 2 (ADR-0029):
 
-Autenticazione: OIDC per utenti; OIDC dei provider CI per le pipeline (nessun token a lunga durata).
+| Metodo | Percorso | Scopo | Ruolo |
+| --- | --- | --- | --- |
+| POST | `/v1/scans` | Riceve il report di una scansione già fatta (report, SARIF, SBOM, grafo): idempotente, con i limiti di dimensione | pipeline |
+| GET | `/v1/scans/{id}` | Stato, plugin, avvisi, gate, scoring, baseline | lettore; pipeline del proprio repository |
+| GET | `/v1/scans/{id}/sarif` | SARIF aggregato | idem |
+| GET | `/v1/repositories` | Repository del tenant con la scansione corrente | lettore |
+| GET, PATCH | `/v1/repositories/{id}` | Dettaglio; tier, esposizione e catalogo | lettore; amministratore |
+| GET | `/v1/repositories/{id}/scans` | Elenco delle scansioni | lettore |
+| GET | `/v1/repositories/{id}/findings` | Filtri: livello, categoria, stato, strumento, nuovi, ricerca; ordinamenti totali; cursore opaco | lettore |
+| GET, PATCH | `/v1/findings/{id}` | Dettaglio con le due varianti; stato, owner, eccezione e revoca, con `approved_by` dall'identità autenticata | lettore; triage; approvatore |
+| GET | `/v1/repositories/{id}/sbom` | CycloneDX | lettore |
+| GET | `/v1/repositories/{id}/graph` | Grafo moduli | lettore |
+| GET | `/v1/me`, `/v1/service-context`, `/v1/health` | Identità e ruoli; contesto del servizio per la pipeline; salute | utente; pipeline; nessuno |
+
+Non in Fase 2: `POST /v1/findings/{id}/agents/run` e i webhook (Fase 3). Il server non avvia scansioni (ADR-0016).
+
+Autenticazione: OIDC per utenti (client pubblico con PKCE, token in memoria); OIDC dei provider CI per le pipeline (nessun token a lunga durata); quattro ruoli (`lettore`, `triage`, `approvatore`, `amministratore`) e il tenant dall'emittente (ADR-0019).
 
 ---
 
@@ -570,46 +588,35 @@ ca-agents/controls/
 
 ### 12.1 GitHub Action
 
-```yaml
-# integrations/github-action/action.yml
-name: Code Analyzer
-description: Scansione incrementale e gate per pull request
-inputs:
-  server-url: { required: false, description: "Vuoto = modalità locale" }
-  fail-on:    { required: false, default: "critico,alto" }
-  variant:    { required: false, default: "A" }
-runs:
-  using: docker
-  image: docker://registry.example.com/code-analyzer/cli:1
-  args: ["scan", "--pr", "--format", "sarif", "--fail-on", "${{ inputs.fail-on }}"]
-```
-
-Uso nel workflow del cliente:
+Forma decisa in ADR-0027 e D2-13 (2026-11-17): Action **composita** nella sottocartella del monorepo, `integrations/github-action/action.yml`, usata dalla CI di questo repository; nessun repository dedicato né Marketplace finché vale la decisione del 2026-11-10 sulla pubblicazione. L'immagine della CLI non ha un valore predefinito: `image` e `public-key` (la chiave cosign dei plugin, fuori dal repository) sono ingressi obbligatori. Passi, in quest'ordine: rifiuto di `pull_request_target`; commit base e baseline (artefatto `code-analyzer-baseline` del branch principale, altrimenti scansione del base nello stesso job); `scan` (con `--pr` su una PR) **senza** `--fail-on`; SARIF in Code Scanning anche dopo un fallimento; `notify` su una PR; `gate`, per ultimo, con l'esito del job.
 
 ```yaml
 permissions:
   contents: read
-  security-events: write
-  pull-requests: write
-  id-token: write          # OIDC verso il server
+  actions: read            # cercare la baseline tra gli artefatti
+  security-events: write   # SARIF
+  pull-requests: write     # commento
+  checks: write            # check run
 jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: org/code-analyzer-action@v1
-      - uses: github/codeql-action/upload-sarif@v3
-        with: { sarif_file: code-analyzer.sarif }
+      - uses: actions/checkout@<hash>
+        with: { fetch-depth: 2, persist-credentials: false }
+      - uses: ./integrations/github-action
+        with:
+          image: <immagine della CLI>
+          public-key: <chiave cosign, fuori dal repository>
+          fail-on: critico,alto   # la soglia sta qui: .code-analyzer.yml lo cambia chi modifica il branch
 ```
 
-Verificare le versioni correnti delle action citate al momento dell'implementazione.
+Il flusso verso il server è un passo a parte: `code-analyzer upload` con il token OIDC del job (`id-token: write`). `server-url` e `variant` non sono ingressi dell'Action. Verificare le versioni correnti delle action citate al momento dell'implementazione; per i dettagli, `doc/utente/ci-github.md`.
 
 ### 12.2 GitLab CI component
 
 - Componente in `integrations/gitlab-component/templates/code-analyzer.yml`.
-- Produce report negli artefatti nativi: `sast`, `dependency_scanning`, `codequality`, `cyclonedx`.
-- Job fallisce secondo `gate.block_on`.
+- Produce report negli artefatti nativi con `code-analyzer export --format gitlab`: `sast`, `dependency_scanning`, `codequality` e l'SBOM CycloneDX portato dalla 1.7 alla 1.6 che GitLab legge.
+- Il job fallisce secondo `gate` (soglia fissata dalla pipeline, come per l'Action). Scritto ma mai eseguito su GitLab: D2-12 (rimandata) ha lasciato senza istanza il progetto specchio e i test E2E (N-08).
 
 ### 12.3 Renovate e Dependabot
 
@@ -645,15 +652,17 @@ Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`). D-0015 approvata 
 
 ### Fase 2 — Qualità e impatto
 
-- [ ] `ca-graph`: tree-sitter, grafo dipendenze, smell Cyclic/Hub-Like/Unstable
-- [ ] Plugin ruff, eslint, checkov, hadolint, coverage
-- [ ] Feed EPSS/KEV/OSV con cache e mirror
-- [ ] Scoring Variante A e Variante B (modalità ombra entrambe)
-- [ ] Livelli, override, baseline e finding nuovi
-- [ ] API REST, DB, UI elenco finding
-- [ ] GitHub Action, GitLab component, commenti PR, check run
+Stato al 2026-11-18, voce per voce (dettagli e limiti in `doc/plan/fase-2.md`):
 
-**Gate 2:** ordinamento validato dai team (metodo Martini et al., ECSA 2018); scelta della variante predefinita.
+- [x] `ca-graph`: tree-sitter, grafo dipendenze, smell Cyclic/Hub-Like/Unstable, PageRank, raggiungibilità e churn — in un contenitore come gli altri plugin (ADR-0020). Le definizioni degli smell non sono ancora confrontate con le pubblicazioni.
+- [x] Plugin ruff, eslint, checkov, hadolint, coverage — per sviluppo e uso interno: la pubblicazione delle immagini attende D2-14 e D2-16 (I-07).
+- [x] Feed EPSS/KEV/OSV con cache (ADR-0024); **il mirror è fuori dalla Fase 2** (D2-05: nessun mirror, solo fonti pubbliche e cache).
+- [ ] Scoring Variante A e Variante B (modalità ombra entrambe) — A realizzata e in ombra; la Variante B coincide con A finché ADR-0023 non la definisce (D2-11, K-06..K-10).
+- [x] Livelli, override, baseline e finding nuovi — con `levels.source: provisional` fino al Gate 2 (D2-10).
+- [x] API REST, DB, UI elenco finding — il server riceve i report e non esegue scansioni (ADR-0016); UI centrata sull'elenco, portfolio in Fase 4 (D2-15).
+- [ ] GitHub Action, GitLab component, commenti PR, check run — scritti e provati in locale; né l'Action né il componente sono stati eseguiti su GitHub o GitLab (N-05, N-08), e nessuna pubblicazione (N-09).
+
+**Gate 2** (`doc/plan/fase-2.md`, sezione 2): G2.a entrambe le varianti calcolate in ombra su ogni finding dei repository del gate; G2.b ordinamento validato dai team (metodo Martini et al., ECSA 2018; con D2-03 un validatore unico e una variante predefinita provvisoria); G2.c scelta della variante predefinita; **G2.d scansione PR < 10 minuti**, che §5 e ADR-0009 assegnavano al Gate 2 senza che questa sezione lo dicesse.
 
 ### Fase 3 — Agenti LLM e motore decisionale
 
@@ -688,9 +697,9 @@ Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`). D-0015 approvata 
 
 | Livello | Cosa | Strumento |
 | --- | --- | --- |
-| Unit | Fingerprint, dedup, scoring A/B, livelli, parser SARIF/CycloneDX | pytest, hypothesis |
-| Contratto | Output plugin vs JSON Schema; contratti di fase agenti | jsonschema |
-| Integrazione | Fase 1: plugin su immagini reali e CLI su fixture. Dalla Fase 2: workflow Temporal end-to-end | Docker; Temporal test server, testcontainers (Postgres, MinIO) |
+| Unit | Fingerprint, dedup, scoring A/B, livelli, parser SARIF/CycloneDX; per la SPA i componenti e gli stati di ogni vista | pytest, hypothesis; vitest, Testing Library, axe-core |
+| Contratto | Output plugin vs JSON Schema; ogni schema di `schemas/` con casi validi e non validi e l'equivalenza col modello; l'OpenAPI e i tipi generati della SPA; contratti di fase agenti (Fase 3) | jsonschema |
+| Integrazione | Plugin su immagini reali e CLI su fixture (E2E con registry locale e immagini firmate). Dalla Fase 2: `ca-api` su PostgreSQL 16 vero con archivio su file system e S3 di prova, e le risposte vere confrontate con l'OpenAPI (nessun Temporal) | Docker; testcontainers (PostgreSQL, server S3 di prova) |
 | Regressione scoring | Tabella di casi con punteggio e livello attesi | pytest parametrizzato |
 | Valutazione decisionale | Accuratezza e calibrazione per `question_id` sul golden set | script in `golden-set/eval/` |
 | Valutazione agenti | Patch: build verde, finding chiuso, nessun finding nuovo, approvazione | harness offline con fake LLM in CI |
