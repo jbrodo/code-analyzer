@@ -33,13 +33,14 @@ interface MultiProps<T extends string> {
 /** Un filtro a scelta multipla: un menu di caselle, con il fuoco gestito dal componente Radix. */
 function MultiFilter<T extends string>({ label, options, labels, selected, onChange }: MultiProps<T>) {
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger className="control" aria-label={`Filtro ${label}`}>
         {label}
         {selected.length > 0 ? ` (${String(selected.length)})` : ""}
         <span aria-hidden="true"> ▾</span>
       </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
+      {/* il menu vive dentro il contenuto principale: fuori dai punti di riferimento axe lo segnala */}
+      <DropdownMenu.Portal container={document.getElementById("contenuto")}>
         <DropdownMenu.Content className="menu" align="start" sideOffset={4}>
           {options.map((option) => (
             <DropdownMenu.CheckboxItem

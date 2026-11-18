@@ -459,7 +459,7 @@ Ogni ADR registra le decisioni dell'utente quando arrivano e le indica nella tab
 - Spec: §6.2. ADR: 0021, 0023.
 
 #### U-05 — Revisione visiva e di accessibilità
-- Agente: `ux-ui`. Stato: `LIBERO`.
+- Agente: `ux-ui`. Stato: `LIBERO`. **Controlli in un Chrome vero il 2026-11-18** (non sostituiscono la revisione umana): axe con il contrasto attivo su lista, menu di filtro, pannello, dialogo con errore e pagina di scansione, in tema chiaro e scuro, ora senza violazioni; reflow a 320 e 640 px senza scorrimento della pagina (anche nel dialogo); spaziatura del testo imposta (G9) senza testo tagliato; 29 bersagli, nessuno sotto i 24 px senza lo spazio richiesto da SC 2.5.8; 45 pressioni di Tab con la finestra alta 600 px, mai un fuoco coperto da elementi fissi. Corretti con questi controlli: la regione scorrevole del pannello non era raggiungibile da tastiera, e il menu di filtro modale nascondeva la pagina (ora non modale e dentro il contenuto principale). G11: il testo scritto in un dialogo ora sopravvive al giro dall'IdP (bozza in `sessionStorage`, cancellata a invio riuscito o «Scarta»); il dialogo però non si riapre da solo. **Resta all'utente:** resa visiva a occhio, G4, G14, D7 a mano, il flusso di triage solo da tastiera e la passata con un lettore di schermo.
 - Percorsi: lettura di `web/`; esito in `doc/ux/`.
 - Dipende da: W-04, W-05, W-06, W-07.
 - Accettazione: scostamenti da U-01..U-04 elencati per gravità e corretti o accettati dall'utente.

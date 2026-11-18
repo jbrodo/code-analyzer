@@ -9,6 +9,7 @@ import { useAnnounce } from "@/layout/announce";
 import { useMe } from "@/layout/me";
 import { STATUS_LABEL } from "@/lib/format";
 import { canApprove, canTriage } from "@/lib/roles";
+import { useDraft } from "@/lib/useDraft";
 
 type Detail = Schemas["FindingDetail"];
 
@@ -98,7 +99,7 @@ export function TriageActions({ detail, onChanged }: Props) {
       <div className="actions">
         {f.status !== "in_corso" && f.status !== "accettato" && <TakeDialog detail={detail} who={who} apply={apply} />}
         <OwnerDialog detail={detail} apply={apply} />
-        {approver ? <FalsePositiveDialog apply={apply} /> : <DisabledAction label="Segna come falso positivo" reason={needApprover} />}
+        {approver ? <FalsePositiveDialog findingId={f.id} apply={apply} /> : <DisabledAction label="Segna come falso positivo" reason={needApprover} />}
         {f.status !== "accettato" &&
           (approver ? <ExceptionDialog detail={detail} who={who} apply={apply} /> : <DisabledAction label="Accetta con eccezione" reason={needApprover} />)}
         {(f.status === "in_corso" || f.status === "falso_positivo") && (
@@ -137,19 +138,22 @@ export function TriageActions({ detail, onChanged }: Props) {
 type Apply = (body: Parameters<ReturnType<typeof useClient>["patchFinding"]>[1]) => Promise<Detail>;
 
 function TakeDialog({ detail, who, apply }: { detail: Detail; who: string; apply: Apply }) {
-  const [owner, setOwner] = useState(detail.finding.owner ?? who);
+  const [draft, setDraft, clearDraft] = useDraft(`${detail.finding.id}:take:owner`);
+  const owner = draft === "" ? (detail.finding.owner ?? who) : draft;
+  const setOwner = setDraft;
   const [errors, setErrors] = useState<FieldErrors>({});
   return (
     <div className="action">
       <ActionDialog
+        onFinished={clearDraft}
         trigger={<button type="button" className="button" data-tone="accent">Prendi in carico</button>}
         title="Prendi in carico"
         description="Il finding passa a «In corso» e viene assegnato."
         submitLabel="Prendi in carico"
-        dirty={owner !== (detail.finding.owner ?? who)}
+        dirty={draft !== ""}
         validate={() => { const e = owner.trim() === "" ? { owner: "Indica chi lo prende in carico." } : null; setErrors(e ?? {}); return e; }}
         onSubmit={async () => { await apply({ action: "set-owner", owner: owner.trim() }); await apply({ action: "set-status", status: "in_corso" }); }}
-        onOpenChange={(open) => { if (open) { setOwner(detail.finding.owner ?? who); setErrors({}); } }}
+        onOpenChange={(open) => { if (open) setErrors({}); }}
       >
         <Field id="owner" label="Assegnato a" required error={errors.owner}>
           {(p) => <input {...p} type="text" value={owner} maxLength={200} onChange={(e) => { setOwner(e.target.value); }} />}
@@ -160,18 +164,20 @@ function TakeDialog({ detail, who, apply }: { detail: Detail; who: string; apply
 }
 
 function OwnerDialog({ detail, apply }: { detail: Detail; apply: Apply }) {
-  const [owner, setOwner] = useState(detail.finding.owner ?? "");
+  const [draft, setDraft, clearDraft] = useDraft(`${detail.finding.id}:assign:owner`);
+  const owner = draft === "" ? (detail.finding.owner ?? "") : draft;
+  const setOwner = setDraft;
   return (
     <div className="action">
       <ActionDialog
+        onFinished={clearDraft}
         trigger={<button type="button" className="button">Assegna</button>}
         title="Assegna"
         description="Cambia chi si occupa del finding. Un campo vuoto toglie l'assegnazione."
         submitLabel="Assegna"
-        dirty={owner !== (detail.finding.owner ?? "")}
+        dirty={draft !== ""}
         validate={() => null}
         onSubmit={async () => { await apply({ action: "set-owner", owner: owner.trim() === "" ? null : owner.trim() }); }}
-        onOpenChange={(open) => { if (open) setOwner(detail.finding.owner ?? ""); }}
       >
         <Field id="owner" label="Assegnato a">
           {(p) => <input {...p} type="text" value={owner} maxLength={200} onChange={(e) => { setOwner(e.target.value); }} />}
@@ -181,12 +187,13 @@ function OwnerDialog({ detail, apply }: { detail: Detail; apply: Apply }) {
   );
 }
 
-function FalsePositiveDialog({ apply }: { apply: Apply }) {
-  const [reason, setReason] = useState("");
+function FalsePositiveDialog({ findingId, apply }: { findingId: string; apply: Apply }) {
+  const [reason, setReason, clearReason] = useDraft(`${findingId}:false-positive:reason`);
   const [errors, setErrors] = useState<FieldErrors>({});
   return (
     <div className="action">
       <ActionDialog
+        onFinished={clearReason}
         trigger={<button type="button" className="button">Segna come falso positivo</button>}
         title="Segna come falso positivo"
         description="Il finding non si presenta più tra gli aperti. La motivazione resta nel registro."
@@ -194,7 +201,7 @@ function FalsePositiveDialog({ apply }: { apply: Apply }) {
         dirty={reason !== ""}
         validate={() => { const e = reason.trim() === "" ? { reason: "Scrivi la motivazione." } : null; setErrors(e ?? {}); return e; }}
         onSubmit={async () => { await apply({ action: "set-status", status: "falso_positivo", reason: reason.trim() }); }}
-        onOpenChange={(open) => { if (open) { setReason(""); setErrors({}); } }}
+        onOpenChange={(open) => { if (open) setErrors({}); }}
       >
         <Field id="reason" label="Motivazione" required error={errors.reason}>
           {(p) => <textarea {...p} rows={4} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); }} />}
@@ -205,8 +212,8 @@ function FalsePositiveDialog({ apply }: { apply: Apply }) {
 }
 
 function ExceptionDialog({ detail, who, apply }: { detail: Detail; who: string; apply: Apply }) {
-  const [reason, setReason] = useState("");
-  const [expires, setExpires] = useState("");
+  const [reason, setReason, clearReason] = useDraft(`${detail.finding.id}:exception:reason`);
+  const [expires, setExpires, clearExpires] = useDraft(`${detail.finding.id}:exception:expires`);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [copied, setCopied] = useState<string | null>(null);
   const announce = useAnnounce();
@@ -237,6 +244,7 @@ function ExceptionDialog({ detail, who, apply }: { detail: Detail; who: string; 
   return (
     <div className="action">
       <ActionDialog
+        onFinished={() => { clearReason(); clearExpires(); }}
         trigger={<button type="button" className="button" data-tone="accent">Accetta con eccezione</button>}
         title="Accetta con eccezione"
         description="Il finding passa a «Accettato» fino alla scadenza. Poi torna aperto."
@@ -244,7 +252,7 @@ function ExceptionDialog({ detail, who, apply }: { detail: Detail; who: string; 
         dirty={reason !== "" || expires !== ""}
         validate={validate}
         onSubmit={async () => { await apply({ action: "create-exception", reason: reason.trim(), expires: expires.trim() }); }}
-        onOpenChange={(open) => { if (open) { setReason(""); setExpires(""); setErrors({}); setCopied(null); } }}
+        onOpenChange={(open) => { if (open) { setErrors({}); setCopied(null); } }}
       >
         <Field id="reason" label="Motivazione" required error={errors.reason}>
           {(p) => <textarea {...p} rows={3} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); }} />}

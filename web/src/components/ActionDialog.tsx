@@ -25,6 +25,8 @@ interface Props {
   /** Esegue l'azione. Un `ApiError` resta nel dialogo con i dati inseriti (T6). */
   onSubmit: () => Promise<void>;
   onOpenChange?: (open: boolean) => void;
+  /** Il dialogo si è concluso (invio riuscito o «Scarta»): le bozze si cancellano. */
+  onFinished?: () => void;
   children: ReactNode;
 }
 
@@ -42,7 +44,7 @@ export function ServerError({ error }: { error: ApiError }) {
 }
 
 export function ActionDialog(props: Props) {
-  const { trigger, title, description, submitLabel, tone = "accent", dirty, validate, onSubmit, onOpenChange, children } = props;
+  const { trigger, title, description, submitLabel, tone = "accent", dirty, validate, onSubmit, onOpenChange, onFinished, children } = props;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -76,6 +78,7 @@ export function ActionDialog(props: Props) {
     setError(null);
     try {
       await onSubmit();
+      onFinished?.();
       change(false);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError(0, "network-error", null));
@@ -117,7 +120,7 @@ export function ActionDialog(props: Props) {
               <div role="alert" className="dialog-error">
                 <p>Hai scritto del testo che non è stato salvato. Chiudere comunque?</p>
                 <button type="button" className="button" onClick={() => { setConfirmDiscard(false); }}>Continua a modificare</button>{" "}
-                <button type="button" className="button" onClick={() => { change(false); }}>Scarta</button>
+                <button type="button" className="button" onClick={() => { onFinished?.(); change(false); }}>Scarta</button>
               </div>
             )}
             <div className="dialog-actions">

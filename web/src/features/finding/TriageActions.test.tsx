@@ -240,3 +240,18 @@ test("Riapri toglie un finding in corso dallo stato in corso con una sola richie
   await waitFor(() => { expect(patch).toHaveBeenCalledWith(FID, { action: "set-status", status: "aperto" }); });
   expect(patch).toHaveBeenCalledTimes(1);
 });
+
+test("G11: il testo scritto in un dialogo sopravvive a un ricaricamento della pagina e si cancella a invio riuscito", async () => {
+  const user = userEvent.setup();
+  mount(detail(), me("lettore", "triage", "approvatore"));
+  await user.click((await actions()).getByRole("button", { name: "Segna come falso positivo" }));
+  await user.type(within(await screen.findByRole("dialog")).getByLabelText(/Motivazione/), "scritto prima della scadenza");
+  cleanup(); // la pagina si ricarica dopo il giro dall'IdP: i componenti nascono da capo
+  mount(detail(), me("lettore", "triage", "approvatore"));
+  await user.click((await actions()).getByRole("button", { name: "Segna come falso positivo" }));
+  const field = within(await screen.findByRole("dialog")).getByLabelText<HTMLTextAreaElement>(/Motivazione/);
+  expect(field.value).toBe("scritto prima della scadenza");
+  await user.click(screen.getByRole("button", { name: "Segna come falso positivo", description: "" }).closest("form")?.querySelector("button[type='submit']") as HTMLElement);
+  await waitFor(() => { expect(screen.queryByRole("dialog")).toBeNull(); });
+  expect(Object.keys(window.sessionStorage).filter((k) => k.startsWith("ca.draft."))).toEqual([]);
+});

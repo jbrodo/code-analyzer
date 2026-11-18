@@ -207,7 +207,8 @@ export function FindingPanel() {
         <h2 id="panel-title" tabIndex={-1} ref={title}>{f.title}</h2>
         <p className="mono muted">{f.rule_id}</p>
       </header>
-      <div className="panel-body">
+      {/* regione scorrevole raggiungibile da tastiera: senza un punto di fuoco non si potrebbe scorrere */}
+      <div className="panel-body" tabIndex={0} role="region" aria-label="Contenuto del finding">
         <Section id="sec-fix" title="Come risolvere"><Remediation finding={f} /></Section>
         <Section id="sec-where" title="Dove"><Where detail={data} /></Section>
         <Section id="sec-why" title="Perché questo livello">
