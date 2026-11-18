@@ -164,7 +164,7 @@ def list_findings(
         state = decode_cursor(cursor, binding)
         try:
             values = [state["k"][i] for i in range(len(order))]
-        except (KeyError, IndexError, TypeError):
+        except KeyError, IndexError, TypeError:
             raise ApiProblem(422, ProblemCode.INVALID_CURSOR) from None
         page_conditions.append(tuple_(*order) > tuple_(*[literal(v) for v in values]))
 

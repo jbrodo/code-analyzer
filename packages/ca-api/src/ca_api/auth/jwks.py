@@ -96,7 +96,7 @@ class JwksCache:
                     continue  # senza `kid` non si può scegliere: si ignora
                 try:
                     key = PyJWK.from_dict(item)
-                except (jwt.PyJWTError, ValueError):
+                except jwt.PyJWTError, ValueError:
                     continue
                 if key.key_type != "oct":  # mai chiavi simmetriche
                     keys[item["kid"]] = key

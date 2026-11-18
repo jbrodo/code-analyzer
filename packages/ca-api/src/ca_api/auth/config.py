@@ -50,7 +50,7 @@ class _Issuer(_Strict):
     )
 
     @model_validator(mode="after")
-    def _urls(self) -> "_Issuer":
+    def _urls(self) -> _Issuer:
         _https(self.issuer, dev=self.allow_insecure_dev)
         _https(self.jwks_url, dev=self.allow_insecure_dev)
         return self
@@ -92,7 +92,7 @@ class AuthSettings(_Strict):
     max_token_bytes: int = Field(default=16384, ge=512, le=65536)
 
     @model_validator(mode="after")
-    def _unique_issuers(self) -> "AuthSettings":
+    def _unique_issuers(self) -> AuthSettings:
         names = [i.issuer for i in self.issuers]
         if len(set(names)) != len(names):
             raise ValueError("emittenti duplicati")

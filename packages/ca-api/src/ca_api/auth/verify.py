@@ -104,7 +104,7 @@ class TokenVerifier:
         try:
             header = jwt.get_unverified_header(token)
             claimed = jwt.decode(token, options={"verify_signature": False})
-        except (jwt.PyJWTError, ValueError):
+        except jwt.PyJWTError, ValueError:
             raise AuthError("malformed") from None
         algorithm, kid = header.get("alg"), header.get("kid")
         if algorithm not in ALLOWED_ALGORITHMS:  # compresi `none` e HS256/384/512

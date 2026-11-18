@@ -71,7 +71,7 @@ def decode_cursor(cursor: str, binding: str) -> dict[str, Any]:
             raise ValueError
         state: dict[str, Any] = document["s"]
         return state
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         raise ApiProblem(422, ProblemCode.INVALID_CURSOR) from None
 
 

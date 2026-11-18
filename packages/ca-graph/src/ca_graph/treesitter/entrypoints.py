@@ -153,7 +153,7 @@ def _python_target(value: object) -> str | None:
 def _from_pyproject(base: str, data: bytes, sources: frozenset[str], out: Declared) -> None:
     try:
         document = tomllib.loads(data.decode("utf-8"))
-    except (ValueError, UnicodeDecodeError, RecursionError):
+    except ValueError, UnicodeDecodeError, RecursionError:
         out.missing += 1
         return
     values: list[object] = []
@@ -186,7 +186,7 @@ def _from_setup_cfg(base: str, data: bytes, sources: frozenset[str], out: Declar
     parser = configparser.ConfigParser(interpolation=None, strict=False)
     try:
         parser.read_string(data.decode("utf-8"))
-    except (configparser.Error, UnicodeDecodeError):
+    except configparser.Error, UnicodeDecodeError:
         out.missing += 1
         return
     if not parser.has_section("options.entry_points"):
@@ -245,7 +245,7 @@ def _js_target(base: str, value: str, sources: frozenset[str]) -> str | None:
 def _from_package_json(base: str, data: bytes, sources: frozenset[str], out: Declared) -> None:
     try:
         document = json.loads(data.decode("utf-8"))
-    except (ValueError, UnicodeDecodeError, RecursionError):
+    except ValueError, UnicodeDecodeError, RecursionError:
         out.missing += 1
         return
     if not isinstance(document, dict):
@@ -283,7 +283,7 @@ def _from_html(base: str, data: bytes, sources: frozenset[str], out: Declared) -
     try:
         parser.feed(data.decode("utf-8", errors="replace"))
         parser.close()
-    except (ValueError, RecursionError):
+    except ValueError, RecursionError:
         return
     for src in parser.sources[:50]:
         src = src.split("?", 1)[0].split("#", 1)[0]

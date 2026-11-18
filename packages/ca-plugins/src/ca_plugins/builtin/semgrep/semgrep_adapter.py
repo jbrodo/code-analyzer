@@ -80,7 +80,7 @@ def jobs(cpu_max: str = CGROUP_CPU_MAX) -> int:
     try:
         quota, period = Path(cpu_max).read_text().split()[:2]
         return max(1, math.ceil(int(quota) / int(period)))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return 1
 
 

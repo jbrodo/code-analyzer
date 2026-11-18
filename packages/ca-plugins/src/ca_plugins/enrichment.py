@@ -403,7 +403,7 @@ def load_enrichment(
         url = origin.epss_url if feed == "epss" else origin.kev_url
         try:
             loaded[feed] = _download(feed, feed_dir, url, fetcher, limits, origin, clock, current)
-        except (FetchError, FeedRejected, OSError):
+        except FetchError, FeedRejected, OSError:
             loaded[feed] = current
             warnings.append(
                 _warning("feeds-sync-failed", "sincronizzazione fallita: snapshot precedente", feed)

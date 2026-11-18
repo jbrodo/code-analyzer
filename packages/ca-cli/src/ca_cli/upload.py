@@ -61,7 +61,7 @@ def _token(env: Mapping[str, str], audience: str, context: Context) -> str:
             15.0,
         )
         value = json.loads(reply.body).get("value") if reply.status == 200 else None
-    except (TransportError, ValueError, AttributeError):
+    except TransportError, ValueError, AttributeError:
         value = None
     if not isinstance(value, str) or not value:
         raise ScanError("richiesta del token OIDC non riuscita")
@@ -137,7 +137,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     if reply.status in (200, 201):
         try:
             scan_id = str(json.loads(reply.body)["id"])
-        except (ValueError, KeyError, TypeError):
+        except ValueError, KeyError, TypeError:
             scan_id = "?"
         print(
             f"upload: {'inviata' if reply.status == 201 else 'già presente'} (scansione {scan_id})"
@@ -151,7 +151,7 @@ def _refusal(status: int, body: bytes) -> str:
     """Il solo codice del problema (`code`), mai il testo ricevuto."""
     try:
         code = json.loads(body).get("code")
-    except (ValueError, AttributeError):
+    except ValueError, AttributeError:
         code = None
     safe = (
         code

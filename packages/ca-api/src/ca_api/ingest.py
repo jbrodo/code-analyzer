@@ -122,7 +122,7 @@ def validate_parts(
         report = ScanReport.model_validate_json(parts.report)
     except ValidationError as exc:
         raise _invalid("report", _errors(exc)) from None
-    except (ValueError, RecursionError):
+    except ValueError, RecursionError:
         raise _invalid("report") from None
     if report.repository.commit is None:
         raise ApiProblem(
@@ -133,7 +133,7 @@ def validate_parts(
     if parts.sarif is not None:
         try:
             document = json.loads(parts.sarif)
-        except (ValueError, RecursionError):
+        except ValueError, RecursionError:
             raise _invalid("sarif") from None
         if not _depth_ok(document) or schemas.validate_sarif(document):
             raise _invalid("sarif")
@@ -151,7 +151,7 @@ def validate_parts(
             graph = Graph.model_validate_json(parts.graph)
         except ValidationError as exc:
             raise _invalid("graph", _errors(exc)) from None
-        except (ValueError, RecursionError):
+        except ValueError, RecursionError:
             raise _invalid("graph") from None
     return report, graph, sbom
 

@@ -107,7 +107,7 @@ class SchemaStore:
         self._sarif_id = _doc_id(json.loads((vendor_dir / _SARIF_FILE).read_bytes()))
 
     @classmethod
-    def packaged(cls) -> "SchemaStore":
+    def packaged(cls) -> SchemaStore:
         """Schemi fissati del pacchetto installato; `SchemaRefusedError` se il manifest diverge."""
         with resources.as_file(resources.files("ca_core").joinpath(PACKAGED_DIR)) as vendor_dir:
             try:

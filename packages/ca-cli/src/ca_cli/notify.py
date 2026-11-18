@@ -50,7 +50,7 @@ def _event(env: dict[str, str]) -> dict[str, Any]:
         with Path(path).open("rb") as handle:
             data = handle.read(MAX_EVENT_BYTES + 1)
         parsed = json.loads(data) if len(data) <= MAX_EVENT_BYTES else {}
-    except (OSError, ValueError, RecursionError):
+    except OSError, ValueError, RecursionError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
 

@@ -50,7 +50,7 @@ def have_pinned_eslint() -> bool:
             json.loads((MODULES / name / "package.json").read_text())["version"] == version
             for name, version in PINNED.items()
         )
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return False
 
 

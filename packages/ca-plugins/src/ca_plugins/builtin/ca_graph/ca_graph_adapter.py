@@ -31,7 +31,7 @@ EXIT_FAILED, EXIT_TOO_LARGE = 3, 5
 def run(*, workspace: str = WORKSPACE, out_file: str = OUT_FILE, max_bytes: int = MAX_BYTES) -> int:
     try:
         data = to_json(extract_graph(workspace))
-    except (LimitExceeded, OSError, MemoryError, RecursionError, ValueError):
+    except LimitExceeded, OSError, MemoryError, RecursionError, ValueError:
         return EXIT_FAILED
     if len(data) > max_bytes:
         return EXIT_TOO_LARGE

@@ -75,7 +75,7 @@ def list_repositories(session: Session, *, limit: int, cursor: str | None) -> Re
         state = decode_cursor(cursor, binding)
         try:
             query = query.where(Repository.id > uuid.UUID(state["id"]))
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             raise ApiProblem(422, ProblemCode.INVALID_CURSOR) from None
     rows = list(session.scalars(query))
     page = rows[:limit]
@@ -105,7 +105,7 @@ def list_scans(
         state = decode_cursor(cursor, binding)
         try:
             marker = (datetime.fromisoformat(state["at"]), uuid.UUID(state["id"]))
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             raise ApiProblem(422, ProblemCode.INVALID_CURSOR) from None
         query = query.where(
             tuple_(Scan.started_at, Scan.id) < tuple_(literal(marker[0]), literal(marker[1]))
@@ -150,7 +150,7 @@ def scan_detail(
         raw = handle.read()
     try:
         report = ScanReport.model_validate_json(raw)
-    except (ValidationError, ValueError):
+    except ValidationError, ValueError:
         raise ApiProblem(500, ProblemCode.INTERNAL_ERROR) from None
     return ScanDetail(
         summary=scan_summary(scan),
@@ -190,7 +190,7 @@ def repository_graph(session: Session, store: ArtifactStore, repository_id: uuid
     with _artifact(store, current_scan(session, repository_id), "graph") as handle:
         try:
             return Graph.model_validate_json(handle.read())
-        except (ValidationError, ValueError):
+        except ValidationError, ValueError:
             raise ApiProblem(500, ProblemCode.INTERNAL_ERROR) from None
 
 

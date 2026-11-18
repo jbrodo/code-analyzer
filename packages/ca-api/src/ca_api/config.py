@@ -56,7 +56,7 @@ class Settings:
     ] = ()  # origini oltre la propria a cui la SPA può connettersi (l'IdP)
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
+    def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         source = os.environ if env is None else env
         part = _int(source, "MAX_PART_BYTES", cls.max_part_bytes, minimum=1)
         request = _int(source, "MAX_REQUEST_BYTES", cls.max_request_bytes, minimum=1)

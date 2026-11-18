@@ -88,7 +88,7 @@ def _env(tmp_dir: str) -> dict[str, str]:
 def _kill(process: subprocess.Popen[bytes]) -> None:
     try:
         os.killpg(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):
+    except ProcessLookupError, PermissionError:
         process.kill()
 
 
@@ -212,7 +212,7 @@ def _boundaries_older_than(git: str, git_dir: Path, shadow: Path, start: int, tm
     """Tutti i commit di confine di un clone superficiale sono più vecchi dell'inizio?"""
     try:
         text = (git_dir / "shallow").read_text("ascii")
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return False
     shas = text.split()
     if not shas or len(shas) > MAX_BOUNDARIES or not all(_SHA.fullmatch(s) for s in shas):
@@ -252,7 +252,7 @@ def read_history(
         try:
             shallow = build_shadow(git, git_dir, shadow, scratch)
             head_ts = _commit_time(git, shadow, "HEAD", scratch)
-        except (UnsupportedRepo, ReadFailed):
+        except UnsupportedRepo, ReadFailed:
             return History(ABSENT, window_days)
         head_time = datetime.fromtimestamp(head_ts, UTC)
         start = head_ts - window_days * 86400

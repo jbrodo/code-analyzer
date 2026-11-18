@@ -110,7 +110,7 @@ _SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
 
 @contextlib.contextmanager
-def _interruptible() -> Generator[None, None, None]:
+def _interruptible() -> Generator[None]:
     """Gestore unico per SIGINT, SIGTERM e SIGHUP (ADR-0004, M-03), solo nel thread principale.
 
     Alla prima consegna ignora i tre segnali, così un secondo non interrompe la pulizia, poi
