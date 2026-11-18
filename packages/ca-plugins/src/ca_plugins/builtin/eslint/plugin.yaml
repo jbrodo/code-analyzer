@@ -15,14 +15,14 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # Provvisorio, da confermare in X-04 sui pilota: un risultato pesa circa 350 byte (nessun testo
-  # dei file). 32 MiB reggono circa 90 mila risultati.
+  # Misurato il 2026-11-18 (I-02): 1,06 MB su excalidraw (1.328 file TypeScript); saleor non ha file
+  # JavaScript e il plugin non si applica. 32 MiB, trenta volte il massimo.
   max_bytes: 33554432
 resources:
-  # Provvisorie fino alla misura sui pilota (X-05). Il JSON nativo di eslint porta il testo dei
-  # file con messaggi e Node ha un'impronta di memoria alta: 2 GiB finche' non si misura.
+  # Misurato il 2026-11-18 (I-02): su excalidraw 14,7 s e 902 MiB di picco (Node ha un'impronta alta):
+  # 2 GiB sono più del doppio. Il tempo ha un margine di venti volte.
   cpu: "1"
   memory: 2Gi
-  timeout: 600s
+  timeout: 300s
   pids: 64
 network: none

@@ -19,15 +19,14 @@ inputs:
   sbom: none
 outputs:
   graph: /out/graph.json
-  # Provvisorio, da confermare in X-04 sui pilota: un modulo con i suoi archi pesa nell'ordine delle
-  # centinaia di byte (saleor: 4.384 moduli e circa 26 mila archi, qualche MB). 64 MiB coprono oltre
-  # 100 mila moduli; l'adattatore usa lo stesso valore.
+  # Misurato il 2026-11-18 (I-02): 4,9 MB su saleor (4.384 moduli), 0,9 MB su excalidraw. 64 MiB sono
+  # tredici volte il massimo; l'adattatore usa lo stesso valore.
   max_bytes: 67108864
 resources:
-  # Provvisorie fino alla misura sui pilota (X-05): V-07 ha misurato 42 MB e meno di 6 s sul pilota
-  # piu' grande con una visita semplice; la risoluzione degli import non e' ancora misurata.
+  # Misurato il 2026-11-18 (I-02): 8,2 s e 32 MiB di picco su saleor, il più grande dei pilota. 512 MiB
+  # sono sedici volte il picco, 180 s oltre venti volte il tempo.
   cpu: "1"
-  memory: 1Gi
-  timeout: 300s
+  memory: 512Mi
+  timeout: 180s
   pids: 32  # Python e git: 16 non basta con git, come per gitleaks
 network: none

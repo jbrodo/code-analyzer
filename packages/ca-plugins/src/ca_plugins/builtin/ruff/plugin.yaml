@@ -14,14 +14,14 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # Provvisorio, da confermare in X-04 sui pilota con le misure: un risultato pesa circa 350 byte
-  # (nessun testo dei file). 32 MiB reggono circa 90 mila risultati.
+  # Misurato il 2026-11-18 (I-02): 1,25 MB su saleor (4.384 file Python, circa 3.500 risultati), 2,4 KB
+  # su fastapi. 32 MiB, oltre venti volte il massimo; un risultato pesa circa 350 byte.
   max_bytes: 33554432
 resources:
-  # Provvisorie fino alla misura sui pilota (X-05): ruff e' un binario nativo che su saleor
-  # (4.384 file) dovrebbe stare nell'ordine dei secondi.
+  # Misurato il 2026-11-18 (I-02) su fastapi, excalidraw e saleor: al massimo 0,9 s e 60 MiB di picco
+  # su saleor. 512 MiB sono otto volte il picco, 120 s oltre cento volte il tempo.
   cpu: "1"
-  memory: 1Gi
-  timeout: 300s
+  memory: 512Mi
+  timeout: 120s
   pids: 32
 network: none

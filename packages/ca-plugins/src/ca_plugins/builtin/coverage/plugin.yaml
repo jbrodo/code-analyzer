@@ -20,8 +20,9 @@ outputs:
   # reggono oltre 20 mila file.
   max_bytes: 8388608
 resources:
-  # Provvisorie fino alla misura (X-05). Un report fino a 32 MiB si legge in memoria; l'XML con
-  # tetto di 2 milioni di elementi.
+  # Non misurabile sui pilota (I-02): nessuno ha un report di copertura committato (92 byte di uscita,
+  # 0,3 s, 13 MiB senza ingressi). Restano i valori provvisori: un report fino a 32 MiB si legge in
+  # memoria; l'XML con entità si rifiuta.
   cpu: "1"
   memory: 512Mi
   timeout: 120s

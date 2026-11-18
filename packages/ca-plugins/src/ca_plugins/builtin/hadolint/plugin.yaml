@@ -16,13 +16,14 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # Provvisorio, da confermare in X-04: un risultato pesa circa 280 byte. 8 MiB reggono oltre
-  # 25 mila risultati.
+  # Misurato il 2026-11-18 (I-02): al massimo 2,2 KB sui tre pilota (pochi Dockerfile). 8 MiB reggono
+  # oltre 25 mila risultati da circa 280 byte.
   max_bytes: 8388608
 resources:
-  # Provvisorie fino alla misura sui pilota (X-05): binario nativo, circa 1 s sulla fixture.
+  # Misurato il 2026-11-18 (I-02): 0,3 s e al massimo 26 MiB di picco. 256 MiB sono dieci volte il
+  # picco, 60 s duecento volte il tempo.
   cpu: "1"
-  memory: 512Mi
-  timeout: 120s
+  memory: 256Mi
+  timeout: 60s
   pids: 32
 network: none

@@ -584,3 +584,49 @@ Verificato il 2026-11-17. `uv pip compile --generate-hashes` da `checkov==3.4.5`
 | Nessuna dichiarata nei metadati | 2 | `cloudsplaining`, `networkx`: testi da procurarsi in D2-14 |
 
 Nessuna licenza vietata o da approvare. Per D2-14 il materiale è l'SBOM dell'immagine, come per le altre.
+
+## I-02 — Misura dei plugin nuovi sui pilota (2026-11-18)
+
+Misurato il 2026-11-18 sulla macchina di sviluppo (venti core) con le immagini già costruite e firmate localmente, una esecuzione per caso. Pilota: `fastapi/full-stack-fastapi-template` (`aabb901`), `excalidraw/excalidraw` (`701b901`) e `saleor/saleor` (`1d707dc`), clonati con 80 commit di storia come in V-06.
+
+Metodo: ogni plugin gira da solo in un contenitore con le opzioni del profilo `hardened-container` (rete spenta, file system in sola lettura, nessuna capability, `/workspace` in sola lettura, `/tmp` in tmpfs, `/out` scrivibile) ma con 4 GiB di memoria, per leggere il picco vero dal cgroup (`memory.peak`) e non un valore che il limite avrebbe già tagliato. Si registra la durata, il picco di memoria e la dimensione dell'uscita. Non passa dall'esecutore della CLI: non c'è la verifica della firma, né il volume tmpfs di `/out` con il suo tetto.
+
+| Plugin | Pilota | Durata (s) | Picco (MiB) | Uscita (byte) | Note |
+| --- | --- | --- | --- | --- | --- |
+| ruff | fastapi | 0,3 | 10 | 2.377 | |
+| ruff | excalidraw | 0,3 | 11 | 88 | nessun file Python |
+| ruff | saleor | 0,9 | 60 | 1.251.469 | 4.384 file Python |
+| eslint | fastapi | 2,4 | 365 | 28.045 | |
+| eslint | excalidraw | 14,7 | 902 | 1.057.552 | 1.328 file TypeScript |
+| eslint | saleor | 0,9 | 127 | 0 | nessun file JavaScript: non si applica (esce con 3) |
+| hadolint | fastapi | 0,3 | 10 | 1.199 | |
+| hadolint | excalidraw | 0,3 | 10 | 1.617 | |
+| hadolint | saleor | 0,3 | 26 | 2.172 | |
+| checkov | fastapi | 3,3 | 188 | 1.203 | |
+| checkov | excalidraw | 3,3 | 191 | 367 | |
+| checkov | saleor | 3,5 | 213 | 640 | |
+| coverage | tutti e tre | 0,2–0,3 | 12–13 | 92 | nessun report di copertura nel repository |
+| ca-graph | fastapi | 0,5 | 17 | 128.676 | |
+| ca-graph | excalidraw | 2,6 | 22 | 908.508 | |
+| ca-graph | saleor | 8,2 | 32 | 4.887.482 | 4.384 moduli |
+
+### Cosa ne segue per i manifest
+
+| Plugin | `max_bytes` | Memoria | Tempo massimo | Perché |
+| --- | --- | --- | --- | --- |
+| ruff | 32 MiB (invariato) | 1 GiB → 512 MiB | 300 s → 120 s | massimo 1,25 MB, 60 MiB, 0,9 s |
+| eslint | 32 MiB (invariato) | 2 GiB (invariata) | 600 s → 300 s | massimo 1,06 MB, 902 MiB, 14,7 s: Node ha un'impronta alta |
+| hadolint | 8 MiB (invariato) | 512 MiB → 256 MiB | 120 s → 60 s | massimo 2,2 KB, 26 MiB, 0,3 s |
+| checkov | 32 MiB → 8 MiB | 2 GiB → 1 GiB | 600 s → 120 s | massimo 1,2 KB, 213 MiB, 3,5 s; 128 PID, vedi sotto |
+| ca-graph | 64 MiB (invariato) | 1 GiB → 512 MiB | 300 s → 180 s | massimo 4,9 MB, 32 MiB, 8,2 s |
+| coverage | invariati (provvisori) | invariata | invariato | nessun pilota ha un report di copertura |
+
+I margini sono dai cinque ai sedici volte il picco di memoria e oltre venti volte il tempo misurato: un repository più grande dei pilota (ruff e ca-graph crescono con i file) ha spazio prima di fallire, e un plugin impazzito si ferma comunque. I numeri non si estendono oltre i pilota.
+
+### Limiti della misura
+
+- **Coverage non è misurato**: nessun pilota ha un report LCOV o Cobertura committato, quindi l'uscita è quella di un workspace senza ingressi. I valori restano provvisori finché non c'è un pilota con la copertura.
+- **Una sola esecuzione per caso**, sulla stessa macchina, con la cache dell'immagine calda. Il picco di memoria è letto dal cgroup in un ciclo di campionamento: l'ultimo valore prima dell'uscita, cumulativo, quindi esatto fino all'ultima lettura.
+- **Fuori dall'esecutore**: la misura non include la verifica della firma, il volume di `/out` né la copia del workspace. Il tempo reale di una scansione intera è in V-06 e nel report di ciascuna.
+- **checkov a 64 PID** si bloccava (auto-analisi del 2026-11-18); il limite a 128 è stato verificato con le opzioni esatte del contenitore, non qui.
+- Le CPU sono una (`cpu: "1"`, come nel manifest): su una macchina più piccola i tempi crescono.

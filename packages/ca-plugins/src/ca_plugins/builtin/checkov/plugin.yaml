@@ -15,16 +15,15 @@ inputs:
   sbom: none
 outputs:
   sarif: /out/results.sarif
-  # Provvisorio, da confermare in X-04: un risultato pesa circa 270 byte (nessun frammento ne'
-  # nome di risorsa). 32 MiB reggono oltre 100 mila risultati.
-  max_bytes: 33554432
+  # Misurato il 2026-11-18 (I-02): al massimo 1,2 KB sui tre pilota (pochi file di infrastruttura). 8 MiB
+  # reggono oltre 25 mila risultati da circa 270 byte; scende dai 32 MiB provvisori.
+  max_bytes: 8388608
 resources:
-  # Provvisorie fino alla misura sui pilota (X-05): checkov e' Python con molte dipendenze; la
-  # copia di lavoro in /tmp (fino a 64 MiB) conta nel limite di memoria (tmpfs).
+  # Misurato il 2026-11-18 (I-02): 3,5 s e al massimo 213 MiB di picco sui tre pilota. 1 GiB è cinque
+  # volte il picco; la copia di lavoro in /tmp (fino a 64 MiB) conta nel limite. 128 PID: con 64 il
+  # gruppo di processi di checkov si blocca su una macchina con venti core (auto-analisi, 2026-11-18).
   cpu: "1"
-  memory: 2Gi
-  timeout: 600s
-  # 64 non basta: checkov apre un gruppo di processi per framework e su una macchina con venti core
-  # esaurisce i PID e si blocca senza errore fino al timeout (trovato dall'auto-analisi, 2026-11-18).
+  memory: 1Gi
+  timeout: 120s
   pids: 128
 network: none

@@ -1219,7 +1219,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §2, §3. ADR: 0004, 0005.
 
 #### I-02 — Nuove immagini nel pacchetto
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-18**. `package-cli.sh` itera su tutti i manifest di `builtin/`: la prova del 2026-11-18 ha impacchettato e firmato tredici plugin con i digest nei manifest, con licenze e SBOM controllati da `image-gate.sh` per ciascuno (e `ca-graph`, checkov, hadolint, eslint, ruff e coverage sono tra loro). **Misurati** `max_bytes`, memoria e tempo dei sei plugin nuovi sui tre pilota, con le opzioni del contenitore e 4 GiB per leggere il picco vero: tabella e metodo in `doc/verifiche/scanner-fase-2.md` (I-02). I manifest sono aggiornati con i valori misurati e i margini (da cinque a sedici volte il picco di memoria, oltre venti volte il tempo): memoria di ruff, hadolint, checkov e `ca-graph` ridotta, tempi massimi ridotti, `max_bytes` di checkov da 32 a 8 MiB. **Non misurato:** coverage (nessun pilota ha un report di copertura: valori provvisori). **Limiti:** una sola esecuzione per caso, fuori dall'esecutore della CLI. Verifica: unit e contratto verdi, E2E (135 prove) verde con i nuovi limiti; l'E2E aveva un test rimasto indietro (`gate.mode` in Fase 1), corretto.
 - Percorsi: `deploy/docker/`, `packages/ca-plugins/`.
 - Dipende da: P-01, P-02, P-03, P-04, P-05, G-09.
 - Accettazione: `package-cli.sh` e `image-gate.sh` includono le nuove immagini, digest nei manifest impacchettati, licenze e SBOM obbligatori; `max_bytes` e risorse misurati sui pilota come F1:X-02.
