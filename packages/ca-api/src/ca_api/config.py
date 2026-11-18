@@ -47,6 +47,13 @@ class Settings:
     s3_prefix: str = ""
     default_branches: tuple[str, ...] = ("main", "master")  # branch che contano come principali
     exception_max_days: int = 365  # durata massima di un'eccezione (ADR-0029)
+    web_dir: str | None = None  # la SPA compilata (immagine di rilascio, I-03); senza, solo l'API
+    web_config: str | None = (
+        None  # `config.json` dell'ambiente (IdP, client); senza, quello della SPA
+    )
+    csp_connect: tuple[
+        str, ...
+    ] = ()  # origini oltre la propria a cui la SPA può connettersi (l'IdP)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
@@ -71,6 +78,11 @@ class Settings:
             s3_region=source.get(PREFIX + "S3_REGION") or "us-east-1",
             s3_prefix=source.get(PREFIX + "S3_PREFIX") or "",
             default_branches=branches or ("main", "master"),
+            web_dir=source.get(PREFIX + "WEB_DIR") or None,
+            web_config=source.get(PREFIX + "WEB_CONFIG") or None,
+            csp_connect=tuple(
+                o.strip() for o in source.get(PREFIX + "CSP_CONNECT", "").split(",") if o.strip()
+            ),
             exception_max_days=_int(
                 source, "EXCEPTION_MAX_DAYS", cls.exception_max_days, minimum=1
             ),

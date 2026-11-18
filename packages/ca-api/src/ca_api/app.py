@@ -20,6 +20,7 @@ from ca_api.db.engine import make_engine
 from ca_api.limits import BodyLimitMiddleware
 from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode, ProblemError
 from ca_api.routes import router
+from ca_api.spa import mount_spa
 from ca_api.storage.filesystem import FileSystemArtifactStore
 from ca_api.storage.s3 import S3ArtifactStore, make_client
 from ca_api.telemetry import Telemetry, TelemetryMiddleware, build_meter_provider
@@ -147,4 +148,5 @@ def create_app(
         """Il processo è vivo. Non controlla database né archivio."""
         return Health(status="ok")
 
+    mount_spa(app, app.state.settings)  # per ultima: non copre mai le rotte di /v1
     return app

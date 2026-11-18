@@ -1196,7 +1196,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §7.2. ADR: 0004, 0005.
 
 #### I-03 — Immagine del server
-- Agente: `devops`. Stato: `LIBERO` (D2-07 decisa il 2026-11-16).
+- Agente: `devops`. Stato: **chiuso il 2026-11-18** (D2-07 decisa il 2026-11-16), senza firma né pubblicazione (D2-16). `Dockerfile.release` e `build-release-image.sh`: l'API con la SPA compilata, utente non root, file system in sola lettura, nessun segreto, licenze e SBOM verificati da `image-gate.sh`. Nuovo `ca_api/spa.py` (indirizzi delle viste, nessuna uscita dalla cartella, configurazione dell'ambiente, Content-Security-Policy con nonce per gli stili iniettati); 19 test e il browser vero contro l'immagine. Vedi ADR-0030. **Limiti:** insieme delle licenze della SPA più largo del bundle (una senza file di licenza); parere di S-01 sulla politica non c'è; non firmata; non provata con S3 né dietro un proxy.
 - Percorsi: `deploy/docker/server/`.
 - Dipende da: B-01, W-01.
 - Accettazione: immagine dell'API con la SPA compilata, utente non root, nessun segreto, licenze e SBOM.

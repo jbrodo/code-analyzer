@@ -1,0 +1,42 @@
+# Immagine di RILASCIO del server (I-03): l'API e la SPA compilata nello stesso processo, utente
+# non root, nessun segreto, file di licenza e SBOM verificati da image-gate.sh. ADR-0016, ADR-0030.
+# Non si pubblica da qui: nessun push e nessuna firma (D2-16, decisione del 2026-11-10).
+# Contesto di build: la cartella preparata da build-release-image.sh (wheel, requirements con hash,
+# `web/` compilata senza `config.json`, licenze di terzi).
+FROM python:3.14-slim-trixie@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f
+
+LABEL org.opencontainers.image.title="code-analyzer-server" \
+      org.opencontainers.image.description="Server di Code Analyzer: API e dashboard"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY requirements.txt /requirements.txt
+COPY dist/ /dist/
+# Dipendenze di terzi dal lock del repository, con hash: mai risolte durante la build.
+RUN pip install --no-cache-dir --require-hashes --no-deps -r /requirements.txt \
+ && pip install --no-cache-dir --no-deps /dist/*.whl \
+ && rm -rf /dist /requirements.txt \
+ && mkdir -p /var/lib/ca/artifacts && chown 65532:65532 /var/lib/ca/artifacts \
+ && chmod 700 /var/lib/ca/artifacts
+
+# La SPA compilata. La configurazione dell'ambiente (IdP, client OIDC) NON e' qui: si monta e si
+# indica con CA_API_WEB_CONFIG, e il server non la tiene mai in cache.
+COPY --chmod=0644 web/ /srv/web/
+
+# File di licenza: il progetto dal suo LICENSE, le dipendenze Python dai file delle wheel
+# installate, quelle della SPA raccolte da collect_web_licenses.mjs.
+COPY licenses/ /licenses/
+COPY LICENSE /licenses/code-analyzer/LICENSE
+COPY collect_licenses.py /build-tools/collect_licenses.py
+RUN mkdir -p /licenses/python \
+ && cp /usr/local/lib/python3.14/LICENSE.txt /licenses/python/LICENSE.txt \
+ && python /build-tools/collect_licenses.py \
+ && rm -rf /build-tools \
+ && chmod -R a=rX /licenses /srv/web
+
+USER 65532:65532
+EXPOSE 8000
+ENV CA_API_WEB_DIR=/srv/web \
+    CA_API_ARTIFACTS_DIR=/var/lib/ca/artifacts
+ENTRYPOINT ["python", "-m", "uvicorn", "ca_api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-server-header"]
