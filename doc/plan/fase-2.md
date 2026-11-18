@@ -533,7 +533,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §12.1, §12.2. ADR: 0003, 0027.
 
 #### C-10 — Test di contratto sui nuovi schemi
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-18** per verifica: ogni schema nuovo o cambiato ha il suo test di contratto sul file di `schemas/` senza importare i modelli e il suo test di equivalenza (scoring-config, service-context, graph, proprietà SARIF, config, manifest, scan-report, finding), più `test_openapi_contract.py` per l'OpenAPI e `test_packaged_schemas.py` per quelli del pacchetto. Nessun test aggiunto.
 - Percorsi: `tests/contract/`.
 - Dipende da: C-01, C-02, C-03, C-04, C-05, C-08, C-09.
 - Accettazione: per ogni schema nuovo o cambiato, casi validi e non validi validati sui file in `schemas/` senza importare i modelli, e un test di equivalenza modello e schema come in Fase 1.
@@ -1233,7 +1233,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 ### O — CI del progetto
 
 #### O-01 — Verifica: `web/` e OpenAPI
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-18** per verifica: `verify.yml` esegue `bun run --cwd web lint` (che controlla anche i token e i tipi generati dall'OpenAPI) e `bun run --cwd web test`, `openapi_export --check`, `schema_export --check`, `ty` e `lint-imports` (che coprono `ca_api`); `AGENTS.md` li elenca. Non rieseguito su GitHub.
 - Percorsi: `.github/workflows/verify.yml`, `AGENTS.md`.
 - Dipende da: C-08, W-01.
 - Accettazione: `bun run --cwd web lint` e `bun run --cwd web test` in `AGENTS.md` e in `verify.yml`; export dell'OpenAPI con `--check` e controllo dei tipi generati; nuovi pacchetti in `lint-imports` e `ty`.
@@ -1254,7 +1254,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §16 regola 7. ADR: 0006, 0024.
 
 #### O-04 — Integrazione del server
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **scritto il 2026-11-18, mai eseguito su GitHub**: job `server-integration` in `verify.yml` con `CA_TEST_DOCKER=1`, che esegue i test di integrazione di `ca-api` (database, ingestione, letture, conformità all'OpenAPI, S3) su PostgreSQL 16 in container. Le immagini si scaricano dal registry pubblico solo per avviare i contenitori; il test non è fissato per digest.
 - Percorsi: `.github/workflows/`.
 - Dipende da: T-05.
 - Accettazione: job con PostgreSQL e archivio in container per i test di integrazione di `ca-api`; nessun servizio esterno.
@@ -1337,14 +1337,14 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §5, §14. ADR: 0025.
 
 #### T-05 — Integrazione del server
-- Agente: `test`. Stato: `LIBERO` (D2-02 decisa il 2026-11-16).
+- Agente: `test`. Stato: **chiuso il 2026-11-18** per verifica: `tests/integration/test_api_database.py`, `test_api_ingest.py` (42 prove: ingestione idempotente, limiti, report ostili rifiutati, stato lato server, tenant e repository del token), `test_api_reads.py` (36: letture, triage, un tenant non vede un altro) e `test_api_s3_store.py` su PostgreSQL e archivio in container; la matrice dei ruoli è in `tests/unit/api/test_api_authorization.py`.
 - Percorsi: `tests/integration/`.
 - Dipende da: B-03, B-05, B-08, B-09, I-05.
 - Accettazione: ingestione e lettura su PostgreSQL e archivio in container, matrice di autorizzazione, isolamento dei tenant, report ostili rifiutati.
 - Spec: §14. ADR: 0016, 0018, 0019.
 
 #### T-06 — Contratto tra OpenAPI e client
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-18**. Gli esempi dell'OpenAPI superano gli schemi (`test_openapi_contract.py`); le risposte reali di `ca-api` superano l'OpenAPI (`tests/integration/test_api_openapi_conformance.py`: ogni rotta, i PATCH, gli errori come problem+json); i tipi del client compilano sul file corrente e il lint fallisce se non coincidono (W-02). **Trovato dal nuovo test:** SARIF e SBOM dichiaravano anche `application/json` senza rispondere così; ora il contratto dichiara solo il loro tipo vero.
 - Percorsi: `tests/contract/`, `web/`.
 - Dipende da: C-08, W-02.
 - Accettazione: gli esempi dell'OpenAPI superano gli schemi; le risposte reali di `ca-api` nei test superano l'OpenAPI; i tipi del client compilano sul file corrente.

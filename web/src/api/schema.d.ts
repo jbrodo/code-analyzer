@@ -1948,9 +1948,6 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/json": {
-                        readonly [key: string]: unknown;
-                    };
                     readonly "application/vnd.cyclonedx+json": unknown;
                 };
             };
@@ -2254,9 +2251,6 @@ export interface operations {
                     readonly [name: string]: unknown;
                 };
                 content: {
-                    readonly "application/json": {
-                        readonly [key: string]: unknown;
-                    };
                     readonly "application/sarif+json": unknown;
                 };
             };

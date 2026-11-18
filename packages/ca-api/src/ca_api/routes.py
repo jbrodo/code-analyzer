@@ -262,7 +262,8 @@ def get_scan(request: Request, identity: ReaderOrPipeline, id: ID) -> ScanDetail
     "/scans/{id}/sarif",
     operation_id="getScanSarif",
     summary="SARIF aggregato della scansione",
-    response_model=dict[str, Any],
+    response_model=None,
+    response_class=Response,  # il corpo è il documento così com'è: se ne dichiara il tipo
     responses={
         200: {"description": "SARIF 2.1.0 (`ADR-0011`).", "content": {"application/sarif+json": {}}}
     },
@@ -371,7 +372,8 @@ def patch_finding(
     "/repositories/{id}/sbom",
     operation_id="getRepositorySbom",
     summary="SBOM CycloneDX della scansione corrente",
-    response_model=dict[str, Any],
+    response_model=None,
+    response_class=Response,  # il corpo è il documento così com'è: se ne dichiara il tipo
     responses={
         200: {"description": "CycloneDX 1.7.", "content": {"application/vnd.cyclonedx+json": {}}}
     },

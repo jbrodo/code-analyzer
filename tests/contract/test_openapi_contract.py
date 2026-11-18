@@ -1,7 +1,7 @@
 """OpenAPI v1 (C-08, ADR-0017): il contratto in `schemas/openapi.json`, senza importare i modelli.
 
-L'unica eccezione è il confronto con `schemas/`, che usa solo i file. Le route non sono ancora
-realizzate: quelle dichiarate rispondono 501 con il formato di errore unico.
+L'unica eccezione è il confronto con `schemas/`, che usa solo i file. Le risposte vere del server
+sono verificate contro questo contratto in `tests/integration/test_api_openapi_conformance.py`.
 """
 
 import copy

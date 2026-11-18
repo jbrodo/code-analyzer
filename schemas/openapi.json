@@ -3775,13 +3775,6 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Getrepositorysbom",
-                  "type": "object"
-                }
-              },
               "application/vnd.cyclonedx+json": {}
             },
             "description": "CycloneDX 1.7."
@@ -4186,13 +4179,6 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Getscansarif",
-                  "type": "object"
-                }
-              },
               "application/sarif+json": {}
             },
             "description": "SARIF 2.1.0 (`ADR-0011`)."
