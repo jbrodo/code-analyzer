@@ -1395,7 +1395,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13, §18. ADR: 0021, 0023.
 
 #### X-07 — Auto-analisi con i livelli della Fase 2
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: `LIBERO`. **Prova intermedia del 2026-11-18** su clone pulito dell'ultimo commit (`e5f8193`) con il pacchetto firmato e tredici plugin: `complete`, 1207 finding, `gate --fail-on critico,alto` esce con 0 dopo 7 eccezioni nuove approvate da Riccardo Roveda (tre licenze di pacchetti nuovi, tre notices rigenerati, una CVE di picomatch senza versione corretta, scadenza 2027-02-18). La prova ha trovato e fatto correggere: la heredoc nel Dockerfile della CLI (hadolint non la legge), un carattere bidirezionale scritto per esteso in un test, licenze nominate nei documenti e un blocco di checkov con 64 PID su venti core. Non chiude X-07: mancano K-14 e il giudizio con i livelli da punteggio.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: K-14, I-02, X-10.
 - Accettazione: Code Analyzer sul proprio monorepo con `--fail-on critico,alto` esce con 0: nessun finding Critico o Alto, con i 6 finding di licenza effettiva coperti dalle eccezioni di X-10.
