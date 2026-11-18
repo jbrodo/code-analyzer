@@ -254,3 +254,11 @@ Il rischio è quello di ogni strumento che lancia container dal job. Accettato p
 4. **Quale flusso può spostare lo stato (S1-A1).** Lo stato della scansione corrente si sposta solo con un token il cui `ref` è il ramo principale, quindi non da una PR. Un flusso nuovo aggiunto direttamente al ramo principale, però, può farlo. Limitare il privilegio ai flussi registrati per il repository (`job_workflow_ref`) è una scelta di adozione, da proporre se serve.
 5. **Revisione indipendente.** Questa revisione e le quattro precedenti sono dello stesso autore del codice. Prima di una distribuzione servirebbe l'occhio di una persona, in particolare su `ca_api/auth/`, `ca_api/ingest.py`, `ca_api/spa.py`, il runner dei plugin e `integrations/github-action/`.
 6. **Aperti minori:** S1-M6 (indirizzi privati), S2-M1, S3-B1 (altri canali di testo), S4-M4 (artefatto per flusso), S5-M3 (cache assente non dichiarata), S1-B2 (test dei log di un'ingestione).
+
+### Decisioni dell'utente sul rischio residuo (2026-11-18)
+
+1. **Quota di byte per tenant: accettata finché c'è un solo tenant** (D2-02). Resta il rischio dichiarato qui sopra e si riapre prima del secondo tenant, insieme alla colonna con la dimensione degli artefatti e alla soglia per tenant.
+2. **Un solo ruolo di database: accettato con un tenant solo.** La protezione a livello di PostgreSQL (ruolo separato per il registro delle modifiche, ruolo per tenant) si fa insieme alla quota e prima del secondo tenant.
+3. **Valori del limite dal CVSS: restano 9,0 `alto` e 7,0 `medio`**, da calibrare in X-02 con gli altri valori di scoring. Contano solo con `levels.source: score`.
+
+Restano da decidere, se serve, il rischio 4 (quale flusso può spostare lo stato) e la revisione indipendente prima di una distribuzione.
