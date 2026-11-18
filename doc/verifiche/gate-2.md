@@ -54,3 +54,62 @@ Si registra anche il risultato dei livelli provvisori, come termine di confronto
 ### Riservatezza
 
 In questo file: numero di finding per categoria e livello, dimensione dei campioni, seme, valori di tau-b e di sovrapposizione, durate. Non entrano percorsi, messaggi, regole per singolo finding né frammenti di codice dei due repository.
+
+## X-02 — Scansione in ombra dei repository del gate (2026-11-18)
+
+Scansioni complete con `--offline` e gli snapshot dei feed già in cache (EPSS e KEV del 2026-11-17), con la CLI impacchettata da `package-cli.sh` al commit `311783f` (immagini firmate sul registry locale), sulla macchina di sviluppo (venti core), una esecuzione per caso. I pilota sono clonati con 80 commit di storia come in V-06; i due repository dell'utente sono cloni puliti dei commit della tabella sopra. `levels.source: provisional` (D2-10): il livello del gate è quello provvisorio di ADR-0009, A e B sono in ombra. Strumento: `scripts/gate2/gate2.py stats`. Qui entrano solo conteggi (i due repository dell'utente sono riservati).
+
+### G2.a: entrambe le varianti su ogni finding
+
+**Superata: 100% su tutti e cinque i repository.** Ogni finding ha i fattori e il punteggio di A e di B, con la versione della configurazione di scoring `1+21df828a85b1`.
+
+### Distribuzione dei livelli
+
+| Repository | Stato | Finding | Provvisorio (critico / alto / medio / basso) | A (critico / alto / medio / basso) | B (id.) | Durata (s) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | `partial` ¹ | 161 | 1 / 27 / 46 / 87 | 0 / 1 / 24 / 136 | uguale ad A | 19 |
+| `excalidraw` | `complete` | 3.350 | 8 / 176 / 1.287 / 1.879 | 0 / 8 / 481 / 2.861 | uguale ad A | 150 |
+| `saleor` | `partial` ² | 3.816 | 1 / 53 / 3.414 / 348 | 0 / 1 / 28 / 3.787 | uguale ad A | 235 |
+| `orario-scuola` | `complete` | 1.169 | 3 / 52 / 476 / 638 | 1 / 3 / 87 / 1.078 | uguale ad A | 92 |
+| `birds-cataloger` | `complete` | 481 | 13 / 207 / 201 / 60 | 0 / 16 / 163 / 302 | uguale ad A | 29 |
+
+¹ `partial` per l'avviso `workspace-symlinks` (quattro collegamenti simbolici con contenuto non analizzato), non per un plugin fallito.
+² `partial` perché eslint usciva con 3: `saleor` ha un `package.json` ma nessun file JavaScript e eslint, che non trova nulla da analizzare, esce con 2. **Difetto trovato da questa misura e corretto**: l'adattatore ora riconosce l'unico messaggio di eslint per «niente da analizzare» e dà un risultato vuoto (`eslint_adapter.py`, con test). Le immagini del pacchetto di questa misura sono precedenti alla correzione, quindi la scansione di `saleor` resta `partial` qui; i finding degli altri plugin non cambiano.
+
+### Quanti finding cambiano livello
+
+| Repository | Da provvisorio ad A | Da provvisorio a B | Da A a B |
+| --- | --- | --- | --- |
+| `full-stack-fastapi-template` | 74 (46,0%) | 74 | 0 |
+| `excalidraw` | 1.163 (34,7%) | 1.163 | 0 |
+| `saleor` | 3.467 (90,9%) | 3.467 | 0 |
+| `orario-scuola` | 479 (41,0%) | 479 | 0 |
+| `birds-cataloger` | 392 (81,5%) | 392 | 0 |
+
+Dove cambiano: quasi sempre verso il basso (`medio → basso` è il grosso: 46 su 74, 964 su 1.163, 3.413 su 3.467, 417 su 479, 174 su 392; poi `alto → medio` e `alto → basso`). Controcorrente: `basso → medio` (15 su `excalidraw`, 7 su `orario-scuola`, 1 su `birds-cataloger`) e un solo `alto → critico`, su `orario-scuola`.
+
+### Cosa dicono i numeri
+
+1. **A e B sono identiche ovunque, e non per caso.** La Variante B non è ancora definita per `quality` e `architecture` (ADR-0023, K-06..K-10) e per le altre categorie è per costruzione uguale ad A: il report lo dichiara con `variante-b-non-definita`. Finché B non esiste, G2.b non può distinguere le due varianti: può solo confrontare A con i livelli provvisori.
+2. **Con i valori predefiniti, il livello da punteggio quasi non produce livelli alti.** I punteggi massimi sono 15,8, 25,2, 21,0, 37,0 e 29,1 su cinque repository, il 99° percentile tra 6 e 21, la mediana tra 0,3 e 4,2, con soglie a 15, 40 e 70. Se `levels.source` passasse a `score` così com'è, il gate non bloccherebbe quasi nulla (non c'è un `critico` da punteggio in quattro repository su cinque; il solo caso è uno su `orario-scuola`). È la taratura che ADR-0021 dichiara da fare in X-02: **le soglie, i valori di G e P e i limiti minimi dal CVSS vanno rivisti prima di passare a `score`**, non dopo.
+3. **I livelli provvisori e quelli da punteggio hanno significati diversi.** Un CVSS alto irraggiungibile è `alto` per ADR-0009 e `basso` per A (ADR-0009 lo notava: un CVSS alto irraggiungibile blocca). Il confronto che il Gate 2 deve fare è quale dei due ordina meglio per l'utente, non quale concorda con l'altro.
+4. **Il tempo di una scansione completa**, in secondi sopra, resta sotto i 10 minuti su tutti e cinque (il massimo è `saleor`, 235 s). Non è G2.d, che misura la modalità PR (X-05).
+
+### Limiti
+
+- Una sola esecuzione per caso; snapshot dei feed del 2026-11-17, non aggiornati (`--offline`): gli EPSS e i KEV di oggi possono dare altri punteggi.
+- Nessun repository di team: gli unici repository riservati sono i due dell'utente; il terzo, facoltativo, non c'è.
+- `saleor` `partial` per il difetto di eslint (corretto nel codice, immagini non ricostruite).
+
+## X-03 — Materiale di valutazione (2026-11-18)
+
+Campioni generati con `scripts/gate2/gate2.py sample`, **seme 20261118**, 30 finding per repository, stratificati per categoria e livello provvisorio (quote proporzionali, almeno uno per strato non vuoto), dai finding con fingerprint distinto, di stato aperto, senza eccezione e senza `health`.
+
+| Repository | Finding ammissibili | Campione | Strati non vuoti |
+| --- | --- | --- | --- |
+| `orario-scuola` | 1.169 | 30 | 13 |
+| `birds-cataloger` | 481 | 30 | 12 |
+
+Il materiale è **fuori dal repository**, in `~/gate2-material/` (cartella con permessi riservati): per ciascun repository `valutazione-<repo>.md` (i 30 finding in ordine casuale, con categoria, regola, posizione e messaggio, **senza** livelli, severità, punteggi né variante), `ordinamento-<repo>.csv` (da compilare con il rango, 1 il più urgente, pari merito ammessi), `chiave-<repo>.json` (corrispondenza con i fingerprint, da non aprire prima di consegnare) e il report su cui calcolare. Il calcolo dopo la consegna: `scripts/gate2/gate2.py score --report ~/gate2-material/report-<repo>.json --key ~/gate2-material/chiave-<repo>.json --ranking ~/gate2-material/ordinamento-<repo>.csv`, che stampa tau-b e sovrapposizione sui primi 10 per A, B e per i livelli provvisori e se la soglia (tau-b ≥ 0,5 e 6 su 10) è raggiunta.
+
+**Quando farla.** Ordinare 60 finding costa tempo, e finché la Variante B non esiste (K-06..K-10) il confronto A contro B è vuoto: A e B danno lo stesso ordinamento. L'ordinamento dell'utente si può comunque consegnare ora e misura A contro i livelli provvisori; non andrà rifatto quando B esisterà, perché il campione è fissato dal seme. Il riesame con una configurazione di scoring ritarata (punto 2 sopra) cambia i punteggi ma non il campione.

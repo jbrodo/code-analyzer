@@ -28,6 +28,11 @@ NODE = "/usr/local/bin/node"
 ESLINT = "/opt/ca-plugin/node_modules/eslint/bin/eslint.js"
 ESLINT_CONFIG = "/opt/ca-plugin/eslint.config.mjs"
 WORKSPACE = "/workspace"
+# Il solo messaggio di eslint per «niente da analizzare»: il testo è suo e cita solo il pattern `.`,
+# non contenuto del repository, quindi lo si riconosce per intero e nient'altro.
+NO_FILES = re.compile(
+    rb'You are linting "\.", but all of the files matching the glob pattern "\." are ignored\.'
+)
 OUT_FILE = "/out/results.sarif"
 CONFIG_FILE = "/inputs/config.json"
 TMP_DIR = "/tmp"  # noqa: S108 - tmpfs del profilo
@@ -193,14 +198,18 @@ def run(
         done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
             command(node, eslint, eslint_config, disabled),
             stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
             cwd=workspace,  # i file si cercano rispetto alla cartella di lavoro (V-04)
             env=env,
             check=False,
         )
     except OSError:
         return EXIT_TOOL
+    if done.returncode == 2 and NO_FILES.search(done.stderr[:4096]):
+        # Un repository con `package.json` ma senza file che la configurazione dell'immagine lint:
+        # non c'è nulla da analizzare, non è un guasto (trovato su saleor, X-02, 2026-11-18).
+        Path(out_file).write_bytes(adapt(b"[]", workspace))
+        return 0
     if done.returncode not in (0, 1) or not done.stdout:  # 1 = trovati problemi
         return EXIT_TOOL
     try:

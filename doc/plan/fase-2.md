@@ -1390,14 +1390,14 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13. ADR: 0021, 0023.
 
 #### X-02 — Scansione in ombra dei repository del gate
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-18** (`doc/verifiche/gate-2.md`): cinque repository (i tre pilota e i due dell'utente), G2.a al 100% su tutti, distribuzione dei livelli provvisori, di A e di B e quanti cambiano (dal 35% al 91% da provvisorio ad A, quasi sempre verso il basso), solo conteggi. **Esiti che contano:** A e B sono identiche ovunque (la B non è definita: G2.b non può ancora distinguerle) e con i valori predefiniti il livello da punteggio non produce quasi livelli alti (punteggi massimi tra 15,8 e 37,0): le soglie e i valori vanno ritarati prima di passare a `score`. Trovato e corretto un difetto di eslint (esce con 2 sui repository senza file da analizzare, rendendo `partial` la scansione). Strumento: `scripts/gate2/gate2.py stats`.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: X-01, K-14, L-02, I-02.
 - Accettazione: su pilota e repository dei team, G2.a misurata; distribuzione dei livelli provvisori, di A e di B; numero di finding che cambiano livello. Solo conteggi se i repository sono riservati.
 - Spec: §13. ADR: 0009, 0021.
 
 #### X-03 — Materiale di valutazione
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-18 per la preparazione**: campioni di 30 finding per i due repository dell'utente, seme 20261118, stratificati, senza punteggi né variante, in `~/gate2-material/` fuori dal repository, con il modello dell'ordinamento e il comando che calcola tau-b e sovrapposizione (`scripts/gate2/gate2.py`, 11 test). **La valutazione è dell'utente** (X-04) e può farsi ora contro i livelli provvisori; il confronto A contro B resta vuoto finché non esiste la Variante B.
 - Percorsi: `doc/verifiche/gate-2.md`, materiale riservato fuori dal repository.
 - Dipende da: X-02.
 - Accettazione: campioni stratificati secondo il protocollo, presentati senza punteggi né variante; seme di estrazione registrato.

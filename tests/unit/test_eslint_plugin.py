@@ -430,3 +430,47 @@ def test_license_files_are_the_release_texts_without_a_product_license() -> None
     assert "non dichiara la licenza del prodotto" in " ".join(notices.split()).lower()
     licence = (ESLINT / "licenses/eslint/LICENSE").read_text()
     assert "Permission is hereby granted" in licence
+
+
+def fake_node(tmp_path: Path, stderr: str, code: int) -> str:
+    script = tmp_path / "node"
+    script.write_text(f"#!/bin/sh\nprintf '%s' '{stderr}' >&2\nexit {code}\n")
+    script.chmod(0o755)
+    return str(script)
+
+
+NO_FILES_MESSAGE = (
+    'Oops! Something went wrong! :(\n\nESLint: 10.14.0\n\nYou are linting ".", but all of the '
+    'files matching the glob pattern "." are ignored.\n\nIf you do want to lint these files'
+)
+
+
+def run_fake(tmp_path: Path, stderr: str, code: int) -> tuple[int, Path]:
+    out = tmp_path / "results.sarif"
+    done = adapter.run(
+        node=fake_node(tmp_path, stderr, code),
+        workspace=str(tmp_path),
+        out_file=str(out),
+        config_file="/nonexistent",
+        tmp_dir=str(tmp_path),
+    )
+    return done, out
+
+
+def test_a_repository_with_nothing_to_lint_is_an_empty_result_not_a_failure(tmp_path: Path) -> None:
+    """Saleor ha un `package.json` ma nessun file JavaScript: eslint esce con 2 e il plugin falliva,
+    rendendo `partial` ogni scansione (X-02, 2026-11-18)."""
+    code, out = run_fake(tmp_path, NO_FILES_MESSAGE, 2)
+    assert code == 0
+    document = json.loads(out.read_text())
+    assert document["runs"][0]["results"] == []
+
+
+def test_other_eslint_failures_stay_failures(tmp_path: Path) -> None:
+    assert run_fake(tmp_path, "Error: Cannot find module 'x'", 2)[0] == 3
+    assert (
+        run_fake(tmp_path, NO_FILES_MESSAGE, 1)[0] == 3
+    )  # solo l'uscita 2 conta come «niente da analizzare»
+    # un messaggio che cita un altro pattern non è quello di eslint per «niente da analizzare»
+    other = NO_FILES_MESSAGE.replace('".", but', '"src/**", but')
+    assert run_fake(tmp_path, other, 2)[0] == 3
