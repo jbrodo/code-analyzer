@@ -1309,7 +1309,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 ### T — Test
 
 #### T-01 — Regressione e proprietà dello scoring
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-18**. La tabella di F-05 è parametrizzata in `tests/unit/test_scoring_variant_a.py` (G, P, E, C, override, estremi dei livelli); `tests/unit/test_scoring_properties.py` aggiunge nove proprietà con hypothesis: punteggio in [0,100] con due decimali, mai in calo se un fattore cresce, zero se un fattore è zero e cento se sono tutti uno, intervalli semiaperti a ogni soglia (anche con soglie qualunque purché crescenti), livello che segue il punteggio arrotondato, arrotondamento idempotente, ordinamento indipendente dall'ordine d'ingresso. Il piano diceva «scritti prima di K-02..K-13»: sono arrivati dopo, a codice fatto, e passano.
 - Percorsi: `tests/unit/core/`.
 - Dipende da: F-05, C-03.
 - Accettazione: test parametrizzati sulla tabella di F-05 e test di proprietà: punteggio in [0,100], monotonia rispetto a ciascun fattore, intervalli semiaperti, determinismo. Scritti prima di K-02..K-13 e falliti finché non sono implementati.
