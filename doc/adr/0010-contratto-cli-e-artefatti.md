@@ -60,3 +60,17 @@ Precisazioni sul legame tra `status` e plugin:
 Data: 2026-11-09. `publish` scrive `scan-report.json` e la CLI lo rinomina nel sink in `code-analyzer.report.json`: il nome stabilito qui vive in due punti, e chiunque altro usi `publish` otterrebbe il nome sbagliato.
 
 Decisione: il nome pubblico è uno solo e sta nel passo che scrive. `ca_core.pipeline.publish.REPORT_NAME = "code-analyzer.report.json"`. `_CapturingSink` conserva solo i byte per lo stdout e non rinomina più. `ca_cli.scan.REPORT_FILE` resta come alias di `REPORT_NAME`, così `gate.DEFAULT_REPORT` non cambia. Lo schema resta `scan-report`, il nome del contratto e non del file. Nessun documento già prodotto da una CLI rilasciata è coinvolto.
+
+## Emendamento per A-16 (2026-11-18): i comandi e le opzioni di Fase 2
+
+Motivo: la sezione «Fuori da Fase 1» elencava ciò che mancava; ora esiste, con questi esiti.
+
+| Comando | Novità | Exit |
+| --- | --- | --- |
+| `scan` | `--pr`, `--base COMMIT`, `--baseline FILE`, `--baseline-source`, `--pull-request N` (modalità PR e baseline, ADR-0025); `--variant A\|B` (ADR-0021); `--scoring-config FILE` e `CA_SCORING_CONFIG`; `--service-context FILE` (ADR-0028). Precedenza della variante: `--variant`, poi `scoring.variant`, poi il file di scoring | come prima |
+| `gate` | Legge anche `gate.effective_mode`: con `new-findings-only` bloccano solo i finding nuovi | come prima |
+| `notify --provider github` | Commento unico e check run sulla PR (ADR-0027) | 0 fatto o saltato con avviso, 2 errore; mai 1 |
+| `export --format gitlab` | Report nativi di GitLab (SAST, dependency scanning, qualità del codice, CycloneDX portato alla 1.6) | 0, 2 |
+| `upload --server URL` | Invia il report e, se ci sono, SARIF, SBOM e grafo al server con il token OIDC del provider CI (ADR-0016, ADR-0019) | 0 inviato o già presente, 2 errore |
+
+Restano fuori: `sbom --format spdx`, `explain`, `plugin list|verify|run` e il comando `service-context` di ADR-0028 (l'endpoint del server c'è, il comando no). Il report ha le sezioni `scoring`, `enrichment`, `baseline` e `scan` (schema 1.3). L'Action e il componente GitLab chiamano `scan` e `gate` separati e `scan` non riceve `--fail-on` (ADR-0027, §12.1 corretto da A-17).

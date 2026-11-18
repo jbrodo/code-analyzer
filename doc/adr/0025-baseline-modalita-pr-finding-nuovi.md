@@ -1,6 +1,6 @@
 # ADR-0025: Baseline, modalità PR e finding nuovi
 
-- Stato: Proposto. Scelta tecnica; la fonte della baseline segue D2-01 (decisa: il server non esegue scansioni). Prove con K-16, K-17, K-18 e L-01
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: la lettura e il confronto con la baseline (K-16, K-17), il gate (K-18), le opzioni della CLI (L-01) e gli script dell'Action contro l'immagine vera (N-04, N-05). La fonte della baseline segue D2-01: il server non esegue scansioni e un endpoint della baseline non è stato necessario (B-12)
 - Data: 2026-11-13
 - Decisione umana richiesta: no
 - Riferimenti: §5 passi 2 e 9, §8, §9.1, §12.1; ADR-0008, 0009, 0010, 0011, 0014, 0016, 0018; misure in `doc/verifiche/scanner-fase-2.md` (V-06)

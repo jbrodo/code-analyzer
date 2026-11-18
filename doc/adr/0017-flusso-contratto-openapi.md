@@ -1,6 +1,6 @@
 # ADR-0017: Flusso del contratto OpenAPI
 
-- Stato: Proposto. La decisione non richiede l'utente; passa ad `Accettato` con le prove di B-01, C-08 e W-02
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: lo scheletro e le route di B-01 e C-08, i tipi generati e il controllo di deriva di W-02, il test di contratto dell'OpenAPI e quello che confronta le risposte vere del server con essa (T-06)
 - Data: 2026-11-13
 - Decisione umana richiesta: no (scelta tecnica; da confermare in revisione)
 - Riferimenti: §2, §9.2, §16 regola 1; ADR-0003; lacuna 12

@@ -20,18 +20,18 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0014](0014-configurazione-e-confini-di-fiducia.md) | Configurazione e confini di fiducia | Accettato | No |
 | [0015](0015-regole-semgrep-e-licenze-motori.md) | Regole Semgrep e licenze dei motori | Accettato | Presa il 2026-11-10 |
 | [0016](0016-modalita-server-e-orchestrazione.md) | Modalità server e orchestrazione in Fase 2 | Accettato | Presa il 2026-11-10 (D2-01) |
-| [0017](0017-flusso-contratto-openapi.md) | Flusso del contratto OpenAPI | Proposto | No |
-| [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Proposto | No (D2-02 per l'esercizio dei tenant) |
+| [0017](0017-flusso-contratto-openapi.md) | Flusso del contratto OpenAPI | Accettato (2026-11-18) | No |
+| [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Accettato (2026-11-18) | No (D2-02 per l'esercizio dei tenant) |
 | [0019](0019-autenticazione-e-rbac.md) | Autenticazione e RBAC | Accettato | Presa il 2026-11-16 (D2-02) |
-| [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto | No |
-| [0021](0021-scoring-variante-a-ombra-livelli-override.md) | Scoring Variante A, ombra, livelli e override | Proposto | No (valori da calibrare in X-02) |
-| [0022](0022-esposizione-e-churn.md) | Esposizione e churn | Proposto | No |
-| [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto | Sì, D2-05: presa il 2026-11-17 (nessun mirror) |
-| [0025](0025-baseline-modalita-pr-finding-nuovi.md) | Baseline, modalità PR e finding nuovi | Proposto | No |
-| [0026](0026-plugin-qualita-iac-coverage.md) | Plugin di qualità, IaC e coverage | Proposto | No |
-| [0027](0027-integrazioni-ci.md) | Integrazioni CI | Proposto | Sì, D2-12 e D2-13 (aperte) per la pubblicazione |
+| [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto (le definizioni degli smell non sono ancora confrontate con le pubblicazioni) | No |
+| [0021](0021-scoring-variante-a-ombra-livelli-override.md) | Scoring Variante A, ombra, livelli e override | Proposto (valori da calibrare in X-02) | No |
+| [0022](0022-esposizione-e-churn.md) | Esposizione e churn | Accettato (2026-11-18) | No |
+| [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto (manca l'origine di OSV e trivy, E-04) | Sì, D2-05: presa il 2026-11-17 (nessun mirror) |
+| [0025](0025-baseline-modalita-pr-finding-nuovi.md) | Baseline, modalità PR e finding nuovi | Accettato (2026-11-18) | No |
+| [0026](0026-plugin-qualita-iac-coverage.md) | Plugin di qualità, IaC e coverage | Accettato (2026-11-18) | No |
+| [0027](0027-integrazioni-ci.md) | Integrazioni CI | Proposto (pubblicazione ferma) | Sì: D2-13 presa il 2026-11-17, D2-12 rimandata |
 | [0028](0028-catalogo-servizi.md) | Catalogo servizi | Accettato | Presa il 2026-11-16 (D2-04) |
-| [0029](0029-ui-elenco-finding-perimetro-e-dati.md) | UI dell'elenco finding: perimetro e dati | Proposto | Sì, D2-15 (perimetro da confermare) |
+| [0029](0029-ui-elenco-finding-perimetro-e-dati.md) | UI dell'elenco finding: perimetro e dati | Accettato (2026-11-18) | Sì, D2-15: presa il 2026-11-17 (perimetro confermato) |
 | [0030](0030-componenti-server-e-object-storage.md) | Componenti del server e object storage | Accettato | Presa il 2026-11-16 (D2-07) |
 
 ## Aggiornamenti dopo la stesura
@@ -42,20 +42,31 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 
 - Emendamenti "per R-09" in ADR-0003 (schemi nel pacchetto), 0004 (`/out` su tmpfs, workspace illeggibile, interruzione), 0006 (spazio e pulizia della sincronizzazione), 0010 (nome del report); "per P-07" in ADR-0012 (configurazione git ostile). Gli stati in tabella non cambiano.
 
+## Emendamenti di Fase 2 (A-16, 2026-11-18)
+
+- ADR-0001: pacchetti di Fase 2 e i nove contratti di `import-linter`; `ca-cli` importa `ca-integrations`, `ca-api` solo `ca-core`.
+- ADR-0002: secondo D2-01 il server non esegue scansioni e Temporal non c'è; il motore resta uno solo.
+- ADR-0006: origine dei feed di arricchimento e mirror rimandati ad ADR-0024 (D2-05).
+- ADR-0008 e 0013: verificati, nessun cambiamento oltre ai `kind` già aggiunti da P-05 e G-10 e alla riga di K-20.
+- ADR-0009: superata dai livelli da punteggio solo con `levels.source: score` (D2-10, ADR-0021).
+- ADR-0010: `--pr`, `--base`, `--baseline`, `--variant`, `--scoring-config`, `--service-context` e i comandi `notify`, `export`, `upload`.
+- ADR-0015: motori e componenti nuovi, hadolint solo per uso interno (D2-14).
+- ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove indicate nei rispettivi stati. ADR-0020, 0021, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione in tabella.
+
 ## Lacune rinviate
 
 Numerazione di `.claude/agents/architect.md`.
 
 | Lacuna | Fase |
 | --- | --- |
-| 1 Dashboard (UI elenco finding) | 2; portfolio in 4 |
-| 2 API insufficienti per la UI | 2 |
-| 3 RBAC | 2 |
-| 4 Scoring ombra | 2 |
-| 5 Fattori non definiti | 2 |
-| 6 Soglie discontinue | 2 (ADR-0009 usa già intervalli semiaperti per CVSS) |
+| 1 Dashboard (UI elenco finding) | 2, risolta da ADR-0029; portfolio in 4 |
+| 2 API insufficienti per la UI | 2, risolta da ADR-0029 e dalle route di C-08 |
+| 3 RBAC | 2, risolta da ADR-0019 |
+| 4 Scoring ombra | 2, risolta da ADR-0021 |
+| 5 Fattori non definiti | 2, risolta da ADR-0021 e ADR-0022 (la Variante B resta ad ADR-0023) |
+| 6 Soglie discontinue | 2, risolta da ADR-0021 (intervalli semiaperti, arrotondamento prima del confronto) |
 | 10 `agent_runs` | 3 |
-| 11 Multi-tenancy | 2 (progettazione con il primo schema DB); packaging in 4 |
-| 12 OpenAPI | 2 (principio in ADR-0003) |
+| 11 Multi-tenancy | 2, risolta da ADR-0018 (uno schema per tenant); packaging in 4 |
+| 12 OpenAPI | 2, risolta da ADR-0017 (principio in ADR-0003) |
 | 13 Evidenza decisionale | 3 |
 - X-07, 2026-11-10: ADR-0002, 0007, 0008, 0010, 0011, 0014 passano ad `Accettato`; le prove elencate nelle rispettive "Revisione A-01" sono nel codice e i test sono verdi.

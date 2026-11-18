@@ -43,3 +43,15 @@ Regole:
 - Il grafo è aciclico e i test di `ca-core` non richiedono infrastruttura.
 - Il primo task del monorepo include il contratto `import-linter`.
 - L'albero di §3 va letto con la correzione su `scoring/feeds/`.
+
+## Emendamento per A-16 (2026-11-18): i pacchetti di Fase 2
+
+Motivo: la tabella sopra è quella di prima della Fase 2 e due righe non corrispondono più a ciò che il codice e `import-linter` impongono.
+
+| Pacchetto | Può dipendere da | Cosa cambia |
+| --- | --- | --- |
+| `ca-cli` | `ca-core`, `ca-plugins`, `ca-graph`, `ca-integrations` | `ca-integrations` entra con ADR-0027: i commenti PR e i report di GitLab partono dalla CI, senza server. La regola «né Temporal, né FastAPI, né driver di database» resta. |
+| `ca-api` | `ca-core` | Solo `ca-core`: senza Temporal (ADR-0016) non c'è `ca-workflows` da importare, e il server non importa plugin, container, grafo né integrazioni. |
+| `ca-workflows` | — | Non esiste in Fase 2: la riga vale per la Fase 3, se mai servirà. |
+
+I contratti di `import-linter` sono nove (`pyproject.toml`): dipendenze interne verso `ca_core`; `ca_core` senza framework, rete né processi; `ca_cli` senza server né database; `ca_graph`, `ca_integrations` e `ca_plugins` che non si importano tra loro; `ca_graph` senza rete né processi, con il parser solo nell'immagine di estrazione e il solo modulo della storia git che lancia un processo; il resto del mondo che non importa il parser; il parser che non importa il resto; `ca_api` che importa solo `ca_core`; nessun altro pacchetto che importa `ca_api`.

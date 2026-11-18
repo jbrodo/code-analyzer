@@ -1,6 +1,6 @@
 # ADR-0022: Esposizione e churn
 
-- Stato: Proposto. Scelta tecnica. Passa ad `Accettato` con le prove di G-11 e G-12
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: la raggiungibilità sul grafo (G-12) e il churn dalla storia git nell'immagine di `ca-graph` (G-11), con l'E2E del pacchetto verde. Restano dichiarati i limiti dei task, tra cui la densità di violazioni, che non è di questo ADR
 - Data: 2026-11-16
 - Decisione umana richiesta: no. Un valore si scosta da una proposta del piano: vedi "Esposizione assente"
 - Riferimenti: §6.1, §6.2; ADR-0012, 0020, 0025, 0028; V-07 in `doc/verifiche/scanner-fase-2.md`; incoerenza 7 del piano

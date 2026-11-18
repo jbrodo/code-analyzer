@@ -113,3 +113,11 @@ Conseguenze:
 - `/feeds` resta in sola lettura e l'elenco degli ecosistemi resta fissato nel manifest: il repository non decide quali database si scaricano.
 - Una scansione con un ecosistema fuori elenco esegue osv-scanner due volte.
 - Aggiungere un ecosistema all'elenco (Maven in Fase 4) resta possibile sopra questo comportamento.
+
+## Emendamento per A-16 (2026-11-18): origine dei feed e mirror
+
+Motivo: D2-05 (2026-11-17) ha deciso che in Fase 2 non c'è un mirror e ADR-0024 ha esteso il tema ai feed di arricchimento.
+
+- ADR-0024 governa EPSS e KEV: fonti pubbliche, cache locale per utente, sincronizzazione separata da quella dei database delle vulnerabilità, avvisi `feeds-stale` e `feeds-sync-failed`. Il punto sullo snapshot avvelenato che questo ADR lasciava aperto è un rischio accettato e riportato a S-01 (D2-05), perché le fonti non pubblicano firme né checksum.
+- Per i database di osv-scanner e trivy non cambia nulla: restano gli snapshot di questo ADR, con la loro pulizia.
+- Il mirror come artefatto OCI firmato resta un design in ADR-0024, senza lavoro in Fase 2 (E-05 esce dal piano).

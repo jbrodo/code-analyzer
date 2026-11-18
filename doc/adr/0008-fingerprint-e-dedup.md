@@ -277,3 +277,7 @@ Da provare:
 - Uso in normalizzazione: URI, `result` senza `region`, decodifica, `tool` uguale al nome del manifest (K-05).
 
 Passa ad `Accettato` con K-05 e K-07 verdi. Il modello non impone che `tools` sia ordinato: l'ordine lo garantisce K-07, e il contratto copre l'assenza di duplicati (emendamento di C-01).
+
+## Verifica per A-16 (2026-11-18)
+
+I `kind` di Fase 2 (`coverage` da P-05, `architecture` da G-10) sono nelle sezioni sopra e non toccano `fp1` né i `kind` esistenti. Gli smell di ADR-0020 usano `architecture`, quindi non serve un `kind` per ciascuno. Il limite che questo ADR dichiarava, cioè che SAST di scanner diversi sulla stessa riga non si fondono, è affrontato in ADR-0026 e realizzato da `ca_core/correlation.py` (K-21), a valle della deduplicazione e senza cambiare il fingerprint.

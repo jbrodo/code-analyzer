@@ -1,6 +1,6 @@
 # ADR-0026: Plugin di qualità, IaC e coverage
 
-- Stato: Proposto. Scelta tecnica, con il parere di `security` in S-03. Passa ad `Accettato` con le prove di P-01..P-05 e K-21
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: i plugin P-01..P-05 (per sviluppo e uso interno) e la correlazione K-21, con il parere di sicurezza S-03 chiuso
 - Data: 2026-11-16
 - Decisione umana richiesta: no (D2-14 riguarda la distribuzione delle immagini, non queste scelte)
 - Riferimenti: §6.3, §7.3, §8; ADR-0004, 0007, 0008, 0009, 0012, 0014, 0029; V-03, V-04 e V-08 in `doc/verifiche/scanner-fase-2.md`; incoerenze 15 e 25 del piano

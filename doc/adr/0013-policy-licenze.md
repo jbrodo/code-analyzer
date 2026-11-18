@@ -78,3 +78,7 @@ Data: 2026-11-10. Il finding su file aveva il percorso ma non la riga, mentre l'
 Decisione: il finding su file riporta `location.start_line` e `location.end_line` presi dai finding di scancode che lo compongono, minimo e massimo tra quelli con una riga. Il fingerprint `license-file` resta percorso più licenza (ADR-0008): le righe non vi entrano, quindi eccezioni e storico già registrati restano validi. Il finding su pacchetto non ha righe.
 
 Limite: la regione che scancode scrive copre tutte le corrispondenze del file, non quelle della singola espressione.
+
+## Verifica per A-16 (2026-11-18)
+
+La riga nei finding di licenza su file (K-20) è nella sezione sopra e il fingerprint non cambia. Il motore resta puro in `ca_core/policy/licenses.py`. Un'osservazione dall'auto-analisi del 2026-11-18: scancode legge i nomi di licenza anche nella prosa dei documenti e li segnala come finding su file; per questo la documentazione del progetto descrive le licenze a parole, e le voci inevitabili si accettano con `exceptions` (ADR-0014).
