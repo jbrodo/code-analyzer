@@ -56,7 +56,7 @@ Scrive **un** commento per PR, riconosciuto da un marcatore e aggiornato a ogni 
 
 Su una PR da fork il token è di sola lettura: `scan` e `gate` girano, il SARIF non si carica (avviso) e `notify` scrive il contenuto del commento nel riepilogo del job, con exit 0. Il commento sulle PR da fork richiederebbe due flussi, uno senza privilegi e uno privilegiato: non c'è in Fase 2.
 
-`pull_request_target` **non è supportato**: darebbe a contenuto scelto da chi apre la PR un token con permessi di scrittura. L'Action si ferma con un errore.
+`pull_request_target` e `workflow_run` **non sono supportati**: darebbero a contenuto scelto da chi apre la PR un token con permessi di scrittura. L'Action si ferma con un errore.
 
 ## Limiti dichiarati
 

@@ -26,6 +26,7 @@ class ProblemCode(StrEnum):
     ARTIFACTS_CONFLICT = "artifacts-conflict"
     STATE_CONFLICT = "state-conflict"
     INVALID_CURSOR = "invalid-cursor"
+    RATE_LIMITED = "rate-limited"
     NOT_IMPLEMENTED = "not-implemented"
     INTERNAL_ERROR = "internal-error"
 
@@ -83,6 +84,7 @@ TITLES = {
     ProblemCode.ARTIFACTS_CONFLICT: "Artefatti diversi per lo stesso report",
     ProblemCode.STATE_CONFLICT: "Lo stato non lo permette",
     ProblemCode.INVALID_CURSOR: "Cursore non valido per questa richiesta",
+    ProblemCode.RATE_LIMITED: "Troppe richieste",
     ProblemCode.NOT_IMPLEMENTED: "Non ancora realizzato",
     ProblemCode.INTERNAL_ERROR: "Errore interno",
 }

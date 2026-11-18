@@ -97,6 +97,27 @@
       "title": "CoverageOverride",
       "type": "object"
     },
+    "CvssFloor": {
+      "additionalProperties": false,
+      "description": "Una dipendenza con questo CVSS o più non scende sotto `level`, qualunque siano i feed.",
+      "properties": {
+        "cvss_min": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Cvss Min",
+          "type": "number"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "cvss_min",
+        "level"
+      ],
+      "title": "CvssFloor",
+      "type": "object"
+    },
     "EConfig": {
       "additionalProperties": false,
       "description": "Valori di E secondo ADR-0022.",
@@ -319,6 +340,15 @@
       "properties": {
         "architecture_smell_hotspot": {
           "$ref": "#/$defs/HotspotOverride"
+        },
+        "dependency_cvss_floor": {
+          "description": "Limite inferiore al livello di una dipendenza in funzione del CVSS (ADR-0021, S5-A1): i feed possono alzare un livello, non azzerarlo.",
+          "items": {
+            "$ref": "#/$defs/CvssFloor"
+          },
+          "maxItems": 10,
+          "title": "Dependency Cvss Floor",
+          "type": "array"
         },
         "epss_reachable": {
           "$ref": "#/$defs/EpssOverride"

@@ -196,3 +196,61 @@ I nomi dei claim in ADR-0019 sono a memoria. Per GitHub ci si aspetta `repositor
 ### Socket nell'immagine CLI
 
 Il rischio è quello di ogni strumento che lancia container dal job. Accettato per la Fase 2 dove il runner è di chi installa, e già dichiarato in ADR-0004. Non accettabile su runner condivisi con altri progetti: la documentazione lo dice.
+
+## S-06 — Revisione dell'implementazione (2026-11-18)
+
+**Come è stata fatta, e cosa non vale.** Revisione fatta dallo stesso modello che ha scritto una gran parte del codice (come S-01..S-05 per gli ADR): **non è indipendente** e non sostituisce una revisione di una persona. Per ogni rilievo di S-01..S-05 ho cercato nel codice e nei test la difesa richiesta; dove non c'era l'ho scritta e provata (voce «Corretto in S-06»), dove non l'ho cercata fino in fondo lo dico (voce «Non verificato»). Non ho eseguito un test di penetrazione né un fuzzing. Ho letto, per questa revisione, `packages/ca-api/`, i punti di ingresso di `ca-plugins`, `ca-graph` e `ca-integrations`, `integrations/github-action/` e `web/src/{api,auth}/`; non ho riletto per intero i plugin né gli adattatori.
+
+**Esito.** Nessun critico. Dei rilievi alti (S1-A1, S1-A2, S3-A1, S4-A1, S5-A1) tre erano già realizzati e due non lo erano (S1-A2 solo in parte, S5-A1 per nulla, benché decisa dall'utente il 2026-11-16): li ho realizzati in questa revisione. Altri sei rilievi di grado medio o basso erano scoperti e sono stati corretti; restano aperti quelli elencati in «Rischio residuo».
+
+### Stato dei rilievi
+
+| ID | Stato | Evidenza |
+| --- | --- | --- |
+| S1-A1 scansione corrente dal token | **Verificato**, con un limite | `ca_api/ingest.py` (`_is_main_branch`): il tipo e il branch vengono dal `ref` del token e dal branch registrato, mai dal report; una PR e un ramo non principale non spostano lo stato (test di integrazione). Limite: `ref_protected` (GitLab) e `job_workflow_ref` (GitHub) non si usano; `sha` si confronta solo se il token lo porta |
+| S1-A2 limiti per tenant | **Corretto in S-06**, in parte | `ca_api/throttle.py`: tetto di ingestioni per repository nell'ora (120) e di ingestioni in parallelo per tenant (4), configurabili (`CA_API_MAX_INGESTS_PER_HOUR`, `CA_API_MAX_CONCURRENT_INGESTS`, 0 li spegne), 429 `rate-limited` con `Retry-After`; ogni tentativo conta, anche se rifiutato. **Non c'è la quota di byte per tenant.** Lo stato sta nel processo: con più repliche il tetto vale per replica |
+| S1-M1 testo del repository | **Verificato**; due difese aggiunte in S-06 | Test con markup ostile in W-04 e W-05 e nell'API; `X-Content-Type-Options: nosniff` ora su **ogni** risposta (`ca_api/headers.py`, prima solo sulla SPA); regola ESLint che vieta `dangerouslySetInnerHTML`, `innerHTML` e `outerHTML` fuori dai test |
+| S1-M2 CSP della SPA | **Verificato** | `ca_api/spa.py` (I-03): script e stili solo della propria origine, nessun `unsafe-inline` né `unsafe-eval`, `connect-src` con la sola origine dell'IdP, `frame-ancestors 'none'`, `base-uri 'none'`; un nonce nuovo per risposta autorizza lo stile che Radix inietta. Test sulle intestazioni e prova in un browser vero contro l'immagine |
+| S1-M3 CORS e CSRF | **Parziale**, per scelta | Nessun CORS e nessun cookie letto o impostato dal server. **Il rifiuto dell'intestazione `Cookie` non c'è**: i cookie si inviano per host e non per porta, quindi sarebbe rifiutata ogni richiesta di un browser con cookie di altre applicazioni su `127.0.0.1` o sullo stesso dominio, e il server non li legge comunque. Si riapre se D2-02 passasse ai cookie |
+| S1-M4 registro delle modifiche | **Parziale** | Il codice inserisce soltanto in `finding_events` (nessun `UPDATE` né `DELETE`). Il ruolo di database dell'applicazione, però, ha tutti i permessi: **non c'è la protezione a livello di PostgreSQL** (stessa lacuna del ruolo per tenant, vedi sotto) |
+| S1-M5 isolamento tra tenant | **Verificato**; prova aggiunta in S-06 | Il nome dello schema si valida (`SCHEMA_NAME`) prima di ogni uso; test di due tenant che leggono insieme per venticinque volte senza perdite (`test_api_reads.py`), oltre al test di un tenant che non vede le risorse di un altro. Limite noto: SQL grezzo qualificato attraverserebbe i tenant (nessun ruolo per tenant) |
+| S1-M6 chiavi dei token e richieste in uscita | **Parziale** | `auth/jwks.py`: solo `https` (`http` solo su loopback con l'opzione di sviluppo), redirect solo verso lo stesso host, tetto di byte e di tempo. **Non si rifiutano gli indirizzi privati o di metadati cloud** per un host `https` configurato: la configurazione degli emittenti è dell'operatore |
+| S1-B1 `owner` e testi liberi | **Corretto in S-06** | `owner` e le motivazioni rifiutano i caratteri di controllo e bidirezionali (a capo e tabulazione restano nelle motivazioni); test con 422 senza rimbalzare il valore |
+| S1-B2 log senza token né corpi | **Parziale** | I log del server sono due righe fisse; test per l'eccezione non gestita (B-13). Nessun test che scorra i log di un'ingestione completa con un token riconoscibile |
+| S1-B3 chiave di idempotenza | **Verificato** | Test dell'ingestione ripetuta e dello stesso report su repository diversi |
+| Condizioni su D2-02 | **Verificate** | Durata massima del token un'ora (`max_token_lifetime_seconds`); nessuno script di terzi (CSP); il token non va in nessun archivio del browser, e lo dimostra un test e una prova nel browser; lo stato transitorio del flusso è in `sessionStorage` (vedi ADR-0019) |
+| S2-M1 tetti del grafo | **Aperto**, basso | `MAX_EDGES` (2 milioni) e `max_bytes` del manifest (64 MiB) restano incoerenti: vale il più basso, e un grafo valido ma grande fa fallire il plugin |
+| S2-M2 albero profondo | **Verificato per costruzione** | Le visite degli estrattori sono iterative (`while stack`); non ho eseguito un caso con migliaia di annidamenti |
+| S2-M3 collegamenti e file speciali | **Verificato** | `treesitter/files.py`: `lstat`, `O_NOFOLLOW`, `O_NONBLOCK`, solo file regolari, tetti di dimensione |
+| S2-M4 storia git ostile | **Verificato** | `treesitter/history.py`: tetti su commit e durata, interruzione del gruppo di processi, rifiuto di `.git` con collegamenti |
+| S3-A1 XML della copertura | **Verificato** | `coverage_adapter.py`: `pyexpat` sui byte, qualunque dichiarazione di entità è un rifiuto |
+| S3-M1 percorso del report | **Verificato** | `runner.py`: `O_NOFOLLOW` e controllo sul file aperto |
+| S3-M2 soppressioni in linea | **Verificato** | ruff `--ignore-noqa`, eslint `--no-inline-config`, hadolint `--disable-ignore-pragma` |
+| S3-M3, S3-M4 | **Verificati** / accettato | Copia di lavoro per checkov; un YAML ostile fa fallire il plugin e rende `partial`, effetto dichiarato |
+| S3-B1 altri canali di testo del file | **Aperto** | Il controllo del nucleo rifiuta solo `snippet`; `fixes`, `source` e `suggestions` restano ammessi |
+| S3-B2, S3-B3 | **Non verificati** | Chiusi nei task dai loro autori |
+| S4-A1 token OIDC da una PR | **Corretto in S-06** nella documentazione | Il server deriva ciò che conta dal token (S1-A1). `doc/utente/server.md` ora dice di dare `id-token: write` solo al job che carica |
+| S4-M1 comandi del flusso nel log | **Verificato** | `scan --format table` e `gate` stampano solo conteggi, codici, livelli e fingerprint, mai titoli o percorsi del repository |
+| S4-M2 testo del commento | **Verificato** | `ca_integrations/github/format.py` (`clean_text`, `neutralize`) con i test di `notify` |
+| S4-M3 immagine e chiave come ingressi | **Parziale** | Ingressi obbligatori senza valore predefinito; il README dell'Action lo dichiara. Un flusso modificato da una PR dello stesso repository decide ancora quali usare |
+| S4-M4 ricerca della baseline | **Parziale** | Filtrata per evento, branch, commit e stato; **non per l'identificativo del flusso**: un altro flusso dello stesso repository può pubblicare un artefatto con lo stesso nome |
+| S4-M5 socket del daemon | **Accettato** | Documentato in ADR-0004 e ADR-0027 |
+| S4-B1 `workflow_run` | **Corretto in S-06** | L'Action ora rifiuta anche `workflow_run`, come `pull_request_target`; test |
+| S4-B2, S4-B3 | **Non verificati** | Annotazioni del check run e permesso del token GitLab |
+| S5-A1 limite inferiore dal CVSS | **Corretto in S-06** | Decisa dall'utente il 2026-11-16 ma **non realizzata** in ADR-0021 né nel codice: ora `overrides.dependency_cvss_floor` (da 9,0 `alto`, da 7,0 `medio`), indipendente dai feed e dalla raggiungibilità, con la prova di punta a punta di un EPSS azzerato |
+| S5-M1 snapshot vecchio | **Corretto in S-06** | Uno snapshot con la data del contenuto precedente a quella dello snapshot in cache è rifiutato (`older-than-previous`), con `feeds-sync-failed` e lo snapshot precedente che resta |
+| S5-M2 voci di KEV tolte | **Corretto in S-06** | Una voce presente nel precedente e assente nel nuovo è rifiutata (`kev-entry-removed`); le voci nuove sono benvenute |
+| S5-M3 runner senza cache | **Aperto** | Senza uno snapshot precedente S5-M1 e S5-M2 non scattano; il report non lo dice |
+| S5-M4 P senza EPSS | **Mitigato** | La costante `feed_missing` è in configurazione; il limite di S5-A1 impedisce che il feed assente nasconda un CVSS alto |
+| S5-M5, S5-B1, S5-B4, S5-B5 | **Verificati** | Tetti in `limits.json`, lettura difensiva (`parse.py`: valori ammessi di `knownRansomwareCampaignUse`, forma di CVE e date), rilettura dalla cache (prove di «cache non fidata»), redirect solo https |
+| S5-M6, S5-M7 mirror | **Non applicabili** | Nessun mirror in Fase 2 (D2-05) |
+| S5-B2, S5-B3 | **Non verificati** | Richieste in uscita fisse; origine nel report |
+
+### Rischio residuo da sottoporre all'utente
+
+1. **Quota di byte per tenant (S1-A2).** I tetti di frequenza e di parallelismo ci sono, la quota no: un tenant può ancora riempire archivio e database caricando, nei limiti di frequenza, report grandi. Serve una colonna con la dimensione degli artefatti e una soglia per tenant. Decisione: farla in Fase 2 o accettare il rischio finché c'è un solo tenant (D2-02).
+2. **Un solo ruolo di database senza permessi ridotti (S1-M4, S1-M5).** Il registro delle modifiche non è append-only per il database e SQL grezzo qualificato attraverserebbe i tenant. Un ruolo per tenant e uno per la sola scrittura del registro chiuderebbero entrambi. Con un solo tenant in esercizio è accettabile; va riaperto prima di averne due.
+3. **Livelli minimi dal CVSS da calibrare.** I valori (9,0 → `alto`, 7,0 → `medio`) sono ipotesi come gli altri: più alti per fidarsi dei feed, più bassi per proteggersi da una manomissione. Si decidono con X-02.
+4. **Quale flusso può spostare lo stato (S1-A1).** Lo stato della scansione corrente si sposta solo con un token il cui `ref` è il ramo principale, quindi non da una PR. Un flusso nuovo aggiunto direttamente al ramo principale, però, può farlo. Limitare il privilegio ai flussi registrati per il repository (`job_workflow_ref`) è una scelta di adozione, da proporre se serve.
+5. **Revisione indipendente.** Questa revisione e le quattro precedenti sono dello stesso autore del codice. Prima di una distribuzione servirebbe l'occhio di una persona, in particolare su `ca_api/auth/`, `ca_api/ingest.py`, `ca_api/spa.py`, il runner dei plugin e `integrations/github-action/`.
+6. **Aperti minori:** S1-M6 (indirizzi privati), S2-M1, S3-B1 (altri canali di testo), S4-M4 (artefatto per flusso), S5-M3 (cache assente non dichiarata), S1-B2 (test dei log di un'ingestione).

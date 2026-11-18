@@ -105,3 +105,7 @@ Le librerie OpenTelemetry sono dipendenze nuove: licenza e manutenzione si verif
 - Il **branch principale** non è nel report: si riconosce dal `ref` del token (`main` e `master`, configurabili con `CA_API_DEFAULT_BRANCHES`) finché il repository non ne ha uno registrato, che la prima scansione completa su quei branch fissa.
 - `ref` e `commit` della scansione vengono dal token e dal report, non dal corpo della richiesta.
 - Gli errori di validazione riportano il luogo (JSON Pointer) e il tipo, mai il valore ricevuto.
+
+## Realizzazione di S1-A2 (2026-11-18): tetti all'ingestione
+
+`ca_api/throttle.py`: al più 120 ingestioni all'ora per repository (finestra mobile, ogni tentativo conta) e 4 in parallelo per tenant, configurabili con `CA_API_MAX_INGESTS_PER_HOUR` e `CA_API_MAX_CONCURRENT_INGESTS` (0 spegne il tetto). Oltre il tetto: `429` `rate-limited` con `Retry-After`. Lo stato sta nel processo, quindi con più repliche il tetto vale per replica. Non c'è ancora la quota di byte per tenant. Il codice di problema nuovo porta `info.version` dell'OpenAPI a 1.2.0.

@@ -31,7 +31,7 @@ import urllib.request
 import zlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal, Protocol
 from urllib.parse import urlsplit
@@ -299,6 +299,21 @@ def _entries(table: EpssTable | KevTable) -> int:
     return len(table.entries)
 
 
+def _content_date(table: EpssTable | KevTable) -> datetime:
+    return table.score_date if isinstance(table, EpssTable) else table.date_released
+
+
+def _check_progress(previous: EpssTable | KevTable, table: EpssTable | KevTable) -> None:
+    """S5-M1 e S5-M2: uno snapshot autentico ma vecchio, o con voci di KEV tolte, non è un
+    aggiornamento. Il conteggio da solo non lo vede (si possono alterare migliaia di righe senza
+    cambiarlo). Il rifiuto è nel verso sicuro: resta lo snapshot precedente, con l'avviso."""
+    if _content_date(table) < _content_date(previous):
+        raise FeedRejected("older-than-previous")
+    if isinstance(table, KevTable) and isinstance(previous, KevTable):
+        if set(previous.entries) - set(table.entries):
+            raise FeedRejected("kev-entry-removed")  # il catalogo di CISA cresce, non si accorcia
+
+
 def _download(
     feed: str,
     feed_dir: Path,
@@ -322,6 +337,8 @@ def _download(
     before = _entries(previous.table) if previous else None
     if not plausible(_entries(table), before, limits.max_drop_percent):
         raise FeedRejected("implausible-drop")
+    if previous is not None:
+        _check_progress(previous.table, table)
     new_dir = Path(tempfile.mkdtemp(prefix="snap-", dir=feed_dir))
     published = False
     try:

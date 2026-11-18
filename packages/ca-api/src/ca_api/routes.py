@@ -175,6 +175,9 @@ def list_repository_scans(
         200: {"model": ScanRef, "description": "Già registrata: stesso `id`, nessun effetto."},
         409: _problem("Stesso report con `sarif`, `sbom` o `graph` diversi."),
         413: _problem("Una parte o la richiesta supera i limiti di dimensione."),
+        429: _problem(
+            "Troppe ingestioni per il repository o in corso per il tenant (`Retry-After`)."
+        ),
     },
     openapi_extra=roles("P: solo il proprio repository"),
 )
@@ -192,46 +195,52 @@ async def create_scan(
         raise ApiProblem(
             500, ProblemCode.INTERNAL_ERROR, detail="database o archivio non configurati"
         )
-    limit = state.settings.max_part_bytes
-
-    async def read(part: UploadFile | None) -> bytes | None:
-        if part is None:
-            return None
-        data = await part.read(limit + 1)
-        if len(data) > limit:  # il corpo intero è già limitato dal middleware, mentre si legge
-            raise ApiProblem(413, ProblemCode.PAYLOAD_TOO_LARGE)
-        return data
-
-    parts = Parts(
-        report=await read(report) or b"",
-        sarif=await read(sarif),
-        sbom=await read(sbom),
-        graph=await read(graph),
+    token = identity.repository
+    assert token is not None
+    state.throttle.admit(
+        (identity.tenant, token.provider, identity.issuer, token.external_id), state.clock.now()
     )
-    schemas = state.schemas or _schemas(state)
-    started = time.perf_counter()
-    try:
-        result = await run_in_threadpool(
-            ingest,
-            state.engine,
-            state.store,
-            schemas,
-            state.settings,
-            identity,
-            parts,
-            now=state.clock.now(),
+    with state.throttle.slot(identity.tenant):  # ingestioni in parallelo del tenant (S1-A2)
+        limit = state.settings.max_part_bytes
+
+        async def read(part: UploadFile | None) -> bytes | None:
+            if part is None:
+                return None
+            data = await part.read(limit + 1)
+            if len(data) > limit:  # il corpo intero è già limitato dal middleware, mentre si legge
+                raise ApiProblem(413, ProblemCode.PAYLOAD_TOO_LARGE)
+            return data
+
+        parts = Parts(
+            report=await read(report) or b"",
+            sarif=await read(sarif),
+            sbom=await read(sbom),
+            graph=await read(graph),
         )
-    except ApiProblem:
-        state.telemetry.ingestion(time.perf_counter() - started, "refused")
-        raise
-    except Exception:
-        state.telemetry.ingestion(time.perf_counter() - started, "failed")
-        raise
-    state.telemetry.ingestion(
-        time.perf_counter() - started, "created" if result.created else "repeated"
-    )
-    response.status_code = 201 if result.created else 200
-    return ScanRef(id=result.id)
+        schemas = state.schemas or _schemas(state)
+        started = time.perf_counter()
+        try:
+            result = await run_in_threadpool(
+                ingest,
+                state.engine,
+                state.store,
+                schemas,
+                state.settings,
+                identity,
+                parts,
+                now=state.clock.now(),
+            )
+        except ApiProblem:
+            state.telemetry.ingestion(time.perf_counter() - started, "refused")
+            raise
+        except Exception:
+            state.telemetry.ingestion(time.perf_counter() - started, "failed")
+            raise
+        state.telemetry.ingestion(
+            time.perf_counter() - started, "created" if result.created else "repeated"
+        )
+        response.status_code = 201 if result.created else 200
+        return ScanRef(id=result.id)
 
 
 def _store(request: Request) -> Any:

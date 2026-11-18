@@ -35,6 +35,10 @@ def test_action_is_composite_and_has_no_default_image() -> None:
     assert "default" not in ACTION["inputs"]["public-key"]
 
 
+def test_event_guard_refuses_workflow_run_as_well() -> None:
+    assert "workflow_run" in commands(STEPS[0])
+
+
 def test_event_guard_refuses_pull_request_target_and_comes_first() -> None:
     assert STEPS[0]["name"] == "Controlla l'evento"
     assert "pull_request_target" in commands(STEPS[0])

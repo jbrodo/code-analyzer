@@ -233,7 +233,7 @@ def run(
             mode, target, notes = "dir", workspace, (NO_HISTORY_NOTE,)
     except UnsupportedRepo:
         return EXIT_REPO
-    except OSError, subprocess.SubprocessError:
+    except (OSError, subprocess.SubprocessError):
         return EXIT_TOOL
     argv = [
         gitleaks, mode, target, "--config", config,

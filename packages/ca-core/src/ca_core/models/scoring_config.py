@@ -135,6 +135,13 @@ class CoverageOverride(_Strict):
     coverage_below_percent: StrictInt = Field(ge=1, le=100)
 
 
+class CvssFloor(_Strict):
+    """Una dipendenza con questo CVSS o più non scende sotto `level`, qualunque siano i feed."""
+
+    cvss_min: StrictFloat = Field(ge=0, le=10)
+    level: Level
+
+
 class OverridesConfig(_Strict):
     """Override di §6.3: alzano il livello a un minimo, mai il punteggio (ADR-0021)."""
 
@@ -144,6 +151,14 @@ class OverridesConfig(_Strict):
     sast_confirmed_exposed: LevelFloor
     architecture_smell_hotspot: HotspotOverride
     low_coverage_critical_code: CoverageOverride
+    dependency_cvss_floor: list[CvssFloor] = Field(
+        default_factory=list,
+        max_length=10,
+        description=(
+            "Limite inferiore al livello di una dipendenza in funzione del CVSS (ADR-0021, S5-A1): "
+            "i feed possono alzare un livello, non azzerarlo."
+        ),
+    )
 
 
 class ScoringConfig(_Strict):

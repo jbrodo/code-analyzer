@@ -43,6 +43,13 @@ Il report registra anche `service_context` (valore e fonte di tier ed esposizion
 
 Li scarica la CLI, senza il workspace, e li tiene in cache per utente: EPSS dal file giornaliero di FIRST, KEV dal JSON di CISA, con controlli di forma, dimensione e plausibilità. Dopo un giorno si risincronizza. I punteggi EPSS sono generati da Empirical Security e pubblicati da FIRST (EPSS SIG); **FIRST chiede di citare EPSS nei prodotti che lo usano**. Le origini si cambiano solo con `CA_FEEDS_EPSS_URL` e `CA_FEEDS_KEV_URL` (https, senza credenziali), mai dal repository. Nessuna delle due fonti pubblica firme: uno snapshot plausibile ma alterato non si riconosce, con effetto limitato al P di una CVE.
 
+## Un feed alterato non nasconde una vulnerabilità grave
+
+Con i livelli da punteggio una dipendenza con CVSS 9 o più non scende sotto `alto`, e con CVSS 7 o più non
+scende sotto `medio`, anche se i dati EPSS e KEV mancano o sono stati alterati (`dependency_cvss_floor` nella
+configurazione di scoring; i valori sono ipotesi da calibrare). Il punteggio mostrato resta quello vero e
+l'evidenza dice che il livello è stato alzato dal limite.
+
 ## Limiti dichiarati
 
 - **«Segreto valido esposto» non si applica.** Provare un segreto contro il servizio che lo ha emesso richiede rete, che i plugin non hanno: ogni segreto ha `evidence.validity` `unverified`.

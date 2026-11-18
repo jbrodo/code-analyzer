@@ -84,6 +84,16 @@
       "level": "medio",
       "churn_percentile_min": 90,
       "coverage_below_percent": 50
-    }
+    },
+    "dependency_cvss_floor": [
+      {
+        "cvss_min": 9.0,
+        "level": "alto"
+      },
+      {
+        "cvss_min": 7.0,
+        "level": "medio"
+      }
+    ]
   }
 }

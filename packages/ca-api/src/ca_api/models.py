@@ -6,12 +6,14 @@ i modelli che esistono nell'API: pagine, riepiloghi, richieste di triage. Tutti 
 le richieste sono rigide; i client devono ignorare i campi di risposta che non conoscono.
 """
 
+import re
 from datetime import date
 from enum import StrEnum
 from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
+    AfterValidator,
     AwareDatetime,
     BaseModel,
     ConfigDict,
@@ -291,6 +293,28 @@ class FindingDetail(_Strict):
     events: list[FindingEvent] = Field(default_factory=list, description="Dal più recente.")
 
 
+_CONTROL = re.compile(
+    "[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u202a-\u202e\u2066-\u2069]"
+)  # + bidirezionali
+_CONTROL_LINE = re.compile(
+    "[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]"
+)  # anche a capo e tabulazione
+
+
+def _plain(value: str | None) -> str | None:
+    """Testo scritto da un utente: niente caratteri di controllo né bidirezionali (S1-B1), che
+    finirebbero in registro, commenti e UI. A capo e tabulazione restano nelle motivazioni."""
+    if value is not None and _CONTROL.search(value):
+        raise ValueError("caratteri di controllo non ammessi")
+    return value
+
+
+def _one_line(value: str | None) -> str | None:
+    if value is not None and _CONTROL_LINE.search(value):
+        raise ValueError("caratteri di controllo non ammessi")
+    return value
+
+
 class SetStatus(_Strict):
     model_config = _examples(
         {"action": "set-status", "status": "falso_positivo", "reason": "Input già validato a monte"}
@@ -298,14 +322,14 @@ class SetStatus(_Strict):
 
     action: Literal["set-status"] = "set-status"
     status: Literal["aperto", "in_corso", "falso_positivo"]
-    reason: Annotated[str, Field(min_length=1, max_length=2000)] | None = Field(
-        default=None, description="Obbligatoria per `falso_positivo`."
+    reason: Annotated[str, Field(min_length=1, max_length=2000), AfterValidator(_plain)] | None = (
+        Field(default=None, description="Obbligatoria per `falso_positivo`.")
     )
 
 
 class SetOwner(_Strict):
     action: Literal["set-owner"] = "set-owner"
-    owner: Annotated[str, Field(max_length=200)] | None = None
+    owner: Annotated[str, Field(max_length=200), AfterValidator(_one_line)] | None = None
 
 
 class CreateException(_Strict):
@@ -320,7 +344,7 @@ class CreateException(_Strict):
     )
 
     action: Literal["create-exception"] = "create-exception"
-    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+    reason: Annotated[str, Field(min_length=1, max_length=2000), AfterValidator(_plain)]
     expires: date = Field(description="Futura; non oltre il massimo configurato dal server.")
 
 

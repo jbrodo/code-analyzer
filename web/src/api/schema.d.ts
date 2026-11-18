@@ -960,7 +960,7 @@ export interface components {
          * @description Enum del contratto: aggiungere un valore a una risposta è incompatibile (ADR-0017).
          * @enum {string}
          */
-        readonly ProblemCode: "unauthenticated" | "forbidden" | "not-found" | "validation-failed" | "report-schema-invalid" | "payload-too-large" | "repository-mismatch" | "artifacts-conflict" | "state-conflict" | "invalid-cursor" | "not-implemented" | "internal-error";
+        readonly ProblemCode: "unauthenticated" | "forbidden" | "not-found" | "validation-failed" | "report-schema-invalid" | "payload-too-large" | "repository-mismatch" | "artifacts-conflict" | "state-conflict" | "invalid-cursor" | "rate-limited" | "not-implemented" | "internal-error";
         /** ProblemError */
         readonly ProblemError: {
             /**
@@ -2147,6 +2147,15 @@ export interface operations {
             };
             /** @description Richiesta non valida. */
             readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Troppe ingestioni per il repository o in corso per il tenant (`Retry-After`). */
+            readonly 429: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

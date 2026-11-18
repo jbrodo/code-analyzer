@@ -628,3 +628,32 @@ def test_manage_creates_a_tenant_and_migrates_without_echoing_the_connection_str
     assert main(["migrate"]) == 2
     captured = capsys.readouterr()
     assert "topsecret" not in captured.out + captured.err
+
+
+def test_a_repository_over_its_hourly_cap_gets_429_with_retry_after(env: Env) -> None:
+    from dataclasses import replace
+
+    capped = replace(env.settings, max_ingests_per_hour=2)
+    _, fetcher, _, verifier = build(
+        user_issuer().model_copy(update={"tenant": env.tenant}),
+        pipeline_issuer().model_copy(update={"owners": {"4242": env.tenant}}),
+    )
+    fetcher.publish(USER_IDP.jwks_url, USER_IDP.jwk())
+    fetcher.publish(GITHUB_IDP.jwks_url, GITHUB_IDP.jwk())
+    env.client = TestClient(
+        create_app(
+            capped, verifier=verifier, engine=env.engine, store=env.store, clock=FixedClock(T0)
+        )
+    )
+    assert env.post(make_report([finding("a")], started=T0)).status_code == 201
+    assert env.post(make_report([finding("b")], started=T0)).status_code == 201
+    refused = env.post(make_report([finding("c")], started=T0))
+    assert refused.status_code == 429
+    assert refused.json()["code"] == "rate-limited" and int(refused.headers["retry-after"]) > 0
+    assert refused.headers["content-type"].startswith("application/problem+json")
+    # un altro repository dello stesso tenant non ne risente
+    other = env.post(
+        make_report([finding("d")], started=T0), headers=env.token(repo_id="9002", name="acme/shop")
+    )
+    assert other.status_code == 201
+    assert env.count(Scan) == 3  # il tentativo rifiutato non ha scritto nulla

@@ -638,3 +638,70 @@ def test_new_on_a_full_scan_means_first_seen_in_that_scan(env: Env) -> None:
     assert titles(listing(env, new=True)) == ["t-fresh"]
     assert titles(listing(env, new=False)) == ["t-old"]
     assert [i["new"] for i in page["items"]] == [True, False]  # il campo coincide con il filtro
+
+
+def test_text_from_a_user_never_carries_control_or_bidirectional_characters(env: Env) -> None:
+    path = f"/v1/findings/{one_finding(env)}"
+    for body in (
+        {"action": "set-owner", "owner": "bob\nmanager"},
+        {"action": "set-owner", "owner": "bob\u202eevil"},
+        {"action": "set-status", "status": "falso_positivo", "reason": "ok\x1b[31m"},
+        {"action": "set-status", "status": "falso_positivo", "reason": "ok\u2066x"},
+        {"action": "create-exception", "reason": "x\x00", "expires": "2999-01-01"},
+    ):
+        reply = patch(env, path, body, *APPROVER)
+        assert reply.status_code == 422, body
+        assert "\x1b" not in reply.text and "\u202e" not in reply.text  # il valore non rimbalza
+    # a capo e tabulazione nelle motivazioni sì: sono testo scritto a mano
+    ok = {"action": "set-status", "status": "falso_positivo", "reason": "riga uno\nriga due\tfine"}
+    assert patch(env, path, ok, *APPROVER).status_code == 200
+
+
+def test_two_tenants_reading_at_the_same_time_never_see_each_other(env: Env, database) -> None:
+    import threading
+
+    from apiauth import GITHUB_IDP, USER_IDP
+    from idp import build, pipeline_issuer, user_issuer
+    from starlette.testclient import TestClient
+
+    from ca_api.app import create_app
+    from ca_api.db import stores
+
+    other = stores.create_tenant(database, f"other-{uuid.uuid4().hex[:6]}")
+    _, fetcher, _, verifier = build(
+        user_issuer().model_copy(update={"tenant": other.name}),
+        pipeline_issuer().model_copy(update={"owners": {"4242": env.tenant, "5151": other.name}}),
+    )
+    fetcher.publish(USER_IDP.jwks_url, USER_IDP.jwk())
+    fetcher.publish(GITHUB_IDP.jwks_url, GITHUB_IDP.jwk())
+    mine = TestClient(create_app(env.settings, verifier=verifier, engine=database, store=env.store))
+    # le due pipeline caricano un repository con lo stesso nome e lo stesso identificativo
+    assert env.post(make_report([finding("mine")], started=T0)).status_code == 201
+    theirs = mine.post(
+        "/v1/scans",
+        files={
+            "report": ("r.json", make_report([finding("theirs")], started=T0), "application/json")
+        },
+        headers=env.token(owner="5151"),
+    )
+    assert theirs.status_code == 201
+    for_other = {"Authorization": "Bearer " + USER_IDP.sign(groups=["readers"])}
+    failures: list[str] = []
+
+    def read(client: TestClient, headers: dict[str, str], title: str) -> None:
+        for _ in range(25):
+            repo = client.get("/v1/repositories", headers=headers).json()["items"]
+            found = client.get(f"/v1/repositories/{repo[0]['id']}/findings", headers=headers).json()
+            titles = [i["title"] for i in found["items"]]
+            if len(repo) != 1 or titles != [title]:
+                failures.append(f"{title}: {titles}")
+
+    threads = [
+        threading.Thread(target=read, args=(env.client, env.user("readers"), "t-mine")),
+        threading.Thread(target=read, args=(mine, for_other, "t-theirs")),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert failures == []

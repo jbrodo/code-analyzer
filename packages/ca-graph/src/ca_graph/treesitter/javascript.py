@@ -154,7 +154,7 @@ def parse_json_lenient(raw: bytes) -> Any:
     cleaned = re.sub(r",(\s*[}\]])", r"\1", "".join(out))
     try:
         return json.loads(cleaned)
-    except ValueError, RecursionError:
+    except (ValueError, RecursionError):
         return None
 
 
@@ -269,7 +269,7 @@ class Resolver:
             document = self._read(path)
             try:
                 data = json.loads(document) if document else None
-            except ValueError, RecursionError:
+            except (ValueError, RecursionError):
                 data = None
             if not isinstance(data, dict):
                 continue

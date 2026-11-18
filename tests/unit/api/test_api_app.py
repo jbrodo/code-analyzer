@@ -70,3 +70,16 @@ def test_export_writes_then_checks(tmp_path: Path) -> None:
 
 def test_versioned_file_matches_the_application() -> None:
     assert (ROOT / "schemas" / FILENAME).read_text(encoding="utf-8") == render()
+
+
+def test_every_api_response_has_nosniff_and_an_explicit_type() -> None:
+    from fastapi.testclient import TestClient
+
+    from ca_api.app import create_app
+    from ca_api.config import Settings
+
+    client = TestClient(create_app(Settings()))
+    for path in ("/v1/health", "/v1/me", "/v1/does-not-exist"):
+        reply = client.get(path)
+        assert reply.headers["x-content-type-options"] == "nosniff", path
+        assert reply.headers["content-type"].startswith("application/"), path

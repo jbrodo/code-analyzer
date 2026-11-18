@@ -119,3 +119,13 @@ L'elenco si ordina per livello attivo, poi punteggio decrescente, poi categoria 
 - Il valore 0,1 di P senza feed e i minimi di churn sono scelte di questo ADR, non di §6: vanno guardati in X-02.
 - "Percorso confermato" dipende dalla capacità degli strumenti di emettere `codeFlows`; dove non c'è, l'override SAST non scatta mai.
 - ADR-0009 resta valido per i livelli provvisori fino al Gate 2; poi la sua tabella resta come origine `tool_severity` per i finding senza punteggio.
+
+## Limite inferiore dal CVSS per le dipendenze (S5-A1, 2026-11-18)
+
+Motivo: decisione dell'utente del 2026-11-16 sul rilievo alto S5-A1 di `doc/verifiche/sicurezza-fase-2.md`. Con il livello da punteggio, P moltiplica tutto: un EPSS portato a zero o una voce tolta da KEV (feed alterato, mirror compromesso, o semplicemente un feed assente) porta P al minimo e una vulnerabilità con CVSS massimo scende a `basso`, senza toccare il repository. Il verso opposto è rumoroso e sicuro; questo no.
+
+- Nuova voce `overrides.dependency_cvss_floor` nella configurazione di scoring: una lista di coppie `cvss_min` e `level`. Una dipendenza con un CVSS (la versione più recente, come per G) pari o superiore a `cvss_min` non scende sotto `level`; vale il livello più grave tra le coppie soddisfatte. Valori predefiniti: da 9,0 `alto`, da 7,0 `medio`. Sono ipotesi, da calibrare in X-02 insieme agli altri.
+- È un override come gli altri: alza il livello, mai il punteggio, e il finding porta `level_source: override` e il nome `dependency-cvss-floor` con il CVSS usato nell'evidenza. **Non dipende dai feed né dalla raggiungibilità** (è il suo scopo) e non scatta senza un CVSS. Gli override KEV ed EPSS restano più severi e vincono quando scattano.
+- Il campo è facoltativo nello schema (`scoring-config` accetta i file senza): un file senza la voce non ha il limite e il report non lo segnala. Il file predefinito del pacchetto lo ha sempre.
+- Fino al Gate 2 non cambia nulla per il gate (D2-10): vale solo con `levels.source: score`.
+- Prove: `tests/unit/test_scoring_step.py` (soglie incluse, assenza di feed, assenza di CVSS, altre categorie, tabella dalla configurazione e il caso di punta a punta con EPSS a zero).

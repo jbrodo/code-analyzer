@@ -38,16 +38,16 @@ def epss_file(n: int = 3, date: str = "2026-11-17") -> bytes:
     return (head + rows).encode()
 
 
-def kev_file(n: int = 2) -> bytes:
+def kev_file(n: int = 2, released: str = "2026-11-13", start: int = 0) -> bytes:
     items = [
         {"cveID": f"CVE-2023-{i:04d}", "dateAdded": "2024-01-01",
          "knownRansomwareCampaignUse": "Unknown"}
-        for i in range(n)
+        for i in range(start, start + n)
     ]  # fmt: skip
     return json.dumps(
         {
-            "catalogVersion": "2026.11.13",
-            "dateReleased": "2026-11-13T00:00:00Z",
+            "catalogVersion": released.replace("-", "."),
+            "dateReleased": f"{released}T00:00:00Z",
             "vulnerabilities": items,
         }
     ).encode()
@@ -189,6 +189,33 @@ def test_a_big_drop_in_entries_is_rejected_as_implausible(cache: Path) -> None:
     clock.advance(1)
     ok = load(cache, FakeFetcher(epss_file(9, date="2026-11-19"), kev_file()), clock)  # -10%
     assert ok.warnings == [] and ok.feeds.epss("CVE-2024-0008").status is FeedStatus.FOUND
+
+
+def test_an_authentic_but_older_snapshot_is_not_an_update(cache: Path) -> None:
+    """S5-M1: un file vecchio di mesi supera forma, dimensione e conteggio, ma non è più recente."""
+    clock = FixedClock(T0)
+    load(cache, FakeFetcher(epss_file(date="2026-11-17"), kev_file(released="2026-11-13")), clock)
+    clock.advance(2 * 24 * 3600)
+    old = FakeFetcher(epss_file(date="2026-06-01"), kev_file(released="2026-06-01"))
+    result = load(cache, old, clock)
+    assert {("feeds-sync-failed", "epss"), ("feeds-sync-failed", "kev")} <= set(codes(result))
+    assert result.feeds.epss("CVE-2024-0001").status is FeedStatus.FOUND  # resta quello di prima
+
+
+def test_a_kev_entry_that_disappears_is_an_anomaly_but_new_ones_are_welcome(cache: Path) -> None:
+    """S5-M2: il catalogo cresce; una voce tolta (per far cadere l'override) non si accetta."""
+    clock = FixedClock(T0)
+    load(cache, FakeFetcher(epss_file(), kev_file(3)), clock)
+    clock.advance(2 * 24 * 3600)
+    dropped = kev_file(3, released="2026-11-17", start=1)  # CVE-2023-0000 sparita
+    result = load(cache, FakeFetcher(epss_file(date="2026-11-19"), dropped), clock)
+    assert ("feeds-sync-failed", "kev") in codes(result)
+    assert result.feeds.kev("CVE-2023-0000").status is FeedStatus.FOUND
+    clock.advance(1)
+    grown = kev_file(4, released="2026-11-17")  # le tre di prima e una nuova
+    ok = load(cache, FakeFetcher(epss_file(date="2026-11-19"), grown), clock)
+    assert ("feeds-sync-failed", "kev") not in codes(ok)
+    assert ok.feeds.kev("CVE-2023-0003").status is FeedStatus.FOUND
 
 
 def test_a_custom_origin_is_labelled_mirror_never_with_its_url(cache: Path) -> None:

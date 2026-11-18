@@ -17,6 +17,24 @@ export default tseslint.config(
     linterOptions: { reportUnusedDisableDirectives: "error" },
   },
   {
+    // S1-M1: il contenuto del report si rende sempre come testo, mai come HTML
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: "Il contenuto del report non si inserisce come HTML (S1-M1).",
+        },
+        {
+          selector: "MemberExpression[property.name=/^(innerHTML|outerHTML)$/]",
+          message: "Il contenuto del report non si inserisce come HTML (S1-M1).",
+        },
+      ],
+    },
+  },
+  {
     files: ["**/*.js", "**/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {

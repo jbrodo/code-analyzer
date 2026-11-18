@@ -86,6 +86,7 @@ def test_problem_codes_are_the_documented_enum() -> None:
         "validation-failed",
         "report-schema-invalid",
         "payload-too-large",
+        "rate-limited",
         "repository-mismatch",
         "artifacts-conflict",
         "state-conflict",

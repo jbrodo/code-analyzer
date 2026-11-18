@@ -17,7 +17,7 @@ Insieme al report partono, se stanno nella stessa cartella, `code-analyzer.sarif
 Non serve nessun segreto a lunga durata: il server si fida del token OIDC che il provider della CI
 rilascia alla singola esecuzione.
 
-- **GitHub Actions:** abilita il permesso `id-token: write`. `upload` chiede il token da solo; con
+- **GitHub Actions:** abilita il permesso `id-token: write` **solo nel job che carica**, mai in quello che analizza il codice di una PR: chi apre una PR dallo stesso repository può chiedere un token con le attestazioni del proprio ramo (il server ne deriva lo stato, ma meno token ci sono, meglio è). `upload` chiede il token da solo; con
   `--audience` si indica l'audience che il server si aspetta.
 - **GitLab:** dichiara un `id_tokens` e passalo nella variabile `CA_OIDC_TOKEN`.
 

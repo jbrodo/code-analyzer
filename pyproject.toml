@@ -56,6 +56,12 @@ extend-exclude = [
 ]
 src = ["packages/*/src"]
 
+[tool.ruff.per-file-target-version]
+# Gli adattatori girano dentro le immagini dei plugin, con un Python più vecchio del progetto:
+# niente sintassi nuova (per esempio `except A, B:` senza parentesi, solo da 3.14).
+"packages/ca-plugins/src/ca_plugins/builtin/**/*.py" = "py312"
+"packages/ca-graph/**/*.py" = "py312"  # `ca_graph.treesitter` e la storia git girano nell'immagine di ca-graph
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 

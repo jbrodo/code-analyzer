@@ -90,7 +90,7 @@ def cvss3(vector: str) -> dict[str, Any] | None:
         iss = 1 - math.prod(1 - _V3["CIA"][m[k]] for k in "CIA")
         impact = 7.52 * (iss - 0.029) - 3.25 * (iss - 0.02) ** 15 if changed else 6.42 * iss
         exploit = 8.22 * _V3["AV"][m["AV"]] * _V3["AC"][m["AC"]] * priv * _V3["UI"][m["UI"]]
-    except KeyError, ValueError:
+    except (KeyError, ValueError):
         return None
     raw = 0.0 if impact <= 0 else min((1.08 if changed else 1.0) * (impact + exploit), 10.0)
     return {"version": match.group(1), "vector": vector, "score": _roundup(raw)}
@@ -371,7 +371,7 @@ def sync(
                 if not archive.namelist():
                     raise OSError("archivio vuoto")
             os.replace(part, target)
-        except OSError, ValueError, zipfile.BadZipFile:  # URLError e' un OSError
+        except (OSError, ValueError, zipfile.BadZipFile):  # URLError e' un OSError
             part.unlink(missing_ok=True)
             return EXIT_SYNC
     return 0

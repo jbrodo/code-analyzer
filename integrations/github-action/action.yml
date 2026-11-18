@@ -43,14 +43,16 @@ outputs:
 runs:
   using: composite
   steps:
-    # pull_request_target darebbe a contenuto scelto da chi apre la PR un token con scrittura (ADR-0027).
+    # pull_request_target e workflow_run darebbero a contenuto scelto da chi apre la PR un token con scrittura (ADR-0027).
     - name: Controlla l'evento
       shell: bash
       env:
         EVENT: ${{ github.event_name }}
       run: |
-        if [ "$EVENT" = pull_request_target ]; then
-          echo "::error::pull_request_target non è supportato: usa pull_request (vedi ADR-0027)"
+        # Entrambi girano nel contesto del ramo base, con accesso a segreti: se il flusso fa il checkout
+        # del codice della PR, il contenuto di chi la apre li usa (S4-B1 di sicurezza-fase-2.md).
+        if [ "$EVENT" = pull_request_target ] || [ "$EVENT" = workflow_run ]; then
+          echo "::error::$EVENT non è supportato: usa pull_request (vedi ADR-0027)"
           exit 2
         fi
 

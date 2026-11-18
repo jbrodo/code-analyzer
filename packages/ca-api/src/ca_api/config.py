@@ -47,6 +47,8 @@ class Settings:
     s3_prefix: str = ""
     default_branches: tuple[str, ...] = ("main", "master")  # branch che contano come principali
     exception_max_days: int = 365  # durata massima di un'eccezione (ADR-0029)
+    max_ingests_per_hour: int = 120  # per repository, finestra mobile; 0 spegne il tetto
+    max_concurrent_ingests: int = 4  # per tenant; 0 spegne il tetto
     web_dir: str | None = None  # la SPA compilata (immagine di rilascio, I-03); senza, solo l'API
     web_config: str | None = (
         None  # `config.json` dell'ambiente (IdP, client); senza, quello della SPA
@@ -78,6 +80,12 @@ class Settings:
             s3_region=source.get(PREFIX + "S3_REGION") or "us-east-1",
             s3_prefix=source.get(PREFIX + "S3_PREFIX") or "",
             default_branches=branches or ("main", "master"),
+            max_ingests_per_hour=_int(
+                source, "MAX_INGESTS_PER_HOUR", cls.max_ingests_per_hour, minimum=0
+            ),
+            max_concurrent_ingests=_int(
+                source, "MAX_CONCURRENT_INGESTS", cls.max_concurrent_ingests, minimum=0
+            ),
             web_dir=source.get(PREFIX + "WEB_DIR") or None,
             web_config=source.get(PREFIX + "WEB_CONFIG") or None,
             csp_connect=tuple(

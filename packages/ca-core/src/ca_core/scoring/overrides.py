@@ -16,7 +16,7 @@ from ca_core.models.finding import Category, Finding, Level
 from ca_core.ports import CVE_PATTERN, FeedStatus
 from ca_core.scoring.base import ScoringContext
 from ca_core.scoring.exposure import _members, reach_of
-from ca_core.scoring.levels import level_rank
+from ca_core.scoring.levels import best_cvss_entry, level_rank
 from ca_core.scoring.reach import ReachState
 
 _CVE = re.compile(CVE_PATTERN)
@@ -26,6 +26,7 @@ EPSS_REACHABLE = "epss-reachable"
 SAST_CONFIRMED_EXPOSED = "sast-confirmed-exposed"
 ARCHITECTURE_HOTSPOT = "architecture-smell-hotspot"
 LOW_COVERAGE_CRITICAL_CODE = "low-coverage-critical-code"
+DEPENDENCY_CVSS_FLOOR = "dependency-cvss-floor"
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,23 @@ def _dependency_overrides(finding: Finding, context: ScoringContext) -> list[Ove
             )
         )
     return found
+
+
+def _cvss_floor(finding: Finding, context: ScoringContext) -> list[Override]:
+    """S5-A1: con un CVSS alto una dipendenza non scende sotto un livello, anche se un feed alterato
+    (o assente) porta P al minimo. Dipende solo dal CVSS del finding, mai dai feed né dalla
+    raggiungibilità; senza CVSS non scatta."""
+    if finding.category is not Category.DEPENDENCY:
+        return []
+    best = best_cvss_entry(finding)
+    if best is None:
+        return []
+    score, version = best
+    matching = [f for f in context.config.overrides.dependency_cvss_floor if score >= f.cvss_min]
+    if not matching:
+        return []
+    top = min(matching, key=lambda f: level_rank(f.level))  # il livello più grave tra i soddisfatti
+    return [Override(DEPENDENCY_CVSS_FLOOR, top.level, {"cvss": score, "version": version})]
 
 
 def _license_override(finding: Finding, context: ScoringContext) -> list[Override]:
@@ -136,6 +154,7 @@ def applicable_overrides(finding: Finding, context: ScoringContext) -> list[Over
     """Tutti gli override che scattano, dal livello minimo più grave."""
     found = [
         *_dependency_overrides(finding, context),
+        *_cvss_floor(finding, context),
         *_license_override(finding, context),
         *_sast_override(finding, context),
         *_hotspot_override(finding, context),

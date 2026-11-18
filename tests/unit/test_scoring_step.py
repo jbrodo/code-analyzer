@@ -67,10 +67,18 @@ def names(found: list[ov.Override]) -> list[str]:
     return [o.name for o in found]
 
 
+def feeds_only(found: list[ov.Override]) -> list[ov.Override]:
+    """Gli override che vengono dai feed e dalla raggiungibilità: senza il limite dal CVSS (S5-A1),
+    che le dipendenze con CVSS alto hanno sempre e che ha i suoi test più sotto."""
+    return [o for o in found if o.name != ov.DEPENDENCY_CVSS_FLOOR]
+
+
 def test_kev_and_reachable_forces_critical() -> None:
     feeds = FakeEnrichmentFeeds(kev={"CVE-2024-0001": KEV})
-    found = ov.applicable_overrides(
-        dependency("CVE-2024-0001"), ctx(feeds=feeds, reachability=reach_django(R))
+    found = feeds_only(
+        ov.applicable_overrides(
+            dependency("CVE-2024-0001"), ctx(feeds=feeds, reachability=reach_django(R))
+        )
     )
     assert names(found) == [ov.KEV_REACHABLE] and found[0].level is Level.CRITICAL
 
@@ -79,7 +87,7 @@ def test_kev_and_reachable_forces_critical() -> None:
 def test_kev_without_proven_reachability_does_not_force_anything(state: ReachState) -> None:
     feeds = FakeEnrichmentFeeds(kev={"CVE-2024-0001": KEV})
     context = ctx(feeds=feeds, reachability=reach_django(state))
-    assert ov.applicable_overrides(dependency("CVE-2024-0001"), context) == []
+    assert feeds_only(ov.applicable_overrides(dependency("CVE-2024-0001"), context)) == []
 
 
 def test_epss_at_least_the_threshold_and_reachable_forces_high() -> None:
@@ -87,21 +95,33 @@ def test_epss_at_least_the_threshold_and_reachable_forces_high() -> None:
     at = FakeEnrichmentFeeds(epss={"CVE-2024-0001": (0.1, 0.5)})
     below = FakeEnrichmentFeeds(epss={"CVE-2024-0001": (0.099, 0.5)})
     assert names(
-        ov.applicable_overrides(dependency("CVE-2024-0001"), ctx(feeds=at, reachability=reach))
+        feeds_only(
+            ov.applicable_overrides(dependency("CVE-2024-0001"), ctx(feeds=at, reachability=reach))
+        )
     ) == [ov.EPSS_REACHABLE]
     assert (
-        ov.applicable_overrides(dependency("CVE-2024-0001"), ctx(feeds=below, reachability=reach))
+        feeds_only(
+            ov.applicable_overrides(
+                dependency("CVE-2024-0001"), ctx(feeds=below, reachability=reach)
+            )
+        )
         == []
     )
 
 
 def test_no_feeds_or_no_cve_means_no_dependency_override() -> None:
     reach = reach_django(R)
-    assert ov.applicable_overrides(dependency("CVE-2024-0001"), ctx(reachability=reach)) == []
+    found = ov.applicable_overrides(dependency("CVE-2024-0001"), ctx(reachability=reach))
+    assert feeds_only(found) == []
     feeds = FakeEnrichmentFeeds(kev={"CVE-2024-0001": KEV})
-    assert ov.applicable_overrides(dependency(), ctx(feeds=feeds, reachability=reach)) == []
     assert (
-        ov.applicable_overrides(dependency("GHSA-x-y-z"), ctx(feeds=feeds, reachability=reach))
+        feeds_only(ov.applicable_overrides(dependency(), ctx(feeds=feeds, reachability=reach)))
+        == []
+    )
+    assert (
+        feeds_only(
+            ov.applicable_overrides(dependency("GHSA-x-y-z"), ctx(feeds=feeds, reachability=reach))
+        )
         == []
     )
 
@@ -109,7 +129,7 @@ def test_no_feeds_or_no_cve_means_no_dependency_override() -> None:
 def test_kev_and_epss_together_floor_to_the_most_severe() -> None:
     feeds = FakeEnrichmentFeeds(epss={"CVE-2024-0001": (0.9, 0.9)}, kev={"CVE-2024-0001": KEV})
     context = ctx(feeds=feeds, reachability=reach_django(R))
-    assert names(ov.applicable_overrides(dependency("CVE-2024-0001"), context)) == [
+    assert names(feeds_only(ov.applicable_overrides(dependency("CVE-2024-0001"), context))) == [
         ov.KEV_REACHABLE,
         ov.EPSS_REACHABLE,
     ]
@@ -319,3 +339,79 @@ def test_the_result_carries_scoring_info_and_counts_fallbacks() -> None:
     assert result.info.active_variant == "B" and result.info.shadow is True
     assert result.info.config_version == config_version(CONFIG)
     assert result.with_fallback == 1  # la dipendenza senza feed né grafo
+
+
+# --- limite inferiore dal CVSS (S5-A1) -------------------------------------------------------
+
+
+def with_cvss(score: float | None, **kv):
+    evidence = {} if score is None else {"cvss": {"score": score, "version": "3.1"}}
+    return dependency("CVE-2024-0001").model_copy(
+        update={"evidence": {"osv-scanner": {**evidence, "cves": ["CVE-2024-0001"]}}, **kv}
+    )
+
+
+@pytest.mark.parametrize(
+    ("cvss", "expected"),
+    [
+        (10.0, Level.HIGH),
+        (9.0, Level.HIGH),
+        (8.99, Level.MEDIUM),
+        (7.0, Level.MEDIUM),
+        (6.99, None),
+    ],
+)
+def test_a_high_cvss_sets_a_floor_whatever_the_feeds_say(
+    cvss: float, expected: Level | None
+) -> None:
+    # feed assente, raggiungibilità ignota e nessuna CVE in KEV: il caso in cui P scende al minimo
+    context = ctx(feeds=FakeEnrichmentFeeds(), reachability=reach_django(U))
+    floor = ov.floor_of(with_cvss(cvss), context)
+    assert (floor.level if floor else None) is expected
+    if floor:
+        assert floor.name == ov.DEPENDENCY_CVSS_FLOOR and floor.evidence["cvss"] == cvss
+
+
+def test_the_floor_needs_no_feeds_and_no_reachability() -> None:
+    assert ov.floor_of(with_cvss(9.8), ctx()) is not None
+
+
+def test_without_a_cvss_or_outside_dependencies_there_is_no_floor() -> None:
+    assert ov.floor_of(with_cvss(None), ctx()) is None
+    sast = finding(
+        "s",
+        category=Category.SAST,
+        tool="semgrep",
+        evidence={"cvss": {"score": 9.8, "version": "3.1"}},
+    )
+    assert ov.floor_of(sast, ctx()) is None
+
+
+def test_the_kev_override_still_wins_over_the_floor() -> None:
+    feeds = FakeEnrichmentFeeds(kev={"CVE-2024-0001": KEV})
+    context = ctx(feeds=feeds, reachability=reach_django(R))
+    assert ov.floor_of(with_cvss(9.8), context).level is Level.CRITICAL  # type: ignore[union-attr]
+
+
+def test_the_floor_table_comes_from_the_configuration() -> None:
+    data = json.loads(default_bytes())
+    data["overrides"]["dependency_cvss_floor"] = [{"cvss_min": 5.0, "level": "alto"}]
+    custom = ScoringConfig.model_validate(data)
+    context = ScoringContext(config=custom)
+    assert ov.floor_of(with_cvss(5.0), context).level is Level.HIGH  # type: ignore[union-attr]
+    data["overrides"]["dependency_cvss_floor"] = []
+    assert (
+        ov.floor_of(with_cvss(9.8), ScoringContext(config=ScoringConfig.model_validate(data)))
+        is None
+    )
+
+
+def test_an_altered_feed_cannot_hide_a_critical_cvss_dependency() -> None:
+    """S5-A1 di punta a punta: EPSS a zero e nessuna KEV portano P al minimo e il punteggio sotto il
+    livello basso, ma il limite dal CVSS tiene il livello da punteggio almeno ad `alto`."""
+    feeds = FakeEnrichmentFeeds(epss={"CVE-2024-0001": (0.0, 0.0)})
+    context = ctx(feeds=feeds, reachability=reach_django(R))
+    scored = score_finding(with_cvss(9.8), context, "A")
+    assert scored.variant_scores[0].score < 15  # il punteggio da solo direbbe basso
+    assert scored.variant_scores[0].level is Level.HIGH  # alzato dal limite, con l'evidenza
+    assert "dependency-cvss-floor" in str(scored.variant_scores[0].impact.evidence)

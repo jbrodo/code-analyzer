@@ -48,7 +48,7 @@ jobs:
 
 ## Permessi e PR da fork
 
-Quelli dell'esempio sono i minimi. Su una PR da fork il token è di sola lettura: `scan` e `gate` girano, il SARIF non si carica (avviso), `notify` scrive il commento nel riepilogo del job. `pull_request_target` non è supportato: l'Action si ferma con un errore.
+Quelli dell'esempio sono i minimi. Su una PR da fork il token è di sola lettura: `scan` e `gate` girano, il SARIF non si carica (avviso), `notify` scrive il commento nel riepilogo del job. `pull_request_target` e `workflow_run` non sono supportati: l'Action si ferma con un errore.
 
 Su `pull_request` il file del flusso è quello della PR: chi la apre può togliere il gate modificandolo. Per imporlo servono i meccanismi del provider per eseguire un flusso da un ramo protetto.
 

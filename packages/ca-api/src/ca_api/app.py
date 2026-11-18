@@ -17,6 +17,7 @@ from ca_api.auth.jwks import HttpsJwksFetcher, JwksCache
 from ca_api.auth.verify import TokenVerifier
 from ca_api.config import Settings
 from ca_api.db.engine import make_engine
+from ca_api.headers import SecurityHeadersMiddleware
 from ca_api.limits import BodyLimitMiddleware
 from ca_api.problem import PROBLEM_MEDIA_TYPE, ApiProblem, Problem, ProblemCode, ProblemError
 from ca_api.routes import router
@@ -24,10 +25,11 @@ from ca_api.spa import mount_spa
 from ca_api.storage.filesystem import FileSystemArtifactStore
 from ca_api.storage.s3 import S3ArtifactStore, make_client
 from ca_api.telemetry import Telemetry, TelemetryMiddleware, build_meter_provider
+from ca_api.throttle import IngestThrottle
 from ca_core.ports import ArtifactStore, Clock
 from ca_core.schema_validation import SchemaStore
 
-API_VERSION = "1.1.0"  # `info.version` del contratto: 1.MINORE.CORREZIONE (ADR-0017)
+API_VERSION = "1.2.0"  # `info.version` del contratto: 1.MINORE.CORREZIONE (ADR-0017)
 
 
 class Health(BaseModel):
@@ -118,9 +120,14 @@ def create_app(
     app.state.store = store if store is not None else build_store(app.state.settings)
     app.state.schemas = schemas
     app.state.clock = clock or SystemClock()
+    app.state.throttle = IngestThrottle(
+        per_hour=app.state.settings.max_ingests_per_hour,
+        concurrent=app.state.settings.max_concurrent_ingests,
+    )
     app.state.telemetry = Telemetry(meter_provider or build_meter_provider())
     app.add_middleware(BodyLimitMiddleware, max_bytes=app.state.settings.max_request_bytes)
     app.add_middleware(TelemetryMiddleware, telemetry=app.state.telemetry)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.include_router(router)
     app.openapi = lambda: _openapi(app)  # type: ignore[method-assign]
 
