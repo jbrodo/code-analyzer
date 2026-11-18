@@ -180,7 +180,7 @@ Trovate durante la stesura. Ognuna ha un ADR o una decisione nella tabella prece
 13. **GitLab.** Il componente deve vivere in un progetto GitLab, il monorepo è su GitHub; ADR-0004 non supporta le CI senza daemon. D2-12.
 14. **`ca-graph` "interno".** §7.3 lo mette tra i plugin senza container, ma tree-sitter analizza codice non fidato con un parser in C: contro il principio di ADR-0004. ADR-0020.
 15. **Ingresso della copertura.** "Import LCOV / Cobertura dalla CI": il manifest (§7.1) ha solo `workspace`, `sbom` e `config` come ingressi, e un report di copertura prodotto dalla CI non è un file del repository. ADR-0026.
-16. **MinIO.** §2 lo indica, ma la sua licenza (AGPL-3.0, da verificare) è nell'elenco vietato di D-0013 per un prodotto distribuito. D2-07.
+16. **MinIO.** §2 lo indica, ma la sua licenza di rete (da verificare) è nell'elenco vietato di D-0013 per un prodotto distribuito. D2-07.
 17. **Versione di Python.** §2 dice 3.12+, `pyproject.toml` richiede 3.14 e la CI usa 3.14; `ruff` ha `target-version = "py312"`. Da allineare in A-17.
 18. **Chi chiama `ca-integrations`.** ADR-0001 non consente a `ca-cli` di importarlo, ma senza server i commenti PR partono dalla CI. ADR-0027 e A-16.
 19. **"I team".** §13 non dice chi valida l'ordinamento. D2-03.
@@ -1006,7 +1006,7 @@ Tutti `IPOTESI` (D2-01): con l'alternativa si aggiungono i task della sezione 3,
 - Spec: §9.2. ADR: 0017.
 
 #### B-07 — Archivio degli artefatti
-- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_api/storage/filesystem.py` e `s3.py` della porta `ArtifactStore` con una batteria di contratto comune (anche il fake in memoria): contenimento dei percorsi con `O_NOFOLLOW`, permessi privati, nessuna sovrascrittura nemmeno in corsa (`link` atomico; `If-None-Match` su S3, provato con scrittori concorrenti), tetto di byte con lettura limitata, digest verificato mentre si scrive. Client `boto3` 1.44.4 (Apache 2.0) e server di prova SeaweedFS (Apache 2.0), verificati e riportati in ADR-0030; MinIO resta escluso. **Non fatto:** la costruzione dell'archivio dalla configurazione (B-03); non provato su un servizio S3 reale.
+- Agente: `backend`. Stato: **chiuso il 2026-11-17**. `ca_api/storage/filesystem.py` e `s3.py` della porta `ArtifactStore` con una batteria di contratto comune (anche il fake in memoria): contenimento dei percorsi con `O_NOFOLLOW`, permessi privati, nessuna sovrascrittura nemmeno in corsa (`link` atomico; `If-None-Match` su S3, provato con scrittori concorrenti), tetto di byte con lettura limitata, digest verificato mentre si scrive. Client `boto3` 1.44.4 (licenza permissiva) e server di prova SeaweedFS (licenza permissiva), verificati e riportati in ADR-0030; MinIO resta escluso. **Non fatto:** la costruzione dell'archivio dalla configurazione (B-03); non provato su un servizio S3 reale.
 - Percorsi: `packages/ca-api/src/ca_api/storage/`.
 - Dipende da: A-15, C-06.
 - Accettazione: adattatori su file system e S3 della porta di C-06, con contenimento dei percorsi; test dell'adattatore S3 su un server compatibile in container.
