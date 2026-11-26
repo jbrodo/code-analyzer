@@ -1353,7 +1353,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §14, §16 regola 4. ADR: 0007.
 
 #### T-03 — E2E di rilevamento della Fase 2
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-26** in locale; in CI lo raccoglie `e2e.yml`. `tests/e2e/test_detection_phase2.py`, 88 prove in circa 95 s con ruff, eslint, checkov, hadolint, trivy, ca-graph e coverage in immagini firmate: ogni atteso di F-02 e i gruppi di correlazione di `iac-app` (uno per problema, distinti tra problemi); per F-01 archi e metriche del grafo pubblicato, righe e ADI, cicli esatti, hub e dipendenze instabili attesi (con le soglie predefinite gli hub in più non sono un errore: la guardia sul grado resta da fare); per F-03 ogni report valido letto e ogni report ostile rifiutato senza effetti, più un file poco coperto generato dalla prova, perché i report della fixture stanno sotto le righe minime del plugin. Nessun `xfail`. **Trovato e corretto:** checkov, senza risorse IaC da analizzare, stampa solo un riepilogo a zero che l'adattatore rifiutava (`exit 5`): ogni repository senza infrastruttura risultava `partial`.
 - Percorsi: `tests/e2e/`.
 - Dipende da: F-01, F-02, F-03, P-01, P-02, P-03, P-04, P-05, G-10.
 - Accettazione: tutti i problemi noti di F-01, F-02 e F-03 rilevati, confronto automatico con gli attesi, nessun `xfail` nuovo senza decisione.
