@@ -201,3 +201,22 @@ La baseline di ciascuna è la scansione completa della base, fatta subito prima 
 - La macchina non era del tutto scarica: servizi dell'utente in container, quasi inattivi, e carico medio intorno a 2 su 20 thread prima di cominciare.
 - PR piccole (5–16 file). Con la scansione completa dei file il tempo dipende dalle dimensioni del repository più che della PR; `saleor` è il più grande dei pilota.
 - Il margine di `saleor` (2,3 volte) vale per questa macchina; un runner di CI con pochi core può essere più lento e non è stato misurato.
+
+## X-07 — Auto-analisi con i livelli della Fase 2 (2026-11-26)
+
+**Superata con la configurazione del prodotto** (variante A attiva), sia con i livelli provvisori sia con quelli da punteggio: `gate --fail-on critico,alto` esce con 0, nessun finding critico o alto aperto. **Con la variante B attiva non è superata** (sotto).
+
+Clone pulito di `main` al commit `b10b9de`, CLI impacchettata con lo stesso codice del prodotto, tredici plugin con immagini firmate, 1.226 finding, `complete`, 96 s (94 s con i livelli da punteggio), `--offline`. Feed: osv-scanner, EPSS e KEV sincronizzati il 2026-11-26; **trivy del 2026-11-17** (avviso `feeds-stale`), perché in una cache nuova su questa macchina la sincronizzazione del suo database non è mai riuscita nei tentativi di oggi (causa non indagata; in CI il 2026-11-26 è riuscita). Per i livelli da punteggio, una copia della configurazione predefinita con `levels.source: score`, fuori dal repository.
+
+| Livelli | Finding per livello (critico / alto / medio / basso) | Aperti (critico / alto / medio / basso) | Eccezioni applicate | `gate` |
+| --- | --- | --- | --- | --- |
+| Provvisori | 14 / 28 / 787 / 397 | 0 / 0 / 787 / 397 | 42 | 0 |
+| Da punteggio, variante A | 14 / 0 / 118 / 1.094 | 0 / 0 / 94 / 1.090 | 42 | 0 |
+
+- **Le 6 eccezioni di D-0015** (X-10) sono tutte applicate, ciascuna su un finding di licenza `alto` sotto i livelli provvisori. Due impronte non sono più quelle elencate in `gate-1.md`, come X-10 aveva già registrato.
+- **Una delle 43 eccezioni non serve più:** il falso positivo di licenza su `doc/plan/fase-2.md` (scadenza 2027-05-09) non corrisponde a nessun finding. Toglierla è una scelta di chi l'ha approvata.
+- **Con i livelli da punteggio** i 14 `critico` vengono tutti dall'override `license-forbidden-distributed` (eccepiti) e il punteggio da solo non produce nessun `alto` in A: i 27 finding eccepiti che erano `alto` diventano 23 `medio` e 4 `basso`. È il limite delle soglie non ritarate di X-02: qui il gate passa anche perché i livelli da punteggio quasi non arrivano ad `alto`.
+
+### Con la variante B
+
+Con `--variant B` e i livelli da punteggio il gate esce con **1**: tre finding `quality` aperti diventano `alto` (`PLR0911`, `PLR0912` e `C901`, punteggi tra 40,3 e 42,1; in A sono `medio` con 20,6). Riguardano la stessa funzione di `packages/ca-plugins/src/ca_plugins/runner.py`: complessità oltre quasi tutto il benchmark (G tra 0,96 e 1,0), in un file con molte modifiche e violazioni (P 0,93). Non sono falsi positivi. **Se X-06 propone B**, per tenere verde X-07 va semplificata quella funzione, oppure serve un'eccezione approvata o una ritaratura delle soglie.
