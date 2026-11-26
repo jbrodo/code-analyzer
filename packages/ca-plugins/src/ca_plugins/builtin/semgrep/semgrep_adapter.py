@@ -29,6 +29,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 SEMGREP = "/opt/venv/bin/semgrep"
 RULES = "/opt/ca-plugin/rules"
@@ -93,6 +94,12 @@ def _relative_uri(uri: str, workspace: str) -> str:
     return path[len(workspace) + 1 :]
 
 
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
+
+
 def _clean(value: Any, workspace: str) -> Any:
     if isinstance(value, list):
         return [_clean(v, workspace) for v in value]
@@ -106,7 +113,7 @@ def _clean(value: Any, workspace: str) -> Any:
             uri = child.get("uri")
             if not isinstance(uri, str):
                 raise InvalidOutput("artifactLocation senza uri")
-            out[key] = {"uri": _relative_uri(uri, workspace)}
+            out[key] = {"uri": _uri(_relative_uri(uri, workspace))}
         else:
             out[key] = _clean(child, workspace)
     return out

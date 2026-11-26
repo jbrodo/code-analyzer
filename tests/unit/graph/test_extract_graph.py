@@ -194,3 +194,17 @@ def test_every_read_module_has_its_physical_lines(tmp_path: Path) -> None:
     )
     found = {path: m["lines"] for path, m in modules(document).items()}
     assert found == {"a.py": 2, "b.py": 2, "c.py": 0, "d.ts": 3}
+
+
+def test_a_path_the_contract_refuses_is_skipped_and_counted_not_fatal(tmp_path: Path) -> None:
+    """ADR-0004: `a:b/` è una cartella legittima, ma il contratto la legge come un'unità."""
+    document = graph(tmp_path, {"a:b/x.py": "import os\n", "ab:c/y.py": "", "ok.py": ""})
+    assert sorted(modules(document)) == ["ab:c/y.py", "ok.py"]
+    assert document["stats"]["files_skipped_name"] == 1
+    Graph.model_validate_json(to_json(document))
+
+
+def test_the_skip_rule_is_the_one_of_the_contract() -> None:
+    from ca_core.models import config
+
+    assert fs._NOT_RELATIVE.pattern == config._NOT_RELATIVE

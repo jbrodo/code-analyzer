@@ -269,3 +269,17 @@ Motivo: la prima volta che un repository reale ha incontrato la regola «un syml
 - Gli adattatori di ruff ed eslint scartano i risultati il cui percorso attraversa un collegamento simbolico del workspace (`through_symlink`, componente per componente). È la stessa regola che questo ADR dà per l'host: i collegamenti non sono analizzabili. La CLI già avvisa con `workspace-symlinks` che il loro contenuto non è analizzato.
 - Gli altri adattatori non sono stati provati su un repository con collegamenti: chi legge i file da sé (bandit, semgrep, scancode, checkov, hadolint) può avere lo stesso problema. È un controllo da fare, non ancora un difetto osservato.
 - Nello stesso lavoro: l'adattatore di eslint scriveva l'`uri` senza codifica percentuale, e una cartella chiamata `#` (anche questa in vite) faceva fallire il plugin. Ora codifica come fa ruff. Anche checkov, coverage, hadolint, osv-scanner, scancode e trivy costruiscono l'`uri` da un percorso grezzo: stesso controllo da fare.
+
+## Emendamento del 2026-11-26: nomi insoliti e collegamenti, verificati con tutti i plugin
+
+Chiude il controllo che l'emendamento per K-06 lasciava aperto. La prova (`tests/e2e/test_odd_paths.py`) scansiona con i tredici plugin firmati un repository con cartelle `#`, `a?b`, `100%41`, `a:b` e con spazi e accenti, collegamenti simbolici a file e cartelle, e un segreto finto per cartella nella storia git.
+
+**Trovati e corretti:**
+
+- **Quattro plugin fallivano** su quel repository: `semgrep` e `gitleaks` (`uri` grezzo), `bandit` (risultati su collegamenti, che segue) e `ca-graph` (sotto). Con `gitleaks` fallito si perdevano **tutti** i segreti del repository per un solo nome di cartella.
+- **`uri`:** `checkov`, `coverage`, `hadolint`, `osv-scanner`, `scancode`, `trivy`, `semgrep` e `gitleaks` ora codificano il percorso, e solo nel momento in cui scrivono l'`uri` (`quote(os.fsencode(percorso), safe="/")`): controlli, ordinamento ed esclusioni lavorano sul nome vero. Per `gitleaks` anche il messaggio usa l'`uri` codificato, perché l'host accetta solo il modello oscurato con l'`uri` del risultato (ADR-0012); il controllo dell'host non cambia.
+- **`bandit`** scarta i risultati che passano da un collegamento, come ruff ed eslint.
+- **`trivy`** rifiutava come «non relativo» ogni percorso con la forma di uno schema, anche la cartella `a:b/`. Ora rifiuta gli indirizzi (`schema://`) e le unità di Windows (`C:/`).
+- **`ca-graph`:** il contratto `graph` rifiuta un percorso che sembra un'unità di Windows (`a:b/…`, una sola lettera), e un solo file così faceva scartare l'intero grafo. Il contratto non cambia: l'estrattore salta quei file e li conta in `files_skipped_name`, come i nomi con caratteri di controllo. **Limite:** quei file non entrano nel grafo, quindi non hanno smell, PageRank né raggiungibilità.
+
+Il nucleo non cambia: nessun controllo dell'host è stato allentato. Le immagini dei plugin cambiati vanno ricostruite.

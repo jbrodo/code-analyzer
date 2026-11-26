@@ -33,6 +33,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 GITLEAKS = "/usr/local/bin/gitleaks"
 GIT = "/usr/bin/git"
@@ -63,6 +64,12 @@ class InvalidOutput(ValueError):
 
 class UnsupportedRepo(ValueError):
     """`.git` non e' una git dir che l'adattatore sappia replicare in sicurezza."""
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def _git_env(tmp_dir: str) -> dict[str, str]:
@@ -165,7 +172,9 @@ def adapt(raw: bytes, workspace: str = WORKSPACE, notes: tuple[str, ...] = ()) -
             raise InvalidOutput("risultato non conforme") from exc
         if not isinstance(rule, str) or not rule or not isinstance(secret, str) or not secret:
             raise InvalidOutput("risultato non conforme")
-        uri = _relative_uri(physical.get("artifactLocation", {}).get("uri"), workspace)
+        # codificato, e lo stesso nel messaggio: l'host accetta solo il modello oscurato con l'`uri`
+        # del risultato (ADR-0012)
+        uri = _uri(_relative_uri(physical.get("artifactLocation", {}).get("uri"), workspace))
         commit = (result.get("partialFingerprints") or {}).get("commitSha")
         at = f" at commit {commit}" if isinstance(commit, str) and _COMMIT.fullmatch(commit) else ""
         results.append(

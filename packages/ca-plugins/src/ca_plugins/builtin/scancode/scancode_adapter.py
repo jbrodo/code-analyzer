@@ -22,6 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 SCANCODE = "/opt/venv/bin/scancode"
 WORKSPACE = "/workspace"
@@ -36,6 +37,12 @@ EXIT_TOOL, EXIT_INVALID = 3, 5
 
 class InvalidOutput(ValueError):
     """Il JSON di scancode non e' conforme o segnala errori di scansione."""
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def processes(cpu_max: str = CGROUP_CPU_MAX) -> int:
@@ -92,7 +99,9 @@ def adapt(raw: bytes) -> bytes:
         spdx = entry.get("detected_license_expression_spdx")
         if entry.get("type") != "file" or not isinstance(spdx, str) or not spdx:
             continue
-        location: dict[str, Any] = {"artifactLocation": {"uri": _safe_path(entry.get("path"))}}
+        location: dict[str, Any] = {
+            "artifactLocation": {"uri": _uri(_safe_path(entry.get("path")))}
+        }
         region = _region(entry.get("license_detections") or [])
         if region:
             location["region"] = region
