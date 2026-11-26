@@ -4,7 +4,9 @@ name: feeds-snapshot
 
 on:
   schedule:
-    - cron: "17 3 * * 1"
+    # Lunedì e giovedì. GitHub cancella una cache non usata da 7 giorni: con un solo snapshot
+    # alla settimana un'esecuzione saltata la svuota, e l'e2e fallisce per mancanza dei feed.
+    - cron: "17 3 * * 1,4"
   workflow_dispatch:
 
 permissions: {}
