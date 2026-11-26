@@ -5,8 +5,8 @@
   "description": "Dipendenze fissate del plugin eslint (P-02). Non si pubblica.",
   "dependencies": {
     "@eslint/js": "10.0.1",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.2"
+    "typescript-eslint": "8.74.0"
   }
 }
