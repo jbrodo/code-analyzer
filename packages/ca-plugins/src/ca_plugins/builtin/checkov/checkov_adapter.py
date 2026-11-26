@@ -206,6 +206,17 @@ def _result(check: Any) -> dict[str, Any]:
     }
 
 
+# Con nessuna risorsa da analizzare checkov (3.4.5) stampa solo questo riepilogo, senza `results`.
+_SUMMARY_COUNTS = ("passed", "failed", "skipped", "parsing_errors", "resource_count")
+
+
+def _nothing_to_analyse(report: dict[str, Any]) -> bool:
+    """Solo il riepilogo, con tutti i conteggi a zero: un errore di lettura non passa di qui."""
+    return set(report) == {*_SUMMARY_COUNTS, "checkov_version"} and all(
+        type(report[k]) is int and report[k] == 0 for k in _SUMMARY_COUNTS
+    )
+
+
 def adapt(raw: bytes) -> bytes:
     """JSON nativo di checkov -> SARIF del contratto, o `InvalidOutput`."""
     try:
@@ -215,6 +226,8 @@ def adapt(raw: bytes) -> bytes:
     seen: set[tuple[str, str, str]] = set()
     results: list[dict[str, Any]] = []
     for report in _reports(document):
+        if _nothing_to_analyse(report):
+            continue
         checks = report.get("results")
         if not isinstance(checks, dict):
             raise InvalidOutput("report senza results")
