@@ -34,7 +34,7 @@ ENV HOME=/tmp \
 
 COPY --from=build /usr/local/bin/node /usr/local/bin/node
 COPY --from=build /opt/ca-plugin/node_modules /opt/ca-plugin/node_modules
-COPY --chmod=0644 eslint.config.mjs eslint_adapter.py /opt/ca-plugin/
+COPY --chmod=0644 eslint.config.mjs eslint.benchmark.config.mjs eslint_adapter.py /opt/ca-plugin/
 
 # File di licenza (I-05): THIRD-PARTY-NOTICES.md, /licenses/eslint/ e i testi delle dipendenze di
 # Node (/licenses/deps/, raccolti dai pacchetti installati). Verificati da image-gate.sh.

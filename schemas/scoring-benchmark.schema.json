@@ -1,0 +1,226 @@
+{
+  "$defs": {
+    "CodeMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "enum": [
+            "ruff",
+            "eslint"
+          ],
+          "title": "Engine",
+          "type": "string"
+        },
+        "observations": {
+          "minimum": 1,
+          "title": "Observations",
+          "type": "integer"
+        },
+        "quantiles": {
+          "description": "Un valore per ogni livello di `levels`.",
+          "items": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "maxItems": 1001,
+          "minItems": 2,
+          "title": "Quantiles",
+          "type": "array"
+        },
+        "repositories": {
+          "description": "Repository con almeno un'osservazione.",
+          "minimum": 1,
+          "title": "Repositories",
+          "type": "integer"
+        },
+        "rule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9@][\\w./@-]*$",
+          "title": "Rule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repositories",
+        "observations",
+        "quantiles",
+        "engine",
+        "rule_id"
+      ],
+      "title": "CodeMetric",
+      "type": "object"
+    },
+    "CorpusRepository": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Commit",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[0-9A-Za-z.+\\-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tag di rilascio del commit, se c'è.",
+          "title": "Tag"
+        },
+        "url": {
+          "description": "Repository pubblico del corpus (D2-11).",
+          "maxLength": 200,
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "commit"
+      ],
+      "title": "CorpusRepository",
+      "type": "object"
+    },
+    "SmellSize": {
+      "additionalProperties": false,
+      "properties": {
+        "observations": {
+          "minimum": 1,
+          "title": "Observations",
+          "type": "integer"
+        },
+        "quantiles": {
+          "description": "Un valore per ogni livello di `levels`.",
+          "items": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "maxItems": 1001,
+          "minItems": 2,
+          "title": "Quantiles",
+          "type": "array"
+        },
+        "repositories": {
+          "description": "Repository con almeno un'osservazione.",
+          "minimum": 1,
+          "title": "Repositories",
+          "type": "integer"
+        },
+        "rule_id": {
+          "description": "Regola dello smell di `ca-graph` (ADR-0020).",
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9@][\\w./@-]*$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "module",
+            "package"
+          ],
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repositories",
+        "observations",
+        "quantiles",
+        "rule_id",
+        "scope"
+      ],
+      "title": "SmellSize",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:scoring-benchmark:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code_metrics": {
+      "items": {
+        "$ref": "#/$defs/CodeMetric"
+      },
+      "title": "Code Metrics",
+      "type": "array"
+    },
+    "corpus": {
+      "items": {
+        "$ref": "#/$defs/CorpusRepository"
+      },
+      "minItems": 1,
+      "title": "Corpus",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "engines": {
+      "description": "Versione dei plugin che hanno misurato; ciascuna fissa il suo motore.",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z0-9@][\\w./@-]*$": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9A-Za-z.+\\-]+$",
+          "type": "string"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Engines",
+      "type": "object"
+    },
+    "levels": {
+      "description": "Livelli dei quantili, in percentuale.",
+      "items": {
+        "maximum": 100,
+        "minimum": 0,
+        "type": "number"
+      },
+      "maxItems": 1001,
+      "minItems": 2,
+      "title": "Levels",
+      "type": "array"
+    },
+    "smell_sizes": {
+      "items": {
+        "$ref": "#/$defs/SmellSize"
+      },
+      "title": "Smell Sizes",
+      "type": "array"
+    },
+    "version": {
+      "description": "Cambia a ogni ricalcolo.",
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "created_at",
+    "corpus",
+    "levels",
+    "engines",
+    "code_metrics",
+    "smell_sizes"
+  ],
+  "title": "ScoringBenchmark",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

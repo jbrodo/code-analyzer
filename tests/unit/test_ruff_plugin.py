@@ -382,3 +382,95 @@ def test_license_files_are_the_release_texts_without_a_product_license() -> None
     assert "non dichiara la licenza del prodotto" in " ".join(notices.split()).lower()
     licence = (RUFF / "licenses/ruff/LICENSE").read_text()
     assert "MIT License" in licence and "Permission is hereby granted" in licence
+
+
+# --- modalità benchmark (ADR-0023, K-06) ---------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ('{"benchmark": true}', ([], True)),
+        ('{"benchmark": false, "disable_rules": ["F401"]}', (["F401"], False)),
+        ("{}", ([], False)),
+    ],
+)
+def test_load_config_reads_the_benchmark_flag(
+    tmp_path: Path, content: str, expected: tuple[list[str], bool]
+) -> None:
+    path = tmp_path / "config.json"
+    path.write_text(content)
+    assert adapter.load_config(str(path)) == expected
+
+
+@pytest.mark.parametrize("content", ['{"benchmark": "yes"}', '{"benchmark": 1}'])
+def test_load_config_rejects_a_benchmark_flag_that_is_not_a_boolean(
+    tmp_path: Path, content: str
+) -> None:
+    path = tmp_path / "config.json"
+    path.write_text(content)
+    with pytest.raises(adapter.InvalidConfig):
+        adapter.load_config(str(path))
+
+
+def test_benchmark_command_selects_only_the_metric_rules_at_zero() -> None:
+    argv = adapter.command("ruff", "/workspace", [], benchmark=True)
+    assert argv[argv.index("--select") + 1] == ",".join(adapter.METRICS)
+    thresholds = [argv[i + 1] for i, a in enumerate(argv) if a == "--config"]
+    assert thresholds and all(t.endswith("=0") for t in thresholds)
+    assert len(thresholds) == len(adapter.THRESHOLDS)
+    normal = adapter.command("ruff", "/workspace", [])
+    assert normal[normal.index("--select") + 1] == adapter.SELECT
+
+
+@needs_ruff
+def test_benchmark_run_measures_every_function(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"benchmark": True}))
+    out = tmp_path / "results.sarif"
+    code = adapter.run(
+        ruff=str(VENV_RUFF),
+        workspace=str(FIXTURE),
+        out_file=str(out),
+        config_file=str(config),
+        tmp_dir=str(tmp_path),
+    )
+    assert code == 0
+    results = json.loads(out.read_text())["runs"][0]["results"]
+    assert results and {r["ruleId"] for r in results} <= set(adapter.METRICS)
+    assert all(r["properties"]["metric"]["threshold"] == 0 for r in results)
+    measured = {(r["ruleId"], r["properties"]["metric"]["value"]) for r in results}
+    (tmp_path / "normal").mkdir()
+    normal = {
+        (r["ruleId"], r["properties"]["metric"]["value"])
+        for r in scan(FIXTURE, tmp_path / "normal")["runs"][0]["results"]
+        if "metric" in r["properties"]
+    }
+    assert normal <= measured  # i valori sopra soglia ci sono anche nel benchmark
+    assert len(measured) > len(normal)  # e in più quelli sotto soglia
+    clean = [r for r in results if r["locations"][0]["physicalLocation"]["artifactLocation"]
+             ["uri"].endswith("clean.py")]  # fmt: skip
+    assert clean  # anche il file senza problemi ha funzioni misurate
+
+
+@needs_ruff
+def test_results_on_symlinked_files_are_dropped(tmp_path: Path) -> None:
+    """ADR-0004: i collegamenti non sono analizzabili e l'host non li legge (trovato su vite)."""
+    ws = tmp_path / "ws"
+    (ws / "real").mkdir(parents=True)
+    (ws / "real/a.py").write_text("import os\n")
+    (ws / "real/b.py").symlink_to("a.py")
+    (ws / "odd#dir").mkdir()
+    (ws / "odd#dir/c.py").write_text("import sys\n")
+    (tmp_path / "out").mkdir()
+    uris = {uri for _, uri in found(scan(ws, tmp_path / "out"))}
+    assert uris == {"real/a.py", "odd%23dir/c.py"}
+
+
+def test_through_symlink_checks_every_component(tmp_path: Path) -> None:
+    (tmp_path / "d").mkdir()
+    (tmp_path / "d/f.py").write_text("")
+    (tmp_path / "link").symlink_to("d")
+    assert adapter.through_symlink(str(tmp_path), "link/f.py")
+    assert not adapter.through_symlink(str(tmp_path), "d/f.py")
+    assert not adapter.through_symlink(str(tmp_path), "missing/f.py")

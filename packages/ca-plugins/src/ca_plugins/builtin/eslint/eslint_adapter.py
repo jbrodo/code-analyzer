@@ -13,6 +13,10 @@ workspace. Il repository può solo spegnere regole: `/inputs/config.json` con
 `{"disable_rules": [...]}`, ricontrollato qui (ADR-0014); le regole spente si passano con
 `--rule 'nome: off'`.
 
+Modalità benchmark (ADR-0023, K-06): con `{"benchmark": true}` si usa `eslint.benchmark.config.mjs`
+dell'immagine, con le sole regole con metrica a soglia zero. Il file lo scrive l'host, mai a partire
+da `.code-analyzer.yml`: il repository analizzato non può attivarla.
+
 Uscite: 0 ok; 3 eslint fallito o senza output; 4 `config.json` non valido; 5 output non conforme.
 """
 
@@ -23,10 +27,13 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 NODE = "/usr/local/bin/node"
 ESLINT = "/opt/ca-plugin/node_modules/eslint/bin/eslint.js"
 ESLINT_CONFIG = "/opt/ca-plugin/eslint.config.mjs"
+ESLINT_BENCHMARK_CONFIG = "/opt/ca-plugin/eslint.benchmark.config.mjs"
+CONFIG_KEYS = {"disable_rules", "benchmark"}
 WORKSPACE = "/workspace"
 # Il solo messaggio di eslint per «niente da analizzare»: il testo è suo e cita solo il pattern `.`,
 # non contenuto del repository, quindi lo si riconosce per intero e nient'altro.
@@ -68,34 +75,54 @@ class InvalidConfig(ValueError):
 
 def load_disabled(path: str = CONFIG_FILE) -> list[str]:
     """Regole da spegnere. File assente = nessuna; file presente ma non valido = errore."""
+    return load_config(path)[0]
+
+
+def load_config(path: str = CONFIG_FILE) -> tuple[list[str], bool]:
+    """Regole da spegnere e modalità benchmark. File assente = nessuna regola, modo normale."""
     try:
         raw = Path(path).read_bytes()
     except FileNotFoundError:
-        return []
+        return [], False
     except OSError as exc:
         raise InvalidConfig("config.json illeggibile") from exc
     try:
         document = json.loads(raw)
     except (ValueError, RecursionError) as exc:
         raise InvalidConfig("config.json non è JSON") from exc
-    if not isinstance(document, dict) or set(document) - {"disable_rules"}:
+    if not isinstance(document, dict) or set(document) - CONFIG_KEYS:
         raise InvalidConfig("config.json: chiavi non ammesse")
+    benchmark = document.get("benchmark", False)
+    if not isinstance(benchmark, bool):
+        raise InvalidConfig("config.json: benchmark non valido")
     rules = document.get("disable_rules")
     if rules is None:
-        return []
+        return [], benchmark
     if (
         not isinstance(rules, list)
         or len(rules) > MAX_DISABLED
         or not all(isinstance(r, str) and RULE_ID.fullmatch(r) for r in rules)
     ):
         raise InvalidConfig("config.json: disable_rules non valido")
-    return sorted(set(rules))
+    return sorted(set(rules)), benchmark
 
 
 def _relative(file_path: str, workspace: str) -> str:
     if file_path == workspace or not file_path.startswith(workspace + "/"):
         raise InvalidOutput("percorso fuori dal workspace")
     return file_path[len(workspace) + 1 :]
+
+
+def through_symlink(workspace: str, relative: str) -> bool:
+    """Il percorso attraversa un collegamento simbolico del workspace? I collegamenti non sono
+    analizzabili (ADR-0004): l'host non li legge e un risultato su uno di essi farebbe fallire il
+    plugin. Il motore li segue, quindi il risultato si scarta qui (trovato su vite con K-06)."""
+    current = Path(workspace)
+    for part in relative.split("/"):
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
 
 
 def _int(value: Any) -> int | None:
@@ -156,7 +183,12 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
             raise InvalidOutput("voce senza messages")
         if not messages:
             continue
-        uri = _relative(entry["filePath"], workspace)
+        # Un `uri` SARIF è codificato: `#`, `?`, spazi e caratteri non ASCII nei nomi dei file
+        # (vite ha una cartella `#`) altrimenti non sono un percorso (trovato con K-06).
+        relative = _relative(entry["filePath"], workspace)
+        if through_symlink(workspace, relative):
+            continue
+        uri = quote(relative, safe="/")
         results += [_result(uri, m) for m in messages if isinstance(m, dict)]
     rules = sorted({r["ruleId"] for r in results})
     clean = {
@@ -184,19 +216,20 @@ def run(
     node: str = NODE,
     eslint: str = ESLINT,
     eslint_config: str = ESLINT_CONFIG,
+    benchmark_config: str = ESLINT_BENCHMARK_CONFIG,
     workspace: str = WORKSPACE,
     out_file: str = OUT_FILE,
     config_file: str = CONFIG_FILE,
     tmp_dir: str = TMP_DIR,
 ) -> int:
     try:
-        disabled = load_disabled(config_file)
+        disabled, benchmark = load_config(config_file)
     except InvalidConfig:
         return EXIT_CONFIG
     env = {"PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"), "HOME": tmp_dir}
     try:
         done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
-            command(node, eslint, eslint_config, disabled),
+            command(node, eslint, benchmark_config if benchmark else eslint_config, disabled),
             stdin=subprocess.DEVNULL,
             capture_output=True,
             cwd=workspace,  # i file si cercano rispetto alla cartella di lavoro (V-04)

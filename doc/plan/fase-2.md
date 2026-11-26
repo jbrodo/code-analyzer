@@ -841,7 +841,7 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.1. ADR: 0028.
 
 #### K-06 — Distribuzione di benchmark della Variante B
-- Agente: `backend`, con `test`. Stato: `LIBERO`.
+- Agente: `backend`, con `test`. Stato: **chiuso il 2026-11-26**; esito in `doc/verifiche/benchmark-variante-b.md`. Corpus di dieci repository approvato dall'utente (i tre pilota e sette pubblici) a tag fissati in `scripts/benchmark/corpus.json`; modalità `benchmark` degli adattatori di ruff ed eslint (soglie a zero, solo regole con metrica), attivabile solo da chi compone il `Context`; contratto nuovo `scoring-benchmark` 1.0 con i livelli dei quantili espliciti (281, più fitti nella coda); `ca_core/scoring/benchmark.py` (lettura, controlli che lo schema non esprime, funzione di ripartizione); `scripts/benchmark/benchmark.py` (`collect`, `aggregate`, `check`) con 21 prove; `benchmark.json` versione 1. **Trovati e corretti:** l'adattatore di eslint non codificava l'`uri` (cartella `#` di vite) e ruff ed eslint segnalavano file collegati che l'host non legge (emendamento di ADR-0004). **Da fare altrove:** stesso controllo sugli altri adattatori; la guardia sul grado degli hub (28% degli hub con dimensione 2). Non fatto qui: `Module.lines` per la densità (K-09).
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`, dato versionato nel pacchetto, procedura in `doc/verifiche/`.
 - Dipende da: A-08, P-01, P-02.
 - Accettazione: corpus di D2-11 con commit fissati, distribuzione per metrica calcolata con una procedura ripetibile e salvata come dato versionato; il ricalcolo è un'azione esplicita.

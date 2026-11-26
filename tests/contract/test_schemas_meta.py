@@ -15,6 +15,7 @@ VERSIONS = {
     "scan-report": "1.3",  # K-21 `correlation_version`; C-04 baseline, tipo, configurazione
     "graph": "1.1",  # G-02: files_skipped_name
     "scoring-config": "1.0",  # C-03
+    "scoring-benchmark": "1.0",  # K-06: distribuzione di benchmark di ADR-0023
     "service-context": "1.0",  # K-05: file di contesto di ADR-0028
 }
 

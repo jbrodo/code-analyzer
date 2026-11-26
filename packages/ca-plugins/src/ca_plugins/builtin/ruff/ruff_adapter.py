@@ -13,6 +13,11 @@ i commenti di soppressione, anche `# ruff: noqa` a livello di file (provato in S
 Il repository può solo spegnere regole: `/inputs/config.json` con `{"disable_rules": [...]}`,
 ricontrollato qui (ADR-0014). Nessuna scrittura nel workspace: `--no-cache`.
 
+Modalità benchmark (ADR-0023, K-06): con `{"benchmark": true}` girano solo le regole con una
+metrica, con soglia zero, così ogni funzione dà un risultato con il suo valore. Il file lo scrive
+l'host: la configurazione dell'host non la genera mai da `.code-analyzer.yml`, quindi il
+repository analizzato non può attivarla. La usa solo la procedura di `scripts/benchmark/`.
+
 Uscite: 0 ok; 3 ruff fallito o senza output; 4 `config.json` non valido; 5 SARIF non conforme.
 """
 
@@ -23,6 +28,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 RUFF = "/opt/venv/bin/ruff"
 WORKSPACE = "/workspace"
@@ -44,6 +50,17 @@ THRESHOLDS = (
     "lint.pylint.max-args=5",
     "lint.pylint.max-statements=50",
 )
+# Modalità benchmark: le sole regole con metrica, soglia zero. Una funzione con valore zero (nessun
+# `return`, nessun argomento) non esce: l'indice di ADR-0023 non ne dipende, perché confronta
+# soltanto valori sopra una soglia che è almeno zero.
+BENCHMARK_THRESHOLDS = (
+    "lint.mccabe.max-complexity=0",
+    "lint.pylint.max-returns=0",
+    "lint.pylint.max-branches=0",
+    "lint.pylint.max-args=0",
+    "lint.pylint.max-statements=0",
+)
+CONFIG_KEYS = {"disable_rules", "benchmark"}
 RULE_ID = re.compile(r"^[A-Za-z0-9@][A-Za-z0-9_./@-]{0,127}$")
 MAX_DISABLED = 500
 MAX_MESSAGE = 1000
@@ -97,28 +114,36 @@ def severity_of(rule_id: str) -> str:
 
 def load_disabled(path: str = CONFIG_FILE) -> list[str]:
     """Regole da spegnere. File assente = nessuna; file presente ma non valido = errore."""
+    return load_config(path)[0]
+
+
+def load_config(path: str = CONFIG_FILE) -> tuple[list[str], bool]:
+    """Regole da spegnere e modalità benchmark. File assente = nessuna regola, modo normale."""
     try:
         raw = Path(path).read_bytes()
     except FileNotFoundError:
-        return []
+        return [], False
     except OSError as exc:
         raise InvalidConfig("config.json illeggibile") from exc
     try:
         document = json.loads(raw)
     except (ValueError, RecursionError) as exc:
         raise InvalidConfig("config.json non è JSON") from exc
-    rules = document.get("disable_rules") if isinstance(document, dict) else None
-    if not isinstance(document, dict) or set(document) - {"disable_rules"}:
+    if not isinstance(document, dict) or set(document) - CONFIG_KEYS:
         raise InvalidConfig("config.json: chiavi non ammesse")
+    benchmark = document.get("benchmark", False)
+    if not isinstance(benchmark, bool):
+        raise InvalidConfig("config.json: benchmark non valido")
+    rules = document.get("disable_rules")
     if rules is None:
-        return []
+        return [], benchmark
     if (
         not isinstance(rules, list)
         or len(rules) > MAX_DISABLED
         or not all(isinstance(r, str) and RULE_ID.fullmatch(r) for r in rules)
     ):
         raise InvalidConfig("config.json: disable_rules non valido")
-    return sorted(set(rules))
+    return sorted(set(rules)), benchmark
 
 
 def _relative_uri(uri: str, workspace: str) -> str:
@@ -128,6 +153,18 @@ def _relative_uri(uri: str, workspace: str) -> str:
     if not path.startswith(workspace + "/"):
         raise InvalidOutput("uri fuori dal workspace")
     return path[len(workspace) + 1 :]
+
+
+def through_symlink(workspace: str, relative: str) -> bool:
+    """Il percorso attraversa un collegamento simbolico del workspace? I collegamenti non sono
+    analizzabili (ADR-0004): l'host non li legge e un risultato su uno di essi farebbe fallire il
+    plugin. Il motore li segue, quindi il risultato si scarta qui (trovato su vite con K-06)."""
+    current = Path(workspace)
+    for part in relative.split("/"):
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
 
 
 def _location(location: Any, workspace: str) -> dict[str, Any]:
@@ -172,6 +209,11 @@ def _result(raw: dict[str, Any], workspace: str) -> dict[str, Any]:
     }
 
 
+def _uri_of(result: dict[str, Any]) -> str:
+    uri: str = result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]
+    return uri
+
+
 def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
     """SARIF di ruff -> SARIF del contratto, o `InvalidOutput`."""
     try:
@@ -183,7 +225,13 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
     runs = document.get("runs")
     if not isinstance(runs, list) or len(runs) != 1 or not isinstance(runs[0], dict):
         raise InvalidOutput("atteso un solo run")
-    results = [_result(r, workspace) for r in runs[0].get("results") or [] if isinstance(r, dict)]
+    results = [
+        result
+        for r in runs[0].get("results") or []
+        if isinstance(r, dict)
+        for result in [_result(r, workspace)]
+        if not through_symlink(workspace, unquote(_uri_of(result)))
+    ]
     rules = sorted({r["ruleId"] for r in results})
     clean = {
         "version": "2.1.0",
@@ -197,10 +245,11 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
     return json.dumps(clean, separators=(",", ":")).encode()
 
 
-def command(ruff: str, workspace: str, disabled: list[str]) -> list[str]:
+def command(ruff: str, workspace: str, disabled: list[str], benchmark: bool = False) -> list[str]:
+    select = ",".join(METRICS) if benchmark else SELECT
     args = [ruff, "check", "--isolated", "--no-cache", "--no-respect-gitignore", "--ignore-noqa"]
-    args += ["--select", SELECT, "--output-format", "sarif", "--exit-zero"]
-    for threshold in THRESHOLDS:
+    args += ["--select", select, "--output-format", "sarif", "--exit-zero"]
+    for threshold in BENCHMARK_THRESHOLDS if benchmark else THRESHOLDS:
         args += ["--config", threshold]
     if disabled:
         args += ["--ignore", ",".join(disabled)]
@@ -216,13 +265,13 @@ def run(
     tmp_dir: str = TMP_DIR,
 ) -> int:
     try:
-        disabled = load_disabled(config_file)
+        disabled, benchmark = load_config(config_file)
     except InvalidConfig:
         return EXIT_CONFIG
     env = {"PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"), "HOME": tmp_dir}
     try:
         done = subprocess.run(  # noqa: S603 - argv a lista, binario fissato, nessuna shell
-            command(ruff, workspace, disabled),
+            command(ruff, workspace, disabled, benchmark),
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,

@@ -24,6 +24,7 @@ SCHEMA_NAMES = (
     "scan-report",
     "graph",
     "scoring-config",
+    "scoring-benchmark",
     "service-context",
 )
 

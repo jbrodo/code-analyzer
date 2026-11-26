@@ -18,6 +18,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 from ca_core.models import PluginManifest
+from ca_core.normalize import relative_path
 
 ROOT = Path(__file__).resolve().parents[2]
 ESLINT = ROOT / "packages/ca-plugins/src/ca_plugins/builtin/eslint"
@@ -65,6 +66,7 @@ def image(tmp_path: Path) -> Path:
     folder = tmp_path / "image"
     folder.mkdir()
     shutil.copy(ESLINT / "eslint.config.mjs", folder)
+    shutil.copy(ESLINT / "eslint.benchmark.config.mjs", folder)
     (folder / "node_modules").symlink_to(MODULES)
     return folder
 
@@ -262,6 +264,22 @@ def test_adapt_drops_source_and_rewrites_the_path() -> None:
     assert result["properties"] == {"tool_severity": "medium"}
 
 
+@pytest.mark.parametrize(
+    ("name", "uri"),
+    [
+        ("a#b/x.ts", "a%23b/x.ts"),
+        ("sp ace/x?.ts", "sp%20ace/x%3F.ts"),
+        ("テスト.js", "%E3%83%86%E3%82%B9%E3%83%88.js"),
+        ("(app)/[id]/x.ts", "%28app%29/%5Bid%5D/x.ts"),
+    ],
+)
+def test_adapt_percent_encodes_the_uri(name: str, uri: str) -> None:
+    raw = json.dumps([{**entry(), "filePath": f"/workspace/{name}"}]).encode()
+    [result] = json.loads(adapter.adapt(raw))["runs"][0]["results"]
+    assert result["locations"][0]["physicalLocation"]["artifactLocation"] == {"uri": uri}
+    assert relative_path(uri, "/") == name  # il nucleo lo riporta al nome del file
+
+
 def test_adapt_skips_files_without_messages() -> None:
     clean = {"filePath": "/workspace/ok.ts", "messages": []}
     assert json.loads(adapter.adapt(json.dumps([clean]).encode()))["runs"][0]["results"] == []
@@ -379,8 +397,9 @@ def test_adapter_does_not_import_ca_core() -> None:
 # --- configurazione dell'immagine ----------------------------------------------------------------
 
 
-def test_image_configuration_does_not_read_the_repository() -> None:
-    text = (ESLINT / "eslint.config.mjs").read_text()
+@pytest.mark.parametrize("name", ["eslint.config.mjs", "eslint.benchmark.config.mjs"])
+def test_image_configuration_does_not_read_the_repository(name: str) -> None:
+    text = (ESLINT / name).read_text()
     code = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("//"))
     assert "projectService" not in code and not re.search(r"\bproject\s*:", code)
     assert "readFile" not in code and "process.cwd" not in code
@@ -419,6 +438,7 @@ def test_build_context_contains_only_what_the_image_needs() -> None:
         "*",
         "!eslint_adapter.py",
         "!eslint.config.mjs",
+        "!eslint.benchmark.config.mjs",
         "!package.json",
         "!package-lock.json",
         "!licenses",
@@ -474,3 +494,84 @@ def test_other_eslint_failures_stay_failures(tmp_path: Path) -> None:
     # un messaggio che cita un altro pattern non è quello di eslint per «niente da analizzare»
     other = NO_FILES_MESSAGE.replace('".", but', '"src/**", but')
     assert run_fake(tmp_path, other, 2)[0] == 3
+
+
+# --- modalità benchmark (ADR-0023, K-06) ---------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ('{"benchmark": true}', ([], True)),
+        ('{"benchmark": false, "disable_rules": ["complexity"]}', (["complexity"], False)),
+        ("{}", ([], False)),
+    ],
+)
+def test_load_config_reads_the_benchmark_flag(
+    tmp_path: Path, content: str, expected: tuple[list[str], bool]
+) -> None:
+    path = tmp_path / "config.json"
+    path.write_text(content)
+    assert adapter.load_config(str(path)) == expected
+
+
+@pytest.mark.parametrize("content", ['{"benchmark": "yes"}', '{"benchmark": 1}'])
+def test_load_config_rejects_a_benchmark_flag_that_is_not_a_boolean(
+    tmp_path: Path, content: str
+) -> None:
+    path = tmp_path / "config.json"
+    path.write_text(content)
+    with pytest.raises(adapter.InvalidConfig):
+        adapter.load_config(str(path))
+
+
+def test_benchmark_configuration_has_only_the_metric_rules_at_zero() -> None:
+    text = (ESLINT / "eslint.benchmark.config.mjs").read_text()
+    rules = dict(re.findall(r'"?([a-z-]+)"?: \["warn", \{ max: (\d+) \}\]', text))
+    assert rules == {rule: "0" for rule in adapter.METRICS}
+    assert "recommended" not in text
+
+
+@needs_eslint
+def test_benchmark_run_measures_every_function(image: Path, tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"benchmark": True}))
+    out = tmp_path / "results.sarif"
+    code = adapter.run(
+        node=str(NODE),
+        eslint=str(image / "node_modules/eslint/bin/eslint.js"),
+        eslint_config=str(image / "eslint.config.mjs"),
+        benchmark_config=str(image / "eslint.benchmark.config.mjs"),
+        workspace=str(FIXTURE),
+        out_file=str(out),
+        config_file=str(config),
+        tmp_dir=str(tmp_path),
+    )
+    assert code == 0
+    results = json.loads(out.read_text())["runs"][0]["results"]
+    assert results and {r["ruleId"] for r in results} <= set(adapter.METRICS)
+    assert all(r["properties"]["metric"]["threshold"] == 0 for r in results)
+    (tmp_path / "normal").mkdir()
+    normal = {
+        (r["ruleId"], r["properties"]["metric"]["value"])
+        for r in scan(image, FIXTURE, tmp_path / "normal")["runs"][0]["results"]
+        if "metric" in r["properties"]
+    }
+    measured = {(r["ruleId"], r["properties"]["metric"]["value"]) for r in results}
+    assert normal <= measured  # i valori sopra soglia ci sono anche nel benchmark
+    assert len(measured) > len(normal)  # e in più quelli sotto soglia
+
+
+def test_results_on_symlinked_files_are_dropped(tmp_path: Path) -> None:
+    """ADR-0004: i collegamenti non sono analizzabili e l'host non li legge (trovato su vite)."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/a.ts").write_text("")
+    (tmp_path / "src/b.ts").symlink_to("a.ts")
+    raw = json.dumps(
+        [{**entry(), "filePath": f"{tmp_path}/src/a.ts"},
+         {**entry(), "filePath": f"{tmp_path}/src/b.ts"}]
+    ).encode()  # fmt: skip
+    results = json.loads(adapter.adapt(raw, str(tmp_path)))["runs"][0]["results"]
+    assert [r["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for r in results] == [
+        "src/a.ts"
+    ]
