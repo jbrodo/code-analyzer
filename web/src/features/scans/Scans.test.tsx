@@ -60,7 +60,8 @@ test("l'elenco mostra tipo, ref, commit, inizio con la data esatta, durata e sta
   expect(within(rows[1] as HTMLElement).getByRole("link", { name: "PR #12" }).getAttribute("href")).toBe(`/r/${REPO}/scans/${scan(2).id}`);
   expect(within(rows[1] as HTMLElement).getByText("Parziale")).toBeDefined();
   expect(rows[0]?.querySelector("time")?.getAttribute("datetime")).toBe(scan(1).started_at); // S4
-  expect(document.title).toBe("Scansioni · acme/shop · Code Analyzer");
+  // il titolo arriva da un effetto, che può girare dopo che il contenuto è già visibile
+  await waitFor(() => { expect(document.title).toBe("Scansioni · acme/shop · Code Analyzer"); });
 });
 
 test("Carica altri usa il cursore; senza scansioni dice come riceverne; un errore ha il codice", async () => {
