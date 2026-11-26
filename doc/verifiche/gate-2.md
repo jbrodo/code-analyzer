@@ -242,3 +242,11 @@ Clone pulito di `main` al commit `b10b9de`, CLI impacchettata con lo stesso codi
 ### Con la variante B
 
 Con `--variant B` e i livelli da punteggio il gate esce con **1**: tre finding `quality` aperti diventano `alto` (`PLR0911`, `PLR0912` e `C901`, punteggi tra 40,3 e 42,1; in A sono `medio` con 20,6). Riguardano la stessa funzione di `packages/ca-plugins/src/ca_plugins/runner.py`: complessità oltre quasi tutto il benchmark (G tra 0,96 e 1,0), in un file con molte modifiche e violazioni (P 0,93). Non sono falsi positivi. **Se X-06 propone B**, per tenere verde X-07 va semplificata quella funzione, oppure serve un'eccezione approvata o una ritaratura delle soglie.
+
+## X-02 e X-03 per il terzo repository, `school-planner` (2026-11-27)
+
+Commit fissato in tabella prima della scansione. Scansione completa `--offline` in 29 s (30 s il processo intero), CLI impacchettata da `package-cli.sh` dal codice di `main` dopo la PR #38 (correzioni di adattatori e di `ca-graph`; scoring `2+cf90f99e443e` e benchmark `1+35e3b0d58d49`, come per gli altri). Feed: osv-scanner e trivy del 2026-11-17, EPSS e KEV del 2026-11-26. **Differenze dagli altri due:** il pacchetto è più recente di quello di X-02, e EPSS e KEV sono di nove giorni dopo; il confronto tra A e B si fa dentro la stessa scansione e non ne dipende.
+
+`complete`, nessun plugin fallito, 88 finding (53 `quality`, 2 `architecture`, 27 `dependency`, 6 `iac`), **G2.a al 100%**. Livelli provvisori (critico / alto / medio / basso): 0 / 21 / 30 / 37; A e B: 0 / 0 / 16 / 72 entrambe, nessun finding cambia livello tra A e B. Punteggi (mediana / 99% / massimo): A 0,5 / 10,5 / 10,5; B 1,7 / 10,5 / 10,5.
+
+**Campione** con lo stesso seme, 20261118: 30 finding su 88 ammissibili, 8 strati (17 `quality`, 10 `dependency`, 2 `iac`, 1 `architecture`). Sul campione A e B hanno punteggi diversi su 18 finding, tau-b tra i due ordini 0,84, 8 dei primi 10 in comune: **le due varianti si distinguono poco**, più che su `birds-cataloger` e meno che su `orario-scuola`. Il materiale è in `~/gate2-material/` (`valutazione-`, `ordinamento-`, `chiave-` e `report-school-planner`), con l'ordinamento vuoto. Il comando di calcolo usa `--report ~/gate2-material/report-school-planner.json`. Claude ha generato il materiale senza leggere il campione e **non ne fa un ordinamento**.
