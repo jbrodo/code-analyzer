@@ -85,6 +85,7 @@ P = max(p_floor, w_churn · pct_churn(file) + w_dens · pct_dens(file))     con 
 - C è la posizione del PageRank del modulo tra i moduli non di test del grafo: la quota di moduli con PageRank **minore o uguale**. Il modulo più critico vale 1, il meno critico `1/n`, poi `max(c_floor, …)` con `c_floor` 0,1.
 - Non è il valore `metrics.pagerank` del grafo (grezzo diviso per il massimo): sui grafi reali quella distribuzione è molto asimmetrica, e quasi tutti i moduli avrebbero C vicino a zero e un punteggio di B trascurabile rispetto ad A. Il valore del grafo resta com'è per l'ADI e la UI. È la scelta che ADR-0020 lasciava a questo ADR.
 - Finding su più moduli: il massimo. Grafo assente: C di A (tier del servizio, ADR-0028), con `grafo-assente`; file senza PageRank (fuori dal grafo, di test): C di A con `fuori-dal-grafo`. Un membro che è una cartella vale come in P.
+- **File di test** (deciso dall'utente il 2026-11-26): restano con il C di A. Il loro C è spesso più alto di quello dei file di produzione, ma E vale già 0,2 per il solo codice di test: nella misura di X-02 un finding `quality` su un test supera in media tra l'11% e il 28% di quelli di produzione e nessuno arriva a `medio` (`doc/verifiche/gate-2.md`). Un C ridotto penalizzerebbe due volte lo stesso fatto. Si riconsidera dopo X-04, se l'ordinamento dell'utente mette i test sempre in fondo.
 - In B il tier del servizio non entra nei finding `quality` e `architecture`: §6.2 sostituisce C. La UI mostra comunque il tier tra i dati del repository.
 
 ### Architectural Debt Index (G-13)
