@@ -5,6 +5,7 @@
 """
 
 import json
+import re
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
@@ -156,6 +157,26 @@ def test_invalid_repository_rule_fails_the_plugin(image_id: str, tmp_path: Path)
 def test_plugin_fails_when_the_workspace_cannot_be_read(image_id: str, tmp_path: Path) -> None:
     result, files = run_plugin(PLUGIN, TAG, image_id, tmp_path / "missing", tmp_path)
     assert result.outcome is RunOutcome.FAILED and files == {}
+
+
+def test_positive_and_negative_cases_of_every_rule_with_the_image_engine(image_id: str) -> None:
+    """P-09 nell'immagine: `semgrep --test` con il motore che si distribuisce. La prova con un
+    semgrep installato (`test_semgrep_rules_real.py`) in CI si salta: senza questa, i casi di ogni
+    regola non girerebbero mai."""
+    cases = Path(__file__).resolve().parent / "semgrep_rule_cases"
+    done = subprocess.run(
+        ["docker", "run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp",
+         "-e", "HOME=/tmp",
+         "-v", f"{BUILTIN / PLUGIN / 'rules'}:/rules:ro", "-v", f"{cases}:/cases:ro",
+         "--entrypoint", "/opt/venv/bin/semgrep", image_id,
+         "--test", "--config", "/rules", "/cases",
+         "--metrics=off", "--disable-version-check"],
+        capture_output=True, text=True, check=False, timeout=600,
+    )  # fmt: skip
+    assert done.returncode == 0, (done.stdout + done.stderr)[-3000:]
+    # «tutto verde» con zero regole provate non vale: l'esito nomina quante ne ha passate
+    assert re.search(r"[1-9]\d*/[1-9]\d*: ✓", done.stdout), done.stdout[-2000:]
+    assert "✖" not in done.stdout, done.stdout[-3000:]
 
 
 def test_image_contains_only_the_project_rules(image_id: str) -> None:

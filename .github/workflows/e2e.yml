@@ -50,5 +50,8 @@ jobs:
       - name: Verifica lo snapshot dei feed
         run: uv run --frozen --offline python tests/fixtures/feeds/snapshot.py verify "$CA_TEST_OSV_FEEDS"
 
+      # `skip_guard`: un salto non previsto (Docker, cosign, feed mancanti) fa fallire il job.
       - name: E2E e integrazione con Docker
-        run: uv run --frozen --offline pytest -q --no-cov tests/e2e tests/integration
+        env:
+          PYTHONPATH: tests/ci
+        run: uv run --frozen --offline pytest -q --no-cov -rs -p skip_guard tests/e2e tests/integration

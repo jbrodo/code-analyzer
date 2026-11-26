@@ -1270,7 +1270,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §16. ADR: 0003, 0017.
 
 #### O-02 — E2E estesi
-- Agente: `devops`. Stato: `LIBERO`.
+- Agente: `devops`. Stato: **chiuso il 2026-11-26**; in CI si chiude con il primo `e2e` verde che comprende T-03. `e2e.yml` esegue `tests/e2e` e `tests/integration`: plugin impacchettati e firmati sul registry locale con chiave generata al momento, `ca-graph` e i plugin della Fase 2 (T-03), modalità PR (T-04), immagine CLI (`test_packaging.py`). Aggiunti: la guardia `tests/ci/skip_guard.py`, per cui un salto non previsto fa fallire il job (ammessi solo la misura di prestazioni, le due prove che scaricano da internet e le prove con un semgrep installato); e **la prova che mancava**: i casi positivi e negativi di ogni regola di semgrep, che in CI non giravano mai, ora si eseguono con il motore dell'immagine. Segreti: il job non usa segreti del repository; nei log di un'esecuzione verde in CI e di una completa in locale (591 passate, 6 salti previsti) non compaiono chiavi private, token né la sentinella delle prove.
 - Percorsi: `.github/workflows/e2e.yml`.
 - Dipende da: I-02, T-03, T-04.
 - Accettazione: nuovi plugin, `ca-graph`, modalità PR e immagine CLI negli E2E con registry locale e chiave di prova; nessun segreto nei log.
