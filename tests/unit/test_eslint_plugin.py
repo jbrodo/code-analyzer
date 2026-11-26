@@ -27,10 +27,10 @@ RECORDED = ESLINT / "fixtures/output/eslint.quality-js-ts.sarif"
 MODULES = ROOT / "web/node_modules"
 NODE = shutil.which("node")
 PINNED = {
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "@eslint/js": "10.0.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.2",
+    "typescript-eslint": "8.74.0",
 }
 
 _spec = importlib.util.spec_from_file_location("eslint_adapter", ESLINT / "eslint_adapter.py")

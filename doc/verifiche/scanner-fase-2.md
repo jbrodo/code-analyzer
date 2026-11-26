@@ -13,8 +13,8 @@ Raccolte il 2026-11-13 dai registri (API JSON di PyPI, registro npm, API dei ril
 | ruff | 0.17.5 | 2026-11-12 | `ruff-0.17.5-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl` `40ca8afaac309b41a5b2e09e4e7beb1f824826b93c25697c4d74f573324fba4e` | MIT | Rilasci settimanali |
 | checkov | 3.4.5 | 2026-11-12 | `checkov-3.4.5-py3-none-any.whl` `64210c48a957ecb85dfb38057e00faa150b5e46e76b08e710d29beb687b7ced2` | Apache License 2.0 | Rilasci quasi quotidiani: la versione fissata invecchia in fretta |
 | hadolint | 2.15.1 | 2026-07-31 | `hadolint-linux-x86_64` `c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507` | GPL-3.0 (dal repository) | **GPL-3.0: in `require_approval` di D-0013**, da portare a D2-14. Binario statico dai rilasci di GitHub. Rilasci rari: 2.13.1 e 2.14.0 a settembre 2025, 2.15.0 e 2.15.1 a luglio 2026; ultimo push al repository 2026-10-19 |
-| eslint | 10.14.0 | 2026-10-30 | `eslint-10.14.0.tgz` `sha512-T0pNsxkb9IKmtQjhpK3d7nWOpFv+YHuMbTJnSVMoQblF0onvXfErrtp4V1jHtsQPan7dKaGVD0q1WCXnzMF31A==` | MIT | Rilasci ogni due settimane. Richiede Node 20.19, 22.13 o 24 |
-| typescript-eslint | 8.72.2 | 2026-11-09 | `typescript-eslint-8.72.2.tgz` `sha512-c/+AKMW1KB81r28Sp0AAdcyXj5dzNmAsZFcsrxKbZTKmcBK2xIwBR31dcSYSDu3bKmzXe8GKrSxO+eDQ401Uzg==` | MIT | Compatibilità con TypeScript 7 da provare in V-03 |
+| eslint | 10.15.0 | 2026-11-13 | `eslint-10.15.0.tgz` `sha512-+5Wg4p+ze3sG1WErYgUO/3H1IQIfFBymVUA0Fo/XTeBOLS6UQIUekpSJ8sdRkn7O7wjh84b55w/roqavH2aScg==` | MIT | Rilasci ogni due settimane. Richiede Node 20.19, 22.13 o 24 |
+| typescript-eslint | 8.74.0 | 2026-11-23 | `typescript-eslint-8.74.0.tgz` `sha512-OsWQlsedt1ZpZXfZZMNK3m4SoQONFFcy4h/uRznsCeRfVuEic3gh4KGUs2pJJ5o0Jj0Jr7keUHQGN1Ns9aDw7Q==` | MIT | Compatibilità con TypeScript 7 da provare in V-03 |
 | @microsoft/eslint-formatter-sarif | 3.1.0 | 2024-04-12 | `eslint-formatter-sarif-3.1.0.tgz` `sha512-/mn4UXziHzGXnKCg+r8HGgPy+w4RzpgdoqFuqaKOqUVBT5x2CygGefIrO4SusaY7t0C4gyIWMNu6YQT6Jw64Cw==` | MIT | **Fermo da aprile 2024**, 9 versioni in tutto: compatibilità con eslint 10 da provare in V-03; in alternativa SARIF prodotto dall'adattatore a partire dal JSON di eslint |
 | tree-sitter | 0.26.1 | 2026-11-09 | `tree_sitter-0.26.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl` `7b14ac81a2afdcf75610f714f1d2eeaac40da93965c104cabb5c4c2b536a488a` | MIT License | Wheel per cp310..cp314. Checksum della wheel cp312; cp314: `0c1b48e17b26cf555060c1285b35f49eeb345222e62c2a35d70c393a7c61c65b` |
 | tree-sitter-python | 0.25.0 | 2025-09-11 | `tree_sitter_python-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl` `86f118e5eecad616ecdb81d171a36dde9bef5a0b21ed71ea9c3e390813c3baf5` | MIT | Wheel abi3. Ultimo rilascio a settembre 2025 |
@@ -77,8 +77,8 @@ Confronto con D-0013: **ammessa** se non è né vietata né da approvare; le alt
 | ruff 0.17.5 | `LICENSE` nella wheel | MIT | Ammessa |
 | checkov 3.4.5 | `LICENSE` nella wheel | Apache-2.0 | Ammessa |
 | hadolint 2.15.1 | `LICENSE` al tag `v2.15.1` | GPL versione 3 | **Da approvare** |
-| eslint 10.14.0 | `LICENSE` nel pacchetto | MIT | Ammessa |
-| typescript-eslint 8.72.2 | `LICENSE` nel pacchetto | MIT | Ammessa |
+| eslint 10.15.0 | `LICENSE` nel pacchetto | MIT | Ammessa |
+| typescript-eslint 8.74.0 | `LICENSE` nel pacchetto | MIT | Ammessa |
 | @microsoft/eslint-formatter-sarif 3.1.0 | **Nessun file di licenza nel pacchetto.** I metadati dichiarano MIT; il sorgente è nel repository `Microsoft/sarif-js-sdk` | Non verificabile dal pacchetto | Da chiarire |
 | tree-sitter 0.26.1 | `LICENSE` nella wheel | MIT | Ammessa |
 | tree-sitter-python 0.25.0, tree-sitter-javascript 0.25.0 | `LICENSE` nella wheel | MIT | Ammessa |
@@ -630,3 +630,7 @@ I margini sono dai cinque ai sedici volte il picco di memoria e oltre venti volt
 - **Fuori dall'esecutore**: la misura non include la verifica della firma, il volume di `/out` né la copia del workspace. Il tempo reale di una scansione intera è in V-06 e nel report di ciascuna.
 - **checkov a 64 PID** si bloccava (auto-analisi del 2026-11-18); il limite a 128 è stato verificato con le opzioni esatte del contenitore, non qui.
 - Le CPU sono una (`cpu: "1"`, come nel manifest): su una macchina più piccola i tempi crescono.
+
+## Aggiornamento del 2026-11-26: eslint e minimatch
+
+eslint passa da 10.14.0 a 10.15.0 e typescript-eslint da 8.72.2 a 8.74.0 (le righe sopra sono aggiornate). Motivo: `minimatch` 10.2.6, nel lockfile del plugin, rientra in un avviso di sicurezza di gravità media (blocco per sovraccarico, corretto da 11.0.1); ora c'è una sola copia, la 11.0.9, e il lockfile passa da 98 a 97 pacchetti. Verifica sul registro npm: nessuna delle versioni nuove è deprecata (pubblicate tra il 13 e il 25 novembre), le licenze dichiarate nel lockfile sono le stesse di prima per ogni pacchetto cambiato, typescript-eslint 8.74.0 accetta ancora typescript 6.0.3. I testi delle licenze e la SBOM dell'immagine li produce `build-image.sh` alla build.

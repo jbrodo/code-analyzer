@@ -9,10 +9,10 @@ L'elenco completo e versionato dei pacchetti e' nell'SBOM CycloneDX associato al
 
 ## Motore di analisi: eslint con typescript-eslint
 
-- eslint 10.14.0, @eslint/js 10.0.1, typescript-eslint 8.72.2 e typescript 6.0.3: licenza
+- eslint 10.15.0, @eslint/js 10.0.1, typescript-eslint 8.74.0 e typescript 6.0.3: licenza
   permissiva per ciascuno, verificata sul testo del pacchetto in `doc/verifiche/scanner-fase-2.md`
   (V-02; typescript include anche un avviso con testi di terzi). typescript e' alla 6.0.3 e non
-  alla serie 7 perche' typescript-eslint 8.72.2 non la accetta (V-03).
+  alla serie 7 perche' typescript-eslint 8.74.0 non la accetta (V-03).
 - Versioni e integrita' di questi pacchetti e di tutte le dipendenze sono in `package-lock.json`;
   `npm ci` rifiuta cio' che non coincide.
 - Testo di eslint: `/licenses/eslint/LICENSE`. I testi delle dipendenze, uno per pacchetto, sono in
