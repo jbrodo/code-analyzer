@@ -157,3 +157,47 @@ Il materiale è **fuori dal repository**, in `~/gate2-material/` (cartella con p
 **Quando farla.** Ordinare 60 finding costa tempo, e finché la Variante B non esiste (K-06..K-10) il confronto A contro B è vuoto: A e B danno lo stesso ordinamento. L'ordinamento dell'utente si può comunque consegnare ora e misura A contro i livelli provvisori; non andrà rifatto quando B esisterà, perché il campione è fissato dal seme. Il riesame con una configurazione di scoring ritarata (punto 2 sopra) cambia i punteggi ma non il campione.
 
 **Aggiornamento del 2026-11-26 (Variante B definita).** Il campione non cambia: i 30 finding di ciascun repository ci sono tutti nelle scansioni nuove. Per il calcolo si usa il report nuovo, `~/gate2-material/report-<repo>-b.json`, con le stesse chiavi e gli stessi ordinamenti; il report del 2026-11-18 resta per riferimento. Al 2026-11-26 gli ordinamenti non sono ancora compilati. Una modifica di formule o pesi fatta **dopo** la consegna sarebbe una taratura sulla valutazione stessa: va decisa prima, oppure dichiarata in X-06.
+
+## X-05 — Scansione in modalità PR (2026-11-26)
+
+**G2.d: superata.** Le tre scansioni in modalità PR durano al massimo 264 s, meno della metà dei 600 s richiesti.
+
+### Regola di misura
+
+Quella di `gate-1.md`: macchina di riferimento (i9-10900K, 20 thread, 60 GiB; Linux 7.0.0-44-generic, Docker 27.3.1), `--offline` con i feed già in cache (sincronizzazione esclusa), `duration_seconds` del report, costruzione e firma delle immagini escluse. CLI impacchettata da `package-cli.sh` con il codice del prodotto di `main` (`032a8d2`: dopo, in `packages/`, nulla è cambiato), tredici plugin con immagini firmate sul registry locale. Feed: database di osv-scanner e trivy sincronizzati il 2026-11-17; EPSS (SHA-256 `24e6330d304d…`) e KEV (`a76360009e4a…`) del 2026-11-26. Scoring `2+cf90f99e443e`, benchmark `1+35e3b0d58d49`.
+
+**Scostamento:** senza la policy di licenze di `.code-analyzer.yml` (avviso `license-policy-absent`), che la regola di `gate-1.md` prevede. Non cambia quali plugin girano.
+
+### PR di riferimento
+
+Criterio fissato **prima** della misura: a partire dal commit pilota della Fase 1, l'ultimo commit della linea principale (primo genitore) che modifica almeno un file di codice Python o JS/TS non di test; la base è il suo primo genitore. Cloni con 80 commit di storia.
+
+| Pilota | Base | Testa | Commit saltati dal pilota | File (codice non di test) | Righe aggiunte / tolte |
+| --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | `f27b4721507824e57ebd0286ff1a84d82e83bf59` | `0007f609ec8467c913283f44660f5e50257a6d7a` | 15 | 5 (3) | 34 / 26 |
+| `excalidraw` | `dd2f8fc32b92cbf56f4abee6a0cf3b14681b4b55` | `7ded689cad49331167e29fd88b38f38d3736d576` | 2 | 16 (7) | 155 / 222 |
+| `saleor` | `89817cdd10423619d6d6be54a61ead11fca90cfa` | `1d707dcf6127b098c187a181e5ee344017cdb064` | 0 | 5 (1) | 302 / 1 |
+
+La baseline di ciascuna è la scansione completa della base, fatta subito prima sulla stessa macchina (`--baseline-source base-scan`).
+
+### Misura
+
+| Pilota | Scansione completa della base (s) | **Scansione PR (s)** | Processo intero PR (s) | Finding | Nuovi / esistenti / risolti / spostati | Stato | Plugin più lento |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | 23,3 | **20,1** | 20 | 181 | 1 / 180 / 1 / 0 | `partial` ¹ | scancode, 13,8 s |
+| `excalidraw` | 170,4 | **172,6** | 176 | 3.350 | 1 / 3.349 / 2 / 38 | `complete` | scancode, 158,8 s |
+| `saleor` | 251,7 | **263,9** | 268 | 3.815 | 38 / 3.777 / 0 / 0 | `partial` ¹ | scancode, 246,2 s |
+
+¹ Solo per i collegamenti simbolici non seguiti (`workspace-symlinks`, e quindi `baseline-partial`): nessun plugin fallito.
+
+- Gli spostati sono compresi tra gli esistenti.
+- **Baseline valida** sulle tre. **Tutti i finding nuovi stanno in file modificati dalla PR** (1 su 1, 1 su 1, 38 su 38; i 38 di `saleor` sono nell'unico file Python aggiunto).
+- **La modalità PR non è più veloce di quella completa:** la PR non restringe i file analizzati (ADR-0009, `PROJECT.md` §5). Il tempo lo decide scancode: da 13,8 su 20,1 s a 246,2 su 263,9 s.
+- **Gate** (modo `all`, senza configurazione): `excalidraw` esce con 1 per finding bloccanti; gli altri due con 2 (`partial-scan`), perché un report parziale non decide.
+
+### Limiti
+
+- Una sola esecuzione per caso.
+- La macchina non era del tutto scarica: servizi dell'utente in container, quasi inattivi, e carico medio intorno a 2 su 20 thread prima di cominciare.
+- PR piccole (5–16 file). Con la scansione completa dei file il tempo dipende dalle dimensioni del repository più che della PR; `saleor` è il più grande dei pilota.
+- Il margine di `saleor` (2,3 volte) vale per questa macchina; un runner di CI con pochi core può essere più lento e non è stato misurato.
