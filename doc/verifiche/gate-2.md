@@ -22,8 +22,9 @@ Il metodo di Martini et al. (ECSA 2018) citato da §13 non è ancora trascritto 
 | --- | --- | --- | --- | --- | --- |
 | `orario-scuola` | `8b9cee9cc54d456f987f2aaf080d031e6fc62c20` | 2026-11-09 | 1.103 | 170 | 241 |
 | `birds-cataloger` | `cb9227f2813b0843a5c0d4d2829c4da7a2d6ae53` | 2025-11-22 | 165 | 36 | 25 |
+| `school-planner` | `9c1d2ce9328bb3c4ca50b67cac430865407890fd` | 2026-11-15 | 155 | 0 | 35 |
 
-Entrambi sono dell'utente e si trattano come riservati. D2-03 ne ammette 2 o 3: il terzo è facoltativo e ancora da indicare. Se si aggiunge, entra in questa tabella con il commit fissato prima di X-02.
+Sono dell'utente e si trattano come riservati. D2-03 ne ammette 2 o 3. **`school-planner` è il terzo, scelto dall'utente il 2026-11-27** e fissato qui prima della sua scansione e prima di qualunque risultato di G2.b. È entrato dopo X-02 del 2026-11-18: la sua scansione è descritta più sotto. Era stato proposto anche un altro repository dell'utente, non inserito perché i suoi finding stavano quasi tutti nella copia di uno strumento di terze parti.
 
 Le scansioni si eseguono su un clone pulito del commit indicato, sulla macchina di riferimento, con le immagini del registry locale (D2-16). I 3 pilota pubblici della Fase 1 servono a G2.a e G2.d, non a G2.b.
 
@@ -68,11 +69,13 @@ Approvate dall'utente il 2026-11-26. A quella data l'utente non ha compilato alc
 
 Se vince B, prima di attivarla si semplifica la funzione di `runner.py` che oggi fa fallire il gate del progetto (X-07), invece di aggiungere un'eccezione.
 
-**Terzo repository:** consigliato, se l'utente ne ha uno adatto (Python o JS/TS, con finding di qualità e architettura), perché sul campione di `birds-cataloger` A e B hanno gli stessi primi 10. Va fissato in tabella con il commit prima di calcolare i risultati. Non ancora indicato.
+**Terzo repository:** consigliato perché sul campione di `birds-cataloger` A e B hanno gli stessi primi 10. Indicato il 2026-11-27: `school-planner` (tabella dei repository).
 
 **Livelli da punteggio: non si attivano per ora** (`levels.source: provisional`). È una modifica di D2-10, che prevedeva di attivarli dopo la scelta della variante: con le soglie attuali quasi nessun finding arriva ad `alto` (X-02, X-07), e un ordinamento dice quale variante ordina meglio, non dove mettere le soglie. L'esito del gate (X-08) la dichiara.
 
-**Ordinamento di Claude, fuori dal protocollo.** Su richiesta dell'utente, Claude ha ordinato i due campioni in file separati, fuori dal repository (`ordinamento-<repo>-claude.csv`), senza aprire report né chiavi. **Non è l'ordinamento di X-04 e non entra in G2.b:** chi l'ha fatto ha scritto le formule di B e ha visto i confronti aggregati tra A e B. I file ufficiali sono vuoti e su quelli di Claude non è stato calcolato nulla.
+**Ordinamenti consegnati il 2026-11-27 per i primi due repository: non utilizzabili, in attesa di chiarimento.** I file ufficiali, completi (30 righe ciascuno, ultima modifica alle 00:13), coincidono con quelli di Claude (paragrafo seguente) in tutte le 60 posizioni: non sono un ordinamento indipendente. Impronte SHA-256 al momento del controllo: `orario-scuola` `47af864078448936fe38ba140491d017610dc99f0a485bd7f8dc40679bf23d00`, `birds-cataloger` `606e8070f86036eee0696733381d02444e68f22b7dd6b5c0ee69b3b49826d540`. Su di essi **non è stato calcolato nulla**. Che fare è una decisione dell'utente ancora aperta.
+
+**Ordinamento di Claude, fuori dal protocollo.** Su richiesta dell'utente, Claude ha ordinato i due campioni in file separati, fuori dal repository (`ordinamento-<repo>-claude.csv`), senza aprire report né chiavi. **Non è l'ordinamento di X-04 e non entra in G2.b:** chi l'ha fatto ha scritto le formule di B e ha visto i confronti aggregati tra A e B. Quando è stato scritto questo paragrafo i file ufficiali erano vuoti; su quelli di Claude non è stato calcolato nulla. **Per `school-planner` Claude non fa alcun ordinamento.**
 
 ## X-02 — Scansione in ombra dei repository del gate (2026-11-18)
 
