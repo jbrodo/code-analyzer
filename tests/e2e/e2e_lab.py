@@ -182,7 +182,7 @@ class Fleet:
         return path
 
     def add_builtin(self, name: str) -> Path:
-        directory = {"osv-scanner": "osv_scanner"}.get(name, name)
+        directory = {"osv-scanner": "osv_scanner", "ca-graph": "ca_graph"}.get(name, name)
         data = yaml.safe_load((BUILTIN / directory / "plugin.yaml").read_text())
         return self.add(name, BUILTIN / directory, data)
 

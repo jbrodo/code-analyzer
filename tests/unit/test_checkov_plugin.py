@@ -270,6 +270,29 @@ def test_adapt_accepts_a_single_report_and_an_empty_one() -> None:
     assert json.loads(adapter.adapt(empty))["runs"][0]["results"] == []
 
 
+# Stampato da checkov 3.4.5 nell'immagine del plugin su una cartella senza risorse IaC
+# (registrato il 2026-11-26): solo il riepilogo, senza `results`.
+NOTHING: dict[str, Any] = {
+    "passed": 0, "failed": 0, "skipped": 0, "parsing_errors": 0, "resource_count": 0,
+    "checkov_version": "3.4.5",
+}  # fmt: skip
+
+
+def test_a_workspace_without_iac_resources_is_an_empty_result_not_a_failure() -> None:
+    out = json.loads(adapter.adapt(json.dumps(NOTHING).encode()))
+    assert out["runs"][0]["results"] == []
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [{"parsing_errors": 1}, {"resource_count": 1}, {"failed": 2}, {"passed": False},
+     {"failed": "0"}, {"extra": 0}],
+)  # fmt: skip
+def test_any_other_summary_without_results_is_still_refused(changes: dict[str, Any]) -> None:
+    with pytest.raises(adapter.InvalidOutput):
+        adapter.adapt(json.dumps({**NOTHING, **changes}).encode())
+
+
 @pytest.mark.parametrize(
     "raw",
     [
