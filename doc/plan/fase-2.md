@@ -1360,7 +1360,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13, §14. ADR: 0020, 0026.
 
 #### T-04 — E2E della modalità PR
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-26** in locale; in CI lo raccoglie già `e2e.yml` (`pytest tests/e2e`), non ancora visto girare lì. `tests/e2e/test_pr_mode.py`, 9 prove con processi veri e l'immagine firmata di bandit sul repository di F-06: baseline dalla scansione completa del base, stato di ogni finding (nuovo, esistente, spostato, rinominato, risolto), conteggi, righe dopo lo spostamento, `baselineState` nel SARIF (`updated` per spostato e rinominato, `absent` per il risolto, come ADR-0025), gate `new-findings-only` che blocca solo sul nuovo, la PR che indebolisce `.code-analyzer.yml` senza effetto (stesso esito del gate), baseline di un altro commit rifiutata. Durate nel riepilogo della sessione: circa 1,4 s per scansione con il solo bandit. **Trovato:** con il bandit vero il file rinominato portava anche B113 (`requests` senza `timeout`), contro quanto dichiarava F-06: corretta la fixture e aggiornati gli SHA fissati in `test_pr_repository.py`.
 - Percorsi: `tests/e2e/`.
 - Dipende da: F-06, L-01.
 - Accettazione: sui repository di F-06, conteggi nuovi, esistenti e risolti corretti, gate `new-findings-only` corretto, configurazione ostile del branch senza effetto, durata registrata.
