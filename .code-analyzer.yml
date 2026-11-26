@@ -149,10 +149,6 @@ exceptions:
     reason: "Rischio residuo accettato, non falso positivo: testo LGPL-2.1 del motore semgrep incluso nell'immagine. Approvazione di D-0015 del 2026-11-10 (doc/verifiche/gate-1.md)"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
-  - fingerprint: "sha256:58cc793e6c3769f8e1ff71a9b074582dd6e38f5dffc7698bd18547e2cd55b08f"
-    reason: "Falso positivo: doc/plan/fase-2.md cita la licenza senza dichiararla. Decisione D2-07 su MinIO e incoerenza 16"
-    expires: 2027-05-09
-    approved_by: "Riccardo Roveda"
   - fingerprint: "sha256:55e48d8894a193962e6d41842e6d9c1ab4eb04e48d8ab80b39ffafecee180360"
     reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): dichiarazione in README.md"
     expires: 2027-05-09
