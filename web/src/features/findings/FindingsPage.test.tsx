@@ -84,7 +84,8 @@ test("la lista mostra una riga per finding, con la parola del livello e il titol
   expect(link.getAttribute("aria-label")).toBe("Critico: Problema 1");
   expect(screen.getByText("2 finding")).toBeDefined();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("acme/shop");
-  expect(document.title).toBe("Finding · acme/shop · Code Analyzer");
+  // il titolo arriva da un effetto, che può girare dopo che il contenuto è già visibile
+  await waitFor(() => { expect(document.title).toBe("Finding · acme/shop · Code Analyzer"); });
 });
 
 test("il predefinito chiede aperti e in corso e lo dice tra i filtri", async () => {

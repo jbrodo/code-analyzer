@@ -44,13 +44,25 @@ pytestmark = [
 
 # Il processo figlio: stesso comando dell'utente, con le sole due cablature che la riga di comando
 # non offre (registry HTTP locale, manifest del plugin finto). Argomenti: manifest, poi `argv`.
+# Nessuna rete (regola 7 di AGENTS.md): senza trasporto per EPSS e KEV, e ogni connessione di
+# questo processo fuori dal loopback fallisce, come in `tests/e2e/_cli_child.py`.
 CHILD = """
-import dataclasses, json, sys
+import dataclasses, json, socket, sys
 from ca_cli.composition import build_context
 from ca_cli.main import main
 from ca_core.models import PackagedPluginManifest
+_connect = socket.socket.connect
+def guarded(self, address):
+    if self.family == socket.AF_UNIX or (
+        isinstance(address, tuple) and address and address[0] in ("127.0.0.1", "::1")
+    ):
+        return _connect(self, address)
+    raise OSError(f"E2E: connessione di rete non consentita verso {address!r}")
+socket.socket.connect = guarded
 manifest = PackagedPluginManifest.model_validate(json.load(open(sys.argv[1])))
-context = dataclasses.replace(build_context(allow_http_registry=True), manifests=lambda: [manifest])
+context = dataclasses.replace(
+    build_context(allow_http_registry=True), manifests=lambda: [manifest], enrichment_fetcher=None
+)
 sys.exit(main(sys.argv[2:], context=context))
 """
 
@@ -89,7 +101,12 @@ class Lab:
     def run(
         self, tmp: Path, *args: str, pub: Path | None = None
     ) -> subprocess.CompletedProcess[str]:
-        env = {**os.environ, "COSIGN": COSIGN, "CA_COSIGN_PUBLIC_KEY": str(pub or self.pub)}
+        env = {
+            **os.environ,
+            "COSIGN": COSIGN,
+            "CA_COSIGN_PUBLIC_KEY": str(pub or self.pub),
+            "XDG_CACHE_HOME": str(tmp / "xdg-cache"),  # mai la cache dell'utente
+        }
         env.pop("CA_INSECURE_ALLOW_UNSIGNED", None)
         return subprocess.run(
             [sys.executable, "-c", CHILD, str(self.manifest), *args],

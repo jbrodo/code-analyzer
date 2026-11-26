@@ -6,12 +6,13 @@ sono quelli di F-05 (`tests/fixtures/feeds`), montati in sola lettura da una cac
 costruita dal laboratorio; le scansioni sono quelle di `conftest.py` (le stesse di T-05).
 """
 
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from .e2e_lab import REPOS, Fleet, e2e_marks, needs_feeds
+from .e2e_lab import OSV_FEEDS, REPOS, Fleet, e2e_marks, has_enrichment, needs_feeds
 from .expectations import describe, load_expected, matching, near_misses
 
 pytestmark = [*e2e_marks, needs_feeds]
@@ -63,6 +64,25 @@ def test_feed_plugins_ran_offline_on_the_frozen_snapshot(
     assert "feeds-sync-failed" not in codes
     failed = [(n, r["failure"]) for n, r in runs.items() if r["outcome"] != "ok"]
     assert scan.report["status"] == "complete", (failed, sorted(codes))
+
+
+@pytest.mark.parametrize("fixture", list(FIXTURE_SCAN))
+def test_the_scan_uses_the_epss_and_kev_of_the_frozen_snapshot(
+    fixture: str, request: pytest.FixtureRequest
+) -> None:
+    """O-03: con `--offline` EPSS e KEV vengono dallo snapshot. Una cache della CI salvata prima di
+    O-03 non li ha: allora il report non ne cita nessuno e lo dice, mai un download."""
+    report = request.getfixturevalue(FIXTURE_SCAN[fixture]).report
+    used = {s["feed"]: s for s in report["enrichment"]}
+    codes = {w["code"] for w in report["warnings"]}
+    assert "feeds-sync-failed" not in codes
+    if not has_enrichment(Path(OSV_FEEDS)):
+        assert used == {} and "enrichment-feed-missing" in codes
+        return
+    assert set(used) == {"epss", "kev"} and "enrichment-feed-missing" not in codes
+    for feed, info in used.items():
+        pointer = json.loads((Path(OSV_FEEDS) / "enrichment" / feed / "current.json").read_text())
+        assert info["sha256"] == pointer["sha256"], feed
 
 
 def test_offline_without_any_snapshot_fails_the_feed_plugins_without_starting_them(
