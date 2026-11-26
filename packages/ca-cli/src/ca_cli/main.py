@@ -17,9 +17,9 @@ from collections.abc import Callable, Generator, Sequence
 from pathlib import Path
 from types import FrameType
 
-from ca_cli import config_validate, gate, sbom, scan
+from ca_cli import config_validate, export, gate, notify, sbom, scan, upload
 from ca_cli.composition import Context, build_context
-from ca_core.models.scan_report import Isolation
+from ca_core.models.scan_report import BaselineSourceKind, Isolation
 from ca_plugins.hostpaths import HostPathsError
 
 PROG = "code-analyzer"
@@ -31,6 +31,9 @@ HANDLERS: dict[tuple[str, str | None], Handler] = {
     ("scan", None): scan.handle,
     ("sbom", None): sbom.handle,
     ("gate", None): gate.handle,
+    ("notify", None): notify.handle,
+    ("export", None): export.handle,
+    ("upload", None): upload.handle,
     ("config", "validate"): config_validate.handle,
 }
 
@@ -53,6 +56,32 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument(
         "--offline", action="store_true", help="non sincronizzare i feed: usa lo snapshot esistente"
     )
+    scan_parser.add_argument(
+        "--pr", action="store_true", help="scansione di PR: confronto con la baseline (ADR-0025)"
+    )
+    scan_parser.add_argument("--base", type=scan.parse_commit, help="commit base (con --pr)")
+    scan_parser.add_argument(
+        "--baseline", help="report della scansione completa del commit base, fuori dal repository"
+    )
+    scan_parser.add_argument(
+        "--baseline-source",
+        type=BaselineSourceKind,
+        choices=list(BaselineSourceKind),
+        default=BaselineSourceKind.CI_ARTIFACT,
+        help="da dove viene la baseline, solo per il report",
+    )
+    scan_parser.add_argument("--pull-request", type=scan.parse_pr_number, help="numero della PR")
+    scan_parser.add_argument(
+        "--variant", choices=["A", "B"], help="variante di scoring attiva (ADR-0021)"
+    )
+    scan_parser.add_argument(
+        "--scoring-config",
+        help="configurazione di scoring, fuori dal repository (o CA_SCORING_CONFIG)",
+    )
+    scan_parser.add_argument(
+        "--service-context",
+        help="contesto del servizio (tier ed esposizione), fuori dal repository",
+    )
     sbom_parser = commands.add_parser("sbom", help="genera l'SBOM CycloneDX")
     sbom_parser.add_argument("path", nargs="?", default=".", help="directory (predefinito: .)")
     sbom_parser.add_argument("--format", choices=["cyclonedx"], default="cyclonedx")
@@ -67,6 +96,9 @@ def build_parser() -> argparse.ArgumentParser:
     gate_parser.add_argument(
         "--allow-partial", action="store_true", help="valuta anche una scansione parziale"
     )
+    notify.add_parser(commands)
+    export.add_parser(commands)
+    upload.add_parser(commands)
     config = commands.add_parser("config", help="strumenti per .code-analyzer.yml")
     config_commands = config.add_subparsers(dest="config_command", metavar="COMMAND", required=True)
     validate = config_commands.add_parser("validate", help="valida .code-analyzer.yml offline")
@@ -78,7 +110,7 @@ _SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
 
 @contextlib.contextmanager
-def _interruptible() -> Generator[None, None, None]:
+def _interruptible() -> Generator[None]:
     """Gestore unico per SIGINT, SIGTERM e SIGHUP (ADR-0004, M-03), solo nel thread principale.
 
     Alla prima consegna ignora i tre segnali, così un secondo non interrompe la pulizia, poi
@@ -102,7 +134,10 @@ def _interruptible() -> Generator[None, None, None]:
 
 
 def main(argv: Sequence[str] | None = None, *, context: Context | None = None) -> int:
-    args = build_parser().parse_args(argv)  # errori di sintassi: exit 2 (argparse)
+    parser = build_parser()
+    args = parser.parse_args(argv)  # errori di sintassi: exit 2 (argparse)
+    if args.command == "scan":
+        scan.check_pr_flags(args, parser)
     handler = HANDLERS[(args.command, getattr(args, "config_command", None))]
     with _interruptible():
         ctx: Context | None = context
@@ -132,7 +167,15 @@ def _confine_outputs(args: argparse.Namespace, root: Path) -> None:
     Un percorso relativo, predefiniti compresi, si legge rispetto a `root`: la directory
     corrente è il workspace, montato in sola lettura.
     """
-    for name in ("output_dir", "output", "report"):
+    for name in (
+        "output_dir",
+        "output",
+        "report",
+        "baseline",
+        "sbom",
+        "scoring_config",
+        "service_context",
+    ):
         value = getattr(args, name, None)
         if value is None:
             continue

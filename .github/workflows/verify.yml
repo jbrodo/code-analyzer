@@ -51,6 +51,8 @@ jobs:
 
       - name: schema_export --check
         run: uv run --frozen --offline python -m ca_core.schema_export --check
+      - name: openapi_export --check
+        run: uv run --frozen --offline python -m ca_api.openapi_export --check
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
@@ -64,3 +66,29 @@ jobs:
 
       - name: test web
         run: bun run --cwd web test
+
+  # O-04: i test di integrazione del server su PostgreSQL 16 vero (testcontainers) con l'archivio su
+  # file system e, per l'adattatore S3, il server di prova in container. Nessun servizio esterno e
+  # nessun segreto: le immagini si scaricano dal registry pubblico solo per avviare i contenitori.
+  server-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      CA_TEST_DOCKER: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Installa le dipendenze
+        run: uv sync --frozen
+
+      - name: Test di integrazione di ca-api
+        run: uv run --frozen --offline pytest -q --no-cov tests/integration/test_api_database.py tests/integration/test_api_ingest.py tests/integration/test_api_reads.py tests/integration/test_api_openapi_conformance.py tests/integration/test_api_s3_store.py

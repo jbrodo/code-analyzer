@@ -173,3 +173,31 @@ exceptions:
     reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-cli/pyproject.toml"
     expires: 2027-05-09
     approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:11c2d0bf5b821247d1d8506dd77f8fd4c5392f504caa808345adde278cdc2a3f"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-integrations/pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:1bc76b92221b70363d2f37b8a36424955e26f405f1f6c0fc6eaebee574e7fc18"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-graph/pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:f67fde721ce286969c2f2605492218541f67413943cbff7c8b9a0a783a8549af"
+    reason: "Licenza del prodotto, scelta dall'utente il 2026-11-09 (GPL-3.0-only): campo license di packages/ca-api/pyproject.toml"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:76d3757e713a4bb4161dd35b7d13f8b3c66c937ca190be4605957847845a12d7"
+    reason: "Falso positivo: THIRD-PARTY-NOTICES.md del plugin checkov elenca i testi delle licenze delle dipendenze, rigenerato; stesso contenuto dei notices gia' accettati, fingerprint nuovo"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:c2066cae5c591a782a88704e7fb5928a32f5c79280115a4c9ed2c3450bda97a6"
+    reason: "Falso positivo: THIRD-PARTY-NOTICES.md del plugin ruff elenca i testi delle licenze delle dipendenze, rigenerato; stesso contenuto dei notices gia' accettati, fingerprint nuovo"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:e4e5b034770c3b76c9f37a92cbfd1f3cf46ce6157b693da9508e21f9b852eac5"
+    reason: "Falso positivo: THIRD-PARTY-NOTICES.md dell'immagine CLI elenca i testi delle licenze delle dipendenze, rigenerato; stesso contenuto dei notices gia' accettati, fingerprint nuovo"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:09fea0877fa643faf3c1856cf894dbeb10a1276adafed60f1a224b27599ca633"
+    reason: "picomatch (CVE-2026-112366, ReDoS con estglob ripetuti): nessuna versione corretta, 4.0.7 e' l'ultima. Solo strumenti di build e di analisi (web/ e plugin eslint), mai in un percorso che riceva input non fidato. Da rivedere appena esce una versione corretta"
+    expires: 2027-02-18
+    approved_by: "Riccardo Roveda"

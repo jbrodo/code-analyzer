@@ -1,0 +1,28 @@
+# Plugin eslint (P-02): qualita' del codice JS, TS e TSX in SARIF 2.1.0. ADR-0004, 0005, 0007,
+# 0014, 0026. Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`)
+# perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e
+# sign-local.sh.
+apiVersion: code-analyzer/v1
+name: eslint
+version: 1.0.0
+image: registry.invalid/ca-plugins/eslint:1.0.0
+capabilities: [detect]
+languages: [javascript, typescript]
+categories: [quality]
+inputs:
+  workspace: readonly
+  config: optional  # {"disable_rules": [...]} da `plugins.eslint.disable_rules`, ricontrollato dall'adattatore
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # Misurato il 2026-11-18 (I-02): 1,06 MB su excalidraw (1.328 file TypeScript); saleor non ha file
+  # JavaScript e il plugin non si applica. 32 MiB, trenta volte il massimo.
+  max_bytes: 33554432
+resources:
+  # Misurato il 2026-11-18 (I-02): su excalidraw 14,7 s e 902 MiB di picco (Node ha un'impronta alta):
+  # 2 GiB sono più del doppio. Il tempo ha un margine di venti volte.
+  cpu: "1"
+  memory: 2Gi
+  timeout: 300s
+  pids: 64
+network: none

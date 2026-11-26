@@ -31,10 +31,10 @@ from ca_core.fingerprint import context_hash, fingerprint_code
 ROOT = Path(__file__).resolve().parents[3]
 CONFIG_SCHEMA = ROOT / "schemas" / "code-analyzer-config.schema.json"
 PINNED = {
-    "base": "00d5bfd579033a860c3a14fdcd2c70241982ca84",
-    "main_head": "be150417e708898e2fed55a3828246469d3ecb6c",
-    "pr_head": "7b440974016c2b4ad164db79649a919317540a20",
-    "weaken_head": "5756c732f60d3ac381d61536b984cfd14d39bdb5",
+    "base": "0934a93b3377b903d493047bf7887f964ee1677a",
+    "main_head": "b8793896f8a82516a1c72ed619ffab7facc340e2",
+    "pr_head": "6f684d9f30fe77e48222590bfa13862165c0948a",
+    "weaken_head": "fe0e61dbb182a2215a9e98a7f6edb0fbefea3910",
 }
 BY_NAME = {entry.name: entry for entry in EXPECTED}
 

@@ -81,3 +81,30 @@ Non ancora verificate, da verificare in B-01 prima di aggiungerle: la libreria c
 - Il server con l'adattatore su file system gira su un solo host; con l'adattatore S3 può avere più repliche.
 - §14 citava un contenitore di object storage tra i test di integrazione: resta, ma con un server a licenza ammessa scelto in B-07.
 - §2 dopo la correzione di A-17: porta `ArtifactStore` con due adattatori, file system e S3; nessun server incluso.
+
+## Verifica del lettore di multipart (C-08, 2026-11-17)
+
+`python-multipart` 0.0.34 è il lettore di `multipart/form-data` che FastAPI richiede per `POST /v1/scans`: licenza permissiva dichiarata sul pacchetto (classificatore Apache Software License), rilasci regolari fino al 2026-11-16, Python 3.11 o successivo. Aggiunto a `ca-api`. I limiti di dimensione di ADR-0016 si applicano in B-03 mentre si legge il corpo; la libreria da sola non li impone. La libreria crittografica che serve a `pyjwt` per gli algoritmi asimmetrici resta da verificare in B-04.
+
+## Verifica delle dipendenze di persistenza (B-02, 2026-11-17)
+
+Aggiunte a `ca-api`: SQLAlchemy 2.0.58 (serie 2.0, MIT), Alembic 1.20.1 (MIT), pg8000 1.31.6 (BSD a tre clausole); solo ai test, `testcontainers` 4.15.0 (Apache 2.0). Transitive nuove, tutte con licenza permissiva e lette dai metadati dei pacchetti: scramp (MIT-0), asn1crypto (MIT; ultimo rilascio del 2022, è una libreria stabile ma ferma: la usa pg8000 per l'autenticazione), Mako e MarkupSafe (MIT, BSD), greenlet (MIT e PSF), python-dateutil, docker, requests, urllib3, charset-normalizer, python-dotenv, wrapt, tzdata. La licenza di ogni pacchetto è quella dichiarata dal pacchetto, non un parere legale: D2-14 resta di Riccardo Roveda per la distribuzione dell'immagine del server, sull'SBOM della build.
+
+## Realizzazione di B-07 (2026-11-17)
+
+- **Client S3: `boto3` 1.44.4** (Apache 2.0, rilasciato il 2026-11-16) con botocore, s3transfer, jmespath (MIT) e six. Scelta di una libreria diffusa e mantenuta invece di una firma SigV4 scritta a mano: codice di sicurezza in meno da mantenere. Le credenziali arrivano solo dalla catena predefinita (ambiente o file montati), mai da un argomento; un endpoint `http` è rifiutato salvo richiesta esplicita.
+- **Server S3 di prova: SeaweedFS** (licenza Apache 2.0 letta dal repository il 2026-11-17, mantenuto), in un container, solo per i test e mai distribuito. MinIO resta escluso.
+- Adattatore su file system: ogni componente del percorso si apre con `O_NOFOLLOW`, cartelle 0700 e file 0600, radice non privata rifiutata, scrittura su temporaneo e `link` atomico (nessuna sovrascrittura nemmeno in corsa). Adattatore S3: tetto di byte e digest mentre si legge, `PutObject` con `If-None-Match: *` (rifiuta la sovrascrittura in corsa: provato con sei scrittori concorrenti), digest nei metadati dell'oggetto per riconoscere una ripetizione con un `HEAD`.
+- Entrambi, più il fake in memoria, superano la stessa batteria di contratto (`tests/unit/api/store_battery.py`): roundtrip, vuoto, 4,6 MiB, digest dichiarato, tetto con lettura limitata, ripetizione contro conflitto, chiavi non valide, cancellazione idempotente.
+- **Non fatto:** la costruzione dell'archivio dalla configurazione del server (B-03); le variabili per indirizzo, bucket e regione; non provato su un servizio S3 reale (solo SeaweedFS); la crittografia lato server e il ciclo di vita degli oggetti sono di chi installa.
+
+## Dipendenza di B-13 (2026-11-17)
+
+OpenTelemetry (API, SDK ed esportatore OTLP su HTTP) alla versione 1.45.2, rilasciata il 2026-10-29: licenza permissiva e manutenzione attiva verificate sul registro dei pacchetti; il protocollo porta `protobuf` (licenza a tre clausole). Usate solo le metriche; le tracce e i log OTLP non sono realizzati.
+
+## Realizzazione di I-03: l'immagine di rilascio (2026-11-18)
+
+- `deploy/docker/server/Dockerfile.release` e `build-release-image.sh`: l'API e la SPA compilata nello stesso processo, utente `65532`, file system in sola lettura provato, nessun segreto, nessuna etichetta di licenza del prodotto. Lo script costruisce le wheel e `web/` dai lock congelati, toglie `config.json` (la configurazione di sviluppo con l'IdP finto) e fa girare `image-gate.sh`: licenze e SBOM CycloneDX 1.7 (312 pacchetti della SPA e le dipendenze Python con i loro testi). Nessun push, nessuna firma (D2-16).
+- `ca_api/spa.py` serve `web/` (variabile `CA_API_WEB_DIR`): `index.html` per ogni indirizzo che non è un file e non sta sotto `/v1`, i file solo se stanno dentro la cartella (nessun `..`, byte nulli, percorsi lunghi o collegamenti che ne escono), 404 per uno script mancante. La configurazione dell'ambiente (`CA_API_WEB_CONFIG`: IdP e client OIDC, nessun segreto) si monta e non si tiene mai in cache.
+- **Content-Security-Policy** senza `unsafe-inline` né `unsafe-eval`: script e stili di questa origine, connessioni a questa origine e alle sole `CA_API_CSP_CONNECT` (l'IdP), nessun frame. Radix blocca lo scorrimento sotto un dialogo con un elemento `<style>`: il server mette un nonce nuovo a ogni risposta di `index.html` nel meta `csp-nonce` e la SPA lo passa a `__webpack_nonce__`, che la libreria legge. Provato con un browser vero contro l'immagine: accesso, filtro, pannello e dialogo senza violazioni.
+- **Limiti:** le licenze della SPA sono quelle di tutta la chiusura delle dipendenze di esecuzione (un insieme più largo di ciò che entra nel bundle) e una non ha un file di licenza; la CSP realizza S1-M2 del parere di S-01 (una revisione di progetto dello stesso agente, non indipendente: la revisione sul codice è S-06, non ancora fatta); l'immagine non è firmata né pubblicata; non si è provato con S3 né con un proxy davanti.

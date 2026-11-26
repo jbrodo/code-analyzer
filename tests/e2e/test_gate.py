@@ -183,7 +183,7 @@ def test_new_findings_only_is_treated_as_all_with_a_warning(case: Case) -> None:
     assert report["gate"]["mode"] == "new-findings-only"
     assert report["gate"]["effective_mode"] == "all"
     assert "new-findings-only-as-all" in {w["code"] for w in report["warnings"]}
-    assert "equivale a 'all'" in done.stderr
+    assert "vale solo in una scansione PR con baseline valida" in done.stderr
     assert case.gate().returncode == 1  # blocca come con `all`: il finding c'e' ed e' bloccante
 
 

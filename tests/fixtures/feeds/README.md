@@ -54,3 +54,30 @@ E' lo stesso albero che i plugin vedono in `/feeds` (cache `<cache>/<plugin>/sna
   lockfile. Il rinnovo e' una scelta (O-03), non automatica.
 
 Prove della procedura: `pytest tests/fixtures/feeds` (file piccoli, senza rete).
+
+## Snapshot ridotto di EPSS e KEV (F-04)
+
+A differenza dei database di osv-scanner e trivy, questo sta nel repository: `enrichment/` contiene
+i due file nel formato pubblicato (CSV di EPSS con l'intestazione di FIRST, JSON di KEV di CISA),
+ridotti ai CVE delle fixture (`tests/fixtures/repos/*/expected-findings.yaml`) piu' due CVE reali
+di controllo. ADR-0024, spec §16 regola 7. Lo legge `enrichment_snapshot.py`; le prove sono in
+`tests/unit/test_feeds_fixture_snapshot.py`.
+
+- **Fonte.** La cache per utente della CLI, sincronizzata dai feed pubblici il 2026-11-17 (EPSS
+  `v2026.06.15` del 2026-11-17, KEV `2026.11.17`). I valori EPSS sono quelli pubblicati. Di KEV
+  restano solo `cveID`, `dateAdded` e `knownRansomwareCampaignUse`, i campi che il nucleo legge.
+- **Voci inventate.** Nessun CVE delle fixture e' in KEV. Per provare il ramo KEV, CVE-2021-44906
+  e CVE-2018-18074 sono state **aggiunte** al catalogo con data 2026-11-17: sono dati di prova, non
+  un fatto. `SYNTHETIC_KEV` in `enrichment_snapshot.py` le elenca e un test controlla che siano le
+  sole. Le altre due voci KEV (CVE-2021-44228, CVE-2026-115731) sono reali.
+- **Copertura.** Tutti i 13 CVE delle fixture hanno un EPSS. CVE-2021-23337 e' sopra la soglia di
+  0,1 dell'override EPSS (ADR-0021), gli altri sotto; CVE-2024-29041 e' anche sotto il minimo di P
+  (0,01).
+- **Uso.** `snapshot_feeds()` da' la porta `EnrichmentFeeds` per i test dello scoring;
+  `seed_cache(dir, downloaded_at)` scrive lo snapshot nella cache dei feed, da leggere con
+  `load_enrichment(..., limits=LIMITS)`. Con i limiti di produzione (`limits.json`: almeno 100 000
+  voci EPSS e 500 KEV) lo snapshot e' rifiutato come implausibile, ed e' voluto: per questo non
+  vale per una CLI lanciata da un E2E, che con `--offline` lo scarterebbe. Il rinnovo con i feed
+  della CI e' O-03.
+- **Aggiornarlo.** Se cambia l'elenco dei CVE delle fixture il primo test fallisce: aggiungere la
+  riga EPSS presa da uno snapshot pubblico e scrivere qui la data.

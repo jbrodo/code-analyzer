@@ -14,10 +14,37 @@ from test_finding_contract import INVALID, MINIMAL, VALID
 from ca_core.models import Finding
 
 VALIDATOR = make_validator("finding")
+FACTORS_A = {"g": 0.5, "p": 0.4, "e": 0.3, "c": 0.7, "variant": "A", "evidence": {}}
 
 # Rifiutati solo dal modello (ADR-0003, "Dove vive un'invariante"): lo schema li accetta.
 MODEL_ONLY: dict[str, Json] = {
     "tool-not-first-of-tools": mutated(MINIMAL, lambda i: i.update(tool="z", tools=["a", "z"])),
+    # C-01: invarianti tra campi, che lo schema non esprime
+    "previous-path-without-existing": mutated(
+        MINIMAL, lambda i: i.update(baseline_state="new", previous_path="old/a.py")
+    ),
+    "previous-path-without-state": mutated(MINIMAL, lambda i: i.update(previous_path="old/a.py")),
+    "variant-scores-same-variant-twice": mutated(
+        MINIMAL,
+        lambda i: i.update(
+            variant_scores=[
+                {"variant": "A", "score": 1.0, "level": "basso", "impact": FACTORS_A},
+                {"variant": "A", "score": 2.0, "level": "basso", "impact": FACTORS_A},
+            ]
+        ),
+    ),
+    "variant-score-factors-of-another-variant": mutated(
+        MINIMAL,
+        lambda i: i.update(
+            variant_scores=[
+                {"variant": "B", "score": 1.0, "level": "basso", "impact": FACTORS_A},
+            ]
+        ),
+    ),
+    "remediation-text-with-control-character": mutated(
+        MINIMAL,
+        lambda i: i.update(remediation={"text": "a\x1b[31mb", "source": "rule"}),
+    ),
     "end-line-before-start-line": mutated(
         MINIMAL,
         lambda i: i.update(location={"repository": "r", "start_line": 5, "end_line": 4}),

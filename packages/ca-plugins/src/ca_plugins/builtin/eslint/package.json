@@ -1,0 +1,12 @@
+{
+  "name": "ca-plugin-eslint",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dipendenze fissate del plugin eslint (P-02). Non si pubblica.",
+  "dependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}

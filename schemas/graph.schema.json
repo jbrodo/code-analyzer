@@ -46,7 +46,14 @@
           "maxLength": 4096,
           "minLength": 1,
           "not": {
-            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            "anyOf": [
+              {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              {
+                "pattern": "[\\x00-\\x1f\\x7f]"
+              }
+            ]
           },
           "title": "Source",
           "type": "string"
@@ -85,7 +92,14 @@
           "maxLength": 4096,
           "minLength": 1,
           "not": {
-            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            "anyOf": [
+              {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              {
+                "pattern": "[\\x00-\\x1f\\x7f]"
+              }
+            ]
           },
           "title": "Path",
           "type": "string"
@@ -194,6 +208,19 @@
       "additionalProperties": false,
       "description": "Calcolate dall'host sul grafo (G-04, G-08). Solo archi interni al repository.",
       "properties": {
+        "adi": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adi"
+        },
         "fan_in": {
           "maximum": 10000000,
           "minimum": 0,
@@ -255,6 +282,20 @@
         "language": {
           "$ref": "#/$defs/Language"
         },
+        "lines": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lines"
+        },
         "metrics": {
           "anyOf": [
             {
@@ -273,7 +314,14 @@
           "maxLength": 4096,
           "minLength": 1,
           "not": {
-            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            "anyOf": [
+              {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              {
+                "pattern": "[\\x00-\\x1f\\x7f]"
+              }
+            ]
           },
           "title": "Path",
           "type": "string"
@@ -309,7 +357,14 @@
           "maxLength": 4096,
           "minLength": 1,
           "not": {
-            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            "anyOf": [
+              {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              {
+                "pattern": "[\\x00-\\x1f\\x7f]"
+              }
+            ]
           },
           "title": "Path",
           "type": "string"
@@ -345,6 +400,13 @@
           "maximum": 10000000,
           "minimum": 0,
           "title": "Files Partial",
+          "type": "integer"
+        },
+        "files_skipped_name": {
+          "default": 0,
+          "maximum": 10000000,
+          "minimum": 0,
+          "title": "Files Skipped Name",
           "type": "integer"
         },
         "files_skipped_size": {
@@ -471,5 +533,5 @@
   ],
   "title": "Graph",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.2"
 }

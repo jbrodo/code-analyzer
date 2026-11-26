@@ -15,6 +15,9 @@ from ca_core.models.graph import Graph
 from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
 from ca_core.models.plugin_sarif import PluginSarifProperties
 from ca_core.models.scan_report import ScanReport
+from ca_core.models.scoring_benchmark import ScoringBenchmark
+from ca_core.models.scoring_config import ScoringConfig
+from ca_core.models.service_context_file import ServiceContextFile
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
 SUFFIX = ".schema.json"
@@ -48,12 +51,15 @@ class Contract:
 
 # I task C-* registrano qui i contratti.
 CONTRACTS: tuple[Contract, ...] = (
-    Contract("finding", "1.0", Finding),
+    Contract("finding", "1.2", Finding),
     Contract("code-analyzer-config", "1.1", CodeAnalyzerConfig),
     Contract("plugin-manifest", "1.1", PluginManifest, {PACKAGED_DEF_NAME: PACKAGED_DEF}),
-    Contract("plugin-sarif-properties", "1.0", PluginSarifProperties),
-    Contract("scan-report", "1.0", ScanReport),
-    Contract("graph", "1.0", Graph),
+    Contract("plugin-sarif-properties", "1.2", PluginSarifProperties),
+    Contract("scan-report", "1.4", ScanReport),
+    Contract("graph", "1.2", Graph),
+    Contract("scoring-config", "1.1", ScoringConfig),
+    Contract("scoring-benchmark", "1.0", ScoringBenchmark),
+    Contract("service-context", "1.0", ServiceContextFile),
 )
 
 

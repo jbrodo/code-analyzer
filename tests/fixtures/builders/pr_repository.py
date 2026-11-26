@@ -16,6 +16,7 @@ un commit diverso da quello passato con `--base`.
 
 Il codice generato e' insicuro di proposito e non va eseguito. Ogni problema e' una regola di
 bandit che non dipende da un `import`, cosi' nessun file porta finding in piu' di quelli elencati.
+La chiamata a `requests` ha un `timeout`, altrimenti bandit aggiunge B113 (visto con T-04).
 """
 
 import subprocess
@@ -86,7 +87,7 @@ import requests
 
 
 def fetch(url: str) -> bytes:
-    return requests.get(url, verify=False).content
+    return requests.get(url, verify=False, timeout=10).content
 """
 NEW = """\
 def run(code: str) -> None:

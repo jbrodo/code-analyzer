@@ -80,11 +80,15 @@ VALID = {
     "minimal": MINIMAL,
     "full": FULL,
     "module-js": _module(),
+    "stats-skipped-name": mutated(
+        MINIMAL, _with(stats={"files_parsed": 1, "files_skipped_name": 2})
+    ),
     "module-root-file": _module(path="setup.py", language="python"),
     "external-scoped-npm": mutated(
         MINIMAL, _with(externals=[{"name": "@scope/pkg.name", "ecosystem": "npm"}])
     ),
     "edge-observed": _edge(confidence="osservato"),
+    "module-lines-and-adi": _module(lines=0, metrics={**METRICS, "adi": 1.25}),
     "history-shallow": _history(status="superficiale", commits_read=1),
     "package-root": mutated(
         MINIMAL,
@@ -109,6 +113,11 @@ UNSAFE_PATHS = {
     "windows-drive": "C:/x.py",
     "backslash-absolute": "\\x.py",
     "too-long": "a/" * 2100 + "x.py",
+    "newline": "a/b\n::error::x.py",
+    "nul": "a\x00b.py",
+    "carriage-return": "a\rb.py",
+    "escape": "a\x1b[31m.py",
+    "delete": "a\x7fb.py",
 }
 
 INVALID = {
@@ -122,6 +131,10 @@ INVALID = {
     "module-unknown-parse": _module(parse="fallita"),
     "module-unknown-key": _module(source="import os"),
     "module-negative-churn": _module(churn=-1),
+    "module-negative-lines": _module(lines=-1),
+    "module-fractional-lines": _module(lines=1.5),
+    "metrics-negative-adi": _module(metrics={**METRICS, "adi": -0.1}),
+    "metrics-string-adi": _module(metrics={**METRICS, "adi": "1"}),
     "module-test-not-bool": _module(test="yes"),
     "metrics-instability-above-one": _module(metrics={**METRICS, "instability": 1.5}),
     "metrics-missing-fan-in": _module(metrics={"fan_out": 1, "instability": 0.5}),
@@ -160,6 +173,9 @@ INVALID = {
         ),
     ),
     "stats-negative": mutated(MINIMAL, _with(stats={"files_parsed": -1})),
+    "stats-skipped-name-negative": mutated(
+        MINIMAL, _with(stats={"files_parsed": 0, "files_skipped_name": -1})
+    ),
     "stats-unknown-reason": mutated(
         MINIMAL, _with(stats={"files_parsed": 0, "unresolved": {"other": 1}})
     ),

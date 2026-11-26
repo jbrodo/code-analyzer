@@ -50,7 +50,7 @@ LICENSE_RULE_ID = "ca.license"
 _MAX_TEXT = 4096
 _PERCENT = re.compile(rb"%([0-9A-Fa-f]{2})")  # `urllib` è vietato in ca_core (lint-imports)
 _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
-_CODE_CATEGORIES = frozenset({Category.SAST, Category.IAC})
+_CODE_CATEGORIES = frozenset({Category.SAST, Category.IAC, Category.QUALITY})
 
 
 def _fail(code: SarifErrorCode, message: str, pointer: str) -> SarifError:
@@ -106,9 +106,11 @@ def _kind(category: Category, properties: PluginSarifProperties, pointer: str) -
         return "code"
     if category is Category.LICENSE:
         return "license-package" if properties.purl else "license-file"
+    if category is Category.TEST:
+        return "coverage"
     if category in (Category.DEPENDENCY, Category.SECRET, Category.HEALTH):
         return category.value
-    raise _fail(SarifErrorCode.MAPPING, "categoria senza kind in Fase 1", pointer)
+    raise _fail(SarifErrorCode.MAPPING, "categoria senza kind", pointer)
 
 
 def _draft(result: SarifResult, manifest: PluginManifest) -> _Draft:
@@ -199,6 +201,9 @@ def _fingerprint(draft: _Draft, tool: str, source: _Source | None, occurrence: i
             start_line=source.start_line,
             occurrence=occurrence,
         )
+    if draft.kind == "coverage":
+        assert draft.path is not None
+        return fp.fingerprint_coverage(rule_id=draft.rule_id, path=draft.path)
     if draft.kind == "dependency":
         assert props.purl is not None
         return fp.fingerprint_dependency(vuln_ids=_vuln_ids(draft), purl=props.purl)
@@ -216,6 +221,22 @@ def _fingerprint(draft: _Draft, tool: str, source: _Source | None, occurrence: i
     return fp.fingerprint_health(plugin=tool) if draft.kind == "health" else _unreachable(pointer)
 
 
+def _pathless_key(draft: _Draft, tool: str, source: _Source | None) -> str | None:
+    """Chiave senza percorso (ADR-0025) per i soli kind `code` e `secret`.
+
+    Un finding `code` senza contesto di codice (nessuna riga, o file oltre il limite) non ne ha:
+    la sola regola accoppierebbe finding non imparentati.
+    """
+    props = draft.properties
+    if draft.kind == "code" and source is not None and source.text:
+        return fp.pathless_key_code(
+            rule_id=draft.rule_id, tool=tool, source=source.text, start_line=source.start_line
+        )
+    if draft.kind == "secret" and props.secret_sha256:
+        return fp.pathless_key_secret(rule_id=draft.rule_id, value_sha256=props.secret_sha256)
+    return None
+
+
 def _unreachable(pointer: str) -> str:
     raise _fail(SarifErrorCode.MAPPING, "kind sconosciuto", pointer)
 
@@ -224,7 +245,7 @@ def _require(draft: _Draft) -> None:
     """Campi obbligatori per kind: il fingerprint non si calcola senza."""
     props, pointer = draft.properties, _pointer(draft.result)
     missing: list[str] = []
-    if draft.kind in ("code", "secret", "license-file") and draft.path is None:
+    if draft.kind in ("code", "secret", "license-file", "coverage") and draft.path is None:
         missing.append("locations/0/physicalLocation/artifactLocation/uri")
     if draft.kind in ("dependency", "license-package") and not props.purl:
         missing.append("properties/purl")
@@ -251,7 +272,9 @@ def _evidence(draft: _Draft) -> dict[str, Any]:
         "sarif_level": draft.result.data.get("level"),
         "tool_severity": props.tool_severity,
         "cvss": props.cvss.model_dump(mode="json") if props.cvss else None,
+        "metric": props.metric.model_dump(mode="json") if props.metric else None,
         "aliases": sorted(set(props.aliases)) if props.aliases else None,
+        "path_confirmed": True if props.taint else None,  # regola taint del prodotto (ADR-0021)
     }
     return {k: v for k, v in evidence.items() if v is not None}
 
@@ -261,6 +284,7 @@ def _finding(
     *,
     tool: str,
     fingerprint: str,
+    pathless_key: str | None,
     repository: str,
     commit: str | None,
     now: Any,
@@ -303,6 +327,7 @@ def _finding(
             if draft.kind == "dependency"
             else [],
             license_spdx=props.license_spdx if draft.kind.startswith("license") else None,
+            pathless_key=pathless_key,
             evidence={tool: _evidence(draft)},
             first_seen=now,
             last_seen=now,
@@ -357,6 +382,7 @@ def normalize_sarif(
                 draft,
                 tool=tool,
                 fingerprint=fingerprint,
+                pathless_key=_pathless_key(draft, tool, sources.get(i)),
                 repository=repository,
                 commit=commit,
                 now=now,

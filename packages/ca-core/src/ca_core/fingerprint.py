@@ -152,6 +152,32 @@ def fingerprint_code(
     return compute_fingerprint("code", rule_id, tool, location, "")
 
 
+PATHLESS_VERSION = "pk1"
+
+
+def _pathless(kind: str, rule_id: str, tool_family: str, ingredient: str) -> str:
+    payload = _NUL.join([PATHLESS_VERSION, kind, rule_id, tool_family, ingredient])
+    return "sha256:" + _sha256(payload)
+
+
+def pathless_key_code(*, rule_id: str, tool: str, source: str, start_line: int) -> str:
+    """Chiave senza percorso di un finding `code` (ADR-0025): regola, strumento e contesto.
+
+    Non contiene l'indice di occorrenza, che dipende dal file: chi la usa accoppia solo gruppi di
+    uno. Non sostituisce il fingerprint e non è un'identità.
+    """
+    _field("rule_id", rule_id, allow_empty=False)
+    _field("tool", tool, allow_empty=False)
+    return _pathless("code", rule_id, tool, context_hash(source, start_line))
+
+
+def pathless_key_secret(*, rule_id: str, value_sha256: str) -> str:
+    _field("rule_id", rule_id, allow_empty=False)
+    if not _SHA256_HEX.fullmatch(value_sha256):
+        raise ValueError("value_sha256 non è un SHA-256 esadecimale minuscolo")
+    return _pathless("secret", rule_id, "secret", value_sha256)
+
+
 def fingerprint_dependency(*, vuln_ids: Sequence[str], purl: str) -> str:
     return compute_fingerprint(
         "dependency", canonical_vuln_id(vuln_ids), "vuln", "", normalize_purl(purl)
@@ -179,6 +205,25 @@ def fingerprint_secret(*, rule_id: str, path: str, value_sha256: str) -> str:
     return compute_fingerprint(
         "secret", rule_id, "secret", _NUL.join([_path(path), value_sha256]), ""
     )
+
+
+def fingerprint_coverage(*, rule_id: str, path: str) -> str:
+    """Kind `coverage` (ADR-0026): una regola e un file, senza righe né contesto di codice."""
+    _field("rule_id", rule_id, allow_empty=False)
+    return compute_fingerprint("coverage", rule_id, "coverage", _path(path), "")
+
+
+def fingerprint_architecture(*, rule_id: str, scope: str, path: str) -> str:
+    """Kind `architecture` (ADR-0008 emendato, ADR-0020): uno smell, il suo ambito e la sua ancora.
+
+    `path` è un file (ambito `module`) o una cartella (ambito `package`, `.` per la radice). Nessuna
+    riga e nessun contesto: spostare righe non cambia il fingerprint.
+    """
+    _field("rule_id", rule_id, allow_empty=False)
+    if scope not in ("module", "package"):
+        raise ValueError(f"scope non valido: {scope!r}")
+    anchor = "." if scope == "package" and path == "." else _path(path)
+    return compute_fingerprint("architecture", rule_id, "ca-graph", _NUL.join([scope, anchor]), "")
 
 
 def fingerprint_health(*, plugin: str) -> str:

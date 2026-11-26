@@ -39,7 +39,7 @@ def test_manifest_sha_is_anchored_in_code() -> None:
     raw = (PACKAGED / MANIFEST_NAME).read_bytes()
     assert hashlib.sha256(raw).hexdigest() == VENDOR_MANIFEST_SHA256
     assert (
-        VENDOR_MANIFEST_SHA256 == "f585c7cf10428a2323bb03def6013bb20e5cac7497f52e1c3b97c3aadfa2035b"
+        VENDOR_MANIFEST_SHA256 == "82ad8f2e84978094bba46e18204cc08a17357f02303e85ed004d8968e95596db"
     )
 
 

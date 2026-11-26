@@ -506,3 +506,127 @@ Ciò che finisce nel prodotto distribuito è solo l'uscita di `vite build`: oggi
 
 - `web/package.json` non dichiara una licenza: il pacchetto è privato e non si pubblica. Dichiararla aprirebbe un finding di licenza nell'auto-analisi, da coprire con un'eccezione approvata da Riccardo Roveda come per i `pyproject.toml`.
 - L'auto-analisi non è stata rieseguita con il lockfile Bun: syft, osv-scanner e trivy leggeranno `bun.lock`, e i finding che ne escono vanno guardati prima di X-07.
+
+### Inizializzazione shadcn/ui (2026-11-16)
+
+Confermati dall'utente registry ufficiale `@shadcn`, base Radix e preset Nova.
+Inizializzata la SPA esistente con Bun 1.4.4, senza scaffold, viste dimostrative
+o componenti aggiunti. Tailwind 4 usa il plugin Vite; alias `@/` coerente tra
+TypeScript e Vite/Vitest. Le variabili shadcn riusano i token del prodotto:
+nessun font Geist incluso, palette aggiuntiva o tema scuro a classi.
+
+Verificati i testi `LICENSE` dei pacchetti installati e i metadati del registry
+npm (versione, data di pubblicazione, repository e assenza di deprecazione).
+Le nuove dipendenze dirette hanno versioni esatte nel manifest.
+
+| Componente | Versione | Licenza dal testo | Ultima pubblicazione della versione |
+| --- | --- | --- | --- |
+| `tailwindcss`, `@tailwindcss/vite` | 4.3.5 | MIT | 2026-11-06 |
+| `cn` | 0.5.2 | MIT | 2026-11-02 |
+| `class-variance-authority` | 0.7.1 | Apache-2.0 | 2024-11-26 |
+| `lucide-react` | 1.73.0 | ISC; MIT per le icone derivate da Feather | 2026-11-14 |
+| `radix-ui` | 1.8.1 | MIT | 2026-10-12 |
+| `shadcn` | 4.23.0 | MIT | 2026-10-27 |
+| `tw-animate-css` | 1.4.0 | MIT | 2025-09-24 |
+
+Per le due release meno recenti verificati anche i repository upstream:
+[`joe-bell/cva`](https://github.com/joe-bell/cva) non archiviato, ultimo push
+2026-11-16; [`Wombosvideo/tw-animate-css`](https://github.com/Wombosvideo/tw-animate-css)
+non archiviato, ultimo push 2026-02-28. La seconda ha una cadenza meno frequente:
+ricontrollare in occasione degli aggiornamenti.
+
+`bun pm --cwd web licenses --json`: 434 nomi di pacchetto installati.
+430 con licenze permissive, 3 con MPL-2.0 (`lightningcss` e i binari Linux
+GNU/musl), 1 con CC-BY-4.0 (`caniuse-lite`). Cinque voci opzionali del lockfile
+non sono installate su questa piattaforma e non sono coperte da questa lettura
+dei metadati. I testi delle dipendenze transitive non sono stati riletti tutti.
+
+Aggiornato [web.cdx.json](web.cdx.json): SBOM sorgente CycloneDX 1.7 da
+`web/bun.lock`, con 510 componenti, incluse dipendenze di sviluppo e voci
+opzionali delle altre piattaforme. Generato da syft 1.57.0, archivio verificato
+con il checksum ufficiale
+`9c077a7d43029b3b13e98a8db720661e700c4d58db6352153a06395ae4a2a704`.
+Validato offline con `SchemaStore.packaged()` contro lo schema CycloneDX 1.7
+fissato nel repository; tutte le dipendenze dirette del manifest sono presenti.
+Comando dalla root, con syft 1.57.0 disponibile:
+
+```sh
+rtk bypass env SYFT_CHECK_FOR_APP_UPDATE=false \
+  SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES=true \
+  SYFT_JAVASCRIPT_SEARCH_REMOTE_LICENSES=false \
+  syft scan dir:web --source-name code-analyzer-web --source-version 0.0.0 \
+  --override-default-catalogers javascript-lock-cataloger \
+  --exclude './node_modules/**' --exclude './dist/**' \
+  --output cyclonedx-json@1.7=doc/verifiche/web.cdx.json
+```
+
+Il catalogo da lockfile non arricchisce le licenze via rete e non sostituisce
+l'SBOM dell'immagine di rilascio, ne la valutazione D2-14.
+L'auto-analisi delle vulnerabilita con osv-scanner/trivy resta da eseguire.
+
+Verifiche eseguite: lint, 5 test e build verdi con Bun. Chromium headless
+sul bundle compilato: temi chiaro/scuro, desktop 1280 px, viewport 320 px e
+reflow equivalente al 200% (640 px con scala 2); alias semantici risolti sui
+token corretti senza cicli, nessun overflow orizzontale, nessun errore di
+console o richiesta esterna dalla pagina. Verificato con un controllo
+temporaneo il focus da tastiera (contorno e distanza di 2 px). Nessun flusso
+applicativo nuovo da provare; zoom nativo del browser e lettore di schermo
+non verificati. Questa prova non chiude W-08/U-05.
+
+## P-03 — Dipendenze dell'immagine checkov
+
+Verificato il 2026-11-17. `uv pip compile --generate-hashes` da `checkov==3.4.5` per Python 3.12 e Linux x86_64 dà 96 pacchetti, tutti con wheel e hash (`requirements.lock`). Licenze **dichiarate** nei metadati dei pacchetti installati, non lette sui testi (V-02 copre solo checkov):
+
+| Classe | Pacchetti | Nota |
+| --- | --- | --- |
+| Permissive | 91 | MIT, Apache-2.0, BSD, PSF |
+| Reciprocità limitata ai file modificati | 3 | `certifi`, `tqdm`, `orjson` (con un'alternativa permissiva per `orjson`). Non sono tra le licenze vietate o da approvare di D-0013 |
+| Nessuna dichiarata nei metadati | 2 | `cloudsplaining`, `networkx`: testi da procurarsi in D2-14 |
+
+Nessuna licenza vietata o da approvare. Per D2-14 il materiale è l'SBOM dell'immagine, come per le altre.
+
+## I-02 — Misura dei plugin nuovi sui pilota (2026-11-18)
+
+Misurato il 2026-11-18 sulla macchina di sviluppo (venti core) con le immagini già costruite e firmate localmente, una esecuzione per caso. Pilota: `fastapi/full-stack-fastapi-template` (`aabb901`), `excalidraw/excalidraw` (`701b901`) e `saleor/saleor` (`1d707dc`), clonati con 80 commit di storia come in V-06.
+
+Metodo: ogni plugin gira da solo in un contenitore con le opzioni del profilo `hardened-container` (rete spenta, file system in sola lettura, nessuna capability, `/workspace` in sola lettura, `/tmp` in tmpfs, `/out` scrivibile) ma con 4 GiB di memoria, per leggere il picco vero dal cgroup (`memory.peak`) e non un valore che il limite avrebbe già tagliato. Si registra la durata, il picco di memoria e la dimensione dell'uscita. Non passa dall'esecutore della CLI: non c'è la verifica della firma, né il volume tmpfs di `/out` con il suo tetto.
+
+| Plugin | Pilota | Durata (s) | Picco (MiB) | Uscita (byte) | Note |
+| --- | --- | --- | --- | --- | --- |
+| ruff | fastapi | 0,3 | 10 | 2.377 | |
+| ruff | excalidraw | 0,3 | 11 | 88 | nessun file Python |
+| ruff | saleor | 0,9 | 60 | 1.251.469 | 4.384 file Python |
+| eslint | fastapi | 2,4 | 365 | 28.045 | |
+| eslint | excalidraw | 14,7 | 902 | 1.057.552 | 1.328 file TypeScript |
+| eslint | saleor | 0,9 | 127 | 0 | nessun file JavaScript: non si applica (esce con 3) |
+| hadolint | fastapi | 0,3 | 10 | 1.199 | |
+| hadolint | excalidraw | 0,3 | 10 | 1.617 | |
+| hadolint | saleor | 0,3 | 26 | 2.172 | |
+| checkov | fastapi | 3,3 | 188 | 1.203 | |
+| checkov | excalidraw | 3,3 | 191 | 367 | |
+| checkov | saleor | 3,5 | 213 | 640 | |
+| coverage | tutti e tre | 0,2–0,3 | 12–13 | 92 | nessun report di copertura nel repository |
+| ca-graph | fastapi | 0,5 | 17 | 128.676 | |
+| ca-graph | excalidraw | 2,6 | 22 | 908.508 | |
+| ca-graph | saleor | 8,2 | 32 | 4.887.482 | 4.384 moduli |
+
+### Cosa ne segue per i manifest
+
+| Plugin | `max_bytes` | Memoria | Tempo massimo | Perché |
+| --- | --- | --- | --- | --- |
+| ruff | 32 MiB (invariato) | 1 GiB → 512 MiB | 300 s → 120 s | massimo 1,25 MB, 60 MiB, 0,9 s |
+| eslint | 32 MiB (invariato) | 2 GiB (invariata) | 600 s → 300 s | massimo 1,06 MB, 902 MiB, 14,7 s: Node ha un'impronta alta |
+| hadolint | 8 MiB (invariato) | 512 MiB → 256 MiB | 120 s → 60 s | massimo 2,2 KB, 26 MiB, 0,3 s |
+| checkov | 32 MiB → 8 MiB | 2 GiB → 1 GiB | 600 s → 120 s | massimo 1,2 KB, 213 MiB, 3,5 s; 128 PID, vedi sotto |
+| ca-graph | 64 MiB (invariato) | 1 GiB → 512 MiB | 300 s → 180 s | massimo 4,9 MB, 32 MiB, 8,2 s |
+| coverage | invariati (provvisori) | invariata | invariato | nessun pilota ha un report di copertura |
+
+I margini sono dai cinque ai sedici volte il picco di memoria e oltre venti volte il tempo misurato: un repository più grande dei pilota (ruff e ca-graph crescono con i file) ha spazio prima di fallire, e un plugin impazzito si ferma comunque. I numeri non si estendono oltre i pilota.
+
+### Limiti della misura
+
+- **Coverage non è misurato**: nessun pilota ha un report LCOV o Cobertura committato, quindi l'uscita è quella di un workspace senza ingressi. I valori restano provvisori finché non c'è un pilota con la copertura.
+- **Una sola esecuzione per caso**, sulla stessa macchina, con la cache dell'immagine calda. Il picco di memoria è letto dal cgroup in un ciclo di campionamento: l'ultimo valore prima dell'uscita, cumulativo, quindi esatto fino all'ultima lettura.
+- **Fuori dall'esecutore**: la misura non include la verifica della firma, il volume di `/out` né la copia del workspace. Il tempo reale di una scansione intera è in V-06 e nel report di ciascuna.
+- **checkov a 64 PID** si bloccava (auto-analisi del 2026-11-18); il limite a 128 è stato verificato con le opzioni esatte del contenitore, non qui.
+- Le CPU sono una (`cpu: "1"`, come nel manifest): su una macchina più piccola i tempi crescono.

@@ -1,6 +1,6 @@
 # ADR-0022: Esposizione e churn
 
-- Stato: Proposto. Scelta tecnica. Passa ad `Accettato` con le prove di G-11 e G-12
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: la raggiungibilità sul grafo (G-12) e il churn dalla storia git nell'immagine di `ca-graph` (G-11), con l'E2E del pacchetto verde. Restano dichiarati i limiti dei task, tra cui la densità di violazioni, che non è di questo ADR
 - Data: 2026-11-16
 - Decisione umana richiesta: no. Un valore si scosta da una proposta del piano: vedi "Esposizione assente"
 - Riferimenti: §6.1, §6.2; ADR-0012, 0020, 0025, 0028; V-07 in `doc/verifiche/scanner-fase-2.md`; incoerenza 7 del piano
@@ -100,3 +100,10 @@ La densità di violazioni, che §6.2 combina con il churn per P della Variante B
 - Chi vuole il churn nelle PR deve clonare almeno 90 giorni di storia. Sui repository grandi costa tempo di clone: X-05 lo misura.
 - Il valore di E per l'esposizione assente è una scelta di questo ADR diversa dalla proposta del piano: l'utente può cambiarla nella configurazione di scoring senza toccare il codice.
 - Gli stati e i valori entrano nella tabella di regressione dello scoring (F-05).
+
+## Realizzazione del churn (G-11, 2026-11-17)
+
+- `ca_graph/treesitter/history.py` (solo libreria standard, nell'immagine di estrazione): git dir ombra come in ADR-0012, un solo `git log --no-merges --no-renames -z --name-only` con tetti su commit (200 mila), byte (256 MiB) e durata (120 s; il processo si termina con il suo gruppo), finestra che finisce alla data del commit analizzato.
+- Un clone superficiale è `completa` se tutti i commit di confine sono più vecchi dell'inizio della finestra (come scrive la tabella sopra); altrimenti `superficiale`. Un tetto superato, un fallimento di git o un `.git` non replicabile danno `assente`: mai un conteggio troncato.
+- `ca-graph` non può più dirsi privo di processi: **`history.py` è l'unico modulo di `ca_graph` che importa `subprocess`**, e gira solo nel container. Il contratto di `lint-imports` lo ammette con `ignore_imports` per quel solo import, così nessun altro modulo del pacchetto può avviare un processo. L'immagine contiene ora git (pacchetto Debian non fissato per versione) e il limite di `pids` sale a 32.
+- Il percentile sull'host è `ca_core.scoring.churn.ChurnIndex`.

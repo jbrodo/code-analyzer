@@ -576,7 +576,7 @@ class OciExecutor:
         self._proof_lock = threading.Lock()
         self._proved = host_paths is None
 
-    def __enter__(self) -> "OciExecutor":
+    def __enter__(self) -> OciExecutor:
         return self
 
     def __exit__(self, *exc: object) -> None:
@@ -621,7 +621,7 @@ class OciExecutor:
                     timeout=30,
                     check=False,
                 )
-            except (OSError, subprocess.TimeoutExpired):
+            except OSError, subprocess.TimeoutExpired:
                 continue
             if done.returncode != 0:
                 continue
@@ -1245,7 +1245,7 @@ class OciExecutor:
 
     @staticmethod
     def _write_copy(
-        source: "tarfile.ExFileObject | IO[bytes]",
+        source: tarfile.ExFileObject | IO[bytes],
         size: int,
         dest_dir: Path,
         name: str,

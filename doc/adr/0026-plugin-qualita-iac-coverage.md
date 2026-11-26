@@ -1,6 +1,6 @@
 # ADR-0026: Plugin di qualità, IaC e coverage
 
-- Stato: Proposto. Scelta tecnica, con il parere di `security` in S-03. Passa ad `Accettato` con le prove di P-01..P-05 e K-21
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: i plugin P-01..P-05 (per sviluppo e uso interno) e la correlazione K-21, con il parere di sicurezza S-03 chiuso
 - Data: 2026-11-16
 - Decisione umana richiesta: no (D2-14 riguarda la distribuzione delle immagini, non queste scelte)
 - Riferimenti: §6.3, §7.3, §8; ADR-0004, 0007, 0008, 0009, 0012, 0014, 0029; V-03, V-04 e V-08 in `doc/verifiche/scanner-fase-2.md`; incoerenze 15 e 25 del piano
@@ -129,3 +129,22 @@ checkov, hadolint e trivy segnalano in parte gli stessi problemi sugli stessi Do
 - Senza controllo dei tipi eslint perde le regole più utili di typescript-eslint. Si rivaluta se un giorno il plugin potrà vedere le dipendenze installate.
 - Ogni aggiornamento di un motore richiede di rieseguire i test con le configurazioni ostili e quelli sul formato dei messaggi. checkov pubblica quasi ogni giorno (V-01): la versione si aggiorna quando serve, non a ogni rilascio.
 - I task P-01, P-03 e P-04 hanno ora il test con la configurazione ostile nell'accettazione, come P-02 (aggiornato con V-08).
+
+## Realizzazione (P-01, P-02)
+
+Scritta il 2026-11-17, a codice provato. Scostamenti e fatti nuovi rispetto al testo sopra.
+
+- **Soglie nell'immagine.** La configurazione di scoring (C-03) non esiste ancora: le soglie sono nel plugin. ruff: complessità 10, ritorni 6, rami 12, argomenti 5, istruzioni 50 (i predefiniti del motore, scritti in chiaro). eslint: complessità 10, parametri 5, annidamento 4, righe per funzione 50. Quando C-03 esisterà le passerà l'host in `/inputs/config.json`, accanto a `disable_rules`.
+- **Invocazioni provate su ruff 0.17.5 e eslint 10.14.0** (test con il motore reale e un repository ostile): ruff con `--isolated --no-cache --no-respect-gitignore --ignore-noqa`, cartella di lavoro fuori dal workspace; `pyproject.toml`, `ruff.toml` e `.ruff.toml` ostili senza effetto, `.gitignore` non nasconde file, `# noqa` e `# ruff: noqa` a livello di file ignorati. eslint con `--no-config-lookup -c <immagine> --no-inline-config`, cartella di lavoro nel workspace: `eslint.config.js` e `.mjs` ostili non eseguiti, un `typescript-eslint` ostile in `node_modules` del workspace non caricato, `eslint-disable` e `eslint-disable-next-line` ignorati, `.eslintrc` e `.eslintignore` senza effetto. Chiude S3-M2 per ruff ed eslint; resta hadolint (P-04).
+- **Errori di sintassi** diventano finding `quality` con severità `high`: `invalid-syntax` per ruff, `parse-error` per eslint (dove `ruleId` è nullo).
+- **Severità.** ruff: tabella per regola nell'adattatore (`invalid-syntax` e nomi non definiti `high`, bugbear e regole di metrica `medium`, il resto `low`). eslint: `medium` per le regole a livello errore della nostra configurazione, `low` per gli avvisi, `high` per gli errori di sintassi.
+- **Nucleo.** `quality` ha il `kind` `code` di ADR-0008 (nessun cambio di formula). Il livello provvisorio è la severità, ma mai sopra `medio`: tetto in `LevelTable.capped`, dato e non logica. `plugin-sarif-properties` passa a 1.1 con `metric` (`value` e `threshold` interi), che la normalizzazione porta nell'evidenza del tool.
+- **Immagine eslint.** Base Python come gli altri plugin, con il binario di Node copiato da `node:24-trixie-slim` per digest. Dipendenze da `package-lock.json` con integrità (98 pacchetti, tutti con licenza permissiva dichiarata), installate con `npm ci --ignore-scripts --omit=dev`. Esito di eslint: il JSON nativo, convertito dall'adattatore.
+- **Immagini costruite e provate** nel profilo `hardened-container` sulle fixture di F-02: 145 MB (ruff) e 329 MB (eslint), stessi risultati dei test.
+- **checkov (P-03).** Copia di lavoro nel tmpfs senza i nomi dei file di configurazione di checkov (la strada indicata da V-04 e S3-M3), solo Dockerfile, Terraform e YAML, senza collegamenti simbolici e con tetti. Senza `--quiet`, perché con quell'opzione il JSON non elenca i controlli saltati da un commento, che tornano finding. 339 MB, 96 pacchetti con hash.
+- **coverage (P-05).** Nessun motore di terzi. Il `metric` di un finding di copertura ha `value` uguale alla copertura misurata e `threshold` a quella minima (il problema è un valore *sotto* la soglia, al contrario delle metriche di complessità). Soglia 50% e minimo 20 righe nell'immagine, in attesa di C-03. L'avviso `coverage-report-missing` previsto sopra non esce: il contratto dei plugin non ha un canale per gli avvisi.
+- **Non fatto:** firma e SBOM con `build-image.sh` e `sign-local.sh` (richiedono syft e cosign, da scaricare come in X-07); misura di memoria, tempo e dimensione dell'uscita sui pilota (X-04, X-05): i valori nei manifest sono provvisori e lo dicono. `remediation` (ADR-0029) non passa ancora: il campo non esiste in `Finding` (C-01).
+
+### Correlazione (K-21, 2026-11-17)
+
+Realizzata in `ca_core.correlation`. Il gruppo è `cg1:` seguito da 16 cifre esadecimali di SHA-256 su categoria, file e problema; si assegna solo se almeno due strumenti diversi lo confermano, quindi un finding con una regola in tabella ma nessuna conferma non ha gruppo. La tabella ha una voce per regola in tutto (una regola in due problemi è un errore) e una versione, che il report registra in `correlation_version`. Non cambia fingerprint, livello né esito del gate. `representatives` e `group_members` servono a chi presenta i finding (campione di G2.b, commento PR, UI). Copre oggi i soli 11 problemi di `iac-app`; semgrep e bandit non hanno voci.

@@ -45,3 +45,12 @@ Significato del Gate 1 (§13): scansione completa su 3 repository pilota sotto i
 - La scala CVSS non risolve la lacuna 5, che resta per Fase 2.
 - Se si anticipasse la Variante A, questo ADR decade e le lacune 5 e 6 tornano bloccanti.
 - scancode è il candidato più lento per i 10 minuti: va misurato presto sui repository pilota, che la specifica non indica.
+
+## Emendamento per A-16 (2026-11-18): superata dai livelli da punteggio, per scelta
+
+Motivo: D2-10 (2026-11-10) e ADR-0021. Questo ADR non decade: le sue regole restano in vigore finché la configurazione di scoring ha `levels.source: provisional`, che è il valore predefinito.
+
+- Con `provisional` il livello dei finding, l'ordinamento e il gate sono quelli di questo ADR e il report è identico a quello della Fase 1; A e B stanno solo in `variant_scores`.
+- Con `score` (l'atto del Gate 2, di chi controlla la configurazione di scoring e non del repository) il livello viene dalla variante attiva, con gli override, e la tabella sopra non si applica più ai finding che hanno un punteggio. `level_source` assume `score` o `override`.
+- Il significato del Gate 1 non cambia. La scansione PR incrementale sotto i 10 minuti è il G2.d del Gate 2; `new-findings-only` esiste dal 2026-11-17 (ADR-0025) e non si ripiega più su `all` quando c'è una baseline valida.
+- La scala CVSS e la regola «senza CVSS» informano il fattore G delle dipendenze, con i valori in configurazione (ADR-0021).

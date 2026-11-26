@@ -260,3 +260,12 @@ Scostamenti e precisazioni rispetto al progetto:
 - **gVisor.** Sotto `runsc` device e inode visti dal container possono differire da quelli dell'host: la prova sul workspace fallirebbe chiusa. Non verificato.
 
 Misure sulla macchina di riferimento: immagine di 327 MB; scansione di `python-app` dall'immagine `complete` con i 7 plugin `ok` e `verified`.
+
+## Emendamento per K-06: collegamenti simbolici segnalati da un motore (2026-11-26)
+
+Motivo: la prima volta che un repository reale ha incontrato la regola «un symlink riportato da uno scanner fa fallire il plugin» (sopra, «da rivedere se i repository pilota lo incontrano»). `vitejs/vite`, nel corpus del benchmark di ADR-0023, ha due file `.js` che sono collegamenti: eslint li segue e li segnala, l'host giustamente non li legge, e l'intero plugin fallisce. ruff fa lo stesso con un file `.py` collegato (provato); non segue le cartelle collegate.
+
+- Il nucleo non cambia: il `SourceReader` continua a non seguire alcun collegamento, e un risultato su un collegamento continua a far fallire il plugin.
+- Gli adattatori di ruff ed eslint scartano i risultati il cui percorso attraversa un collegamento simbolico del workspace (`through_symlink`, componente per componente). È la stessa regola che questo ADR dà per l'host: i collegamenti non sono analizzabili. La CLI già avvisa con `workspace-symlinks` che il loro contenuto non è analizzato.
+- Gli altri adattatori non sono stati provati su un repository con collegamenti: chi legge i file da sé (bandit, semgrep, scancode, checkov, hadolint) può avere lo stesso problema. È un controllo da fare, non ancora un difetto osservato.
+- Nello stesso lavoro: l'adattatore di eslint scriveva l'`uri` senza codifica percentuale, e una cartella chiamata `#` (anche questa in vite) faceva fallire il plugin. Ora codifica come fa ruff. Anche checkov, coverage, hadolint, osv-scanner, scancode e trivy costruiscono l'`uri` da un percorso grezzo: stesso controllo da fare.

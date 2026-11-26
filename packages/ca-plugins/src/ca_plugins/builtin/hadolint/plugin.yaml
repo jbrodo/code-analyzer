@@ -1,0 +1,29 @@
+# Plugin hadolint (P-04): Dockerfile in SARIF 2.1.0. ADR-0004, 0005, 0007, 0014, 0026.
+# Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`) perche' D-0005
+# e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e sign-local.sh.
+# Licenza del motore: approvata solo per uso interno (D2-14, 2026-11-17); la distribuzione
+# dell'immagine e' di I-07.
+apiVersion: code-analyzer/v1
+name: hadolint
+version: 1.0.0
+image: registry.invalid/ca-plugins/hadolint:1.0.0
+capabilities: [detect]
+languages: []
+categories: [iac]
+inputs:
+  workspace: readonly
+  config: optional  # {"disable_rules": [...]} da `plugins.hadolint.disable_rules`, ricontrollato dall'adattatore
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # Misurato il 2026-11-18 (I-02): al massimo 2,2 KB sui tre pilota (pochi Dockerfile). 8 MiB reggono
+  # oltre 25 mila risultati da circa 280 byte.
+  max_bytes: 8388608
+resources:
+  # Misurato il 2026-11-18 (I-02): 0,3 s e al massimo 26 MiB di picco. 256 MiB sono dieci volte il
+  # picco, 60 s duecento volte il tempo.
+  cpu: "1"
+  memory: 256Mi
+  timeout: 60s
+  pids: 32
+network: none

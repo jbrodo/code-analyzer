@@ -1,6 +1,6 @@
 # ADR-0018: Modello dati relazionale e multi-tenancy
 
-- Stato: Proposto. Scelta tecnica; l'esercizio di più tenant dipende da D2-02. Passa ad `Accettato` con le prove di C-07 e B-02
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: il modello relazionale e le migrazioni (C-07), l'accesso ai dati per tenant (B-02), l'ingestione con lo stato lato server (B-03) e i test di integrazione su PostgreSQL con l'isolamento tra tenant (T-05). L'esercizio di più tenant resta quello di D2-02: uno solo in esercizio
 - Data: 2026-11-13
 - Decisione umana richiesta: no per il modello; sì (D2-02) per quanti tenant sono in esercizio
 - Riferimenti: §4.1, §4.3, §9.2; ADR-0003, 0008, 0014, 0016; lacune 10 e 11 del piano

@@ -33,7 +33,7 @@ ENV CA_CLI_IMAGE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Dipendenze con hash da uv.lock, poi i tre wheel del progetto senza risolvere altro.
+# Dipendenze con hash da uv.lock, poi i wheel del progetto senza risolvere altro.
 COPY requirements.txt /build/requirements.txt
 COPY dist/ /build/dist/
 RUN pip install --require-hashes --only-binary :all: -r /build/requirements.txt \
@@ -47,22 +47,11 @@ COPY --from=docker --chmod=0755 /usr/local/bin/docker /usr/local/bin/docker
 # dipendenze Python dai file di licenza delle wheel installate.
 COPY licenses/ /licenses/
 COPY LICENSE /licenses/code-analyzer/LICENSE
+COPY collect_licenses.py /build-tools/collect_licenses.py
 RUN mkdir -p /licenses/python \
  && cp /usr/local/lib/python3.14/LICENSE.txt /licenses/python/LICENSE.txt \
- && python - <<'PY'
-import pathlib, shutil
-site = pathlib.Path("/usr/local/lib/python3.14/site-packages")
-for info in sorted(site.glob("*.dist-info")):
-    name = info.name.split("-")[0]
-    if name in {"pip", "ca_core", "ca_plugins", "ca_cli"}:
-        continue
-    found = [p for p in info.rglob("*") if p.is_file()
-             and p.name.upper().startswith(("LICENSE", "LICENCE", "COPYING", "NOTICE"))]
-    for path in found:
-        target = pathlib.Path("/licenses/deps", name)
-        target.mkdir(parents=True, exist_ok=True)
-        shutil.copy(path, target / path.name)
-PY
+ && python /build-tools/collect_licenses.py \
+ && rm -rf /build-tools
 RUN chmod -R a=rX /licenses \
  && mkdir -p /ca/workspace /ca/work /ca/cache /ca/output /ca/keys
 

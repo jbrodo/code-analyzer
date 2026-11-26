@@ -9,10 +9,12 @@ Invarianti che lo schema non esprime, controllate dal modello: percorsi unici, a
 che citano solo nodi presenti, elenchi ordinati (lo stesso workspace dà lo stesso file).
 """
 
+import re
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import (
+    AfterValidator,
     AwareDatetime,
     BaseModel,
     BeforeValidator,
@@ -24,7 +26,7 @@ from pydantic import (
     model_validator,
 )
 
-from ca_core.models.config import RelativePath
+from ca_core.models.config import _NOT_RELATIVE, RelativePath
 
 # Tetti del contratto: oltre, il documento è rifiutato per intero, mai troncato (ADR-0020).
 MAX_MODULES = 200_000
@@ -39,7 +41,25 @@ MAX_COUNT = 10_000_000
 # nome con lo scope per npm. Nessuno spazio, nessun separatore di percorso oltre allo scope.
 EXTERNAL_NAME_PATTERN = r"^(?:@[A-Za-z0-9._~-]+/)?[A-Za-z0-9_][A-Za-z0-9._~-]*$"
 
-ModulePath = Annotated[RelativePath, Field(max_length=MAX_PATH_LENGTH)]
+# S-02: i percorsi arrivano in UI, commenti e log. Un a capo o un NUL in un nome di file
+# permetterebbe di iniettare righe (comandi del provider CI, Markdown): si rifiutano alla fonte.
+_CONTROL = r"[\x00-\x1f\x7f]"
+
+
+def _no_control(value: str) -> str:
+    if re.search(_CONTROL, value):
+        raise ValueError("carattere di controllo nel percorso")
+    return value
+
+
+ModulePath = Annotated[
+    RelativePath,
+    Field(
+        max_length=MAX_PATH_LENGTH,
+        json_schema_extra={"not": {"anyOf": [{"pattern": _NOT_RELATIVE}, {"pattern": _CONTROL}]}},
+    ),
+    AfterValidator(_no_control),
+]
 Count = Annotated[StrictInt, Field(ge=0, le=MAX_COUNT)]
 Unit = Annotated[StrictFloat, Field(ge=0.0, le=1.0)]
 
@@ -96,6 +116,9 @@ class Metrics(_Strict):
     fan_out: Count
     instability: Unit
     pagerank: Unit | None = None
+    # Architectural Debt Index (G-13, ADR-0023): somma dei G di B degli smell che includono il
+    # modulo; per un pacchetto, la somma sui suoi moduli. Assente se B non è configurata.
+    adi: Annotated[StrictFloat, Field(ge=0)] | None = None
 
 
 class Module(_Strict):
@@ -105,6 +128,8 @@ class Module(_Strict):
     test: StrictBool = False
     # Commit che toccano il file nella finestra; None se la storia non la copre (ADR-0022).
     churn: Count | None = None
+    # Righe fisiche del file (ADR-0023, densità di violazioni); None se il file non è leggibile.
+    lines: Count | None = None
     metrics: Metrics | None = None
 
 
@@ -153,6 +178,7 @@ class Stats(_Strict):
     files_parsed: Count
     files_partial: Count = 0
     files_skipped_size: Count = 0
+    files_skipped_name: Count = 0  # nomi di file con caratteri di controllo (S-02)
     unresolved: Unresolved = Field(default_factory=Unresolved)
 
 

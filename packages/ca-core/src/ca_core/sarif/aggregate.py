@@ -5,9 +5,13 @@ Layout (contratto pubblico, coperto da `tests/contract/test_aggregate_sarif_cont
 - `tool.driver.name = "code-analyzer"`; gli scanner eseguiti in `tool.extensions` con versione.
 - un `result` per finding con posizione; `partialFingerprints["codeAnalyzer/v1"]` = fingerprint;
   `level`: critico e alto `error`, medio `warning`, basso `note`.
-- `properties`: `level`, `level_source`, `category`, `tools`, `status`, `purl` se c'è;
+- `properties`: `level`, `level_source`, `category`, `tools`, `status`, `purl` se c'è; con i
+  punteggi (ADR-0021) anche `score` e `variant_scores` (variante, punteggio, livello, G, P, E, C);
   `security-severity` solo con un CVSS, mai inventato.
 - finding senza `location.path` e avvisi del report: `invocations[0].toolExecutionNotifications`.
+- con una baseline valida (ADR-0025): `baselineState` su ogni risultato (`new`, `unchanged` o
+  `updated` se posizione o livello sono cambiati); i risolti compaiono come risultati `absent`,
+  senza il resto dei campi del finding. Senza baseline il campo manca.
 - eccezione applicata: `suppressions` con `kind: external` e la motivazione.
 - URI relativi alla radice, senza `uriBaseId`; nessuno `snippet`; il messaggio è quello del
   finding (per i segreti già sintetizzato, ADR-0012).
@@ -22,8 +26,13 @@ from datetime import UTC
 from typing import Any
 
 from ca_core.formats import SARIF_VERSION
-from ca_core.models.finding import Finding, Level
-from ca_core.models.scan_report import AppliedException, ScanReport
+from ca_core.models.finding import BaselineState, Finding, Level
+from ca_core.models.scan_report import (
+    AppliedException,
+    BaselineStatus,
+    ResolvedFinding,
+    ScanReport,
+)
 from ca_core.sarif.errors import SarifError, SarifErrorCode
 from ca_core.schema_validation import SchemaStore
 from ca_core.scoring.levels import best_cvss
@@ -66,11 +75,53 @@ def _properties(finding: Finding) -> dict[str, Any]:
     cvss = best_cvss(finding)
     if cvss is not None:
         props["security-severity"] = f"{cvss:.1f}"
+    if finding.score is not None:
+        props["score"] = finding.score
+    if finding.variant_scores:
+        props["variant_scores"] = [
+            {
+                "variant": v.variant,
+                "score": v.score,
+                "level": v.level.value,
+                "g": v.impact.g,
+                "p": v.impact.p,
+                "e": v.impact.e,
+                "c": v.impact.c,
+            }
+            for v in finding.variant_scores
+        ]
     return props
 
 
+def _state(finding: Finding, updated: frozenset[str]) -> str | None:
+    if finding.baseline_state is BaselineState.NEW:
+        return "new"
+    if finding.baseline_state is BaselineState.EXISTING:
+        return "updated" if finding.fingerprint in updated else "unchanged"
+    return None
+
+
+def _absent(resolved: ResolvedFinding, rule_index: int) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "ruleId": resolved.rule_id,
+        "ruleIndex": rule_index,
+        "level": "note",
+        "message": {"text": resolved.title},
+        "partialFingerprints": {FINGERPRINT_KEY: resolved.fingerprint},
+        "baselineState": "absent",
+    }
+    if resolved.path is not None:
+        result["locations"] = [
+            {"physicalLocation": {"artifactLocation": {"uri": _uri(resolved.path)}}}
+        ]
+    return result
+
+
 def _result(
-    finding: Finding, rule_index: int, applied: Mapping[str, AppliedException]
+    finding: Finding,
+    rule_index: int,
+    applied: Mapping[str, AppliedException],
+    updated: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     assert finding.location.path is not None
     physical: dict[str, Any] = {"artifactLocation": {"uri": _uri(finding.location.path)}}
@@ -93,6 +144,9 @@ def _result(
         "partialFingerprints": {FINGERPRINT_KEY: finding.fingerprint},
         "properties": _properties(finding),
     }
+    state = _state(finding, updated)
+    if state is not None:
+        result["baselineState"] = state
     exception = applied.get(finding.fingerprint)
     if exception is not None:
         result["suppressions"] = [
@@ -104,7 +158,14 @@ def _result(
 def build_aggregate(report: ScanReport) -> dict[str, Any]:
     applied = {e.fingerprint: e for e in report.exceptions}
     located = [f for f in report.findings if f.location.path is not None]
-    rules = sorted({f.rule_id for f in located})
+    baseline = (
+        report.baseline
+        if report.baseline and report.baseline.status is BaselineStatus.VALID
+        else None
+    )
+    resolved = baseline.resolved if baseline else []
+    updated = frozenset(baseline.updated) if baseline else frozenset()
+    rules = sorted({f.rule_id for f in located} | {r.rule_id for r in resolved})
     index = {rule: i for i, rule in enumerate(rules)}
     notifications: list[dict[str, Any]] = [
         {
@@ -140,7 +201,10 @@ def build_aggregate(report: ScanReport) -> dict[str, Any]:
                 "toolExecutionNotifications": notifications,
             }
         ],
-        "results": [_result(f, index[f.rule_id], applied) for f in located],
+        "results": [
+            *(_result(f, index[f.rule_id], applied, updated) for f in located),
+            *(_absent(r, index[r.rule_id]) for r in resolved),
+        ],
     }
     return {"$schema": SARIF_SCHEMA_URI, "version": SARIF_VERSION, "runs": [run]}
 

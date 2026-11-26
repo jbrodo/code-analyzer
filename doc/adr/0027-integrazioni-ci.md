@@ -137,3 +137,44 @@ Sviluppo e prove di Action e componente usano il registry locale avviato nel job
 - Su GitLab i finding che non entrano nei quattro report nativi si vedono solo negli artefatti, e senza un token dell'utente non c'è commento. È meno di quanto offre GitHub: va scritto nella documentazione.
 - Ogni pipeline deve conservare il report del branch principale come artefatto, o pagare una seconda scansione per PR.
 - S-04 rivede: token nell'ambiente della CLI, testi non fidati nel commento, fonte della baseline, rifiuto di `pull_request_target`.
+
+### Realizzazione del client GitHub (N-02, 2026-11-17)
+
+`ca_integrations.github`. Scostamenti e fatti nuovi:
+
+- **Identità dell'autore.** Con il token del job `GET /user` non è disponibile, quindi l'identità con cui riconoscere il proprio commento la dà il chiamante (predefinito `github-actions[bot]`), non l'API. Un commento con il marcatore ma di un altro autore si ignora.
+- **Marcatore iniziale.** Il commento si riconosce solo se *inizia* con il marcatore: un marcatore nel mezzo di un testo non conta.
+- **Trasporto.** Solo libreria standard, senza dipendenze nuove. Nessun redirect seguito (il token andrebbe a un altro host), HTTPS obbligatorio salvo loopback richiesto esplicitamente, tetto di 5 MiB sulla risposta, timeout, nessun nuovo tentativo.
+- **Ricerca del commento** al più su 20 pagine da 100; oltre si crea un commento nuovo invece di cercare all'infinito.
+- **Non verificato alla fonte:** i limiti di dimensione e le annotazioni per richiesta di GitHub, e i nomi esatti dei permessi, restano quelli scritti a memoria in `ca_integrations.limits`. Chi li legge alla fonte è N-03.
+
+## Realizzazione di N-03 e di `notify` (2026-11-17)
+
+- `ca-cli` dipende ora da `ca-integrations` (consentito da `lint-imports`); il pacchetto entra nei wheel di `package-cli.sh`. **L'immagine della CLI non era stata ricostruita**; lo è stata il 2026-11-17 e riprovata con l'E2E del pacchetto il 2026-11-18 (3 test verdi, compresi gli script dell'Action contro l'immagine vera).
+- `notify --provider github` legge il token solo da `GITHUB_TOKEN`. Repository, PR e commit di testa vengono dai flag, poi dal report (`scan.pull_request`) e dal file `GITHUB_EVENT_PATH`, validati; un valore malformato vale come assente. Ordine per la PR: flag, report, evento.
+- Un permesso mancante (`forbidden`) scrive il commento nel riepilogo del job e esce con 0; ogni altro errore esce con 2 con il solo codice. Un commento fallito non ferma la check run.
+- Le annotazioni non sono neutralizzate per Markdown: GitHub le mostra come testo. Sono pulite da caratteri di controllo e bidirezionali e limitate in lunghezza.
+- **Da verificare alla fonte** (non fatto): limiti di GitHub su commenti, annotazioni e riepilogo; il fatto che un backslash davanti a `@` e `#` non basti, motivo per cui si aggiunge anche il carattere invisibile.
+
+## Realizzazione di N-04 (2026-11-17)
+
+- `integrations/github-action/`: `action.yml` composita, `run-cli.sh` (un solo punto che lancia l'immagine), `fetch-baseline.sh`, `scan-base.sh`, `README.md`. Ordine dei passi come sopra; `scan` non riceve `--fail-on`, `gate` è l'ultimo, il SARIF si carica con `always()`.
+- Il token di GitHub arriva solo ai passi che ne hanno bisogno; a `notify` nel container passa per nome (`-e GITHUB_TOKEN`), mai come argomento. `scan` e `gate` non lo ricevono; solo `scan` monta il socket. Nessuna espressione `${{ }}` dentro `run:`: i valori passano per `env:`.
+- **Il SARIF si carica con `gh api` (code-scanning/sarifs), non con un'action di terzi**, e la baseline si scarica con `gh api` dall'esecuzione `push` riuscita del branch principale; l'unica action di terzi è `actions/upload-artifact` (conserva il report del branch principale), fissata per hash del commit del tag v7.0.2 letto dall'API di GitHub il 2026-11-17.
+- Dallo zip dell'artefatto si estrae un solo nome scelto dall'Action, mai un percorso preso dallo zip; dimensione massima 100 MiB; ogni valore di ambiente è validato prima dell'uso.
+- **Ingressi `variant` e `server-url` non presenti**: la CLI non ha ancora le varianti di punteggio né `upload`. Si aggiungono con K-04/K-14 e il comando `upload`.
+- **Non fatto:** prova con l'immagine reale su un runner (i test usano `docker` e `gh` finti; è N-05); verifica alla fonte del formato dell'API `code-scanning/sarifs` e dei permessi; `notify` dentro l'immagine reale non è stato provato (potrebbe pretendere variabili che qui non passiamo).
+
+## Realizzazione di N-05 (2026-11-17)
+
+- L'immagine CLI con `ca-integrations` è stata costruita e provata: scansione con plugin fratelli, `gate`, e gli script dell'Action (baseline dalla scansione del base, `scan --pr`, `notify`, `gate`) contro un server GitHub finto su loopback. `notify` accetta `http` su loopback solo con `CA_NOTIFY_ALLOW_LOOPBACK_HTTP=1`.
+- `.github/workflows/e2e-action.yml` esiste ma **non è mai stato eseguito su GitHub**: la sua prova è il primo push. Non è stato controllato con `actionlint`.
+- Il comportamento reale di GitHub (commento, check run, SARIF, permessi) resta quindi non provato.
+
+## Realizzazione di N-06 e N-07 (2026-11-17)
+
+- `code-analyzer export --format gitlab` scrive `sast`, `dependency_scanning` e `codequality` dal report, più il CycloneDX con `--sbom`. I tre report di sicurezza e qualità si validano contro gli schemi fissati prima di scrivere.
+- **Correzione a §12.2: GitLab accetta CycloneDX 1.4, 1.5 e 1.6, non 1.7**, e il report `cyclonedx` è del livello Ultimate (documentazione di GitLab, letta il 2026-11-17). L'SBOM del prodotto (1.7) si riporta alla 1.6 cambiando la dichiarazione di versione e si valida contro lo schema 1.6, fissato in `vendor_schemas`; se usa qualcosa di esclusivo della 1.7 non si scrive. La 1.6 è ammessa solo in uscita.
+- **Correzione al passo «Docker-in-Docker»:** la CLI non accetta un `DOCKER_HOST` remoto e richiede la stessa directory di build per il job e per il daemon (ADR-0004). Il componente richiede quindi un runner con il socket e la directory di build montati alla pari; il solo servizio Docker-in-Docker non basta.
+- Il componente usa sempre la scansione del base come baseline; la baseline dall'artefatto del branch principale resta da fare. Nessun commento sulla merge request.
+- **Mai eseguito su GitLab** (nessuna istanza, D2-12); non controllato con il linter CI.

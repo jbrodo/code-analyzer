@@ -96,3 +96,11 @@ Limite di concorrenza:
 - Il tetto conta i container. Ogni container è limitato dalle proprie `resources`, ma la loro somma no. I manifest built-in non esistono ancora, quindi manca il dato: X-04 misura il picco. Se la somma non sta nella macchina, si passa a un budget sulle `resources` dentro l'adattatore, senza toccare la porta.
 
 Conseguenze: `ca-core` resta senza thread né concetti di infrastruttura; la porta è un'interfaccia Python nello stesso build, quindi non serve un artefatto di contratto separato; il fake esegue il lotto in ordine e i test del passo restano deterministici.
+
+## Emendamento per A-16 (2026-11-18): secondo D2-01
+
+Motivo: la decisione D2-01 (2026-11-10, ADR-0016) ha tolto Temporal dalla Fase 2.
+
+- Il motore resta uno solo, in `ca_core/pipeline/`, eseguito dalla CLI: è anche l'unico in CI e in locale. Il server non esegue scansioni: riceve il report di una scansione già fatta (`POST /v1/scans`, ADR-0016, ADR-0018).
+- La frase «`ca-workflows` li avvolge in activity» vale solo se una fase futura riporterà Temporal. I passi restano funzioni con ingressi e uscite serializzabili, idempotenti e invocabili da sole: la proprietà costa poco e tiene aperta la porta.
+- Le porte di Fase 2 si aggiungono a quelle di Fase 1: `EnrichmentFeeds`, `GitHistory`, `BaselineSource` e `ArtifactStore` (in `ca_core/ports.py`).

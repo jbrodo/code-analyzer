@@ -4,7 +4,9 @@ name: feeds-snapshot
 
 on:
   schedule:
-    - cron: "17 3 * * 1"
+    # Lunedì e giovedì. GitHub cancella una cache non usata da 7 giorni: con un solo snapshot
+    # alla settimana un'esecuzione saltata la svuota, e l'e2e fallisce per mancanza dei feed.
+    - cron: "17 3 * * 1,4"
   workflow_dispatch:
 
 permissions: {}
@@ -72,3 +74,31 @@ jobs:
         with:
           path: ${{ env.CA_TEST_OSV_FEEDS }}
           key: feeds-snapshot-${{ github.run_id }}
+
+  # Un'esecuzione programmata fallita apre (o aggiorna) un'issue: senza, un fallimento si vede solo
+  # nell'elenco delle Actions, e la cache dei feed scade in silenzio dopo 7 giorni. Non copre i job
+  # che non partono affatto (limiti di spesa): per quelli servono le notifiche di GitHub.
+  report-failure:
+    needs: snapshot
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TITLE: "CI: feeds-snapshot programmato fallito"
+    steps:
+      - name: Apri o aggiorna l'issue
+        run: |
+          set -euo pipefail
+          body="Esecuzione fallita: $RUN_URL. Senza uno snapshot nuovo entro 7 giorni la cache dei feed scade e l'e2e fallisce."
+          number=$(gh issue list --repo "$REPO" --state open --search "\"$TITLE\" in:title" \
+            --json number,title --jq "map(select(.title == \"$TITLE\")) | .[0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$REPO" --body "$body"
+          else
+            gh issue create --repo "$REPO" --title "$TITLE" --body "$body"
+          fi

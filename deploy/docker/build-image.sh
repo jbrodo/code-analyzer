@@ -7,5 +7,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTEXT="${1:-}"; IMAGE="${2:-}"; OUT="${3:-}"
 [ -d "$CONTEXT" ] && [ -n "$IMAGE" ] && [ -n "$OUT" ] || { echo "uso: $0 <contesto> <nome:tag> <cartella-sbom>" >&2; exit 2; }
-docker build -q -t "$IMAGE" "$CONTEXT" >/dev/null
-exec "$HERE/image-gate.sh" "$IMAGE" "$OUT"
+STAGED="$("$HERE/stage-context.sh" "$CONTEXT")"
+[ "$STAGED" = "$CONTEXT" ] || trap 'rm -rf "$STAGED"' EXIT
+docker build -q -t "$IMAGE" "$STAGED" >/dev/null
+"$HERE/image-gate.sh" "$IMAGE" "$OUT"

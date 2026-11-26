@@ -2,7 +2,8 @@
 
 Funzione pura sul report: nessun accesso al disco né ai flag. Soglia di blocco, per precedenza:
 `fail_on` (flag CLI), `report.gate.block_on`, `DEFAULT_BLOCK_ON`. Una lista vuota è una scelta
-esplicita: nulla blocca. In Fase 1 la modalità è sempre `all` (anche `new-findings-only`, ADR-0009).
+esplicita: nulla blocca. Con `gate.effective_mode` `new-findings-only` (solo con una baseline
+valida, ADR-0025 §6) bloccano soltanto i finding `new`; un `existing` peggiorato non blocca.
 
 Non contano solo i finding `accettato` (eccezione attiva, ADR-0014); è la lettura più severa tra gli
 stati. Exit: 0 superato, 1 fallito, 2 errore. Con 2: scansione parziale, un plugin con
@@ -15,7 +16,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from ca_core.models.finding import Category, Finding, Level, Status
+from ca_core.models.config import GateMode
+from ca_core.models.finding import BaselineState, Category, Finding, Level, Status
 from ca_core.models.scan_report import Outcome, ReportStatus, ScanReport, Signature
 
 DEFAULT_BLOCK_ON: tuple[Level, ...] = (Level.CRITICAL, Level.HIGH)
@@ -34,6 +36,7 @@ class GateFinding(_Frozen):
 
 class GateResult(_Frozen):
     exit_code: Literal[0, 1, 2]
+    mode: GateMode
     block_on: list[Level]
     block_on_source: Literal["cli", "config", "default"]
     blocking: list[GateFinding]
@@ -77,7 +80,9 @@ def evaluate_gate(
     active = [f for f in report.findings if f.status is not Status.ACCEPTED]
     if any(f.level is None for f in active):
         reasons.append("finding-without-level")
-    blocking = [_brief(f) for f in active if f.level is not None and f.level in block_on]
+    mode = report.gate.effective_mode
+    judged = [f for f in active if mode is GateMode.ALL or f.baseline_state is BaselineState.NEW]
+    blocking = [_brief(f) for f in judged if f.level is not None and f.level in block_on]
     warned = [
         _brief(f) for f in active if f.level is not None and f.level in warn_on - set(block_on)
     ]
@@ -88,6 +93,7 @@ def evaluate_gate(
         exit_code = 1 if blocking else 0
     return GateResult(
         exit_code=exit_code,
+        mode=mode,
         block_on=block_on,
         block_on_source=source,
         blocking=blocking,

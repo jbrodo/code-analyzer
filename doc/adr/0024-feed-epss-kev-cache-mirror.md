@@ -1,8 +1,8 @@
 # ADR-0024: Feed EPSS e KEV, cache, mirror e firma
 
-- Stato: Proposto. La parte su mirror e firma attende D2-05; il resto è una scelta tecnica e procede (E-01..E-04, E-06)
+- Stato: Proposto. D2-05 decisa il 2026-11-17: nessun mirror in Fase 2, solo fonti pubbliche e cache; la sezione «Mirror e firma» resta come design per un lavoro futuro. Il resto è una scelta tecnica e procede (E-01..E-04, E-06)
 - Data: 2026-11-13
-- Decisione umana richiesta: sì, D2-05 (aperta) per il mirror
+- Decisione umana richiesta: sì, D2-05 per il mirror: presa il 2026-11-17 (nessun mirror)
 - Riferimenti: §5 passo 6, §6.1, §13, §19; ADR-0001, 0005, 0006, 0014; fatti in `doc/verifiche/scanner-fase-2.md` (V-05)
 
 ## Contesto
@@ -60,7 +60,7 @@ I campi di testo di KEV (descrizione, azione richiesta, note) non entrano nel re
 - Si cambia solo con un flag della CLI o con una variabile d'ambiente, mai da `.code-analyzer.yml` (ADR-0014): un repository non può indicare da dove prendere i dati che ne determinano il punteggio. Nomi di flag e variabile in E-04, validi per tutti i feed (OSV, trivy, EPSS, KEV).
 - L'origine è un'etichetta nel report, non un URL.
 
-### Mirror e firma (D2-05, aperta)
+### Mirror e firma (D2-05: non in Fase 2)
 
 Raccomandazione, progettata ma non pubblicata (D2-16):
 
@@ -69,7 +69,7 @@ Raccomandazione, progettata ma non pubblicata (D2-16):
 - La firma è nostra: prova che lo snapshot è quello che il mirror ha pubblicato, non che la fonte fosse integra. Chi costruisce il mirror applica gli stessi controlli di "Lettura difensiva" prima di firmare.
 - Contenuto ammesso nel mirror, secondo V-05: KEV sì (CC0); OSV per PyPI e GitHub Advisory sì, con attribuzione (CC-BY 4.0); EPSS e trivy-db solo dopo la valutazione di D2-14, perché la ridistribuzione non è concessa in modo esplicito. Un mirror senza EPSS è possibile: quell'origine resta `public`.
 
-Senza D2-05 la Fase 2 usa la cache locale e quella della CI, come oggi.
+D2-05 (2026-11-17): la Fase 2 usa la cache locale e quella della CI, come oggi, e non costruisce il mirror. Il rischio dello snapshot avvelenato resta quello descritto sotto, accettato.
 
 ### Snapshot avvelenato
 

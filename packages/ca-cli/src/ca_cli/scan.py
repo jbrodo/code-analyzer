@@ -35,10 +35,12 @@ from ca_cli.config_validate import (
     parse_config,
     semantic_checks,
 )
+from ca_core.correlation import TABLE_VERSION
 from ca_core.models import CodeAnalyzerConfig, PackagedPluginManifest
 from ca_core.models.config import GateMode
 from ca_core.models.plugin_manifest import InputMode
 from ca_core.models.scan_report import (
+    BaselineStatus,
     Gate,
     HistoryCoverage,
     InertSection,
@@ -46,18 +48,24 @@ from ca_core.models.scan_report import (
     PluginRun,
     ReportStatus,
     Repository,
+    ScanInfo,
+    ScanKind,
     ScanReport,
     Signature,
     Warning_,
 )
 from ca_core.pipeline import publish as publish_step
-from ca_core.pipeline.exclusions import coverage_exclusions
+from ca_core.pipeline.baseline import load_baseline
+from ca_core.pipeline.diff_baseline import diff_baseline
+from ca_core.pipeline.exclusions import coverage_exclusions, effective_exclusions
 from ca_core.pipeline.normalize import NormalizeRequest, normalize
 from ca_core.pipeline.publish import publish
 from ca_core.pipeline.run_plugins import RunPluginsRequest, run_plugins
 from ca_core.pipeline.workspace import PrepareWorkspaceRequest, WorkspaceError, prepare_workspace
 from ca_core.ports import (
     ArtifactRef,
+    BaselineLookup,
+    BaselineOutcome,
     FeedsPurgeRequest,
     FeedsSyncRequest,
     PluginRunRequest,
@@ -66,10 +74,12 @@ from ca_core.ports import (
     SourceError,
     SourceReader,
 )
+from ca_graph.step import BuildGraphRequest, build_graph
 from ca_plugins.feeds import FeedsError, FeedsOutcome, default_cache_dir, ensure_snapshot
 from ca_plugins.runner import require_isolation
 from ca_plugins.source import count_skipped_symlinks, count_unreadable
 
+GRAPH_FILE = "code-analyzer.graph.json"  # grafo con metriche e PageRank (G-10)
 REPORT_FILE = publish_step.REPORT_NAME  # alias (ADR-0010): `gate.DEFAULT_REPORT` non cambia
 _COMMIT = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 _REF = re.compile(r"refs/[A-Za-z0-9._/-]{1,200}")
@@ -217,11 +227,28 @@ class _FeedingExecutor:
 
 def _plugin_configs(config: CodeAnalyzerConfig, directory: Path) -> dict[str, str]:
     """File `/inputs/config.json` per plugin, con la sola parte che lo riguarda (ADR-0014)."""
-    if config.plugins.semgrep is None or not config.plugins.semgrep.rules:
-        return {}
-    path = directory / "semgrep.json"
-    path.write_text(json.dumps({"rules": config.plugins.semgrep.rules}))
-    return {"semgrep": str(path)}
+    configs: dict[str, str] = {}
+    if config.plugins.semgrep is not None and config.plugins.semgrep.rules:
+        path = directory / "semgrep.json"
+        path.write_text(json.dumps({"rules": config.plugins.semgrep.rules}))
+        configs["semgrep"] = str(path)
+    # ADR-0026: i linter ricevono solo le regole da spegnere. Il repository non può attivarne.
+    for name in ("ruff", "eslint", "checkov", "hadolint"):
+        options = getattr(config.plugins, name)
+        if options is not None and options.disable_rules:
+            path = directory / f"{name}.json"
+            path.write_text(json.dumps({"disable_rules": sorted(set(options.disable_rules))}))
+            configs[name] = str(path)
+    coverage = config.plugins.coverage
+    if coverage is not None and coverage.reports:
+        path = directory / "coverage.json"
+        reports = [
+            {"path": r.path, "format": r.format.value, "base_dir": r.base_dir}
+            for r in coverage.reports
+        ]
+        path.write_text(json.dumps({"reports": reports}))
+        configs["coverage"] = str(path)
+    return configs
 
 
 class _CapturingSink:
@@ -246,15 +273,72 @@ def _table(report: ScanReport, refs: Sequence[ArtifactRef]) -> str:
     levels = Counter(f.level.value if f.level else "senza livello" for f in report.findings)
     lines.append(f"finding: {len(report.findings)}")
     lines += [f"  {level}: {count}" for level, count in sorted(levels.items())]
+    scores = [f.score for f in report.findings if f.score is not None]
+    if scores and report.scoring is not None:
+        lines.append(
+            f"punteggio (variante {report.scoring.active_variant}): massimo {max(scores):.2f}"
+            f" su {len(scores)} finding"
+        )
+    if report.baseline is not None and report.baseline.status is BaselineStatus.VALID:
+        b = report.baseline
+        lines.append(
+            f"baseline: {b.new} nuovi, {b.existing} esistenti, {len(b.resolved)} risolti"
+            + (f", {b.not_evaluated} non valutati" if b.not_evaluated else "")
+        )
     lines += [f"avviso {w.code}" for w in report.warnings]
     lines += [f"scritto {ref.location}" for ref in refs]
     return "\n".join(lines)
+
+
+_COMMIT = re.compile(r"[0-9a-f]{40,64}")
+MAX_PR_NUMBER = 2_147_483_647
+
+
+def parse_commit(value: str) -> str:
+    if not _COMMIT.fullmatch(value):
+        raise argparse.ArgumentTypeError("commit completo, 40-64 cifre esadecimali minuscole")
+    return value
+
+
+def parse_pr_number(value: str) -> int:
+    if not value.isascii() or not value.isdigit() or not 1 <= int(value) <= MAX_PR_NUMBER:
+        raise argparse.ArgumentTypeError("numero intero positivo")
+    return int(value)
+
+
+def check_pr_flags(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """`--base` serve alla modalità PR e solo a quella (ADR-0025): errore di sintassi, exit 2."""
+    if args.pr and args.base is None:
+        parser.error("--pr richiede --base")
+    if not args.pr and (args.base or args.baseline or args.pull_request):
+        parser.error("--base, --baseline e --pull-request valgono solo con --pr")
 
 
 def handle(args: argparse.Namespace, context: Context) -> int:
     started = context.clock.now()
     root = str(Path(args.path).resolve())
     config = load_config(root, context.source, context)
+    loaded = None
+    if args.pr:
+        # ADR-0025 §5: con una baseline valida la configurazione è quella del base, per tutto.
+        # Il percorso è risolto qui (nessun link simbolico) prima del confronto con il workspace.
+        lookup = (
+            BaselineLookup(
+                outcome=BaselineOutcome.FOUND,
+                location=str(Path(args.baseline).resolve()),
+                source=args.baseline_source,
+            )
+            if args.baseline
+            else None
+        )
+        loaded = load_baseline(
+            lookup,
+            base_commit=args.base,
+            workspace=root,
+            head_config=config,
+            reader=context.source,
+        )
+        config = loaded.config
     try:
         workspace = prepare_workspace(
             PrepareWorkspaceRequest(
@@ -296,7 +380,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             )
         except FeedsError as exc:
             raise ScanError(str(exc)) from exc
-    warnings: list[Warning_] = []
+    warnings: list[Warning_] = list(loaded.warnings) if loaded else []
     executions = []
     for execution in ran.executions:
         outcome = feeding.outcomes.get(execution.run.name)
@@ -305,6 +389,19 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             run = execution.run.model_copy(update={"feed": outcome.feed})
             execution = execution.model_copy(update={"run": run})
         executions.append(execution)
+    # G-10: dal grafo del plugin `ca-graph` agli smell; se il grafo non serve il plugin diventa
+    # fallito e `normalize` ne fa un finding `health` (scansione parziale).
+    graph_step = build_graph(
+        BuildGraphRequest(
+            repository=name,
+            commit=commit,
+            executions=executions,
+            exclude=effective_exclusions(config.paths.exclude),
+        ),
+        context.source,
+        context.clock,
+    )
+    executions = graph_step.executions
     normalized = normalize(
         NormalizeRequest(
             repository=name,
@@ -312,6 +409,7 @@ def handle(args: argparse.Namespace, context: Context) -> int:
             workspace=root,
             executions=executions,
             config=config,
+            extra_findings=graph_step.findings,
         ),
         context.source,
         store,
@@ -330,11 +428,41 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     if not executions:
         warnings.append(Warning_(code="no-plugin-run", message="nessun plugin eseguito"))
         status = ReportStatus.PARTIAL
-    if config.gate.mode.value == "new-findings-only":
-        warnings.append(
-            Warning_(code="new-findings-only-as-all", message="in Fase 1 equivale a 'all'")
-        )
     plugins: list[PluginRun] = normalized.plugins
+    findings = normalized.findings
+    baseline = None
+    if loaded is not None:
+        diffed = diff_baseline(findings, plugins, loaded)
+        findings, baseline = diffed.findings, diffed.baseline
+    # Punteggi in ombra (K-14, ADR-0021): il livello cambia solo con `levels.source: score`.
+    from ca_cli.scoring import (
+        run_scoring,
+        with_debt_index,
+    )  # import locale: `scoring` usa `ScanError` di questo modulo
+
+    scored = run_scoring(
+        args,
+        context,
+        config=config,
+        workspace=root,
+        findings=findings,
+        graph=graph_step.graph,
+        plugins=plugins,
+    )
+    graph = with_debt_index(graph_step, scored.config, scored.benchmark)
+    findings = scored.findings
+    warnings += scored.warnings
+    effective = GateMode.ALL
+    if config.gate.mode is GateMode.NEW_FINDINGS_ONLY:
+        if baseline is not None and baseline.status is BaselineStatus.VALID:
+            effective = GateMode.NEW_FINDINGS_ONLY
+        else:
+            warnings.append(
+                Warning_(
+                    code="new-findings-only-as-all",
+                    message="senza una baseline valida si valutano tutti i finding",
+                )
+            )
     report = ScanReport(
         version=1,
         status=status,
@@ -343,17 +471,28 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         repository=Repository(name=name[:500], commit=commit, history=history),
         gate=Gate(
             mode=config.gate.mode,
-            effective_mode=GateMode.ALL,
+            effective_mode=effective,
             block_on=config.gate.block_on,
             warn_on=config.gate.warn_on,
         ),
         plugins=plugins,
         disabled_plugins=ran.disabled,
         exclusions=normalized.exclusions,
+        correlation_version=TABLE_VERSION,
+        effective_config=config,  # ADR-0025: serve a chi userà questo report come baseline
         exceptions=normalized.exceptions,
-        inert_sections=[s for s in InertSection if getattr(config, s.value) is not None],
+        inert_sections=[
+            s for s in InertSection if s is InertSection.AGENTS and config.agents is not None
+        ],
         warnings=warnings,
-        findings=normalized.findings,
+        scan=ScanInfo(kind=ScanKind.PR, base_commit=args.base, pull_request=args.pull_request)
+        if loaded
+        else ScanInfo(),
+        baseline=baseline,
+        scoring=scored.info,
+        service_context=scored.service,
+        enrichment=scored.enrichment,
+        findings=findings,
     )
     sink = _CapturingSink(context, args.output_dir)
     try:
@@ -362,6 +501,11 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         raise ScanError(f"report non valido: {exc.__class__.__name__}") from exc
     except OSError as exc:
         raise ScanError("scrittura degli artefatti non riuscita") from exc
+    if graph is not None:
+        try:
+            sink.write(GRAPH_FILE, graph.model_dump_json(exclude_none=True).encode())
+        except OSError as exc:
+            raise ScanError("scrittura degli artefatti non riuscita") from exc
 
     if args.format == "json":
         sys.stdout.write(sink.contents[REPORT_FILE].decode())

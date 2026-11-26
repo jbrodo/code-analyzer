@@ -20,7 +20,7 @@ from referencing import Registry, Resource
 from referencing.exceptions import Unresolvable
 from referencing.jsonschema import DRAFT4, DRAFT7
 
-from ca_core.formats import ADMITTED_CYCLONEDX_VERSIONS
+from ca_core.formats import ADMITTED_CYCLONEDX_VERSIONS, EXPORT_CYCLONEDX_VERSIONS
 
 MANIFEST_NAME = "SOURCES.json"
 MAX_ERRORS = 20  # l'istanza è non fidata: niente elenchi di errori illimitati
@@ -29,7 +29,7 @@ _SARIF_FILE = "sarif-schema-2.1.0.json"
 PACKAGED_DIR = "vendor_schemas"
 # Ancora nel codice: SOURCES.json è nella stessa cartella e prova solo la coerenza interna.
 # Aggiornare uno schema fissato tocca file, SOURCES.json e questa costante (ADR-0003).
-VENDOR_MANIFEST_SHA256 = "f585c7cf10428a2323bb03def6013bb20e5cac7497f52e1c3b97c3aadfa2035b"
+VENDOR_MANIFEST_SHA256 = "82ad8f2e84978094bba46e18204cc08a17357f02303e85ed004d8968e95596db"
 
 
 class SchemaRefusedError(ValueError):
@@ -99,11 +99,15 @@ class SchemaStore:
         for schema in documents.values():
             check_refs(schema, self._registry)
         self._documents = documents
+        self._ids = {
+            name: _doc_id(documents[_doc_id(json.loads((vendor_dir / name).read_bytes()))])
+            for name in expected
+        }
         self._validators: dict[str, Validator] = {}
         self._sarif_id = _doc_id(json.loads((vendor_dir / _SARIF_FILE).read_bytes()))
 
     @classmethod
-    def packaged(cls) -> "SchemaStore":
+    def packaged(cls) -> SchemaStore:
         """Schemi fissati del pacchetto installato; `SchemaRefusedError` se il manifest diverge."""
         with resources.as_file(resources.files("ca_core").joinpath(PACKAGED_DIR)) as vendor_dir:
             try:
@@ -139,6 +143,19 @@ class SchemaStore:
         """Errori di validazione contro CycloneDX `version`, che deve essere ammessa."""
         if version not in ADMITTED_CYCLONEDX_VERSIONS:
             raise SchemaRefusedError(f"versione CycloneDX non ammessa: {version!r}")
+        uri = f"http://cyclonedx.org/schema/bom-{version}.schema.json"
+        return self._errors(self._validator(uri), instance)
+
+    def validate_pinned(self, file: str, instance: Any) -> list[str]:
+        """Errori contro uno schema fissato, per nome di file (es. quelli dei report di GitLab)."""
+        if file not in self._ids:
+            raise SchemaRefusedError(f"schema non fissato: {file!r}")
+        return self._errors(self._validator(self._ids[file]), instance)
+
+    def validate_cyclonedx_export(self, instance: Any, version: str) -> list[str]:
+        """Come `validate_cyclonedx`, per le versioni che i nostri export possono scrivere."""
+        if version not in EXPORT_CYCLONEDX_VERSIONS:
+            raise SchemaRefusedError(f"versione CycloneDX non ammessa in uscita: {version!r}")
         uri = f"http://cyclonedx.org/schema/bom-{version}.schema.json"
         return self._errors(self._validator(uri), instance)
 

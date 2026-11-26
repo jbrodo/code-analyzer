@@ -159,6 +159,28 @@ def test_adapt_makes_the_contract_output() -> None:
     assert "/workspace" not in text and "uriBaseId" not in text
 
 
+def test_taint_rules_are_read_from_the_product_rule_files_only() -> None:
+    found = adapter.taint_rule_ids(str(SEMGREP / "rules"))
+    assert "ca-py-sql-string-building" in found
+    assert "ca-py-eval-dynamic" not in found  # regola senza `mode: taint`
+    assert found and all(isinstance(i, str) and i for i in found)
+
+
+def test_taint_rule_ids_ignores_a_mode_line_outside_a_rule(tmp_path: Path) -> None:
+    (tmp_path / "a.yaml").write_text(
+        "rules:\n  mode: taint\n  - id: x\n    mode: search\n  - id: y\n    mode: taint\n"
+    )
+    assert adapter.taint_rule_ids(str(tmp_path)) == frozenset({"y"})
+
+
+def test_adapt_marks_only_the_product_taint_results() -> None:
+    document = raw_sarif()
+    taint = adapter.adapt(json.dumps(document).encode(), taint=frozenset({"user.dotted.rule"}))
+    plain = adapter.adapt(json.dumps(document).encode())
+    assert json.loads(taint)["runs"][0]["results"][0]["properties"]["taint"] is True
+    assert "taint" not in json.loads(plain)["runs"][0]["results"][0]["properties"]
+
+
 def test_adapt_without_rule_text_falls_back_to_the_rule_id() -> None:
     document = raw_sarif()
     document["runs"][0]["tool"]["driver"]["rules"] = []

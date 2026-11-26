@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="1" lines-valid="1" lines-covered="1" version="0.1">
+  <sources><source>/w/js</source></sources>
+  <packages><package name="main"><classes>
+    <class name="calc.js" filename="src/calc.js"><lines><line number="2" hits="3"/></lines></class>
+  </classes></package></packages>
+</coverage>

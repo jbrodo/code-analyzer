@@ -1,6 +1,6 @@
 # ADR-0029: UI dell'elenco finding, perimetro e dati
 
-- Stato: Proposto, in `IPOTESI` su D2-15 (perimetro proposto, non ancora confermato dall'utente). Prove con C-01, C-08 e W-04..W-07
+- Stato: Accettato il 2026-11-18. Il perimetro proposto è stato confermato dall'utente il 2026-11-17 (D2-15). Le prove sono nel codice: i contratti C-01 e C-08, le viste W-04..W-07 e i test di accessibilità W-08
 - Data: 2026-11-13
 - Decisione umana richiesta: sì, D2-15 per il perimetro
 - Riferimenti: §1, §4.1, §9.2, §13; ADR-0016, 0017, 0018; `doc/ux/fase-2.md` (U-01); lacune 1 e 2 del piano

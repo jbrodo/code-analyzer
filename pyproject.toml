@@ -4,15 +4,18 @@ version = "0.0.0"
 description = "Workspace di Code Analyzer"
 license = "GPL-3.0-only"
 requires-python = ">=3.14"
-dependencies = ["ca-core", "ca-plugins", "ca-cli"]
+dependencies = ["ca-core", "ca-plugins", "ca-cli", "ca-graph", "ca-integrations", "ca-api"]
 
 [dependency-groups]
 dev = [
+    "ca-graph[extract]",
+    "httpx>=0.28",
     "hypothesis>=6.170.15",
     "import-linter>=2.16",
     "pre-commit>=4.7.0",
     "pytest>=8",
     "pytest-cov>=7.1",
+    "testcontainers>=4.15,<5",  # solo test: PostgreSQL in container (ADR-0030, §14)
     "ruff>=0.17",
     "ty>=0.0.99",
     "types-jsonschema>=4.26.0.20261006",
@@ -29,33 +32,53 @@ members = ["packages/*"]
 ca-core = { workspace = true }
 ca-plugins = { workspace = true }
 ca-cli = { workspace = true }
+ca-graph = { workspace = true }
+ca-integrations = { workspace = true }
+ca-api = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=ca_core --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=ca_core --cov=ca_graph --cov=ca_integrations --cov=ca_api --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.report]
 exclude_also = ["if __name__ == .__main__.:"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
-# quality-python: fixture con problemi di qualita' messi di proposito (F-02 della Fase 2).
-extend-exclude = [".agents", ".claude", "doc", "tests/fixtures/repos/quality-python"]
+target-version = "py314"
+# quality-python e graph-python: fixture con problemi messi di proposito (F-02 e F-01 della Fase 2).
+extend-exclude = [
+    ".agents",
+    ".claude",
+    "doc",
+    "tests/fixtures/repos/quality-python",
+    "tests/fixtures/repos/graph-python",
+]
 src = ["packages/*/src"]
+
+[tool.ruff.per-file-target-version]
+# Gli adattatori girano dentro le immagini dei plugin, con un Python più vecchio del progetto:
+# niente sintassi nuova (per esempio `except A, B:` senza parentesi, solo da 3.14).
+"packages/ca-plugins/src/ca_plugins/builtin/**/*.py" = "py312"
+"packages/ca-graph/**/*.py" = "py312"  # `ca_graph.treesitter` e la storia git girano nell'immagine di ca-graph
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# Workspace di prova scritti come stringhe: righe lunghe volute.
+"tests/unit/graph/*" = ["E501"]
+"tests/unit/test_ca_graph_plugin.py" = ["E501"]  # hash lunghi
+
 # ADR-0001: dipendenze interne solo verso ca-core.
 [tool.importlinter]
-root_packages = ["ca_core", "ca_plugins", "ca_cli"]
+root_packages = ["ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations", "ca_api"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Dipendenze interne verso ca_core"
 type = "layers"
-layers = ["ca_cli", "ca_plugins", "ca_core"]
+layers = ["ca_cli", "ca_plugins | ca_graph | ca_integrations", "ca_core"]
 
 [[tool.importlinter.contracts]]
 name = "ca_core senza framework, rete né processi"
@@ -86,3 +109,42 @@ name = "ca_cli senza server né database"
 type = "forbidden"
 source_modules = ["ca_cli"]
 forbidden_modules = ["asyncpg", "fastapi", "psycopg", "psycopg2", "sqlalchemy", "temporalio"]
+
+[[tool.importlinter.contracts]]
+name = "ca_graph, ca_integrations e ca_plugins non si importano tra loro"
+type = "independence"
+modules = ["ca_plugins", "ca_graph", "ca_integrations"]
+
+[[tool.importlinter.contracts]]
+name = "ca_graph senza rete né processi; il parser solo nell'immagine di estrazione"
+type = "forbidden"
+source_modules = ["ca_graph"]
+forbidden_modules = ["http", "httpx", "requests", "socket", "subprocess", "urllib", "urllib3"]
+# Un solo modulo avvia un processo: la lettura della storia git per il churn (G-11, ADR-0022), che
+# gira solo nell'immagine di estrazione, dalla git dir ombra di ADR-0012. Nessun altro modulo di
+# `ca_graph` deve poterlo fare: l'host non avvia processi.
+ignore_imports = ["ca_graph.treesitter.history -> subprocess"]
+
+[[tool.importlinter.contracts]]
+name = "il resto del mondo non importa il parser di ca_graph"
+type = "forbidden"
+source_modules = ["ca_core", "ca_cli", "ca_plugins", "ca_integrations"]
+forbidden_modules = ["ca_graph.treesitter", "tree_sitter"]
+
+[[tool.importlinter.contracts]]
+name = "ca_graph.treesitter non importa il resto di ca_graph né ca_core"
+type = "forbidden"
+source_modules = ["ca_graph.treesitter"]
+forbidden_modules = ["ca_core", "ca_graph.deps", "ca_graph.smells", "ca_graph.pagerank"]
+
+[[tool.importlinter.contracts]]
+name = "ca_api importa solo ca_core: niente plugin, container, grafo né integrazioni (ADR-0016)"
+type = "forbidden"
+source_modules = ["ca_api"]
+forbidden_modules = ["ca_plugins", "ca_cli", "ca_graph", "ca_integrations", "docker", "subprocess"]
+
+[[tool.importlinter.contracts]]
+name = "nessun altro pacchetto importa ca_api"
+type = "forbidden"
+source_modules = ["ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations"]
+forbidden_modules = ["ca_api"]

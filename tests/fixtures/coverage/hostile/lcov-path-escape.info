@@ -1,0 +1,15 @@
+SF:../../etc/passwd
+DA:1,1
+LF:1
+LH:1
+end_of_record
+SF:/etc/shadow
+DA:1,0
+LF:1
+LH:0
+end_of_record
+SF:pkg/inside.py
+DA:1,1
+LF:1
+LH:1
+end_of_record

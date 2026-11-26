@@ -1,0 +1,30 @@
+# Plugin coverage (P-05): copertura di riga dai report della CI (LCOV e Cobertura) in SARIF 2.1.0.
+# ADR-0004, 0005, 0007, 0014, 0026. Nessun motore di terzi: legge file del workspace con la sola
+# libreria standard. Manifest sorgente: `image` senza digest e su un registry inesistente
+# (`.invalid`) perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo
+# build-image.sh e sign-local.sh.
+apiVersion: code-analyzer/v1
+name: coverage
+version: 1.0.0
+image: registry.invalid/ca-plugins/coverage:1.0.0
+capabilities: [detect]
+languages: []
+categories: [test]
+inputs:
+  workspace: readonly
+  config: optional  # {"reports": [{"path", "format", "base_dir"}]} da `plugins.coverage`, ricontrollato dall'adattatore
+  sbom: none
+outputs:
+  sarif: /out/results.sarif
+  # Provvisorio, da confermare in X-04: un risultato per file sotto soglia, circa 330 byte. 8 MiB
+  # reggono oltre 20 mila file.
+  max_bytes: 8388608
+resources:
+  # Non misurabile sui pilota (I-02): nessuno ha un report di copertura committato (92 byte di uscita,
+  # 0,3 s, 13 MiB senza ingressi). Restano i valori provvisori: un report fino a 32 MiB si legge in
+  # memoria; l'XML con entità si rifiuta.
+  cpu: "1"
+  memory: 512Mi
+  timeout: 120s
+  pids: 16
+network: none

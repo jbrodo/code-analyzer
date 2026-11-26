@@ -97,3 +97,15 @@ Le librerie OpenTelemetry sono dipendenze nuove: licenza e manutenzione si verif
 - La baseline per la modalità PR non può venire da un'esecuzione sul server: la fonte la sceglie ADR-0025 tra il report del branch base conservato dalla CI e quello servito dall'API.
 - Un repository senza CI non ha scansioni sul server. Accettato per la Fase 2.
 - Se D2-01 venisse rivista, B-03 resta valido per l'ingestione dalla CI e i task aggiuntivi sono quelli della sezione 3 del piano.
+
+## Realizzazione di B-03 (2026-11-17)
+
+- `POST /v1/scans` è realizzato come descritto: quattro parti validate, 201 e 200 per l'idempotenza, 409 per artefatti diversi, 413 contato mentre si legge, un'unica transazione di database con gli artefatti scritti prima. Una richiesta interrotta lascia al più un oggetto orfano; se il database fallisce l'ingestione prova a cancellare ciò che ha scritto.
+- **Il confronto tra repository del report e del token** non può essere un'uguaglianza di identificativi: il report ha solo il nome della cartella analizzata (`repository.name`), il token l'identificativo numerico e il nome completo del provider. Si accetta il nome intero o il suo ultimo segmento, quindi una scansione di una sottocartella (con un altro nome) si rifiuta e si lancia dalla radice del repository. Il commit si confronta solo se il token lo porta.
+- Il **branch principale** non è nel report: si riconosce dal `ref` del token (`main` e `master`, configurabili con `CA_API_DEFAULT_BRANCHES`) finché il repository non ne ha uno registrato, che la prima scansione completa su quei branch fissa.
+- `ref` e `commit` della scansione vengono dal token e dal report, non dal corpo della richiesta.
+- Gli errori di validazione riportano il luogo (JSON Pointer) e il tipo, mai il valore ricevuto.
+
+## Realizzazione di S1-A2 (2026-11-18): tetti all'ingestione
+
+`ca_api/throttle.py`: al più 120 ingestioni all'ora per repository (finestra mobile, ogni tentativo conta) e 4 in parallelo per tenant, configurabili con `CA_API_MAX_INGESTS_PER_HOUR` e `CA_API_MAX_CONCURRENT_INGESTS` (0 spegne il tetto). Oltre il tetto: `429` `rate-limited` con `Retry-After`. Lo stato sta nel processo, quindi con più repliche il tetto vale per replica. Non c'è ancora la quota di byte per tenant. Il codice di problema nuovo porta `info.version` dell'OpenAPI a 1.2.0.

@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://code-analyzer.invalid/tests/expected-graph.schema.json",
+  "title": "Attesi delle fixture del grafo (expected-graph.yaml, dopo il parsing)",
+  "description": "Archi, metriche e smell noti di una fixture del grafo (F-01). Scritti dal progetto della fixture, non dall'output di un estrattore. Percorsi POSIX relativi alla radice della fixture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "language", "internal_edges", "test_modules", "metrics", "smells"],
+  "properties": {
+    "version": { "const": 1 },
+    "language": { "enum": ["python", "typescript"] },
+    "internal_edges": {
+      "type": "array",
+      "description": "Archi interni tra moduli non di test, ordinati. Gli archi dei moduli di test non sono qui.",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": { "$ref": "#/$defs/path" }
+      },
+      "uniqueItems": true
+    },
+    "test_modules": { "type": "array", "items": { "$ref": "#/$defs/path" }, "uniqueItems": true },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modules", "packages"],
+      "properties": {
+        "modules": { "$ref": "#/$defs/metrics_map" },
+        "packages": { "$ref": "#/$defs/metrics_map" }
+      }
+    },
+    "smells": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["config", "cycles", "hubs", "unstable_dependencies"],
+      "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hub_min_degree", "unstable_min_degree"],
+          "properties": {
+            "hub_min_degree": { "type": "integer", "minimum": 0 },
+            "unstable_min_degree": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "cycles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["module", "package", "not_in_any_cycle"],
+          "properties": {
+            "module": { "$ref": "#/$defs/groups" },
+            "package": { "$ref": "#/$defs/groups" },
+            "not_in_any_cycle": { "type": "array", "items": { "$ref": "#/$defs/path" } }
+          }
+        },
+        "hubs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present", "absent"],
+          "properties": {
+            "present": { "type": "array", "items": { "$ref": "#/$defs/path" } },
+            "absent": { "type": "array", "items": { "$ref": "#/$defs/path" } }
+          }
+        },
+        "unstable_dependencies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present", "absent"],
+          "properties": {
+            "present": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["package", "depends_on"],
+                "properties": {
+                  "package": { "$ref": "#/$defs/path" },
+                  "depends_on": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/path" } }
+                }
+              }
+            },
+            "absent": { "type": "array", "items": { "$ref": "#/$defs/path" } }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+    },
+    "groups": {
+      "type": "array",
+      "description": "Gruppi di membri che formano un ciclo, ciascuno ordinato.",
+      "items": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/path" } }
+    },
+    "metrics_map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ca", "ce", "instability"],
+        "properties": {
+          "ca": { "type": "integer", "minimum": 0 },
+          "ce": { "type": "integer", "minimum": 0 },
+          "instability": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

@@ -76,7 +76,7 @@ class Leaf:
 @dataclass(frozen=True)
 class Node:
     op: str  # "AND" | "OR"
-    children: tuple["Node | Leaf", ...]
+    children: tuple[Node | Leaf, ...]
 
 
 class _Parser:
@@ -94,7 +94,7 @@ class _Parser:
         self.pos += 1
         return token
 
-    def parse(self) -> "Node | Leaf":
+    def parse(self) -> Node | Leaf:
         if not self.tokens:
             raise SpdxSyntaxError("espressione vuota")
         node = self.or_(0)
@@ -102,21 +102,21 @@ class _Parser:
             raise SpdxSyntaxError("token inatteso")
         return node
 
-    def or_(self, depth: int) -> "Node | Leaf":
+    def or_(self, depth: int) -> Node | Leaf:
         items = [self.and_(depth)]
         while self.peek() == "OR":
             self.pos += 1
             items.append(self.and_(depth))
         return items[0] if len(items) == 1 else Node("OR", tuple(items))
 
-    def and_(self, depth: int) -> "Node | Leaf":
+    def and_(self, depth: int) -> Node | Leaf:
         items = [self.atom(depth)]
         while self.peek() == "AND":
             self.pos += 1
             items.append(self.atom(depth))
         return items[0] if len(items) == 1 else Node("AND", tuple(items))
 
-    def atom(self, depth: int) -> "Node | Leaf":
+    def atom(self, depth: int) -> Node | Leaf:
         token = self.take()
         if token == "(":
             if depth >= _MAX_DEPTH:
@@ -138,7 +138,7 @@ class _Parser:
         return Leaf(token, token)
 
 
-def parse_expression(text: str) -> "Node | Leaf":
+def parse_expression(text: str) -> Node | Leaf:
     """Albero dell'espressione; `SpdxSyntaxError` se non valida. `AND` lega più di `OR`."""
     if len(text) > MAX_EXPRESSION:
         raise SpdxSyntaxError("espressione troppo lunga")
@@ -160,7 +160,7 @@ def _leaf_verdict(leaf: Leaf, forbidden: frozenset[str], approval: frozenset[str
 
 
 def _evaluate(
-    node: "Node | Leaf", forbidden: frozenset[str], approval: frozenset[str]
+    node: Node | Leaf, forbidden: frozenset[str], approval: frozenset[str]
 ) -> tuple[Verdict, list[str]]:
     """Verdetto e foglie che lo determinano."""
     if isinstance(node, Leaf):
@@ -323,6 +323,7 @@ def evaluate_licenses(
                 evidence={
                     TOOL: {
                         "verdict": verdict.name.lower(),
+                        "distributed": licenses.distributed_product is not False,
                         "sources": sorted({o.source for o in group}),
                         "terms": [_printable(t) for t in terms],
                     }

@@ -80,7 +80,10 @@ curl -fsS --max-time 3 "http://$REGISTRY/v2/" >/dev/null 2>&1 ||
 # --- build e push ---------------------------------------------------------------
 TAGGED="$REGISTRY/$NAME:$TAG"
 log "build $TAGGED"
-docker build -q -t "$TAGGED" "$CONTEXT" >/dev/null
+STAGED="$("$HERE/stage-context.sh" "$CONTEXT")"
+built=0; docker build -q -t "$TAGGED" "$STAGED" >/dev/null || built=$?
+[ "$STAGED" = "$CONTEXT" ] || rm -rf "$STAGED"  # niente `trap`: ce n'e' gia' uno per la chiave
+[ "$built" = 0 ] || die "docker build fallito"
 log "push $TAGGED"
 docker push -q "$TAGGED" >/dev/null
 

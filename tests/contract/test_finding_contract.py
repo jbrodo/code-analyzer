@@ -57,6 +57,8 @@ VALID = {
     "minimal": MINIMAL,
     "full": FULL,
     "score-lower-bound": mutated(MINIMAL, _set("score", 0)),
+    "correlation": mutated(MINIMAL, _set("correlation", "cg1:0123456789abcdef")),
+    "correlation-null": mutated(MINIMAL, _set("correlation", None)),
     "score-upper-bound": mutated(MINIMAL, _set("score", 100)),
     "null-optionals": mutated(
         MINIMAL, _set("level", None), _set("score", None), _set("impact", None)
@@ -81,6 +83,10 @@ VALID = {
     },
 }
 INVALID = {
+    "correlation-not-a-group": mutated(MINIMAL, _set("correlation", "group-1")),
+    "correlation-wrong-length": mutated(MINIMAL, _set("correlation", "cg1:0123")),
+    "correlation-uppercase": mutated(MINIMAL, _set("correlation", "cg1:0123456789ABCDEF")),
+    "correlation-other-version": mutated(MINIMAL, _set("correlation", "cg2:0123456789abcdef")),
     **{
         f"missing-{k}": mutated(MINIMAL, _pop(k))
         for k in (
@@ -135,6 +141,98 @@ INVALID = {
     "cwe-not-array": mutated(MINIMAL, _set("cwe", "CWE-78")),
     "tools-item-not-string": mutated(MINIMAL, _set("tools", [1])),
 }
+
+
+# --- Fase 2 (C-01): stato rispetto alla baseline, correzione, punteggi in ombra -------------------
+
+KEY = "sha256:" + "c" * 64
+FACTORS = {"g": 0.5, "p": 0.4, "e": 0.3, "c": 0.7, "variant": "A", "evidence": {"epss": 0.1}}
+SCORE_A = {"variant": "A", "score": 42.5, "level": "alto", "impact": FACTORS}
+SCORE_B = {"variant": "B", "score": 12, "level": "basso", "impact": {**FACTORS, "variant": "B"}}
+REMEDIATION = {
+    "text": "Aggiornare il pacchetto alla versione 2.31.0 o successiva.\nVedere il riferimento.",
+    "references": ["https://example.invalid/advisory/1"],
+    "source": "derived",
+}
+
+
+def _phase2(**fields: object):
+    return mutated(MINIMAL, _set_many(fields))
+
+
+def _set_many(fields: dict[str, object]):
+    return lambda i: i.update(fields)
+
+
+VALID.update(
+    {
+        "level-source-score": mutated(
+            MINIMAL, _set("level", "alto"), _set("level_source", "score")
+        ),
+        "level-source-override": mutated(
+            MINIMAL, _set("level", "critico"), _set("level_source", "override")
+        ),
+        "baseline-new": _phase2(baseline_state="new"),
+        "baseline-existing-moved": _phase2(
+            baseline_state="existing", previous_path="old/a.py", pathless_key=KEY
+        ),
+        "variant-scores-both": _phase2(variant_scores=[SCORE_A, SCORE_B]),
+        "variant-scores-empty": _phase2(variant_scores=[]),
+        "remediation": _phase2(remediation=REMEDIATION),
+        "remediation-no-references": _phase2(
+            remediation={"text": "Rimuovere l'uso.", "source": "rule"}
+        ),
+        "remediation-source-tool": _phase2(remediation={**REMEDIATION, "source": "tool"}),
+        "phase2-nulls": _phase2(
+            baseline_state=None, previous_path=None, pathless_key=None, remediation=None
+        ),
+    }
+)
+INVALID.update(
+    {
+        "baseline-resolved-is-not-a-finding": _phase2(baseline_state="resolved"),
+        "baseline-unknown": _phase2(baseline_state="updated"),
+        "previous-path-absolute": _phase2(baseline_state="existing", previous_path="/etc/x"),
+        "previous-path-traversal": _phase2(baseline_state="existing", previous_path="a/../b"),
+        "previous-path-empty": _phase2(baseline_state="existing", previous_path=""),
+        "previous-path-control": _phase2(baseline_state="existing", previous_path="a\nb"),
+        "previous-path-windows": _phase2(baseline_state="existing", previous_path="C:/x"),
+        "pathless-key-not-a-hash": _phase2(pathless_key="abc"),
+        "pathless-key-uppercase": _phase2(pathless_key="sha256:" + "C" * 64),
+        "variant-scores-three": _phase2(variant_scores=[SCORE_A, SCORE_B, SCORE_A]),
+        "variant-score-above-100": _phase2(variant_scores=[{**SCORE_A, "score": 101}]),
+        "variant-score-unknown-variant": _phase2(variant_scores=[{**SCORE_A, "variant": "C"}]),
+        "variant-score-missing-level": _phase2(
+            variant_scores=[{k: v for k, v in SCORE_A.items() if k != "level"}]
+        ),
+        "variant-score-unknown-key": _phase2(variant_scores=[{**SCORE_A, "weights": {}}]),
+        "remediation-without-source": _phase2(
+            remediation={k: v for k, v in REMEDIATION.items() if k != "source"}
+        ),
+        "remediation-unknown-source": _phase2(remediation={**REMEDIATION, "source": "llm"}),
+        "remediation-empty-text": _phase2(remediation={**REMEDIATION, "text": ""}),
+        "remediation-text-too-long": _phase2(remediation={**REMEDIATION, "text": "x" * 4001}),
+        "remediation-reference-not-a-url": _phase2(
+            remediation={**REMEDIATION, "references": ["not a url"]}
+        ),
+        "remediation-reference-javascript": _phase2(
+            remediation={**REMEDIATION, "references": ["javascript:alert(1)"]}
+        ),
+        "remediation-reference-with-space": _phase2(
+            remediation={**REMEDIATION, "references": ["https://a.example/x y"]}
+        ),
+        "remediation-too-many-references": _phase2(
+            remediation={
+                **REMEDIATION,
+                "references": [f"https://example.invalid/{i}" for i in range(11)],
+            }
+        ),
+        "remediation-duplicate-references": _phase2(
+            remediation={**REMEDIATION, "references": ["https://a.example/", "https://a.example/"]}
+        ),
+        "remediation-unknown-key": _phase2(remediation={**REMEDIATION, "html": "<b>x</b>"}),
+    }
+)
 
 
 @pytest.mark.parametrize("instance", VALID.values(), ids=VALID.keys())

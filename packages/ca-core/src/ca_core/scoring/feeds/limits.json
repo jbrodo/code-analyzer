@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "epss": {
+    "max_download_bytes": 33554432,
+    "max_decompressed_bytes": 134217728,
+    "min_entries": 100000,
+    "max_entries": 3000000
+  },
+  "kev": {
+    "max_download_bytes": 33554432,
+    "min_entries": 500,
+    "max_entries": 100000
+  },
+  "max_drop_percent": 20,
+  "max_age_hours": 24
+}

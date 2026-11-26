@@ -1,0 +1,32 @@
+# Plugin ca-graph (G-09): grafo dei moduli di Python, JS, TS e TSX con tree-sitter. ADR-0004, 0005,
+# 0007, 0020. Manifest sorgente: `image` senza digest e su un registry inesistente (`.invalid`)
+# perche' D-0005 e' aperta. Il digest (@sha256:...) lo inserisce il rilascio dopo build-image.sh e
+# sign-local.sh.
+#
+# Il parser e' un componente in C che legge file non fidati: gira solo qui, in un container firmato
+# senza rete, con il workspace in sola lettura (ADR-0020, S-02). Emette un dato (`outputs.graph`,
+# contratto `graph`); metriche e smell li calcola l'host.
+apiVersion: code-analyzer/v1
+name: ca-graph
+version: 1.0.0
+image: registry.invalid/ca-plugins/ca-graph:1.0.0
+capabilities: [detect]
+languages: [python, javascript, typescript]
+categories: [architecture]
+inputs:
+  workspace: readonly
+  config: none
+  sbom: none
+outputs:
+  graph: /out/graph.json
+  # Misurato il 2026-11-18 (I-02): 4,9 MB su saleor (4.384 moduli), 0,9 MB su excalidraw. 64 MiB sono
+  # tredici volte il massimo; l'adattatore usa lo stesso valore.
+  max_bytes: 67108864
+resources:
+  # Misurato il 2026-11-18 (I-02): 8,2 s e 32 MiB di picco su saleor, il più grande dei pilota. 512 MiB
+  # sono sedici volte il picco, 180 s oltre venti volte il tempo.
+  cpu: "1"
+  memory: 512Mi
+  timeout: 180s
+  pids: 32  # Python e git: 16 non basta con git, come per gitleaks
+network: none

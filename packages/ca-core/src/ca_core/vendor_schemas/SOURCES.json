@@ -18,6 +18,14 @@
       "sha256": "73308edec3ab2d38bfffd993e96a042b594314143b6971a6e9ed98bbb6bd76ce"
     },
     {
+      "file": "bom-1.6.schema.json",
+      "format": "CycloneDX",
+      "version": "1.6",
+      "origin": "https://raw.githubusercontent.com/CycloneDX/specification/6470e34ef83f915868ece48934cff52e10c9eb49/schema/bom-1.6.schema.json",
+      "note": "CycloneDX/specification commit 6470e34ef83f915868ece48934cff52e10c9eb49 (Apache-2.0); solo per i report di GitLab, che accetta 1.4, 1.5 e 1.6 (N-06); usa spdx e jsf di bom-1.7",
+      "sha256": "18f57f7482593bad9f21b4feed09084640cbeff419d62ad5090c5ceccca5b37d"
+    },
+    {
       "file": "spdx.schema.json",
       "format": "CycloneDX",
       "version": "1.7",
@@ -40,6 +48,22 @@
       "origin": "https://raw.githubusercontent.com/CycloneDX/specification/6470e34ef83f915868ece48934cff52e10c9eb49/schema/cryptography-defs.schema.json",
       "note": "referenziato da bom-1.7",
       "sha256": "013919cfb1c6209f919cd7253a4e3f740cb44023697bb4657a5f0584d6f47137"
+    },
+    {
+      "file": "gitlab-sast-15.2.5.schema.json",
+      "format": "GitLab SAST",
+      "version": "15.2.5",
+      "origin": "https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/raw/v15.2.5/dist/sast-report-format.json",
+      "note": "gitlab-org/security-products/security-report-schemas, tag v15.2.5 (commit 94999aa479bd, 2026-09-02); licenza MIT, testo in LICENSE-gitlab-security-report-schemas.md (letta in V-02); draft-07, nessun $ref esterno; C-09",
+      "sha256": "1d2d2717fe7bd7bc5f3428bcfc4c3f2b7d60dbe27482602f99041da57afc33d8"
+    },
+    {
+      "file": "gitlab-dependency-scanning-15.2.5.schema.json",
+      "format": "GitLab Dependency Scanning",
+      "version": "15.2.5",
+      "origin": "https://gitlab.com/gitlab-org/security-products/security-report-schemas/-/raw/v15.2.5/dist/dependency-scanning-report-format.json",
+      "note": "gitlab-org/security-products/security-report-schemas, tag v15.2.5 (commit 94999aa479bd, 2026-09-02); licenza MIT, testo in LICENSE-gitlab-security-report-schemas.md (letta in V-02); draft-07, nessun $ref esterno; C-09",
+      "sha256": "172516195568babba3b9aead126b076ade756da4ad4cdb988eaf1545e088af32"
     }
   ]
 }

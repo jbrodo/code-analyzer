@@ -8,6 +8,7 @@ import pytest
 
 from ca_cli import gate
 from ca_cli.composition import DirectoryArtifactSink
+from ca_core.models.config import GateMode
 from ca_core.models.finding import Category, Level
 from ca_core.pipeline.gate import GateFinding, GateResult
 
@@ -31,6 +32,7 @@ def test_gate_output_omits_only_the_fingerprint_of_secrets(
 ) -> None:
     result = GateResult(
         exit_code=1,
+        mode=GateMode.ALL,
         block_on=[Level.HIGH],
         block_on_source="default",
         blocking=[

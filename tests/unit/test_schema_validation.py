@@ -125,7 +125,12 @@ def test_unlisted_vendor_file_is_refused(tmp_path: Path) -> None:
 
 def test_vendor_sources_pin_known_origin() -> None:
     entries = json.loads((VENDOR / "SOURCES.json").read_text())["files"]
-    assert {e["format"] for e in entries} == {"SARIF", "CycloneDX"}
+    assert {e["format"] for e in entries} == {
+        "SARIF",
+        "CycloneDX",
+        "GitLab SAST",
+        "GitLab Dependency Scanning",
+    }
     assert all(len(e["sha256"]) == 64 and e["origin"].startswith("https://") for e in entries)
 
 

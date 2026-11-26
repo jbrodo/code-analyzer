@@ -128,3 +128,11 @@ main {
     transition-duration: 0s !important;
   }
 }
+
+.topbar {
+  justify-content: space-between;
+}
+
+.topbar-user {
+  margin: 0;
+}

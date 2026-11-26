@@ -119,3 +119,40 @@ def test_result_is_serializable_and_pure() -> None:
     assert r.model_dump_json() == before
     assert evaluate_gate(r) == result
     assert type(result).model_validate_json(result.model_dump_json()) == result
+
+
+def pr_report(*states: tuple[str, Level, str]):
+    findings = [with_level(n, lv, baseline_state=st) for n, lv, st in states]
+    return report(
+        findings,
+        gate={"mode": "new-findings-only", "effective_mode": "new-findings-only"},
+        scan={"kind": "pr", "base_commit": "a" * 40},
+        baseline={
+            "status": "valid",
+            "commit": "a" * 40,
+            "source": "ci-artifact",
+            "new": sum(s == "new" for _, _, s in states),
+            "existing": sum(s == "existing" for _, _, s in states),
+        },
+    )
+
+
+def test_new_findings_only_blocks_only_the_new_ones() -> None:
+    old_only = evaluate_gate(pr_report(("a", C, "existing")))
+    assert (old_only.exit_code, old_only.mode.value) == (0, "new-findings-only")
+    mixed = evaluate_gate(pr_report(("a", C, "existing"), ("b", H, "new"), ("c", L, "new")))
+    assert mixed.exit_code == 1 and [b.level for b in mixed.blocking] == [H]
+
+
+def test_new_findings_only_still_exits_2_on_a_partial_scan() -> None:
+    bad = plugin("trivy", outcome="failed", failure="timeout")
+    r = pr_report(("a", L, "existing")).model_copy(
+        update={"status": "partial", "plugins": [plugin_run(bad)]}
+    )
+    assert evaluate_gate(r).exit_code == 2
+
+
+def plugin_run(data: dict):
+    from ca_core.models.scan_report import PluginRun
+
+    return PluginRun.model_validate(data)

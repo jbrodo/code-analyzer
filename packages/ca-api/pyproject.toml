@@ -1,0 +1,39 @@
+[project]
+name = "ca-api"
+version = "0.0.0"
+description = "Server di Code Analyzer: riceve i report della CLI e li serve all'API e alla UI"
+license = "GPL-3.0-only"
+requires-python = ">=3.14"
+# Versioni di V-01 (2026-11-13) come punto di partenza; sqlalchemy, alembic, pg8000, pyjwt e
+# opentelemetry entrano con i task che li usano (B-02, B-04, B-13), con licenza verificata.
+dependencies = [
+    "ca-core",
+    "fastapi>=0.162,<1",
+    "uvicorn>=0.54,<1",
+    # Lettore di multipart/form-data di `POST /v1/scans` (ADR-0016): licenza permissiva e rilasci
+    # recenti verificati il 2026-11-17 (C-08); i limiti di dimensione li applica B-03 mentre legge.
+    "python-multipart>=0.0.34,<1",
+    # Persistenza (B-02, ADR-0030). Verificate il 2026-11-17: SQLAlchemy 2.0.58 (MIT, rilascio del
+    # 2026-11-16; si resta sulla serie 2.0), Alembic 1.20.1 (MIT), pg8000 1.31.6 (BSD a tre clausole).
+    "sqlalchemy>=2.0.58,<2.1",
+    "alembic>=1.20.1,<2",
+    "pg8000>=1.31.6,<2",
+    # Verifica dei token OIDC (B-04, ADR-0019): PyJWT 2.15.1 (MIT) e, per gli algoritmi asimmetrici,
+    # cryptography 50.0.2 (doppia licenza permissiva). Verificate il 2026-11-17.
+    "pyjwt[crypto]>=2.15.1,<3",
+    # Adattatore S3 dell'archivio (B-07): boto3 1.44.4 (licenza permissiva, rilasciato il 2026-11-16) con
+    # botocore, s3transfer e jmespath (MIT). Verificate il 2026-11-17.
+    "boto3>=1.44.4,<2",
+    # Telemetria (B-13, ADR-0016): OpenTelemetry 1.45.2 (licenza permissiva, rilasciato il 2026-10-29; il
+    # protocollo OTLP porta protobuf, licenza a tre clausole). Verificate il 2026-11-17.
+    "opentelemetry-api>=1.45.2,<2",
+    "opentelemetry-sdk>=1.45.2,<2",
+    "opentelemetry-exporter-otlp-proto-http>=1.45.2,<2",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ca-core = { workspace = true }

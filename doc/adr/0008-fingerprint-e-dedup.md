@@ -54,6 +54,26 @@ Modifiche proposte al modello §4.1:
 - `Location.commit` diventa opzionale (cartella non git).
 - Senza database: `id` uguale al fingerprint, opaco per i consumatori; `first_seen` e `last_seen` uguali all'ora della scansione.
 
+## Emendamento per P-05 (2026-11-17): `kind` `coverage`
+
+Nuova riga della tabella, senza toccare la formula né i `kind` esistenti (ADR-0026):
+
+| `kind` | `rule_id` | `tool_family` | `normalized_location` | `component` |
+| --- | --- | --- | --- | --- |
+| `coverage` | `ca.coverage.low-file-coverage` | `coverage` | percorso | vuoto |
+
+Nessuna riga né contesto di codice: spostare righe non cambia il fingerprint. L'implementazione è `ca_core.fingerprint.fingerprint_coverage`. `architecture` ha il suo `kind` dal 2026-11-17 (G-10), qui sotto.
+
+## Emendamento per G-10 (2026-11-17): `kind` `architecture`
+
+Nuova riga della tabella, senza toccare la formula né i `kind` esistenti (ADR-0020):
+
+| `kind` | `rule_id` | `tool_family` | `normalized_location` | `component` |
+| --- | --- | --- | --- | --- |
+| `architecture` | `ca.arch.cyclic-dependency`, `ca.arch.hub-like-dependency` o `ca.arch.unstable-dependency` | `ca-graph` | `ambito` NUL `ancora` | vuoto |
+
+`ambito` è `module` o `package`; `ancora` è il percorso del file o della cartella (`.` per il pacchetto radice, ammesso solo con ambito `package`). Nessuna riga né contesto di codice. Per un ciclo l'ancora è il primo membro in ordine lessicografico: un membro in più non cambia il fingerprint, ma un membro che precede l'ancora lo cambia (limite accettato, ADR-0020). L'implementazione è `ca_core.fingerprint.fingerprint_architecture`.
+
 ## Conseguenze
 
 - Una futura `fp2` richiede una migrazione delle eccezioni; il prefisso `fp1` la rende rilevabile.
@@ -257,3 +277,7 @@ Da provare:
 - Uso in normalizzazione: URI, `result` senza `region`, decodifica, `tool` uguale al nome del manifest (K-05).
 
 Passa ad `Accettato` con K-05 e K-07 verdi. Il modello non impone che `tools` sia ordinato: l'ordine lo garantisce K-07, e il contratto copre l'assenza di duplicati (emendamento di C-01).
+
+## Verifica per A-16 (2026-11-18)
+
+I `kind` di Fase 2 (`coverage` da P-05, `architecture` da G-10) sono nelle sezioni sopra e non toccano `fp1` né i `kind` esistenti. Gli smell di ADR-0020 usano `architecture`, quindi non serve un `kind` per ciascuno. Il limite che questo ADR dichiarava, cioè che SAST di scanner diversi sulla stessa riga non si fondono, è affrontato in ADR-0026 e realizzato da `ca_core/correlation.py` (K-21), a valle della deduplicazione e senza cambiare il fingerprint.

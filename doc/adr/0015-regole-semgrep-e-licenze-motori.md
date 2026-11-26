@@ -41,3 +41,11 @@ Opzione 2 per la Fase 1. L'opzione 3 si valuta dopo il parere legale.
 - Copertura SAST iniziale limitata: si ottiene "i problemi noti delle fixture" del Gate 1, non un'analisi ampia sui repository pilota.
 - Un task del piano deve produrre un primo set di regole e uno deve registrare la verifica legale; la pubblicazione delle immagini dipende da quest'ultimo.
 - Il proprietario della verifica è una persona, non un agente.
+
+## Emendamento per A-16 (2026-11-18): i motori e i componenti di Fase 2 (D2-14)
+
+Motivo: la Fase 2 aggiunge motori e componenti alle immagini; la regola di §16 e di questo ADR (verificare licenza e manutenzione prima di includerli, con file di licenza e SBOM per immagine) vale per ognuno.
+
+- **Decisioni prese.** hadolint è approvato il 2026-11-17 per uso interno e per il registry locale. Non è un'approvazione alla distribuzione: la sua licenza copyleft forte obbliga, a chi distribuisce l'immagine, ad accompagnarla con il testo della licenza e l'offerta della sorgente. Quella decisione resta di I-07 e non è un parere legale. Gli altri motori e componenti nuovi (checkov, il parser tree-sitter di `ca-graph`, eslint e i suoi plugin, il client S3, OpenTelemetry, le dipendenze del server e della SPA) si valutano sugli SBOM di rilascio.
+- **Dove sta la verifica.** Ogni immagine ha i suoi file di licenza e il suo SBOM, controllati da `deploy/docker/image-gate.sh` (convenzione in `deploy/docker/LICENSES-SBOM.md`); ogni dipendenza Python o JavaScript nuova ha la sua nota di verifica nel task e nell'ADR che la introduce (per esempio ADR-0030).
+- **Nessuna pubblicazione.** Finché D2-16 e la decisione del 2026-11-10 lo vietano, nessuna immagine con componenti nuovi lascia il registry locale (I-04, I-07).

@@ -1,6 +1,6 @@
 # ADR-0025: Baseline, modalità PR e finding nuovi
 
-- Stato: Proposto. Scelta tecnica; la fonte della baseline segue D2-01 (decisa: il server non esegue scansioni). Prove con K-16, K-17, K-18 e L-01
+- Stato: Accettato il 2026-11-18. Le prove sono nel codice: la lettura e il confronto con la baseline (K-16, K-17), il gate (K-18), le opzioni della CLI (L-01) e gli script dell'Action contro l'immagine vera (N-04, N-05). La fonte della baseline segue D2-01: il server non esegue scansioni e un endpoint della baseline non è stato necessario (B-12)
 - Data: 2026-11-13
 - Decisione umana richiesta: no
 - Riferimenti: §5 passi 2 e 9, §8, §9.1, §12.1; ADR-0008, 0009, 0010, 0011, 0014, 0016, 0018; misure in `doc/verifiche/scanner-fase-2.md` (V-06)
@@ -131,3 +131,25 @@ Il confronto non legge la storia git: `fetch-depth: 1` basta. La profondità con
 - Ogni pipeline deve conservare il report del branch principale, o pagare una seconda scansione per PR.
 - Il report contiene la configurazione per intero. È già un artefatto riservato (ADR-0010) e la configurazione è un file del repository: nessun dato nuovo esce.
 - L'approvazione di un'eccezione richiede una PR separata. È un passo in più, ed è il punto.
+
+## Realizzazione dei contratti (C-01, C-04, 2026-11-17)
+
+- `finding` 1.2: `baseline_state` (`new` o `existing`; `risolto` non è un valore, perché un finding risolto non è più nel report), `previous_path` (solo con `existing`, percorso relativo senza caratteri di controllo) e `pathless_key` (impronta degli ingredienti del fingerprint senza il percorso, per il secondo passaggio).
+- `scan-report` 1.2: `scan`, `baseline` e `effective_config`. `baseline.status` vale `valid`, `missing` o `rejected`; per `rejected` il campo `reason` è un codice come `baseline-commit-mismatch` o `baseline-partial`. I conteggi `new` ed `existing` devono coincidere con lo stato dei finding, e con una baseline non valida nessun finding ha uno stato. `not_evaluated` conta i finding della baseline il cui plugin è fallito.
+- **`effective_config` è facoltativo** e la CLI lo scrive da ora. Un report della Fase 1 non lo ha: usato come baseline non fornisce la configurazione del base, e K-16 deve trattarlo come tale (avviso e configurazione del file della PR, come per `pr-config-from-head`).
+- Lo `updated` del SARIF (ADR-0011) non ha un campo nel finding: lo ricava K-17 confrontando posizione e livello con la baseline.
+
+## Realizzazione di K-16 e K-17 (2026-11-17)
+
+- `load_baseline` (K-16) riceve l'esito della porta `BaselineSource`. Il confronto «dentro la directory» è sul percorso (normalizzato): il chiamante deve passare percorsi già risolti, altrimenti un link simbolico lo aggirerebbe. Lo farà la CLI in L-01.
+- `diff_baseline` (K-17). **Chi non è un plugin:** i finding della policy delle licenze (`ca-core`) dipendono dall'output di più plugin; si considerano valutabili solo se tutti i plugin sono riusciti.
+- **Chiave senza percorso, regola di accoppiamento:** `pk1` non contiene l'indice di occorrenza (dipende dal file). Per questo il secondo passaggio accoppia solo gruppi di uno contro uno. Un finding `code` senza contesto di codice non ha la chiave.
+- `updated` ha un campo (`baseline.updated`, i fingerprint) perché il SARIF si costruisce dal solo report. Il campo ha richiesto `scan-report` 1.3.
+- **Non ancora fatto:** collegare tutto alla CLI (L-01) e il gate sui nuovi (K-18). Finché non ci sono, nessun report reale ha uno stato rispetto alla baseline.
+
+## Realizzazione del gate e della CLI (K-18, L-01, 2026-11-17)
+
+- `gate` legge il modo da `gate.effective_mode` e non da altro: il report è l'unico ingresso (ADR-0010). Il modello rifiuta `new-findings-only` effettivo senza una baseline valida.
+- La CLI sostituisce la configurazione con quella della baseline **prima** di preparare il workspace, così esclusioni, plugin, eccezioni e policy sono quelli del base per tutta la scansione.
+- Un file di baseline privato (0600) dentro il repository darebbe in più un avviso di workspace illeggibile: è comunque rifiutato prima.
+- `--baseline-source` dichiara la fonte per il report; la CLI non può verificarla.

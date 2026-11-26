@@ -1,0 +1,762 @@
+{
+  "$defs": {
+    "ArchitectureWeights": {
+      "additionalProperties": false,
+      "description": "Peso per tipo di architectural smell (ADR-0023); il G è peso per dimensione normalizzata.",
+      "properties": {
+        "cyclic_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Cyclic Dependency",
+          "type": "number"
+        },
+        "hub_like_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Hub Like Dependency",
+          "type": "number"
+        },
+        "unstable_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unstable Dependency",
+          "type": "number"
+        }
+      },
+      "required": [
+        "cyclic_dependency",
+        "hub_like_dependency",
+        "unstable_dependency"
+      ],
+      "title": "ArchitectureWeights",
+      "type": "object"
+    },
+    "CConfig": {
+      "additionalProperties": false,
+      "description": "C dal tier del servizio (ADR-0028).",
+      "properties": {
+        "missing": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Missing",
+          "type": "number"
+        },
+        "tier_1": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Tier 1",
+          "type": "number"
+        },
+        "tier_2": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Tier 2",
+          "type": "number"
+        },
+        "tier_3": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Tier 3",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tier_1",
+        "tier_2",
+        "tier_3",
+        "missing"
+      ],
+      "title": "CConfig",
+      "type": "object"
+    },
+    "ChurnConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "floor": {
+          "description": "Minimo di P con il percentile di churn.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        },
+        "unknown": {
+          "description": "P senza churn (storia superficiale o assente).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "number"
+        },
+        "window_days": {
+          "maximum": 3650,
+          "minimum": 1,
+          "title": "Window Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "window_days",
+        "floor",
+        "unknown"
+      ],
+      "title": "ChurnConfig",
+      "type": "object"
+    },
+    "CoverageOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "churn_percentile_min": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Churn Percentile Min",
+          "type": "integer"
+        },
+        "coverage_below_percent": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Coverage Below Percent",
+          "type": "integer"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "level",
+        "churn_percentile_min",
+        "coverage_below_percent"
+      ],
+      "title": "CoverageOverride",
+      "type": "object"
+    },
+    "CvssFloor": {
+      "additionalProperties": false,
+      "description": "Una dipendenza con questo CVSS o più non scende sotto `level`, qualunque siano i feed.",
+      "properties": {
+        "cvss_min": {
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Cvss Min",
+          "type": "number"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "cvss_min",
+        "level"
+      ],
+      "title": "CvssFloor",
+      "type": "object"
+    },
+    "EConfig": {
+      "additionalProperties": false,
+      "description": "Valori di E secondo ADR-0022.",
+      "properties": {
+        "not_reachable_or_test": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Not Reachable Or Test",
+          "type": "number"
+        },
+        "reachable_exposed": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Reachable Exposed",
+          "type": "number"
+        },
+        "reachable_exposure_unknown": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Reachable Exposure Unknown",
+          "type": "number"
+        },
+        "reachable_internal": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Reachable Internal",
+          "type": "number"
+        },
+        "unknown": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "number"
+        }
+      },
+      "required": [
+        "reachable_exposed",
+        "reachable_internal",
+        "reachable_exposure_unknown",
+        "unknown",
+        "not_reachable_or_test"
+      ],
+      "title": "EConfig",
+      "type": "object"
+    },
+    "EpssOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "epss_min": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Epss Min",
+          "type": "number"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "level",
+        "epss_min"
+      ],
+      "title": "EpssOverride",
+      "type": "object"
+    },
+    "GConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "dependency_without_cvss": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Dependency Without Cvss",
+          "type": "number"
+        },
+        "health": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Health",
+          "type": "number"
+        },
+        "license": {
+          "$ref": "#/$defs/GLicense"
+        },
+        "secret": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Secret",
+          "type": "number"
+        },
+        "severity": {
+          "$ref": "#/$defs/SeverityMap"
+        }
+      },
+      "required": [
+        "severity",
+        "dependency_without_cvss",
+        "license",
+        "secret",
+        "health"
+      ],
+      "title": "GConfig",
+      "type": "object"
+    },
+    "GLicense": {
+      "additionalProperties": false,
+      "properties": {
+        "attribution": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Attribution",
+          "type": "number"
+        },
+        "forbidden": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Forbidden",
+          "type": "number"
+        },
+        "forbidden_distributed": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Forbidden Distributed",
+          "type": "number"
+        },
+        "require_approval": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Require Approval",
+          "type": "number"
+        },
+        "unknown": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "number"
+        }
+      },
+      "required": [
+        "forbidden_distributed",
+        "forbidden",
+        "require_approval",
+        "unknown",
+        "attribution"
+      ],
+      "title": "GLicense",
+      "type": "object"
+    },
+    "HotspotOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "churn_percentile_min": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Churn Percentile Min",
+          "type": "integer"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "level",
+        "churn_percentile_min"
+      ],
+      "title": "HotspotOverride",
+      "type": "object"
+    },
+    "Level": {
+      "enum": [
+        "critico",
+        "alto",
+        "medio",
+        "basso"
+      ],
+      "title": "Level",
+      "type": "string"
+    },
+    "LevelFloor": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/Level"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "LevelFloor",
+      "type": "object"
+    },
+    "LevelSourceChoice": {
+      "description": "Quale livello decide il gate (D2-10): il provvisorio di ADR-0009 o quello da punteggio.",
+      "enum": [
+        "provisional",
+        "score"
+      ],
+      "title": "LevelSourceChoice",
+      "type": "string"
+    },
+    "LevelsConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/LevelSourceChoice"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/Thresholds"
+        }
+      },
+      "required": [
+        "source",
+        "thresholds"
+      ],
+      "title": "LevelsConfig",
+      "type": "object"
+    },
+    "OverridesConfig": {
+      "additionalProperties": false,
+      "description": "Override di §6.3: alzano il livello a un minimo, mai il punteggio (ADR-0021).",
+      "properties": {
+        "architecture_smell_hotspot": {
+          "$ref": "#/$defs/HotspotOverride"
+        },
+        "dependency_cvss_floor": {
+          "description": "Limite inferiore al livello di una dipendenza in funzione del CVSS (ADR-0021, S5-A1): i feed possono alzare un livello, non azzerarlo.",
+          "items": {
+            "$ref": "#/$defs/CvssFloor"
+          },
+          "maxItems": 10,
+          "title": "Dependency Cvss Floor",
+          "type": "array"
+        },
+        "epss_reachable": {
+          "$ref": "#/$defs/EpssOverride"
+        },
+        "kev_reachable": {
+          "$ref": "#/$defs/LevelFloor"
+        },
+        "license_forbidden_distributed": {
+          "$ref": "#/$defs/LevelFloor"
+        },
+        "low_coverage_critical_code": {
+          "$ref": "#/$defs/CoverageOverride"
+        },
+        "sast_confirmed_exposed": {
+          "$ref": "#/$defs/LevelFloor"
+        }
+      },
+      "required": [
+        "kev_reachable",
+        "license_forbidden_distributed",
+        "epss_reachable",
+        "sast_confirmed_exposed",
+        "architecture_smell_hotspot",
+        "low_coverage_critical_code"
+      ],
+      "title": "OverridesConfig",
+      "type": "object"
+    },
+    "PConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "churn": {
+          "$ref": "#/$defs/ChurnConfig"
+        },
+        "epss_floor": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Epss Floor",
+          "type": "number"
+        },
+        "feed_missing": {
+          "description": "P di una dipendenza senza snapshot EPSS e KEV.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Feed Missing",
+          "type": "number"
+        },
+        "health": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Health",
+          "type": "number"
+        },
+        "iac": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Iac",
+          "type": "number"
+        },
+        "kev": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Kev",
+          "type": "number"
+        },
+        "license": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "License",
+          "type": "number"
+        },
+        "sast": {
+          "$ref": "#/$defs/SastP"
+        },
+        "secret": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Secret",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kev",
+        "epss_floor",
+        "feed_missing",
+        "sast",
+        "iac",
+        "secret",
+        "license",
+        "health",
+        "churn"
+      ],
+      "title": "PConfig",
+      "type": "object"
+    },
+    "SastP": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmed": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confirmed",
+          "type": "number"
+        },
+        "unconfirmed": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unconfirmed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "confirmed",
+        "unconfirmed"
+      ],
+      "title": "SastP",
+      "type": "object"
+    },
+    "SeverityMap": {
+      "additionalProperties": false,
+      "description": "Severità della regola → G. Le chiavi sono i nomi del SARIF e degli scanner.",
+      "properties": {
+        "critical": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Critical",
+          "type": "number"
+        },
+        "error": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Error",
+          "type": "number"
+        },
+        "high": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "High",
+          "type": "number"
+        },
+        "low": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Low",
+          "type": "number"
+        },
+        "medium": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Medium",
+          "type": "number"
+        },
+        "missing": {
+          "description": "Regola senza severità.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Missing",
+          "type": "number"
+        },
+        "note": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Note",
+          "type": "number"
+        },
+        "warning": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Warning",
+          "type": "number"
+        }
+      },
+      "required": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "error",
+        "warning",
+        "note",
+        "missing"
+      ],
+      "title": "SeverityMap",
+      "type": "object"
+    },
+    "Thresholds": {
+      "additionalProperties": false,
+      "description": "Limiti inferiori inclusi dei livelli; il basso è tutto ciò che sta sotto `medio`.",
+      "properties": {
+        "alto": {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Alto",
+          "type": "number"
+        },
+        "critico": {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Critico",
+          "type": "number"
+        },
+        "medio": {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Medio",
+          "type": "number"
+        }
+      },
+      "required": [
+        "critico",
+        "alto",
+        "medio"
+      ],
+      "title": "Thresholds",
+      "type": "object"
+    },
+    "VariantBC": {
+      "additionalProperties": false,
+      "properties": {
+        "floor": {
+          "description": "Minimo di C di B (posizione del PageRank).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        }
+      },
+      "required": [
+        "floor"
+      ],
+      "title": "VariantBC",
+      "type": "object"
+    },
+    "VariantBConfig": {
+      "additionalProperties": false,
+      "description": "Variante B su qualità e architettura (ADR-0023). Le altre categorie usano A.",
+      "properties": {
+        "c": {
+          "$ref": "#/$defs/VariantBC"
+        },
+        "g": {
+          "$ref": "#/$defs/VariantBG"
+        },
+        "p": {
+          "$ref": "#/$defs/VariantBP"
+        }
+      },
+      "required": [
+        "g",
+        "p",
+        "c"
+      ],
+      "title": "VariantBConfig",
+      "type": "object"
+    },
+    "VariantBG": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/ArchitectureWeights"
+        },
+        "floor": {
+          "description": "Minimo di G di B: un finding reale non ha G zero.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        }
+      },
+      "required": [
+        "floor",
+        "architecture"
+      ],
+      "title": "VariantBG",
+      "type": "object"
+    },
+    "VariantBP": {
+      "additionalProperties": false,
+      "description": "P di B: churn e densità di violazioni, in percentile, con pesi di somma 1.",
+      "properties": {
+        "density_unknown": {
+          "description": "Percentile di densità ignota (senza righe).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Density Unknown",
+          "type": "number"
+        },
+        "floor": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        },
+        "w_churn": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "W Churn",
+          "type": "number"
+        },
+        "w_density": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "W Density",
+          "type": "number"
+        }
+      },
+      "required": [
+        "w_churn",
+        "w_density",
+        "floor",
+        "density_unknown"
+      ],
+      "title": "VariantBP",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:scoring-config:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "c": {
+      "$ref": "#/$defs/CConfig"
+    },
+    "e": {
+      "$ref": "#/$defs/EConfig"
+    },
+    "g": {
+      "$ref": "#/$defs/GConfig"
+    },
+    "levels": {
+      "$ref": "#/$defs/LevelsConfig"
+    },
+    "overrides": {
+      "$ref": "#/$defs/OverridesConfig"
+    },
+    "p": {
+      "$ref": "#/$defs/PConfig"
+    },
+    "variant": {
+      "description": "Variante attiva di default (ADR-0021).",
+      "enum": [
+        "A",
+        "B"
+      ],
+      "title": "Variant",
+      "type": "string"
+    },
+    "variant_b": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VariantBConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Parametri della Variante B (ADR-0023); senza, B coincide con A."
+    },
+    "version": {
+      "description": "Versione del contenuto: la alza chi lo cambia.",
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "variant",
+    "levels",
+    "g",
+    "p",
+    "e",
+    "c",
+    "overrides"
+  ],
+  "title": "ScoringConfig",
+  "type": "object",
+  "x-schema-version": "1.1"
+}

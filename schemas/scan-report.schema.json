@@ -1,5 +1,50 @@
 {
   "$defs": {
+    "Agents": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enabled"
+        },
+        "llm_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm Provider"
+        },
+        "max_phase": {
+          "anyOf": [
+            {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Phase"
+        }
+      },
+      "title": "Agents",
+      "type": "object"
+    },
     "AppliedException": {
       "additionalProperties": false,
       "description": "Eccezione con fingerprint corrispondente e `expires` non superata (ADR-0014).",
@@ -34,6 +79,122 @@
       "title": "AppliedException",
       "type": "object"
     },
+    "Baseline": {
+      "additionalProperties": false,
+      "description": "Esito del confronto con la baseline (ADR-0025, §7). I conteggi quadrano con i finding.",
+      "properties": {
+        "commit": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "existing": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Existing",
+          "type": "integer"
+        },
+        "new": {
+          "default": 0,
+          "minimum": 0,
+          "title": "New",
+          "type": "integer"
+        },
+        "not_evaluated": {
+          "default": 0,
+          "description": "Finding della baseline che mancano perché il loro plugin è fallito: non sono né risolti né esistenti e il report lo dice (ADR-0025).",
+          "minimum": 0,
+          "title": "Not Evaluated",
+          "type": "integer"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9-]{0,62}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Codice dell'avviso (`baseline-commit-mismatch`, `baseline-partial`...).",
+          "title": "Reason"
+        },
+        "resolved": {
+          "items": {
+            "$ref": "#/$defs/ResolvedFinding"
+          },
+          "maxItems": 10000,
+          "title": "Resolved",
+          "type": "array"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaselineSourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/BaselineStatus"
+        },
+        "updated": {
+          "description": "Fingerprint degli `existing` con posizione o livello cambiati: il SARIF li marca `updated` (ADR-0011, ADR-0025).",
+          "items": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "title": "Updated",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "Baseline",
+      "type": "object"
+    },
+    "BaselineSourceKind": {
+      "enum": [
+        "ci-artifact",
+        "base-scan",
+        "server"
+      ],
+      "title": "BaselineSourceKind",
+      "type": "string"
+    },
+    "BaselineState": {
+      "description": "Stato rispetto alla baseline (ADR-0025). Un finding `risolto` non è nel report: sta nella\nsezione `baseline` di `scan-report`. Assente: nessuna baseline valida.",
+      "enum": [
+        "new",
+        "existing"
+      ],
+      "title": "BaselineState",
+      "type": "string"
+    },
+    "BaselineStatus": {
+      "enum": [
+        "valid",
+        "missing",
+        "rejected"
+      ],
+      "title": "BaselineStatus",
+      "type": "string"
+    },
     "Category": {
       "enum": [
         "quality",
@@ -48,6 +209,233 @@
       ],
       "title": "Category",
       "type": "string"
+    },
+    "CodeAnalyzerConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "agents": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Agents"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "exceptions": {
+          "items": {
+            "$ref": "#/$defs/ConfigException"
+          },
+          "title": "Exceptions",
+          "type": "array"
+        },
+        "gate": {
+          "$ref": "#/$defs/ca_core__models__config__Gate"
+        },
+        "languages": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Languages",
+          "type": "array"
+        },
+        "licenses": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Licenses"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "paths": {
+          "$ref": "#/$defs/Paths"
+        },
+        "plugins": {
+          "$ref": "#/$defs/Plugins"
+        },
+        "scoring": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Scoring"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "service": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Service"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "version": {
+          "const": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "CodeAnalyzerConfig",
+      "type": "object"
+    },
+    "ConfigException": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "expires": {
+          "format": "date",
+          "title": "Expires",
+          "type": "string"
+        },
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fingerprint",
+        "reason",
+        "expires",
+        "approved_by"
+      ],
+      "title": "ConfigException",
+      "type": "object"
+    },
+    "CoverageFormat": {
+      "enum": [
+        "lcov",
+        "cobertura"
+      ],
+      "title": "CoverageFormat",
+      "type": "string"
+    },
+    "CoverageOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "reports": {
+          "items": {
+            "$ref": "#/$defs/CoverageReport"
+          },
+          "maxItems": 20,
+          "title": "Reports",
+          "type": "array"
+        }
+      },
+      "title": "CoverageOptions",
+      "type": "object"
+    },
+    "CoverageReport": {
+      "additionalProperties": false,
+      "description": "Un report prodotto dalla CI prima della scansione, come file del workspace.",
+      "properties": {
+        "base_dir": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "not": {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+              },
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Dir"
+        },
+        "format": {
+          "$ref": "#/$defs/CoverageFormat"
+        },
+        "path": {
+          "minLength": 1,
+          "not": {
+            "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+          },
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "format"
+      ],
+      "title": "CoverageReport",
+      "type": "object"
+    },
+    "EnrichmentSnapshot": {
+      "additionalProperties": false,
+      "description": "Snapshot EPSS o KEV usato (ADR-0024): basta a riprodurre un punteggio a posteriori.",
+      "properties": {
+        "content": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "type": "string"
+          },
+          "maxProperties": 8,
+          "title": "Content",
+          "type": "object"
+        },
+        "downloaded_at": {
+          "format": "date-time",
+          "title": "Downloaded At",
+          "type": "string"
+        },
+        "feed": {
+          "enum": [
+            "epss",
+            "kev"
+          ],
+          "title": "Feed",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "public",
+            "mirror",
+            "cache"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feed",
+        "origin",
+        "downloaded_at",
+        "sha256"
+      ],
+      "title": "EnrichmentSnapshot",
+      "type": "object"
     },
     "FeedSnapshot": {
       "additionalProperties": false,
@@ -80,8 +468,33 @@
     "Finding": {
       "additionalProperties": false,
       "properties": {
+        "baseline_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BaselineState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "category": {
           "$ref": "#/$defs/Category"
+        },
+        "correlation": {
+          "anyOf": [
+            {
+              "pattern": "^cg1:[0-9a-f]{16}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gruppo di correlazione (K-21, ADR-0026): finding di strumenti diversi sullo stesso problema nello stesso file. Non cambia fingerprint, livello né esito del gate.",
+          "title": "Correlation"
         },
         "cve": {
           "items": {
@@ -198,6 +611,49 @@
           "default": null,
           "title": "Owner"
         },
+        "pathless_key": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Impronta degli ingredienti del fingerprint senza il percorso (ADR-0025): serve ad accoppiare un finding dopo un cambio di percorso. Non è un identificativo.",
+          "title": "Pathless Key"
+        },
+        "previous_path": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "not": {
+                "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])|[\\x00-\\x1f\\x7f]"
+              },
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Percorso nella baseline di un finding accoppiato dopo uno spostamento di file (ADR-0025, secondo passaggio). Solo con `baseline_state` `existing`.",
+          "title": "Previous Path"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Remediation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "rule_id": {
           "title": "Rule Id",
           "type": "string"
@@ -238,6 +694,15 @@
           "title": "Tools",
           "type": "array",
           "uniqueItems": true
+        },
+        "variant_scores": {
+          "description": "Punteggi in ombra di A e B (D2-10). Varianti uniche (vincolo del modello).",
+          "items": {
+            "$ref": "#/$defs/VariantScore"
+          },
+          "maxItems": 2,
+          "title": "Variant Scores",
+          "type": "array"
         }
       },
       "required": [
@@ -254,54 +719,6 @@
         "last_seen"
       ],
       "title": "Finding",
-      "type": "object"
-    },
-    "Gate": {
-      "additionalProperties": false,
-      "description": "Configurazione di gate effettiva. IPOTESI D-0009-A: `effective_mode` va tolto con essa.\n\n`block_on` e `warn_on` sono quelli di `.code-analyzer.yml`, non risolti: il valore\npredefinito e la precedenza di `--fail-on` stanno nel gate (ADR-0009), mai nel report.",
-      "properties": {
-        "block_on": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Level"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Block On"
-        },
-        "effective_mode": {
-          "$ref": "#/$defs/GateMode"
-        },
-        "mode": {
-          "$ref": "#/$defs/GateMode"
-        },
-        "warn_on": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/Level"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Warn On"
-        }
-      },
-      "required": [
-        "mode",
-        "effective_mode"
-      ],
-      "title": "Gate",
       "type": "object"
     },
     "GateMode": {
@@ -403,10 +820,62 @@
       "enum": [
         "tool_severity",
         "policy",
-        "default"
+        "default",
+        "score",
+        "override"
       ],
       "title": "LevelSource",
       "type": "string"
+    },
+    "Licenses": {
+      "additionalProperties": false,
+      "properties": {
+        "distributed_product": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distributed Product"
+        },
+        "forbidden": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "require_approval": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Require Approval",
+          "type": "array"
+        }
+      },
+      "title": "Licenses",
+      "type": "object"
+    },
+    "LinterOptions": {
+      "additionalProperties": false,
+      "description": "ADR-0026: il repository può solo spegnere regole; il report le elenca.",
+      "properties": {
+        "disable_rules": {
+          "items": {
+            "pattern": "^[A-Za-z0-9@][A-Za-z0-9_./@-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 500,
+          "title": "Disable Rules",
+          "type": "array"
+        }
+      },
+      "title": "LinterOptions",
+      "type": "object"
     },
     "Location": {
       "additionalProperties": false,
@@ -499,6 +968,24 @@
       ],
       "title": "Outcome",
       "type": "string"
+    },
+    "Paths": {
+      "additionalProperties": false,
+      "properties": {
+        "exclude": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            },
+            "type": "string"
+          },
+          "title": "Exclude",
+          "type": "array"
+        }
+      },
+      "title": "Paths",
+      "type": "object"
     },
     "PluginRun": {
       "additionalProperties": false,
@@ -599,6 +1086,126 @@
       "title": "PluginRun",
       "type": "object"
     },
+    "Plugins": {
+      "additionalProperties": false,
+      "properties": {
+        "checkov": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoverageOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "disable": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Disable",
+          "type": "array"
+        },
+        "eslint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "hadolint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ruff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinterOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "semgrep": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Plugins",
+      "type": "object"
+    },
+    "Remediation": {
+      "additionalProperties": false,
+      "description": "I passi per risolvere un finding (ADR-0029). Sempre testo semplice: né l'API né la UI lo\ninterpretano come HTML o Markdown. È della regola, non del risultato: nessun contenuto del\nrepository analizzato. Nessun testo generato (gli LLM sono della Fase 3).",
+      "properties": {
+        "references": {
+          "items": {
+            "pattern": "^https?://[^\\s\\x00-\\x1f\\x7f]{1,2040}$",
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "References",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source": {
+          "$ref": "#/$defs/RemediationSource"
+        },
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source"
+      ],
+      "title": "Remediation",
+      "type": "object"
+    },
+    "RemediationSource": {
+      "enum": [
+        "tool",
+        "rule",
+        "derived"
+      ],
+      "title": "RemediationSource",
+      "type": "string"
+    },
     "ReportStatus": {
       "enum": [
         "complete",
@@ -640,6 +1247,290 @@
       "title": "Repository",
       "type": "object"
     },
+    "ResolvedFinding": {
+      "additionalProperties": false,
+      "description": "Un finding della baseline assente ora, con tutti i suoi strumenti riusciti (ADR-0025).",
+      "properties": {
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "rule_id": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fingerprint",
+        "rule_id",
+        "title"
+      ],
+      "title": "ResolvedFinding",
+      "type": "object"
+    },
+    "ScanInfo": {
+      "additionalProperties": false,
+      "description": "Tipo di scansione (ADR-0025, ADR-0018): servono a `scans` sul server.",
+      "properties": {
+        "base_commit": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40,64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Commit"
+        },
+        "kind": {
+          "$ref": "#/$defs/ScanKind",
+          "default": "full"
+        },
+        "pull_request": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pull Request"
+        }
+      },
+      "title": "ScanInfo",
+      "type": "object"
+    },
+    "ScanKind": {
+      "enum": [
+        "full",
+        "pr"
+      ],
+      "title": "ScanKind",
+      "type": "string"
+    },
+    "Scoring": {
+      "additionalProperties": false,
+      "properties": {
+        "variant": {
+          "default": "A",
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "title": "Scoring",
+      "type": "object"
+    },
+    "ScoringInfo": {
+      "additionalProperties": false,
+      "description": "Quale configurazione di scoring ha prodotto i punteggi (G2.a, D2-10).",
+      "properties": {
+        "active_variant": {
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Active Variant",
+          "type": "string"
+        },
+        "benchmark_version": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distribuzione di benchmark della Variante B (ADR-0023): versione e impronta.",
+          "title": "Benchmark Version"
+        },
+        "config_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Config Version",
+          "type": "string"
+        },
+        "shadow": {
+          "default": true,
+          "description": "A e B calcolate entrambe: la seconda non decide il livello.",
+          "title": "Shadow",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "active_variant",
+        "config_version"
+      ],
+      "title": "ScoringInfo",
+      "type": "object"
+    },
+    "SemgrepOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "items": {
+            "minLength": 1,
+            "not": {
+              "pattern": "^(?:[/\\\\]|[A-Za-z]:)|(?:^|[/\\\\])\\.\\.(?![^/\\\\])"
+            },
+            "type": "string"
+          },
+          "title": "Rules",
+          "type": "array"
+        }
+      },
+      "title": "SemgrepOptions",
+      "type": "object"
+    },
+    "Service": {
+      "additionalProperties": false,
+      "description": "Dichiarazione non verificata: vale solo se manca il file di contesto (ADR-0028).",
+      "properties": {
+        "catalog_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Catalog Id"
+        },
+        "internet_facing": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Internet Facing"
+        },
+        "tier": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tier"
+        }
+      },
+      "title": "Service",
+      "type": "object"
+    },
+    "ServiceContext": {
+      "additionalProperties": false,
+      "description": "Fonte di C ed E (ADR-0028): da dove venivano tier ed esposizione di un punteggio.",
+      "properties": {
+        "catalog_id": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Catalog Id"
+        },
+        "internet_facing": {
+          "$ref": "#/$defs/ServiceValue"
+        },
+        "tier": {
+          "$ref": "#/$defs/ServiceValue"
+        }
+      },
+      "required": [
+        "tier",
+        "internet_facing"
+      ],
+      "title": "ServiceContext",
+      "type": "object"
+    },
+    "ServiceValue": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "enum": [
+            "catalog",
+            "repository",
+            "default"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "ServiceValue",
+      "type": "object"
+    },
     "Signature": {
       "description": "Firma assente o non valida non genera un report (exit 2, ADR-0005): resta `skipped`.",
       "enum": [
@@ -659,6 +1550,40 @@
       ],
       "title": "Status",
       "type": "string"
+    },
+    "VariantScore": {
+      "additionalProperties": false,
+      "description": "Punteggio in ombra di una variante (D2-10, ADR-0018): si calcolano A e B insieme, e ciascuna\nporta i suoi fattori con la loro evidenza. La forma esatta dei fattori è di ADR-0021 (A-06,\nancora da scrivere): qui solo ciò che ADR-0018 già fissa.",
+      "properties": {
+        "impact": {
+          "$ref": "#/$defs/ImpactFactors"
+        },
+        "level": {
+          "$ref": "#/$defs/Level"
+        },
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "variant": {
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variant",
+        "score",
+        "level",
+        "impact"
+      ],
+      "title": "VariantScore",
+      "type": "object"
     },
     "Warning_": {
       "additionalProperties": false,
@@ -696,6 +1621,205 @@
       ],
       "title": "Warning_",
       "type": "object"
+    },
+    "ca_core__models__config__Gate": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "critico"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "critico"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "alto"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "alto"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "medio"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "medio"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "block_on": {
+                "contains": {
+                  "const": "basso"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "block_on"
+            ]
+          },
+          "then": {
+            "properties": {
+              "warn_on": {
+                "not": {
+                  "contains": {
+                    "const": "basso"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "block_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block On"
+        },
+        "mode": {
+          "$ref": "#/$defs/GateMode",
+          "default": "all"
+        },
+        "warn_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Warn On"
+        }
+      },
+      "title": "Gate",
+      "type": "object"
+    },
+    "ca_core__models__scan_report__Gate": {
+      "additionalProperties": false,
+      "description": "Configurazione di gate effettiva. IPOTESI D-0009-A: `effective_mode` va tolto con essa.\n\n`block_on` e `warn_on` sono quelli di `.code-analyzer.yml`, non risolti: il valore\npredefinito e la precedenza di `--fail-on` stanno nel gate (ADR-0009), mai nel report.",
+      "properties": {
+        "block_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block On"
+        },
+        "effective_mode": {
+          "$ref": "#/$defs/GateMode"
+        },
+        "mode": {
+          "$ref": "#/$defs/GateMode"
+        },
+        "warn_on": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Level"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Warn On"
+        }
+      },
+      "required": [
+        "mode",
+        "effective_mode"
+      ],
+      "title": "Gate",
+      "type": "object"
     }
   },
   "$id": "urn:code-analyzer:schema:scan-report:v1",
@@ -723,6 +1847,31 @@
     ]
   },
   "properties": {
+    "baseline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Baseline"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "correlation_version": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{1,4}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Versione della tabella di correlazione usata (K-21): un gruppo assegnato con una tabella diversa non è confrontabile.",
+      "title": "Correlation Version"
+    },
     "disabled_plugins": {
       "description": "Disattivati da `plugins.disable`; disgiunti dai nomi in `plugins` (vincolo del modello, non dello schema).",
       "items": {
@@ -736,6 +1885,26 @@
       "minimum": 0,
       "title": "Duration Seconds",
       "type": "number"
+    },
+    "effective_config": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CodeAnalyzerConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Configurazione con cui la scansione è stata eseguita, per intero (ADR-0025): serve a una scansione di PR che usa questo report come baseline. Assente nei report della Fase 1, che quindi non valgono come baseline per la configurazione."
+    },
+    "enrichment": {
+      "items": {
+        "$ref": "#/$defs/EnrichmentSnapshot"
+      },
+      "maxItems": 2,
+      "title": "Enrichment",
+      "type": "array"
     },
     "exceptions": {
       "items": {
@@ -760,7 +1929,7 @@
       "type": "array"
     },
     "gate": {
-      "$ref": "#/$defs/Gate"
+      "$ref": "#/$defs/ca_core__models__scan_report__Gate"
     },
     "inert_sections": {
       "items": {
@@ -779,6 +1948,31 @@
     },
     "repository": {
       "$ref": "#/$defs/Repository"
+    },
+    "scan": {
+      "$ref": "#/$defs/ScanInfo"
+    },
+    "scoring": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScoringInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "service_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServiceContext"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "started_at": {
       "format": "date-time",
@@ -820,5 +2014,5 @@
   },
   "title": "ScanReport",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.4"
 }

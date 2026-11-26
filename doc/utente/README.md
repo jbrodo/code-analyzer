@@ -1,6 +1,8 @@
-# Code Analyzer: guida della CLI (Fase 1)
+# Code Analyzer: guida della CLI
 
-La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate.
+La CLI `code-analyzer` analizza una directory con scanner open source eseguiti in container, e decide da un report se la scansione supera il gate. In Fase 2 sa anche confrontare una PR con una baseline, commentare la PR su GitHub e produrre i report nativi di GitLab.
+
+Altre pagine: [modalità PR e baseline](pull-request.md), [GitHub: Action, commento e check run](ci-github.md), [GitLab: componente e report nativi](ci-gitlab.md), [invio al server](server.md), [la dashboard](dashboard.md), [livelli, punteggi e varianti](livelli-e-punteggi.md).
 
 **Stato.** Non esiste ancora un rilascio: il pacchetto si costruisce con `deploy/docker/package-cli.sh`, che firma le immagini con una chiave di prova su un registry locale (D-0005).
 
@@ -24,12 +26,15 @@ In alternativa all'installazione, la CLI gira in un container che avvia i plugin
 
 | Comando | Cosa fa | Exit |
 | --- | --- | --- |
-| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
+| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline] [--pr --base COMMIT --baseline FILE …] [--variant A\|B] [--scoring-config FILE] [--service-context FILE]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
 | `gate [--report FILE] [--fail-on LIVELLI] [--allow-partial]` | Decide dal report | 0 superato; 1 fallito; 2 errore o scansione non valutabile |
 | `config validate [PATH]` | Controlla `.code-analyzer.yml` offline: schema, espressioni SPDX, date, percorsi | 0 valido; 2 non valido |
 | `sbom [PATH] [--format cyclonedx] [--output FILE]` | Genera con syft l'SBOM CycloneDX 1.7 di `PATH`, su stdout o in `FILE` | 0 SBOM prodotto; 2 errore |
+| `notify --provider github [--report FILE] [--no-comment] [--no-check-run] [--max-findings N] [--max-annotations N]` | Scrive il commento sulla PR e la check run dal report (token in `GITHUB_TOKEN`) | 0 fatto o saltato con avviso; 2 errore; mai 1 |
+| `export --format gitlab [--report FILE] [--sbom FILE] [--output-dir DIR]` | Scrive i report nativi di GitLab dal report | 0 fatto; 2 errore |
+| `upload --server URL [--report FILE] [--audience A]` | Invia report, SARIF, SBOM e grafo al server con il token OIDC della CI (facoltativo, [server.md](server.md)) | 0 inviato o già presente; 2 errore |
 
-`scan` non esce mai con 1: a decidere è solo `gate`. Un'interruzione o un errore inatteso danno sempre 2.
+Le opzioni di PR sono in [pull-request.md](pull-request.md). `scan`, `notify`, `export` e `upload` non escono mai con 1: a decidere è solo `gate`. Un'interruzione o un errore inatteso danno sempre 2.
 
 ### `scan`
 
@@ -45,7 +50,21 @@ Il report è `partial`, e quindi non supera il gate, quando:
 - alcuni percorsi non sono leggibili dai plugin (`workspace-unreadable`);
 - ci sono collegamenti simbolici il cui contenuto non viene analizzato (`workspace-symlinks`): quelli a file e quelli a directory che escono dalla directory scansionata o finiscono in un percorso escluso. Vale qualunque sia il nome, anche se il link è innocuo: se è atteso, escludilo con `paths.exclude`. Analizzando una sottodirectory di un monorepo, un link come `shared -> ../../shared` rende quindi parziale la scansione.
 
-Scanner eseguiti: syft, osv-scanner, trivy, scancode, gitleaks, bandit (Python) e semgrep (Python, JavaScript, TypeScript). Un plugin il cui linguaggio non è presente viene saltato con l'avviso `plugin-skipped`.
+Scanner eseguiti, ciascuno nel proprio container firmato; un plugin il cui linguaggio non è presente viene saltato con l'avviso `plugin-skipped`:
+
+| Plugin | Cosa analizza | Categoria |
+| --- | --- | --- |
+| syft | SBOM dei componenti | (SBOM) |
+| osv-scanner, trivy | Vulnerabilità delle dipendenze | `dependency` |
+| scancode | Licenze | `license` |
+| gitleaks | Segreti, anche nella storia git | `secret` |
+| bandit (Python), semgrep (Python, JavaScript, TypeScript) | Problemi di sicurezza nel codice | `sast` |
+| ruff (Python), eslint (JavaScript, TypeScript) | Qualità del codice | `quality` |
+| checkov, hadolint | Configurazioni IaC (Dockerfile, Kubernetes, Terraform) | `iac` |
+| coverage | File con copertura di riga bassa, dai report LCOV o Cobertura prodotti dalla CI | `test` |
+| ca-graph | Grafo dei moduli (Python, JS, TS) e smell architetturali: dipendenza ciclica, hub, instabile | `architecture` |
+
+I repository possono solo **spegnere** regole di checkov, hadolint, ruff ed eslint (`plugins.<nome>.disable_rules`); il report le elenca. `coverage` legge i report indicati in `plugins.coverage.reports` (`path`, `format`, `base_dir`): senza, non trova nulla. Segnala i file con almeno 20 righe e copertura inferiore al 50%; le soglie non sono ancora configurabili. Finding di strumenti diversi sullo stesso problema nello stesso file ricevono un gruppo di correlazione (`correlation`), senza cambiare livello né esito del gate. La distribuzione dell'immagine di hadolint è ancora un tema aperto.
 
 ### `sbom`
 
@@ -78,7 +97,7 @@ languages: [python]           # linguaggi dichiarati
 paths:
   exclude: ["tests/fixtures/**"]   # glob relativi al repository
 gate:
-  mode: all                   # all | new-findings-only (in Fase 1 equivale ad all)
+  mode: all                   # all | new-findings-only (solo in una scansione di PR con baseline valida)
   block_on: [critico, alto]
   warn_on: [medio]            # un livello non può stare in entrambe le liste
 licenses:                     # se la sezione manca, le licenze non sono valutate
@@ -98,13 +117,13 @@ exceptions:
 
 Sono esclusi per impostazione predefinita `node_modules`, `.venv`, `dist`, `.git` (non per gitleaks) e gli artefatti di output.
 
-`service`, `scoring` e `agents` vengono validati ma non hanno effetto in Fase 1; il report li elenca come sezioni inerti.
+`service` e `scoring` (solo `variant`) sono attive: vedi [livelli-e-punteggi.md](livelli-e-punteggi.md). `agents` viene validata ma non ha effetto; il report la elenca come sezione inerte.
 
 Il file non può decidere immagini, firma, isolamento, rete, montaggi, comandi dei plugin o origine dei feed.
 
 ## Limiti da conoscere
 
-**Livelli provvisori.** In Fase 1 i livelli derivano dalla severità degli scanner e dalle policy, senza punteggio né raggiungibilità: una vulnerabilità non raggiungibile con CVSS alto blocca comunque. In Fase 2 molti finding cambieranno livello.
+**Livelli provvisori.** I livelli che decidono il gate derivano ancora dalla severità degli scanner e dalle policy: una vulnerabilità non raggiungibile con CVSS alto blocca comunque. I punteggi A e B si calcolano in ombra e stanno nel report; quando il livello da punteggio diventerà attivo molti finding cambieranno livello, una volta sola (vedi [livelli-e-punteggi.md](livelli-e-punteggi.md)).
 
 **Isolamento.** Fuori da un server i plugin girano in container rafforzati, con isolamento inferiore a gVisor. Il rischio residuo è accettato per CI effimere e uso locale, non per runner persistenti condivisi senza gVisor.
 
