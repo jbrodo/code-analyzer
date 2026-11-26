@@ -1411,7 +1411,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13. ADR: nessuno.
 
 #### X-05 — Misura della scansione PR
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-26** (`doc/verifiche/gate-2.md`). **G2.d superata:** 20,1, 172,6 e 263,9 s sulle PR di riferimento dei tre pilota, scelte con un criterio fissato prima; tutti i finding nuovi nei file modificati. Senza la policy di licenze e con una sola esecuzione per caso; su un runner di CI non è misurata.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: L-01, I-02, T-04.
 - Accettazione: PR di riferimento registrata per ciascun pilota; durata totale in modalità `--pr` dal report, con la regola di misura della Fase 1; G2.d misurata.
@@ -1425,7 +1425,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13, §18. ADR: 0021, 0023.
 
 #### X-07 — Auto-analisi con i livelli della Fase 2
-- Agente: `test`. Stato: `LIBERO`. **Prova intermedia del 2026-11-18** su clone pulito dell'ultimo commit (`e5f8193`) con il pacchetto firmato e tredici plugin: `complete`, 1207 finding, `gate --fail-on critico,alto` esce con 0 dopo 7 eccezioni nuove approvate da Riccardo Roveda (tre licenze di pacchetti nuovi, tre notices rigenerati, una CVE di picomatch senza versione corretta, scadenza 2027-02-18). La prova ha trovato e fatto correggere: la heredoc nel Dockerfile della CLI (hadolint non la legge), un carattere bidirezionale scritto per esteso in un test, licenze nominate nei documenti e un blocco di checkov con 64 PID su venti core. Non chiude X-07: mancano K-14 e il giudizio con i livelli da punteggio.
+- Agente: `test`. Stato: **chiuso il 2026-11-26** con la variante A attiva, livelli provvisori e da punteggio (`doc/verifiche/gate-2.md`): `gate` esce con 0, le 6 eccezioni di D-0015 applicate, 42 delle 43 in uso. **Con la variante B attiva il gate fallisce** su tre finding `quality` di una funzione di `runner.py`: da risolvere se X-06 propone B. Trivy con il database del 2026-11-17. **Prova intermedia del 2026-11-18** su clone pulito dell'ultimo commit (`e5f8193`) con il pacchetto firmato e tredici plugin: `complete`, 1207 finding, `gate --fail-on critico,alto` esce con 0 dopo 7 eccezioni nuove approvate da Riccardo Roveda (tre licenze di pacchetti nuovi, tre notices rigenerati, una CVE di picomatch senza versione corretta, scadenza 2027-02-18). La prova ha trovato e fatto correggere: la heredoc nel Dockerfile della CLI (hadolint non la legge), un carattere bidirezionale scritto per esteso in un test, licenze nominate nei documenti e un blocco di checkov con 64 PID su venti core. Non chiude X-07: mancano K-14 e il giudizio con i livelli da punteggio.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: K-14, I-02, X-10.
 - Accettazione: Code Analyzer sul proprio monorepo con `--fail-on critico,alto` esce con 0: nessun finding Critico o Alto, con i 6 finding di licenza effettiva coperti dalle eccezioni di X-10.
