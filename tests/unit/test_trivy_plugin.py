@@ -244,11 +244,13 @@ def test_adapt_maps_severity_to_a_sarif_level(severity: str) -> None:
         lambda d: d["Results"][0].update(Target="/etc/passwd"),
         lambda d: d["Results"][0].update(Target="../x"),
         lambda d: d["Results"][0].update(Target="file:///x"),
+        lambda d: d["Results"][0].update(Target="https://h/x"),
+        lambda d: d["Results"][0].update(Target="C:/x"),
         lambda d: d["Results"][0]["Vulnerabilities"][0].pop("PkgIdentifier"),
         lambda d: d["Results"][0]["Vulnerabilities"][0].pop("VulnerabilityID"),
         lambda d: d.update(Results="x"),
     ],
-    ids=["absolute", "dotdot", "scheme", "no-purl", "no-id", "not-a-list"],
+    ids=["absolute", "dotdot", "scheme", "url", "drive", "no-purl", "no-id", "not-a-list"],
 )
 def test_adapt_rejects_what_it_cannot_make_conforming(mutate: Any) -> None:
     document = native()

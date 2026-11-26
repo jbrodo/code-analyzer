@@ -311,6 +311,7 @@ def test_adapter_does_not_import_ca_core_or_third_parties() -> None:
         "xml.parsers.expat",
         "pathlib",
         "typing",
+        "urllib.parse",  # codifica dell'`uri` (ADR-0004)
     }
 
 

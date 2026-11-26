@@ -36,6 +36,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 SCANNER = "/usr/local/bin/osv-scanner"
 SCANNER_VERSION = "2.7.0"
@@ -71,6 +72,12 @@ _V3 = {
     "UI": {"N": 0.85, "R": 0.62},
     "CIA": {"H": 0.56, "L": 0.22, "N": 0.0},
 }
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def _roundup(value: float) -> float:
@@ -161,7 +168,7 @@ def _result(
         "ruleId": rule_id,
         "level": _LEVELS.get((severity or "").upper(), "note" if severity else "warning"),
         "message": {"text": text[:_MAX_TEXT]},
-        "locations": [{"physicalLocation": {"artifactLocation": {"uri": source}}}],
+        "locations": [{"physicalLocation": {"artifactLocation": {"uri": _uri(source)}}}],
         "properties": properties,
     }
 

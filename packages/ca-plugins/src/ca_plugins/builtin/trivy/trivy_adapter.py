@@ -26,6 +26,7 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 TRIVY = "/usr/local/bin/trivy"
 TRIVY_VERSION = "0.76.2"
@@ -47,6 +48,12 @@ class InvalidOutput(ValueError):
     """L'output di trivy non e' un JSON nativo utilizzabile."""
 
 
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
+
+
 def _relative(target: str, workspace: str) -> str:
     path = target[len(workspace) + 1 :] if target.startswith(workspace + "/") else target
     segments = path.replace("\\", "/").split("/")
@@ -54,7 +61,8 @@ def _relative(target: str, workspace: str) -> str:
         not path
         or path.startswith(("/", "\\"))
         or ".." in segments
-        or re.match(r"[A-Za-z][\w+.-]*:", path)
+        # un indirizzo (`schema://`) o un'unità di Windows; `a:b/` è una cartella legittima
+        or re.match(r"[A-Za-z][\w+.-]*://|[A-Za-z]:[\\/]", path)
     ):
         raise InvalidOutput("percorso non relativo")
     return path
@@ -106,13 +114,13 @@ def _vulnerability(target: str | None, record: dict[str, Any]) -> dict[str, Any]
         "properties": properties,
     }
     if target is not None:
-        result["locations"] = [{"physicalLocation": {"artifactLocation": {"uri": target}}}]
+        result["locations"] = [{"physicalLocation": {"artifactLocation": {"uri": _uri(target)}}}]
     return result
 
 
 def _misconfiguration(target: str, record: dict[str, Any]) -> dict[str, Any]:
     severity = str(record.get("Severity") or "")
-    physical: dict[str, Any] = {"artifactLocation": {"uri": target}}
+    physical: dict[str, Any] = {"artifactLocation": {"uri": _uri(target)}}
     cause = record.get("CauseMetadata") or {}
     start, end = cause.get("StartLine"), cause.get("EndLine")
     if isinstance(start, int) and start >= 1:

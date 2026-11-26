@@ -15,6 +15,10 @@ from dataclasses import dataclass, field
 MAX_FILE_BYTES = 2 * 1024 * 1024  # V-07: il file più grande dei pilota è 972 KB
 MAX_FILES = 200_000  # come `MAX_MODULES` di `graph`
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+# Ciò che il contratto `graph` non accetta come percorso relativo (`ModulePath`): fra l'altro un
+# nome che sembra un'unità di Windows (`a:b/…`). Un solo file così farebbe scartare tutto il grafo.
+# È la stessa espressione di `ca_core.models.config`: un test le confronta.
+_NOT_RELATIVE = re.compile(r"^(?:[/\\]|[A-Za-z]:)|(?:^|[/\\])\.\.(?![^/\\])")
 
 SKIP_DIRS = frozenset(
     {
@@ -58,7 +62,7 @@ class LimitExceeded(ValueError):
 class Listing:
     files: list[str] = field(default_factory=list)  # percorsi relativi POSIX, ordinati
     skipped_size: int = 0
-    skipped_name: int = 0  # nomi con caratteri di controllo: il contratto li rifiuta (S-02)
+    skipped_name: int = 0  # nomi che il contratto rifiuta: caratteri di controllo (S-02) e simili
 
 
 def language_of(name: str) -> str | None:
@@ -98,7 +102,7 @@ def list_sources(root: str, max_files: int | None = None) -> Listing:
                 continue
             path = os.path.join(current, name)
             relative = os.path.relpath(path, root).replace(os.sep, "/")
-            if _CONTROL.search(relative):
+            if _CONTROL.search(relative) or _NOT_RELATIVE.search(relative):
                 listing.skipped_name += 1
                 continue
             try:

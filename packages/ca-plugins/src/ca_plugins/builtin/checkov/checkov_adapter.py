@@ -26,6 +26,7 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 CHECKOV = "/opt/venv/bin/checkov"
 WORKSPACE = "/workspace"
@@ -78,6 +79,12 @@ class InvalidOutput(ValueError):
 
 class InvalidConfig(ValueError):
     """`config.json` malformato o con un identificativo di regola non ammesso."""
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def load_disabled(path: str = CONFIG_FILE) -> list[str]:
@@ -194,7 +201,7 @@ def _result(check: Any) -> dict[str, Any]:
         raise InvalidOutput("controllo senza id o file")
     name = check.get("check_name")
     text = name[:MAX_MESSAGE] if isinstance(name, str) and name else rule_id
-    physical: dict[str, Any] = {"artifactLocation": {"uri": _relative(file_path)}}
+    physical: dict[str, Any] = {"artifactLocation": {"uri": _uri(_relative(file_path))}}
     if region := _range(check.get("file_line_range")):
         physical["region"] = region
     properties = {"tool_severity": SEVERITY[rule_id]} if rule_id in SEVERITY else {}

@@ -26,6 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 HADOLINT = "/usr/local/bin/hadolint"
 WORKSPACE = "/workspace"
@@ -55,6 +56,12 @@ class InvalidOutput(ValueError):
 
 class InvalidConfig(ValueError):
     """`config.json` malformato o con un identificativo di regola non ammesso."""
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def load_disabled(path: str = CONFIG_FILE) -> list[str]:
@@ -138,7 +145,9 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
             )
             if value is not None
         }
-        physical: dict[str, Any] = {"artifactLocation": {"uri": _relative(file_path, workspace)}}
+        physical: dict[str, Any] = {
+            "artifactLocation": {"uri": _uri(_relative(file_path, workspace))}
+        }
         if region:
             physical["region"] = region
         severity = SEVERITY.get(str(item.get("level")), "low")

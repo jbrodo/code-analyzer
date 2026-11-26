@@ -30,6 +30,7 @@ import sys
 import xml.parsers.expat as expat
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 WORKSPACE = "/workspace"
 OUT_FILE = "/out/results.sarif"
@@ -58,6 +59,12 @@ class ConfigError(ValueError):
 
 class ReportRefused(ValueError):
     """Il report viola un limite, la forma attesa o dichiara entità."""
+
+
+def _uri(path: str) -> str:
+    """Percorso codificato per l'`uri` del SARIF (ADR-0004): l'host rifiuta `?` e `#`, scambia
+    `a:` per uno schema e decodifica `%XX`. `fsencode` conserva anche i nomi non UTF-8."""
+    return quote(os.fsencode(path), safe="/")
 
 
 def _safe_relative(value: Any) -> bool:
@@ -282,7 +289,7 @@ def findings(files: dict[str, Lines]) -> list[dict[str, Any]]:
             {
                 "ruleId": RULE_ID,
                 "message": {"text": text},
-                "locations": [{"physicalLocation": {"artifactLocation": {"uri": path}}}],
+                "locations": [{"physicalLocation": {"artifactLocation": {"uri": _uri(path)}}}],
                 # `value` è la copertura misurata e `threshold` quella minima: qui il problema è
                 # un valore sotto la soglia, non sopra (ADR-0026).
                 "properties": {

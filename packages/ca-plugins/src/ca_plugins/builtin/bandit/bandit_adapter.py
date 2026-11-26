@@ -20,6 +20,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 BANDIT = "/opt/venv/bin/bandit"
 WORKSPACE = "/workspace"
@@ -92,6 +93,29 @@ def _contract_properties(result: dict[str, Any]) -> dict[str, Any]:
     return {"tool_severity": severity} if isinstance(severity, str) and severity else {}
 
 
+def through_symlink(workspace: str, relative: str) -> bool:
+    """Un componente del percorso è un collegamento simbolico: l'host non lo legge (ADR-0004)."""
+    current = Path(workspace)
+    for part in relative.split("/"):
+        current /= part
+        if current.is_symlink():
+            return True
+    return False
+
+
+def _reaches_a_link(result: dict[str, Any], workspace: str) -> bool:
+    """Dopo `_clean`: l'`uri` è relativo, codificato come lo scrive bandit."""
+    return any(
+        through_symlink(workspace, unquote(uri))
+        for loc in result.get("locations") or []
+        if isinstance(loc, dict)
+        and isinstance(
+            uri := ((loc.get("physicalLocation") or {}).get("artifactLocation") or {}).get("uri"),
+            str,
+        )
+    )
+
+
 def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
     """SARIF di bandit -> SARIF del contratto, o `InvalidOutput`."""
     try:
@@ -117,7 +141,11 @@ def adapt(raw: bytes, workspace: str = WORKSPACE) -> bytes:
                         "rules": [{"id": r["id"]} for r in rules if isinstance(r.get("id"), str)],
                     }
                 },
-                "results": [r for r in cleaned if not _assert_in_test(r)],
+                "results": [
+                    r
+                    for r in cleaned
+                    if not _assert_in_test(r) and not _reaches_a_link(r, workspace)
+                ],
             }
         ],
     }
