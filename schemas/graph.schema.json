@@ -208,6 +208,19 @@
       "additionalProperties": false,
       "description": "Calcolate dall'host sul grafo (G-04, G-08). Solo archi interni al repository.",
       "properties": {
+        "adi": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adi"
+        },
         "fan_in": {
           "maximum": 10000000,
           "minimum": 0,
@@ -268,6 +281,20 @@
         },
         "language": {
           "$ref": "#/$defs/Language"
+        },
+        "lines": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lines"
         },
         "metrics": {
           "anyOf": [
@@ -506,5 +533,5 @@
   ],
   "title": "Graph",
   "type": "object",
-  "x-schema-version": "1.1"
+  "x-schema-version": "1.2"
 }

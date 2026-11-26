@@ -35,6 +35,8 @@ VALID = {
     "source-score": mutated(DEFAULT, _set("levels.source", "score")),
     "integer-numbers": mutated(DEFAULT, _set("g.secret", 1), _set("levels.thresholds.alto", 40)),
     "version-2": mutated(DEFAULT, _set("version", 2)),
+    # ADR-0023: senza il blocco B coincide con A, ed è un file valido
+    "without-variant-b": mutated(DEFAULT, _set("variant_b", None)),
 }
 
 INVALID = {
@@ -63,6 +65,12 @@ INVALID = {
         DEFAULT, _set("overrides.low_coverage_critical_code.churn_percentile_min", 90.5)
     ),
     "window-zero": mutated(DEFAULT, _set("p.churn.window_days", 0)),
+    "variant-b-missing-c": mutated(DEFAULT, _set("variant_b.c", None)),
+    "variant-b-unknown-smell": mutated(
+        DEFAULT, _set("variant_b.g.architecture.god_component", 1.0)
+    ),
+    "variant-b-weight-above-one": mutated(DEFAULT, _set("variant_b.p.w_churn", 1.5)),
+    "variant-b-null": mutated(DEFAULT, _set("variant_b", "none")),
     # «segreto valido esposto» non si applica (ADR-0012): non c'è un posto dove configurarlo
     "valid-secret-override": mutated(DEFAULT, _set("overrides.valid_secret", {"level": "critico"})),
 }
@@ -81,7 +89,17 @@ def test_invalid_instances_are_rejected(instance: Json) -> None:
 def test_the_packaged_default_has_no_value_the_schema_cannot_express() -> None:
     """Il file predefinito supera lo schema ed elenca ogni sezione del contratto."""
     assert errors_of(VALIDATOR, DEFAULT) == []
-    assert set(DEFAULT) == {"version", "variant", "levels", "g", "p", "e", "c", "overrides"}
+    assert set(DEFAULT) == {
+        "version",
+        "variant",
+        "levels",
+        "g",
+        "p",
+        "e",
+        "c",
+        "overrides",
+        "variant_b",
+    }
 
 
 def test_default_levels_source_is_provisional_until_gate_2() -> None:

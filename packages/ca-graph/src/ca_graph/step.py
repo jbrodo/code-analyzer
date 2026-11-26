@@ -51,6 +51,7 @@ class BuildGraphResult(_Frozen):
     findings: list[Finding]
     executions: list[PluginExecution]  # con il plugin `ca-graph` fallito se il grafo non serve
     graph: Graph | None  # con metriche e PageRank, da conservare come artefatto
+    smells: list[Smell] = []  # con i membri completi: servono all'ADI (G-13)
 
 
 def _graph_execution(executions: list[PluginExecution]) -> PluginExecution | None:
@@ -154,12 +155,15 @@ def build_graph(request: BuildGraphRequest, reader: SourceReader, clock: Clock) 
         return BuildGraphResult(findings=[], executions=failed, graph=None)
     graph = _without_excluded(graph, request.exclude)
     deps = build(graph, request.options)
+    smells = detect(deps, request.smells)
     findings = [
         finding_of(s, repository=request.repository, commit=request.commit, clock=clock)
-        for s in detect(deps, request.smells)
+        for s in smells
     ]
     enriched = with_pagerank(graph, request.options, request.pagerank)
-    return BuildGraphResult(findings=findings, executions=request.executions, graph=enriched)
+    return BuildGraphResult(
+        findings=findings, executions=request.executions, graph=enriched, smells=smells
+    )
 
 
 __all__ = ["BuildGraphRequest", "BuildGraphResult", "UNSTABLE", "build_graph", "finding_of"]

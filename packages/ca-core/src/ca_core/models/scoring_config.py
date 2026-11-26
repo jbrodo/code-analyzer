@@ -6,7 +6,8 @@ non viene mai da `.code-analyzer.yml` (ADR-0014): lo cambia il tenant o chi lanc
 dal repository. Un file di sovrascrittura è completo, mai fuso con il predefinito.
 
 Non c'è un campo per l'override «segreto valido esposto»: non si applica (ADR-0012, ADR-0021).
-I parametri della Variante B sono di ADR-0023 e per ora non esistono.
+I parametri della Variante B (ADR-0023) stanno nel blocco facoltativo `variant_b`: senza, B coincide
+con A su qualità e architettura e l'evidenza lo dichiara.
 """
 
 from enum import StrEnum
@@ -161,6 +162,46 @@ class OverridesConfig(_Strict):
     )
 
 
+class ArchitectureWeights(_Strict):
+    """Peso per tipo di architectural smell (ADR-0023); il G è peso per dimensione normalizzata."""
+
+    cyclic_dependency: Fraction
+    hub_like_dependency: Fraction
+    unstable_dependency: Fraction
+
+
+class VariantBG(_Strict):
+    floor: Fraction = Field(description="Minimo di G di B: un finding reale non ha G zero.")
+    architecture: ArchitectureWeights
+
+
+class VariantBP(_Strict):
+    """P di B: churn e densità di violazioni, in percentile, con pesi di somma 1."""
+
+    w_churn: Fraction
+    w_density: Fraction
+    floor: Fraction
+    density_unknown: Fraction = Field(description="Percentile di densità ignota (senza righe).")
+
+    @model_validator(mode="after")
+    def _weights(self) -> Self:
+        if abs(self.w_churn + self.w_density - 1.0) > 1e-9:
+            raise ValueError("w_churn + w_density deve valere 1")
+        return self
+
+
+class VariantBC(_Strict):
+    floor: Fraction = Field(description="Minimo di C di B (posizione del PageRank).")
+
+
+class VariantBConfig(_Strict):
+    """Variante B su qualità e architettura (ADR-0023). Le altre categorie usano A."""
+
+    g: VariantBG
+    p: VariantBP
+    c: VariantBC
+
+
 class ScoringConfig(_Strict):
     version: StrictInt = Field(ge=1, description="Versione del contenuto: la alza chi lo cambia.")
     variant: Literal["A", "B"] = Field(description="Variante attiva di default (ADR-0021).")
@@ -170,6 +211,10 @@ class ScoringConfig(_Strict):
     e: EConfig
     c: CConfig
     overrides: OverridesConfig
+    variant_b: VariantBConfig | None = Field(
+        default=None,
+        description="Parametri della Variante B (ADR-0023); senza, B coincide con A.",
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:

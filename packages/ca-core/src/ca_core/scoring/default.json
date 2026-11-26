@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "variant": "A",
   "levels": {
     "source": "provisional",
@@ -95,5 +95,24 @@
         "level": "medio"
       }
     ]
+  },
+  "variant_b": {
+    "g": {
+      "floor": 0.1,
+      "architecture": {
+        "cyclic_dependency": 1.0,
+        "hub_like_dependency": 0.8,
+        "unstable_dependency": 0.6
+      }
+    },
+    "p": {
+      "w_churn": 0.5,
+      "w_density": 0.5,
+      "floor": 0.1,
+      "density_unknown": 0.3
+    },
+    "c": {
+      "floor": 0.1
+    }
   }
 }

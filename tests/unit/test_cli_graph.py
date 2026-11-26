@@ -86,3 +86,27 @@ def test_table_output_still_works_with_the_graph(
     executor = FakePluginExecutor({"ca-graph": env.ok()})
     assert env.scan(env.context(executor, plugins), "--format", "table") == 0
     assert "plugin ca-graph" in capsys.readouterr().out
+
+
+def test_variant_b_uses_the_benchmark_and_the_graph_artifact_has_the_debt_index(
+    tmp_path: Path,
+) -> None:
+    """K-07..K-10 e G-13 nella scansione: B ha i suoi fattori, il grafo righe e ADI."""
+    env = Env(tmp_path)
+    shutil.copytree(FIXTURE, env.repo, dirs_exist_ok=True)
+    report = run(env, graph_json(), [graph_plugin()])
+    assert report["scoring"]["benchmark_version"].startswith("1+")
+    cycle = next(f for f in report["findings"] if f["rule_id"] == "ca.arch.cyclic-dependency")
+    a, b = cycle["variant_scores"]
+    assert b["impact"]["evidence"]["g"]["rule"] == "smell-size"
+    assert b["impact"]["evidence"]["p"]["rule"] == "churn-density"
+    assert b["impact"]["evidence"]["c"]["rule"] == "pagerank-rank"
+    assert "variante-b-non-configurata" not in b["impact"]["evidence"].get("fallbacks", [])
+    assert a["impact"]["evidence"]["g"]["rule"] == "severity"
+    artifact = json.loads((env.out / "code-analyzer.graph.json").read_text())
+    measured = [m for m in artifact["modules"] if "metrics" in m]
+    assert all(isinstance(m["lines"], int) for m in artifact["modules"])
+    assert all(m["metrics"]["adi"] >= 0 for m in measured)
+    members = set(cycle["evidence"]["ca-graph"]["members"])
+    assert all(m["metrics"]["adi"] > 0 for m in measured if m["path"] in members)
+    assert all("adi" in p["metrics"] for p in artifact["packages"])

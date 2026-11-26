@@ -116,6 +116,9 @@ class Metrics(_Strict):
     fan_out: Count
     instability: Unit
     pagerank: Unit | None = None
+    # Architectural Debt Index (G-13, ADR-0023): somma dei G di B degli smell che includono il
+    # modulo; per un pacchetto, la somma sui suoi moduli. Assente se B non è configurata.
+    adi: Annotated[StrictFloat, Field(ge=0)] | None = None
 
 
 class Module(_Strict):
@@ -125,6 +128,8 @@ class Module(_Strict):
     test: StrictBool = False
     # Commit che toccano il file nella finestra; None se la storia non la copre (ADR-0022).
     churn: Count | None = None
+    # Righe fisiche del file (ADR-0023, densità di violazioni); None se il file non è leggibile.
+    lines: Count | None = None
     metrics: Metrics | None = None
 
 

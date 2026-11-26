@@ -66,7 +66,8 @@ def scores(
     )
     out = []
     for variant in ("A", "B"):
-        extra = {"fallbacks": ["variante-b-non-definita"]} if variant == "B" and b_fallback else {}
+        b_only = variant == "B" and b_fallback
+        extra = {"fallbacks": ["variante-b-non-configurata"]} if b_only else {}
         out.append(
             VariantScore(
                 variant=variant,  # type: ignore[arg-type]

@@ -111,14 +111,14 @@ test("le due varianti hanno la stessa struttura, in ordine fisso, con la formula
   expect(section?.textContent).not.toMatch(/migliore|peggiore|scarto/i);
 });
 
-test("la variante B senza definizione dichiara il ripiego e le due coincidono", async () => {
-  const fallback = { fallbacks: ["variante-b-non-definita"] };
+test.each(["variante-b-non-definita", "variante-b-non-configurata"])("la variante B senza parametri (%s) dichiara il ripiego e le due coincidono", async (code) => {
+  const fallback = { fallbacks: [code] };
   const a = score("A");
   const b = score("B", { evidence: { ...score("B").impact.evidence, ...fallback } });
   mount(detail({ occurrence: { scan_id: "s", commit: "c".repeat(40), variant_scores: [a, b] } }));
-  expect(await screen.findByText("Variante B non definita per questa categoria: coincide con A.")).toBeDefined();
+  expect(await screen.findByText("Variante B non configurata per questa categoria: coincide con A.")).toBeDefined();
   expect(screen.getByText("Le due varianti coincidono.")).toBeDefined();
-  expect(screen.getAllByText("variante-b-non-definita").length).toBeGreaterThan(0);
+  expect(screen.getAllByText(code).length).toBeGreaterThan(0);
 });
 
 test("l'origine del livello è in parole e i valori dell'evidenza sono testo", async () => {

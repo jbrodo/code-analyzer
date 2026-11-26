@@ -111,6 +111,11 @@ def _record_js(state: _State, resolver: js.Resolver, source: str, imports: FileI
             state.missing += 1
 
 
+def _lines(data: bytes) -> int:
+    """Righe fisiche: gli a capo, più l'ultima riga se non ne ha uno (ADR-0023)."""
+    return data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0)
+
+
 def extract_graph(
     workspace: str, *, window_days: int = 90, history: hist.History | None = None
 ) -> dict[str, Any]:
@@ -163,6 +168,8 @@ def extract_graph(
         }
         if history.status == hist.COMPLETE:
             module["churn"] = history.churn.get(path, 0)
+        if data is not None:
+            module["lines"] = _lines(data)
         modules.append(module)
     declared = ep.declared_entrypoints(configs, frozenset(sources), read_config)
     edges = [

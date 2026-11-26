@@ -537,5 +537,363 @@
       ],
       "floor": "critico"
     }
-  ]
+  ],
+  "variant_b": {
+    "_note": "ADR-0023, valori ricavati a mano su un benchmark e un grafo minimi, configurazione predefinita (g.floor 0,1; pesi 1,0/0,8/0,6; w_churn = w_density = 0,5; density_unknown 0,3; c.floor 0,1). F interpola linearmente tra i quantili ai livelli 0, 50, 90 e 100.",
+    "benchmark": {
+      "levels": [
+        0.0,
+        50.0,
+        90.0,
+        100.0
+      ],
+      "code_metrics": [
+        {
+          "engine": "ruff",
+          "rule_id": "C901",
+          "quantiles": [
+            1.0,
+            4.0,
+            10.0,
+            30.0
+          ]
+        }
+      ],
+      "smell_sizes": [
+        {
+          "rule_id": "ca.arch.cyclic-dependency",
+          "scope": "module",
+          "quantiles": [
+            2.0,
+            3.0,
+            5.0,
+            20.0
+          ]
+        },
+        {
+          "rule_id": "ca.arch.hub-like-dependency",
+          "scope": "module",
+          "quantiles": [
+            2.0,
+            6.0,
+            10.0,
+            40.0
+          ]
+        },
+        {
+          "rule_id": "ca.arch.unstable-dependency",
+          "scope": "package",
+          "quantiles": [
+            2.0,
+            3.0,
+            4.0,
+            10.0
+          ]
+        }
+      ]
+    },
+    "graph": {
+      "_note": "densità: a 20, b 0, c 20, d 0 per mille righe; churn non di test ordinato 0, 5, 10, 20; PageRank non di test ordinato 0,2, 0,5, 0,5, 1,0",
+      "modules": [
+        {
+          "path": "a.py",
+          "lines": 100,
+          "churn": 10,
+          "pagerank": 0.2
+        },
+        {
+          "path": "b.py",
+          "lines": 200,
+          "churn": 0,
+          "pagerank": 0.5
+        },
+        {
+          "path": "c.py",
+          "lines": 50,
+          "churn": 5,
+          "pagerank": 1.0
+        },
+        {
+          "path": "d.py",
+          "lines": 1000,
+          "churn": 20,
+          "pagerank": 0.5
+        },
+        {
+          "path": "tests/test_a.py",
+          "lines": 10,
+          "churn": 3,
+          "test": true
+        }
+      ],
+      "quality_findings": {
+        "a.py": 2,
+        "c.py": 1
+      }
+    },
+    "g_code": [
+      {
+        "name": "intensita-meta",
+        "rule_id": "C901",
+        "metric": {
+          "value": 20,
+          "threshold": 10
+        },
+        "expected": 0.5,
+        "_why": "F(20)=0,9+0,1·10/20=0,95; F(10)=0,9; (0,95−0,9)/(1−0,9)=0,5"
+      },
+      {
+        "name": "appena-sopra-soglia-al-minimo",
+        "rule_id": "C901",
+        "metric": {
+          "value": 11,
+          "threshold": 10
+        },
+        "expected": 0.1,
+        "_why": "F(11)=0,905; intensità 0,05 < g.floor 0,1"
+      },
+      {
+        "name": "oltre-il-massimo",
+        "rule_id": "C901",
+        "metric": {
+          "value": 40,
+          "threshold": 10
+        },
+        "expected": 1.0,
+        "_why": "F(40)=1"
+      },
+      {
+        "name": "soglia-oltre-il-benchmark",
+        "rule_id": "C901",
+        "metric": {
+          "value": 35,
+          "threshold": 30
+        },
+        "expected": 1.0,
+        "_why": "F(t)=1: intensità 1"
+      },
+      {
+        "name": "regola-assente-dal-benchmark",
+        "rule_id": "PLR0913",
+        "metric": {
+          "value": 8,
+          "threshold": 5
+        },
+        "tool_severity": "medium",
+        "expected": 0.5,
+        "fallback": "benchmark-assente"
+      },
+      {
+        "name": "regola-senza-metrica",
+        "rule_id": "F401",
+        "tool_severity": "medium",
+        "expected": 0.5,
+        "fallback": "regola-senza-metrica"
+      },
+      {
+        "name": "metrica-non-estratta",
+        "rule_id": "C901",
+        "tool_severity": "high",
+        "expected": 0.75,
+        "fallback": "metrica-assente"
+      }
+    ],
+    "g_arch": [
+      {
+        "name": "ciclo-di-4-moduli",
+        "rule_id": "ca.arch.cyclic-dependency",
+        "evidence": {
+          "scope": "module",
+          "size": 4
+        },
+        "expected": 0.7,
+        "_why": "1,0 · F(4) = 0,5 + 0,4·1/2 = 0,7"
+      },
+      {
+        "name": "ciclo-minimo-al-minimo",
+        "rule_id": "ca.arch.cyclic-dependency",
+        "evidence": {
+          "scope": "module",
+          "size": 2
+        },
+        "expected": 0.1,
+        "_why": "F(2)=0: g.floor"
+      },
+      {
+        "name": "hub-6-collegamenti",
+        "rule_id": "ca.arch.hub-like-dependency",
+        "evidence": {
+          "scope": "module",
+          "size": 1,
+          "fan_in": 3,
+          "fan_out": 3
+        },
+        "expected": 0.4,
+        "_why": "dimensione fan_in+fan_out=6; 0,8 · F(6)=0,8·0,5"
+      },
+      {
+        "name": "instabile-7-pacchetti",
+        "rule_id": "ca.arch.unstable-dependency",
+        "evidence": {
+          "scope": "package",
+          "size": 7
+        },
+        "expected": 0.57,
+        "_why": "0,6 · (0,9 + 0,1·3/6) = 0,6·0,95"
+      },
+      {
+        "name": "ambito-assente-dal-benchmark",
+        "rule_id": "ca.arch.cyclic-dependency",
+        "evidence": {
+          "scope": "package",
+          "size": 3
+        },
+        "expected": 0.5,
+        "fallback": "benchmark-assente",
+        "_why": "G di A: nessuna severità, g.severity.missing"
+      }
+    ],
+    "p": [
+      {
+        "name": "a-churn-e-densita-a-meta",
+        "members": [
+          "a.py"
+        ],
+        "expected": 0.5,
+        "_why": "0,5·0,5 + 0,5·0,5"
+      },
+      {
+        "name": "b-tutto-a-zero-al-minimo",
+        "members": [
+          "b.py"
+        ],
+        "expected": 0.1
+      },
+      {
+        "name": "d-solo-churn",
+        "members": [
+          "d.py"
+        ],
+        "expected": 0.375,
+        "_why": "0,5·0,75 + 0,5·0"
+      },
+      {
+        "name": "file-di-test",
+        "members": [
+          "tests/test_a.py"
+        ],
+        "expected": 0.125,
+        "_why": "churn 3: 1 su 4 sotto; densità 0"
+      },
+      {
+        "name": "fuori-dal-grafo",
+        "members": [
+          "e.py"
+        ],
+        "expected": 0.3,
+        "fallback": "churn-ignoto,densita-ignota",
+        "_why": "0,5·0,3 + 0,5·0,3"
+      },
+      {
+        "name": "storia-superficiale",
+        "members": [
+          "c.py"
+        ],
+        "history": "superficiale",
+        "expected": 0.4,
+        "fallback": "churn-ignoto",
+        "_why": "0,5·0,3 (p.churn.unknown) + 0,5·0,5"
+      },
+      {
+        "name": "pacchetto-radice",
+        "members": [
+          "."
+        ],
+        "expected": 0.625,
+        "_why": "massimi tra a, b, c, d: churn 0,75, densità 0,5"
+      }
+    ],
+    "c": [
+      {
+        "name": "a-il-meno-critico",
+        "members": [
+          "a.py"
+        ],
+        "expected": 0.25
+      },
+      {
+        "name": "pari-merito",
+        "members": [
+          "b.py"
+        ],
+        "expected": 0.75
+      },
+      {
+        "name": "il-piu-critico",
+        "members": [
+          "c.py"
+        ],
+        "expected": 1.0
+      },
+      {
+        "name": "massimo-tra-i-membri",
+        "members": [
+          "a.py",
+          "d.py"
+        ],
+        "expected": 0.75
+      },
+      {
+        "name": "senza-pagerank",
+        "members": [
+          "tests/test_a.py"
+        ],
+        "expected": 0.7,
+        "fallback": "fuori-dal-grafo",
+        "_why": "C di A senza tier: c.missing"
+      }
+    ],
+    "scores": [
+      {
+        "name": "c901-20-su-a",
+        "category": "quality",
+        "rule_id": "C901",
+        "metric": {
+          "value": 20,
+          "threshold": 10
+        },
+        "path": "a.py",
+        "g": 0.5,
+        "p": 0.5,
+        "e": 0.3,
+        "c": 0.25,
+        "score": 1.88,
+        "level": "basso",
+        "_why": "E ignota senza grafo di raggiungibilità; 100·0,5·0,5·0,3·0,25 = 1,875"
+      },
+      {
+        "name": "ciclo-a-b-c-d",
+        "category": "architecture",
+        "rule_id": "ca.arch.cyclic-dependency",
+        "evidence": {
+          "scope": "module",
+          "size": 4,
+          "members": [
+            "a.py",
+            "b.py",
+            "c.py",
+            "d.py"
+          ]
+        },
+        "path": "a.py",
+        "g": 0.7,
+        "p": 0.625,
+        "e": 0.3,
+        "c": 1.0,
+        "score": 13.13,
+        "level": "basso",
+        "_why": "100·0,7·0,625·0,3·1 = 13,125"
+      }
+    ]
+  }
 }

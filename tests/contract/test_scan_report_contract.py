@@ -242,6 +242,16 @@ VALID.update(
             MINIMAL,
             _set(scoring={"active_variant": "B", "config_version": "2026-11-17", "shadow": False}),
         ),
+        "scoring-benchmark-version": mutated(
+            MINIMAL,
+            _set(
+                scoring={
+                    "active_variant": "A",
+                    "config_version": "2+cf90f99e443e",
+                    "benchmark_version": "1+35e3b0d58d49",
+                }
+            ),
+        ),
         "service-context": mutated(
             MINIMAL,
             _set(
@@ -305,6 +315,10 @@ INVALID.update(
             MINIMAL, _set(scoring={"active_variant": "C", "config_version": "1"})
         ),
         "scoring-without-version": mutated(MINIMAL, _set(scoring={"active_variant": "A"})),
+        "scoring-empty-benchmark-version": mutated(
+            MINIMAL,
+            _set(scoring={"active_variant": "A", "config_version": "1", "benchmark_version": ""}),
+        ),
         "service-tier-4": mutated(
             MINIMAL,
             _set(

@@ -16,7 +16,7 @@ from ca_core.scoring import overrides as ov
 from ca_core.scoring.base import ScoringContext
 from ca_core.scoring.churn import ChurnIndex
 from ca_core.scoring.config import config_version, default_bytes, load_default
-from ca_core.scoring.models import B_UNDEFINED
+from ca_core.scoring.models import B_NOT_CONFIGURED
 from ca_core.scoring.reach import ReachResult, ReachState
 from ca_core.scoring.score import score_finding, score_findings
 
@@ -287,14 +287,17 @@ def test_an_override_never_lowers_a_level() -> None:
     assert (above.level, above.level_source) == (Level.CRITICAL, LevelSource.SCORE)
 
 
-def test_variant_b_equals_a_on_quality_and_architecture_and_says_so() -> None:
+def test_without_the_variant_b_block_b_equals_a_on_quality_and_architecture_and_says_so() -> None:
+    data = json.loads(default_bytes())
+    data.pop("variant_b")
+    config = ScoringConfig.model_validate(data)
     quality = finding("q", category=Category.QUALITY, tool="ruff")
-    a, b = score_finding(quality, ctx(), "A").variant_scores
+    a, b = score_finding(quality, ctx(config), "A").variant_scores
     assert a.score == b.score
-    assert B_UNDEFINED in b.impact.evidence["fallbacks"]
-    assert B_UNDEFINED not in a.impact.evidence.get("fallbacks", [])
+    assert B_NOT_CONFIGURED in b.impact.evidence["fallbacks"]
+    assert B_NOT_CONFIGURED not in a.impact.evidence.get("fallbacks", [])
     secret = finding("k", category=Category.SECRET, tool="gitleaks")
-    assert B_UNDEFINED not in score_finding(secret, ctx(), "A").variant_scores[
+    assert B_NOT_CONFIGURED not in score_finding(secret, ctx(config), "A").variant_scores[
         1
     ].impact.evidence.get("fallbacks", [])
 

@@ -21,7 +21,8 @@ function factorEvidence(score: Score, key: (typeof FACTORS)[number][0]): [string
 
 function VariantBlock({ score }: { score: Score }) {
   const { g, p, e, c } = score.impact;
-  const fallback = score.variant === "B" && hasFallback(score.impact.evidence, VARIANT_B_UNDEFINED);
+  const fallback =
+    score.variant === "B" && VARIANT_B_UNDEFINED.some((code) => hasFallback(score.impact.evidence, code));
   const shared = evidenceEntries(
     Object.fromEntries(
       Object.entries(score.impact.evidence ?? {}).filter(([k]) => !["g", "p", "e", "c"].includes(k)),
@@ -30,7 +31,7 @@ function VariantBlock({ score }: { score: Score }) {
   return (
     <section className="variant" aria-labelledby={`variant-${score.variant}`}>
       <h4 id={`variant-${score.variant}`}>Variante {score.variant}</h4>
-      {fallback && <p>Variante B non definita per questa categoria: coincide con A.</p>}
+      {fallback && <p>Variante B non configurata per questa categoria: coincide con A.</p>}
       <table className="factors">
         <caption>Fattori della variante {score.variant}</caption>
         <thead>

@@ -200,7 +200,7 @@ Esito di A-16 e A-17 al 2026-11-18, voce per voce:
 | 3 | D2-10, ADR-0021, `PROJECT.md` §6 | Risolta: ombra con `levels.source: provisional` fino al Gate 2 |
 | 4 | ADR-0021, `PROJECT.md` §6.3, regola 3 di `AGENTS.md` | Risolta: soglie nel file di scoring |
 | 5 | ADR-0021 e ADR-0022; «segreto valido» non applicabile (§6.3) | Risolta per la Variante A |
-| 6 | ADR-0023, D2-11 | **Aperta**: la Variante B coincide con A (K-06..K-10) |
+| 6 | ADR-0023, D2-11 | Risolta nell'implementazione (K-06..K-10, G-13, 2026-11-26); ADR-0023 resta `Proposto` fino al confronto con le pubblicazioni |
 | 7 | ADR-0022, K-04, G-12 | Risolta |
 | 8 | ADR-0028, D2-04, `PROJECT.md` §8 | Risolta: fonte attendibile = server o `--service-context` |
 | 9 | ADR-0029, C-01 (`remediation`) | Risolta |
@@ -600,7 +600,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §16 regola 7. ADR: 0024.
 
 #### F-05 — Tabella di regressione dello scoring
-- Agente: `test`. Stato: **parziale, 2026-11-17**. `tests/fixtures/scoring/cases.json`, con valori ricavati a mano da ADR-0021 e ADR-0022 e non dal codice: G per ogni categoria (26 casi), P (6), E (7), C (4), override (5), i sei punteggi dell'ADR e i bordi 14,99, 15, 39,99, 40, 69,5, 69,99, 69,995 e 70. **Non fatto:** i casi della Variante B (ADR-0023 non esiste); i casi di P per qualità e SAST sono nei test unitari, non nella tabella.
+- Agente: `test`. Stato: **parziale, 2026-11-17**. `tests/fixtures/scoring/cases.json`, con valori ricavati a mano da ADR-0021 e ADR-0022 e non dal codice: G per ogni categoria (26 casi), P (6), E (7), C (4), override (5), i sei punteggi dell'ADR e i bordi 14,99, 15, 39,99, 40, 69,5, 69,99, 69,995 e 70. Il 2026-11-26 la sezione `variant_b`: un benchmark e un grafo minimi e i casi di G (7 code smell, 5 architectural smell), P (7), C (5) e due punteggi completi, ricavati a mano da ADR-0023 (`tests/unit/test_scoring_variant_b.py`). **Non fatto:** i casi di P di A per qualità e SAST sono nei test unitari, non nella tabella.
 - Percorsi: `tests/fixtures/scoring/`.
 - Dipende da: C-03.
 - Accettazione: casi con fattori, punteggio e livello attesi per A e B, per ogni categoria, ogni override e i bordi 15, 40 e 70 (incluso 69,5); i valori attesi si ricavano da ADR-0021 e ADR-0023, non dal codice.
@@ -700,7 +700,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §6.1. ADR: 0022.
 
 #### G-13 — ADI per modulo
-- Agente: `backend`. Stato: `LIBERO`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-26**. `ca_graph/adi.py`: somma dei G di B degli smell per modulo e per pacchetto, in `metrics.adi` del grafo pubblicato (`graph` 1.2); calcolato dopo lo scoring, solo con blocco `variant_b` e benchmark. Il server lo serve con il grafo (B-11): nessuna colonna nuova.
 - Percorsi: `packages/ca-graph/src/ca_graph/`.
 - Dipende da: G-05, G-06, G-07, G-08, A-08.
 - Accettazione: ADI calcolato per modulo secondo ADR-0023, nel report e, con il server, nel DB; nessun trend in UI.
@@ -848,35 +848,35 @@ Ogni plugin include manifest, adattatore in Python standard senza importare `ca-
 - Spec: §6.2. ADR: 0023.
 
 #### K-07 — Variante B: G dei code smell
-- Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b.py`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-26**. `scoring/variant_b/code_smell.py`: intensità `(F(v) − F(t)) / (1 − F(t))` con `g.floor`; ripieghi su G di A con `benchmark-assente`, `metrica-assente`, `regola-senza-metrica`; evidenza con valore, soglia, `F(v)`, `F(t)` e versione del benchmark; `benchmark-motore-diverso` dichiarato, non rifiutato. `scoring.benchmark_version` nel report (`scan-report` 1.4). Formule confermate dall'utente il 2026-11-26.
+- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b/`.
 - Dipende da: K-01, K-06.
 - Accettazione: indice di intensità con quantili sul benchmark, casi di F-05 verdi.
 - Spec: §6.2. ADR: 0023.
 
 #### K-08 — Variante B: G degli architectural smell
-- Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b.py`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-26**. `scoring/variant_b/arch_smell.py`, separato da K-07: `peso(tipo) · F_dim(dimensione)` con `g.floor`; dimensione `size`, per Hub-Like `fan_in + fan_out`; ripieghi `benchmark-assente`, `dimensione-assente`.
+- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b/`.
 - Dipende da: K-01, G-10.
 - Accettazione: severità per tipo per dimensione normalizzata, motore separato da K-07, casi di F-05 verdi.
 - Spec: §6.2. ADR: 0023.
 
 #### K-09 — Variante B: P
-- Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b.py`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-26**. `scoring/variant_b/change.py` e `graph_index.py`: `max(p.floor, w_churn · pct_churn + w_density · pct_density)`, pesi di somma 1 controllati dal modello; densità = finding `quality` per mille righe. `graph` 1.2 con `Module.lines`, contato dall'estrattore. **Da fare fuori dal codice:** ricostruire e firmare l'immagine di `ca-graph` perché le scansioni con l'immagine abbiano le righe; finché non c'è, la densità è ignota e P usa `density_unknown`.
+- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b/`, `packages/ca-graph/src/ca_graph/treesitter/extract.py`.
 - Dipende da: K-01, G-11, P-01, P-02.
 - Accettazione: combinazione di churn e densità di violazioni con pesi in configurazione, casi di F-05 verdi.
 - Spec: §6.2. ADR: 0023.
 
 #### K-10 — Variante B: C
-- Agente: `backend`. Stato: `LIBERO`.
-- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b.py`.
+- Agente: `backend`. Stato: **chiuso il 2026-11-26**. `scoring/variant_b/criticality.py`: posizione del PageRank tra i moduli non di test (quota con PageRank minore o uguale), `c.floor`; ripieghi su C di A con `grafo-assente` e `fuori-dal-grafo`. Le categorie diverse da `quality` e `architecture` usano A, verificato da test.
+- Percorsi: `packages/ca-core/src/ca_core/scoring/variant_b/`.
 - Dipende da: K-01, G-08.
 - Accettazione: PageRank del componente normalizzato; per le categorie diverse da `quality` e `architecture` si usa la Variante A, verificato da test.
 - Spec: §6.2. ADR: 0023.
 
 #### K-11 — Calcolo in ombra di entrambe le varianti
-- Agente: `backend`. Stato: **chiuso il 2026-11-17** per A e per la struttura di B. `scoring/models.py`: A completa; B coincide con A su qualità e architettura con il fallback `variante-b-non-definita` nell'evidenza finché ADR-0023 non esiste, e usa A per il resto. K-07..K-10 (Variante B) restano fermi su ADR-0023 e D2-11. Esempio di ADR-0021 verificato (49,00, alto).
+- Agente: `backend`. Stato: **chiuso il 2026-11-17** per A e per la struttura di B. `scoring/models.py`: A completa; B coincide con A su qualità e architettura con il fallback `variante-b-non-definita` nell'evidenza finché ADR-0023 non esiste, e usa A per il resto. Esempio di ADR-0021 verificato (49,00, alto). **Il 2026-11-26** con K-07..K-10 B ha i suoi fattori su qualità e architettura; senza blocco `variant_b` nella configurazione il ripiego si chiama `variante-b-non-configurata` (la UI riconosce anche il nome vecchio). Il file predefinito passa alla versione 2.
 - Percorsi: `packages/ca-core/src/ca_core/scoring/`.
 - Dipende da: K-02, K-03, K-04, K-05, K-07, K-08, K-09, K-10, C-04.
 - Accettazione: per ogni finding fattori e punteggio di A e di B registrati come da ADR-0021, con la versione della configurazione; determinismo.

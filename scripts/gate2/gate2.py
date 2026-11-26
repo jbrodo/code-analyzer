@@ -80,7 +80,14 @@ def stats(report: dict[str, Any]) -> dict[str, Any]:
             "matrix": {f"{a}->{b}": n for (a, b), n in sorted(Counter(moved).items(), key=str)},
         }
     out["changes"] = changes
-    fallbacks = sum(1 for f in both if "variante-b-non-definita" in json.dumps(variant(f, "B")))
+    fallbacks = sum(
+        1
+        for f in both
+        if any(
+            c in json.dumps(variant(f, "B"))
+            for c in ("variante-b-non-definita", "variante-b-non-configurata")
+        )
+    )
     out["B_fallback_to_A"] = fallbacks
     out["by_category"] = {
         cat: dict(

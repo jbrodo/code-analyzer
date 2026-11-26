@@ -88,6 +88,7 @@ VALID = {
         MINIMAL, _with(externals=[{"name": "@scope/pkg.name", "ecosystem": "npm"}])
     ),
     "edge-observed": _edge(confidence="osservato"),
+    "module-lines-and-adi": _module(lines=0, metrics={**METRICS, "adi": 1.25}),
     "history-shallow": _history(status="superficiale", commits_read=1),
     "package-root": mutated(
         MINIMAL,
@@ -130,6 +131,10 @@ INVALID = {
     "module-unknown-parse": _module(parse="fallita"),
     "module-unknown-key": _module(source="import os"),
     "module-negative-churn": _module(churn=-1),
+    "module-negative-lines": _module(lines=-1),
+    "module-fractional-lines": _module(lines=1.5),
+    "metrics-negative-adi": _module(metrics={**METRICS, "adi": -0.1}),
+    "metrics-string-adi": _module(metrics={**METRICS, "adi": "1"}),
     "module-test-not-bool": _module(test="yes"),
     "metrics-instability-above-one": _module(metrics={**METRICS, "instability": 1.5}),
     "metrics-missing-fan-in": _module(metrics={"fan_out": 1, "instability": 0.5}),

@@ -16,7 +16,8 @@ const LABELS: Record<string, string> = {
   taint: "Percorso confermato",
 };
 
-export const VARIANT_B_UNDEFINED = "variante-b-non-definita";
+/** B coincide con A: report precedenti ad ADR-0023 (`non-definita`) o senza il blocco `variant_b`. */
+export const VARIANT_B_UNDEFINED = ["variante-b-non-definita", "variante-b-non-configurata"];
 const MAX_ENTRIES = 30;
 const MAX_VALUE = 300;
 

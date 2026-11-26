@@ -4,6 +4,7 @@ Un fattore restituisce il valore e la sua evidenza: quale regola, quale fallback
 Nessun valore numerico sta qui: arrivano dalla configurazione di scoring (regola 3).
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Protocol
@@ -12,8 +13,10 @@ from ca_core.models.finding import Finding, ImpactFactors
 from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
 from ca_core.ports import EnrichmentFeeds
+from ca_core.scoring.benchmark import LoadedBenchmark
 from ca_core.scoring.churn import ChurnIndex
 from ca_core.scoring.reach import NoReachability, Reachability
+from ca_core.scoring.variant_b.graph_index import GraphIndex
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,11 @@ class ScoringContext:
     reachability: Reachability = field(default_factory=NoReachability)
     feeds: EnrichmentFeeds | None = None  # EPSS e KEV; `None`: nessuno snapshot
     churn: ChurnIndex | None = None  # `None`: nessun grafo
+    # Variante B (ADR-0023): distribuzione di benchmark, dati del grafo per P e C, e versione di
+    # ogni plugin della scansione (per dire se il benchmark l'ha misurata un'altra versione).
+    benchmark: LoadedBenchmark | None = None
+    graph: GraphIndex | None = None  # `None`: nessun grafo
+    plugin_versions: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

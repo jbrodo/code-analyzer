@@ -29,7 +29,7 @@ Titolo `Variante A` (o `Variante B`), stesso peso tipografico per entrambe. Poi:
 - Tabella di dati con didascalia («Fattori della variante A») e intestazioni. Il nome del fattore è per esteso, la lettera tra parentesi. I valori hanno sempre due decimali, in notazione italiana.
 - **Da dove viene** mostra le voci dell'evidenza del fattore come coppie «nome: valore» in testo. Le chiavi note hanno un'etichetta italiana (regola, origine, tier, commit, esposizione, ripiego); le altre si mostrano con la chiave così com'è. Nessun valore è interpretato come markup o come collegamento.
 - Sotto la tabella la formula con i numeri veri: `100 × 0,75 × 0,40 × 0,60 × 1,00 = 18,00`, poi «Livello da punteggio: medio». Il punteggio è quello arrotondato a due decimali (ADR-0021).
-- **Ripiego.** Se l'evidenza dice `variante-b-non-definita`, il blocco di B apre con «Variante B non definita per questa categoria: coincide con A.» Su queste categorie il confronto non dice nulla (ADR-0021).
+- **Ripiego.** Se l'evidenza dice `variante-b-non-configurata` (o `variante-b-non-definita`, nei report precedenti ad ADR-0023), il blocco di B apre con «Variante B non configurata per questa categoria: coincide con A.» Su queste categorie il confronto non dice nulla (ADR-0021).
 - **Dato mancante.** Un fattore calcolato con un ripiego (`feed-assente`, tier non registrato) lo dichiara nella colonna «Da dove viene», in testo: un valore dedotto non si presenta come misurato.
 
 ## Nella lista

@@ -53,7 +53,7 @@ def test_by_default_both_variants_are_recorded_and_the_level_is_the_provisional_
     assert run_scan(env) == 0
     report, found = load(env), finding_of(env)
     assert report["scoring"]["active_variant"] == "A" and report["scoring"]["shadow"] is True
-    assert report["scoring"]["config_version"].startswith("1+")
+    assert report["scoring"]["config_version"].startswith("2+")
     assert [v["variant"] for v in found["variant_scores"]] == ["A", "B"]
     assert found["level"] == "alto" and found["level_source"] == "tool_severity"
     assert found["score"] == found["variant_scores"][0]["score"]

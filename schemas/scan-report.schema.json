@@ -1365,6 +1365,21 @@
           "title": "Active Variant",
           "type": "string"
         },
+        "benchmark_version": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Distribuzione di benchmark della Variante B (ADR-0023): versione e impronta.",
+          "title": "Benchmark Version"
+        },
         "config_version": {
           "maxLength": 64,
           "minLength": 1,
@@ -1999,5 +2014,5 @@
   },
   "title": "ScanReport",
   "type": "object",
-  "x-schema-version": "1.3"
+  "x-schema-version": "1.4"
 }

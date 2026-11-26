@@ -835,6 +835,8 @@ export interface components {
          * @description Calcolate dall'host sul grafo (G-04, G-08). Solo archi interni al repository.
          */
         readonly Metrics: {
+            /** Adi */
+            readonly adi?: number | null;
             /** Fan In */
             readonly fan_in: number;
             /** Fan Out */
@@ -849,6 +851,8 @@ export interface components {
             /** Churn */
             readonly churn?: number | null;
             readonly language: components["schemas"]["Language"];
+            /** Lines */
+            readonly lines?: number | null;
             readonly metrics?: components["schemas"]["Metrics"] | null;
             readonly parse: components["schemas"]["ParseStatus"];
             /** Path */
@@ -1171,6 +1175,11 @@ export interface components {
              * @enum {string}
              */
             readonly active_variant: "A" | "B";
+            /**
+             * Benchmark Version
+             * @description Distribuzione di benchmark della Variante B (ADR-0023): versione e impronta.
+             */
+            readonly benchmark_version?: string | null;
             /** Config Version */
             readonly config_version: string;
             /**

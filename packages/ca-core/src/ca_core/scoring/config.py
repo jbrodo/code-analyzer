@@ -45,7 +45,8 @@ def config_version(config: ScoringConfig) -> str:
     L'impronta è sul contenuto normalizzato, non sui byte del file: spazi e ordine delle chiavi non
     cambiano la versione.
     """
-    canonical = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    data = config.model_dump(mode="json", exclude_none=True)  # un blocco assente non conta
+    canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(canonical.encode()).hexdigest()
     return f"{config.version}+{digest[:12]}"
 

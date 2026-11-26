@@ -437,11 +437,19 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     # Punteggi in ombra (K-14, ADR-0021): il livello cambia solo con `levels.source: score`.
     from ca_cli.scoring import (
         run_scoring,
+        with_debt_index,
     )  # import locale: `scoring` usa `ScanError` di questo modulo
 
     scored = run_scoring(
-        args, context, config=config, workspace=root, findings=findings, graph=graph_step.graph
+        args,
+        context,
+        config=config,
+        workspace=root,
+        findings=findings,
+        graph=graph_step.graph,
+        plugins=plugins,
     )
+    graph = with_debt_index(graph_step, scored.config, scored.benchmark)
     findings = scored.findings
     warnings += scored.warnings
     effective = GateMode.ALL
@@ -493,9 +501,9 @@ def handle(args: argparse.Namespace, context: Context) -> int:
         raise ScanError(f"report non valido: {exc.__class__.__name__}") from exc
     except OSError as exc:
         raise ScanError("scrittura degli artefatti non riuscita") from exc
-    if graph_step.graph is not None:
+    if graph is not None:
         try:
-            sink.write(GRAPH_FILE, graph_step.graph.model_dump_json(exclude_none=True).encode())
+            sink.write(GRAPH_FILE, graph.model_dump_json(exclude_none=True).encode())
         except OSError as exc:
             raise ScanError("scrittura degli artefatti non riuscita") from exc
 

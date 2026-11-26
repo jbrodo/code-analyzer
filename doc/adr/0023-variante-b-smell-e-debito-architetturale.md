@@ -1,6 +1,6 @@
 # ADR-0023: Variante B, smell e debito architetturale
 
-- Stato: Proposto. Scelta tecnica su una decisione già presa (D2-11, 2026-11-10). I valori numerici sono ipotesi da calibrare in X-02 e X-06. Le definizioni sono ricostruite dalle pubblicazioni di §19 senza averle sotto mano: ogni punto segnato **da confrontare** va verificato sul testo prima di `Accettato`. Passa ad `Accettato` con quel confronto, la distribuzione di benchmark di K-06 e le prove di K-07..K-10 e G-13
+- Stato: Proposto. Scelta tecnica su una decisione già presa (D2-11, 2026-11-10). I valori numerici sono ipotesi da calibrare in X-02 e X-06. Le definizioni sono ricostruite dalle pubblicazioni di §19 senza averle sotto mano: ogni punto segnato **da confrontare** va verificato sul testo prima di `Accettato`. Il 2026-11-26 l'utente ha confermato le formule come scritte qui per l'implementazione; K-06, K-07..K-10 e G-13 sono fatti. Resta, per `Accettato`, il confronto con le pubblicazioni
 - Data: 2026-11-26
 - Decisione umana richiesta: no per la struttura (D2-11 è decisa). Sì per la conferma delle definizioni segnate **da confrontare**, che spetta a chi conosce le pubblicazioni
 - Riferimenti: §6, §6.2, §16 regola 3, §19; ADR-0003, 0014, 0020, 0021, 0022, 0026, 0028; D2-11; X-02 in `doc/verifiche/gate-2.md`
@@ -75,8 +75,8 @@ P = max(p_floor, w_churn · pct_churn(file) + w_dens · pct_dens(file))     con 
 
 - `pct_churn` è il percentile di ADR-0022 (`ChurnIndex`).
 - `pct_dens` è lo stesso percentile calcolato sulla **densità di violazioni**: finding `quality` del file per mille righe. I finding sono quelli della scansione dopo la normalizzazione e la deduplicazione, prima di eccezioni e baseline (una violazione accettata resta una violazione). La popolazione sono i moduli non di test del grafo; un modulo senza violazioni ha densità 0.
-- Per le righe il contratto `graph` passa a 1.1 con `Module.lines` (righe fisiche, facoltativo): lo conta l'estrattore, che ha già il file in memoria. Chiude la parte aperta di G-11.
-- Finding su più file (architettura a livello di pacchetto): il massimo tra i membri, come in A.
+- Per le righe il contratto `graph` passa a 1.2 con `Module.lines` (righe fisiche, facoltativo): lo conta l'estrattore, che ha già il file in memoria. Chiude la parte aperta di G-11.
+- Finding su più file: il massimo tra i membri, come in A. Un membro che è una cartella (smell a livello di pacchetto) vale per i moduli che contiene direttamente, come i pacchetti di ADR-0020; in A lo stesso finding resta senza churn. Un file di test ha il suo percentile, misurato sulla popolazione dei moduli non di test.
 - Predefiniti, ipotesi: `w_churn` 0,5, `w_dens` 0,5, `p_floor` 0,1. Churn ignoto: si usa `p.churn.unknown` di A come valore del suo termine; densità ignota (file fuori dal grafo o senza `lines`): `variant_b.p.density_unknown`, predefinito 0,3. Entrambi dichiarati nell'evidenza.
 - **Da confrontare.** EASE 2017 usa un modello predittivo, non una media pesata; la combinazione lineare è una scelta di questo ADR per restare spiegabile nella UI.
 
@@ -84,7 +84,7 @@ P = max(p_floor, w_churn · pct_churn(file) + w_dens · pct_dens(file))     con 
 
 - C è la posizione del PageRank del modulo tra i moduli non di test del grafo: la quota di moduli con PageRank **minore o uguale**. Il modulo più critico vale 1, il meno critico `1/n`, poi `max(c_floor, …)` con `c_floor` 0,1.
 - Non è il valore `metrics.pagerank` del grafo (grezzo diviso per il massimo): sui grafi reali quella distribuzione è molto asimmetrica, e quasi tutti i moduli avrebbero C vicino a zero e un punteggio di B trascurabile rispetto ad A. Il valore del grafo resta com'è per l'ADI e la UI. È la scelta che ADR-0020 lasciava a questo ADR.
-- Finding su più moduli: il massimo. File fuori dal grafo o grafo assente: C di A (tier del servizio, ADR-0028), con `grafo-assente`.
+- Finding su più moduli: il massimo. Grafo assente: C di A (tier del servizio, ADR-0028), con `grafo-assente`; file senza PageRank (fuori dal grafo, di test): C di A con `fuori-dal-grafo`. Un membro che è una cartella vale come in P.
 - In B il tier del servizio non entra nei finding `quality` e `architecture`: §6.2 sostituisce C. La UI mostra comunque il tier tra i dati del repository.
 
 ### Architectural Debt Index (G-13)
@@ -93,7 +93,7 @@ P = max(p_floor, w_churn · pct_churn(file) + w_dens · pct_dens(file))     con 
 ADI(m) = Σ G_B(s)     su ogni architectural smell s che include il modulo m
 ```
 
-- Calcolato sull'host dopo gli smell, scritto nel grafo dell'artefatto (`code-analyzer.graph.json`) come `metrics.adi` del modulo, con due decimali. Sul server si serve con `GET /v1/repositories/{id}/graph` (B-11), che già restituisce il grafo: nessuna route né colonna nuova. Per i pacchetti, la somma sui moduli.
+- Calcolato sull'host dopo gli smell e lo scoring, scritto nel grafo dell'artefatto (`code-analyzer.graph.json`) come `metrics.adi` del modulo, con due decimali (metà verso l'alto, come i punteggi). Uno smell a livello di pacchetto conta per i moduli dei suoi pacchetti. Senza blocco `variant_b` o senza benchmark l'ADI non c'è: non si somma un G di ripiego. Sul server si serve con `GET /v1/repositories/{id}/graph` (B-11), che già restituisce il grafo: nessuna route né colonna nuova. Per i pacchetti, la somma sui moduli.
 - Non è un fattore del punteggio e non decide livelli. Nessun trend né grafico nella UI (Fase 4, D2-15).
 - **Da confrontare.** SEAA 2018 definisce l'ADI con termini che qui mancano (per esempio la storia dello smell o una normalizzazione per dimensione del componente). Questa è la forma minima che si può calcolare con i dati di oggi.
 
@@ -117,7 +117,7 @@ Stesse soglie e stessi override di ADR-0021. L'override «architectural smell in
 
 ## Conseguenze
 
-- **Contratti** (regola 1 di `AGENTS.md`): `graph` 1.1 con `Module.lines` e `ModuleMetrics.adi`; `scoring-config` con il blocco facoltativo `variant_b`; `scan-report` con `scoring.benchmark_version` facoltativo; nuovo `scoring-benchmark`. Tutti aggiunte compatibili, con schemi e test di contratto.
+- **Contratti** (regola 1 di `AGENTS.md`): `graph` 1.2 con `Module.lines` e `Metrics.adi`; `scoring-config` 1.1 con il blocco facoltativo `variant_b`; `scan-report` 1.4 con `scoring.benchmark_version` facoltativo; nuovo `scoring-benchmark` 1.0. Tutti aggiunte compatibili, con schemi e test di contratto.
 - **Task.** K-06 costruisce corpus, modalità benchmark degli adattatori, script e `benchmark.json`. K-07 e K-08 i due motori di G, K-09 P con la densità (e `lines` nell'estrattore, che chiede di ricostruire l'immagine di `ca-graph`), K-10 C, G-13 l'ADI. `VariantBModel` smette di dichiarare `variante-b-non-definita`.
 - **X-02 va ripetuta** con B definita, e solo allora X-04 e X-06 possono confrontare A e B. X-02 ha già mostrato che le soglie dei livelli vanno ritarate per A; per B lo stesso vale a maggior ragione, perché G e C di B stanno spesso sotto quelli di A.
 - La modalità benchmark aggiunge una chiave a `/inputs/config.json` dei due plugin: va nel test di contratto degli adattatori e in S-03 (il repository non deve poterla attivare).

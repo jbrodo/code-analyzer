@@ -1,5 +1,36 @@
 {
   "$defs": {
+    "ArchitectureWeights": {
+      "additionalProperties": false,
+      "description": "Peso per tipo di architectural smell (ADR-0023); il G è peso per dimensione normalizzata.",
+      "properties": {
+        "cyclic_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Cyclic Dependency",
+          "type": "number"
+        },
+        "hub_like_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Hub Like Dependency",
+          "type": "number"
+        },
+        "unstable_dependency": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Unstable Dependency",
+          "type": "number"
+        }
+      },
+      "required": [
+        "cyclic_dependency",
+        "hub_like_dependency",
+        "unstable_dependency"
+      ],
+      "title": "ArchitectureWeights",
+      "type": "object"
+    },
     "CConfig": {
       "additionalProperties": false,
       "description": "C dal tier del servizio (ADR-0028).",
@@ -564,6 +595,105 @@
       ],
       "title": "Thresholds",
       "type": "object"
+    },
+    "VariantBC": {
+      "additionalProperties": false,
+      "properties": {
+        "floor": {
+          "description": "Minimo di C di B (posizione del PageRank).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        }
+      },
+      "required": [
+        "floor"
+      ],
+      "title": "VariantBC",
+      "type": "object"
+    },
+    "VariantBConfig": {
+      "additionalProperties": false,
+      "description": "Variante B su qualità e architettura (ADR-0023). Le altre categorie usano A.",
+      "properties": {
+        "c": {
+          "$ref": "#/$defs/VariantBC"
+        },
+        "g": {
+          "$ref": "#/$defs/VariantBG"
+        },
+        "p": {
+          "$ref": "#/$defs/VariantBP"
+        }
+      },
+      "required": [
+        "g",
+        "p",
+        "c"
+      ],
+      "title": "VariantBConfig",
+      "type": "object"
+    },
+    "VariantBG": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/ArchitectureWeights"
+        },
+        "floor": {
+          "description": "Minimo di G di B: un finding reale non ha G zero.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        }
+      },
+      "required": [
+        "floor",
+        "architecture"
+      ],
+      "title": "VariantBG",
+      "type": "object"
+    },
+    "VariantBP": {
+      "additionalProperties": false,
+      "description": "P di B: churn e densità di violazioni, in percentile, con pesi di somma 1.",
+      "properties": {
+        "density_unknown": {
+          "description": "Percentile di densità ignota (senza righe).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Density Unknown",
+          "type": "number"
+        },
+        "floor": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Floor",
+          "type": "number"
+        },
+        "w_churn": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "W Churn",
+          "type": "number"
+        },
+        "w_density": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "W Density",
+          "type": "number"
+        }
+      },
+      "required": [
+        "w_churn",
+        "w_density",
+        "floor",
+        "density_unknown"
+      ],
+      "title": "VariantBP",
+      "type": "object"
     }
   },
   "$id": "urn:code-analyzer:schema:scoring-config:v1",
@@ -597,6 +727,18 @@
       "title": "Variant",
       "type": "string"
     },
+    "variant_b": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VariantBConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Parametri della Variante B (ADR-0023); senza, B coincide con A."
+    },
     "version": {
       "description": "Versione del contenuto: la alza chi lo cambia.",
       "minimum": 1,
@@ -616,5 +758,5 @@
   ],
   "title": "ScoringConfig",
   "type": "object",
-  "x-schema-version": "1.0"
+  "x-schema-version": "1.1"
 }

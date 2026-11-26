@@ -76,12 +76,18 @@ def score_findings(
     *,
     active_variant: Variant,
     config_version: str,
+    benchmark_version: str | None = None,
 ) -> ScoreResult:
     out = [score_finding(f, context, active_variant) for f in findings]
     fallback = sum(
         1 for f in out if f.variant_scores and f.variant_scores[0].impact.evidence.get("fallbacks")
     )
-    info = ScoringInfo(active_variant=active_variant, config_version=config_version, shadow=True)
+    info = ScoringInfo(
+        active_variant=active_variant,
+        config_version=config_version,
+        shadow=True,
+        benchmark_version=benchmark_version,
+    )
     return ScoreResult(sort_scored(out), info, fallback)
 
 

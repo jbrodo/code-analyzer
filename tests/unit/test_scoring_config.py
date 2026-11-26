@@ -22,7 +22,7 @@ def test_the_packaged_default_loads() -> None:
 
 
 def test_version_is_the_version_plus_a_short_fingerprint() -> None:
-    assert re.fullmatch(r"1\+[0-9a-f]{12}", config_version(load_default()))
+    assert re.fullmatch(r"2\+[0-9a-f]{12}", config_version(load_default()))
 
 
 def test_version_ignores_whitespace_and_key_order() -> None:
@@ -60,4 +60,6 @@ def test_no_scoring_value_is_hard_coded_in_the_model() -> None:
     from ca_core.models.scoring_config import ScoringConfig
 
     defaults = [n for n, f in ScoringConfig.model_fields.items() if not f.is_required()]
-    assert defaults == []
+    # `variant_b` è un blocco facoltativo, non un valore: assente, B coincide con A (ADR-0023)
+    assert defaults == ["variant_b"]
+    assert ScoringConfig.model_fields["variant_b"].default is None

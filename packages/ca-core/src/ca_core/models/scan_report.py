@@ -233,6 +233,10 @@ class ScoringInfo(_Strict):
     shadow: StrictBool = Field(
         default=True, description="A e B calcolate entrambe: la seconda non decide il livello."
     )
+    benchmark_version: Annotated[str, Field(min_length=1, max_length=64)] | None = Field(
+        default=None,
+        description="Distribuzione di benchmark della Variante B (ADR-0023): versione e impronta.",
+    )
 
 
 class ServiceValue(_Strict):

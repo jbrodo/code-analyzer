@@ -19,16 +19,34 @@ from ca_cli.scan import ScanError
 from ca_core.models.config import CodeAnalyzerConfig
 from ca_core.models.finding import Finding
 from ca_core.models.graph import Graph
-from ca_core.models.scan_report import EnrichmentSnapshot, ScoringInfo, ServiceContext, Warning_
+from ca_core.models.scan_report import (
+    EnrichmentSnapshot,
+    PluginRun,
+    ScoringInfo,
+    ServiceContext,
+    Warning_,
+)
+from ca_core.models.scoring_config import ScoringConfig
 from ca_core.models.service_context_file import ServiceContextFile
 from ca_core.ports import SourceError
 from ca_core.scoring.base import ScoringContext
+from ca_core.scoring.benchmark import (
+    BenchmarkError,
+    LoadedBenchmark,
+    load_benchmark,
+    packaged_bytes,
+)
 from ca_core.scoring.churn import ChurnIndex
 from ca_core.scoring.config import ScoringConfigError, config_version, resolve_config
 from ca_core.scoring.reach import NoReachability, Reachability
 from ca_core.scoring.score import Variant, score_findings
 from ca_core.scoring.service import resolve_service_context
+from ca_core.scoring.variant_b.arch_smell import smell_g
+from ca_core.scoring.variant_b.graph_index import GraphIndex
+from ca_graph.adi import with_adi
 from ca_graph.reachability import GraphReachability
+from ca_graph.smells import Smell
+from ca_graph.step import BuildGraphResult
 from ca_plugins.enrichment import FetchError, load_enrichment, origin_from_env
 from ca_plugins.feeds import default_cache_dir as default_feeds_dir
 
@@ -43,6 +61,8 @@ class ScoringOutcome:
     service: ServiceContext
     enrichment: list[EnrichmentSnapshot]
     warnings: list[Warning_]
+    config: ScoringConfig  # serve all'ADI (G-13), che somma i G di B degli smell
+    benchmark: LoadedBenchmark | None
 
 
 def _read_outside(path: str, label: str, workspace: str, context: Context) -> bytes:
@@ -86,6 +106,17 @@ def _variant(args: argparse.Namespace, config: CodeAnalyzerConfig, default: str)
     return value  # type: ignore[return-value]
 
 
+def _benchmark() -> LoadedBenchmark | None:
+    """La distribuzione del pacchetto (ADR-0023); è un dato del prodotto, non una scelta."""
+    raw = packaged_bytes()
+    if raw is None:
+        return None
+    try:
+        return load_benchmark(raw)
+    except BenchmarkError as exc:
+        raise ScanError(str(exc)) from exc
+
+
 def run_scoring(
     args: argparse.Namespace,
     context: Context,
@@ -94,6 +125,7 @@ def run_scoring(
     workspace: str,
     findings: list[Finding],
     graph: Graph | None,
+    plugins: list[PluginRun] | None = None,
 ) -> ScoringOutcome:
     warnings: list[Warning_] = []
     try:
@@ -120,13 +152,22 @@ def run_scoring(
     warnings += enriched.warnings
     reach: Reachability = GraphReachability(graph) if graph is not None else NoReachability()
     churn = ChurnIndex(graph) if graph is not None else None
+    benchmark = _benchmark()
     result = score_findings(
         findings,
         ScoringContext(
-            config=scoring, service=service, reachability=reach, feeds=enriched.feeds, churn=churn
+            config=scoring,
+            service=service,
+            reachability=reach,
+            feeds=enriched.feeds,
+            churn=churn,
+            benchmark=benchmark,
+            graph=GraphIndex(graph, findings) if graph is not None else None,
+            plugin_versions={p.name: p.version for p in plugins or []},
         ),
         active_variant=_variant(args, config, scoring.variant),
         config_version=config_version(scoring),
+        benchmark_version=benchmark.version if benchmark is not None else None,
     )
     if result.with_fallback:
         warnings.append(
@@ -136,8 +177,29 @@ def run_scoring(
             )
         )
     return ScoringOutcome(
-        result.findings, result.info, service, enriched.feeds.snapshots(), warnings
+        result.findings,
+        result.info,
+        service,
+        enriched.feeds.snapshots(),
+        warnings,
+        scoring,
+        benchmark,
     )
+
+
+def with_debt_index(
+    step: BuildGraphResult, scoring: ScoringConfig, benchmark: LoadedBenchmark | None
+) -> Graph | None:
+    """Il grafo da pubblicare, con l'ADI (G-13) se B è configurata e c'è il benchmark."""
+    graph, b = step.graph, scoring.variant_b
+    if graph is None or b is None or benchmark is None:
+        return graph
+
+    def g_of(smell: Smell) -> float | None:
+        result = smell_g(smell.rule_id, {"scope": smell.scope, **smell.evidence}, b, benchmark)
+        return None if isinstance(result, str) else result[0]
+
+    return with_adi(graph, step.smells, g_of)
 
 
 class _NoNetwork:

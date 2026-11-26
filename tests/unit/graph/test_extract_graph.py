@@ -184,3 +184,13 @@ def test_f01_extractor_then_metrics_gives_the_designed_numbers(fixture: str) -> 
         assert (packages[path].fan_in, packages[path].fan_out) == (want["ca"], want["ce"]), path
         assert packages[path].instability == pytest.approx(want["instability"], abs=1e-4), path
     assert all(modules[t] is None for t in expected["test_modules"])  # il test non conta
+
+
+def test_every_read_module_has_its_physical_lines(tmp_path: Path) -> None:
+    """ADR-0023: le righe servono alla densità di violazioni (K-09)."""
+    document = graph(
+        tmp_path,
+        {"a.py": "x = 1\ny = 2\n", "b.py": "x = 1\ny = 2", "c.py": "", "d.ts": "\n\n\n"},
+    )
+    found = {path: m["lines"] for path, m in modules(document).items()}
+    assert found == {"a.py": 2, "b.py": 2, "c.py": 0, "d.ts": 3}
