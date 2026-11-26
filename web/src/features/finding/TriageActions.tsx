@@ -135,6 +135,12 @@ export function TriageActions({ detail, onChanged }: Props) {
   );
 }
 
+/** Gli errori senza quello di `field`: un campo corretto non resta segnato fino al nuovo invio. */
+function without(errors: FieldErrors, field: string): FieldErrors {
+  if (errors[field] === undefined) return errors;
+  return Object.fromEntries(Object.entries(errors).filter(([name]) => name !== field));
+}
+
 type Apply = (body: Parameters<ReturnType<typeof useClient>["patchFinding"]>[1]) => Promise<Detail>;
 
 function TakeDialog({ detail, who, apply }: { detail: Detail; who: string; apply: Apply }) {
@@ -156,7 +162,7 @@ function TakeDialog({ detail, who, apply }: { detail: Detail; who: string; apply
         onOpenChange={(open) => { if (open) setErrors({}); }}
       >
         <Field id="owner" label="Assegnato a" required error={errors.owner}>
-          {(p) => <input {...p} type="text" value={owner} maxLength={200} onChange={(e) => { setOwner(e.target.value); }} />}
+          {(p) => <input {...p} type="text" value={owner} maxLength={200} onChange={(e) => { setOwner(e.target.value); setErrors((now) => without(now, "owner")); }} />}
         </Field>
       </ActionDialog>
     </div>
@@ -204,7 +210,7 @@ function FalsePositiveDialog({ findingId, apply }: { findingId: string; apply: A
         onOpenChange={(open) => { if (open) setErrors({}); }}
       >
         <Field id="reason" label="Motivazione" required error={errors.reason}>
-          {(p) => <textarea {...p} rows={4} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); }} />}
+          {(p) => <textarea {...p} rows={4} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); setErrors((now) => without(now, "reason")); }} />}
         </Field>
       </ActionDialog>
     </div>
@@ -245,7 +251,7 @@ function ExceptionDialog({ detail, who, apply }: { detail: Detail; who: string; 
     <div className="action">
       <ActionDialog
         onFinished={() => { clearReason(); clearExpires(); }}
-        trigger={<button type="button" className="button" data-tone="accent">Accetta con eccezione</button>}
+        trigger={<button type="button" className="button">Accetta con eccezione</button>}
         title="Accetta con eccezione"
         description="Il finding passa a «Accettato» fino alla scadenza. Poi torna aperto."
         submitLabel="Accetta con eccezione"
@@ -255,10 +261,10 @@ function ExceptionDialog({ detail, who, apply }: { detail: Detail; who: string; 
         onOpenChange={(open) => { if (open) { setErrors({}); setCopied(null); } }}
       >
         <Field id="reason" label="Motivazione" required error={errors.reason}>
-          {(p) => <textarea {...p} rows={3} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); }} />}
+          {(p) => <textarea {...p} rows={3} value={reason} maxLength={2000} onChange={(e) => { setReason(e.target.value); setErrors((now) => without(now, "reason")); }} />}
         </Field>
         <Field id="expires" label="Scadenza" required hint="Formato AAAA-MM-GG." error={errors.expires}>
-          {(p) => <input {...p} type="text" inputMode="numeric" placeholder="2027-06-30" value={expires} maxLength={10} onChange={(e) => { setExpires(e.target.value); }} />}
+          {(p) => <input {...p} type="text" inputMode="numeric" placeholder="2027-06-30" value={expires} maxLength={10} onChange={(e) => { setExpires(e.target.value); setErrors((now) => without(now, "expires")); }} />}
         </Field>
         <p>Approva: <strong>{who}</strong> (l&apos;utente autenticato; non si modifica).</p>
         <p className="notice">

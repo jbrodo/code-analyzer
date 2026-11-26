@@ -91,7 +91,13 @@ function Baseline({ repository, scan, detail }: { repository: string; scan: Sche
         {b.not_evaluated > 0 && (<><dt>Non valutati</dt><dd>{b.not_evaluated} (il loro plugin è fallito: non sono né risolti né esistenti)</dd></>)}
       </dl>
       <p>
-        <Link to={`/r/${repository}?scan=${scan.id}&new=true&status=any`}>Vedi i {b.new} finding nuovi di questa scansione</Link>
+        {b.new === 0 ? (
+          "Nessun finding nuovo in questa scansione."
+        ) : (
+          <Link to={`/r/${repository}?scan=${scan.id}&new=true&status=any`}>
+            {b.new === 1 ? "Vedi il finding nuovo di questa scansione" : `Vedi i ${String(b.new)} finding nuovi di questa scansione`}
+          </Link>
+        )}
       </p>
       {b.resolved && b.resolved.length > 0 && (
         <>

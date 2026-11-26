@@ -99,7 +99,7 @@ Il rilevatore statico segnala un solo punto, la barra di 2 px sulla riga selezio
 
 ### Scostamenti
 
-Gravità: bloccante, seria, minore. **Decisione: da prendere** (correggere o accettare).
+Gravità: bloccante, seria, minore. **Decisione dell'utente del 2026-11-27: correggerli tutti.** Fatto: vedi «Correzioni» sotto la tabella.
 
 | # | Vista | Cosa si è visto | Gravità | Criterio | Causa e correzione proposta |
 | --- | --- | --- | --- | --- | --- |
@@ -113,6 +113,25 @@ Gravità: bloccante, seria, minore. **Decisione: da prendere** (correggere o acc
 | 8 | Dialogo | L'errore «Scrivi la motivazione.» resta dopo averla scritta, fino al nuovo invio | minore | T3, T5 | Togliere l'errore del campo quando cambia |
 | 9 | Elenco | Con il fuoco sul riquadro della tabella (dodicesimo Tab) `j`, `k` e le frecce non fanno nulla; dalle righe funzionano | minore | L3, L4 | Dal riquadro, portare il fuoco alla prima riga |
 | 10 | Elenco delle scansioni | La tabella è attaccata al collegamento «Torna ai finding» | minore | resa visiva | Spaziatura sopra la tabella |
+
+### Correzioni (2026-11-27)
+
+Rimisurate nello stesso Chrome sul server di sviluppo ricostruito, con gli stessi dati di prova.
+
+| # | Prima | Dopo |
+| --- | --- | --- |
+| 1 | cella del livello 104 px per 119 di contenuto | nessuna cella tagliata a nessuna larghezza |
+| 2 | titoli tagliati 3/7 a 1280 px, 7/7 a 320 px; percorsi lunghi tagliati in fondo | 0/7 a 1280, 767, 375 e allo zoom 200%; 1/7 a 320 px (il titolo di prova con markup ostile, il più lungo); nessun percorso tagliato |
+| 3 | tabelle dei fattori 19 px oltre il pannello | pannello senza scorrimento laterale, tabelle affiancate, nessuna parola spezzata sui sette finding di prova |
+| 4 | allo zoom 200% circa 111 px di tabella, meno di due righe | barra non fissa sotto 48rem di larghezza o 32rem di altezza: scorrendo, 6 righe intere allo zoom 200% e 7 a 320 px |
+| 5 | barra 61 px, 13 px di scorrimento in più | barra 48 px, nessuno scorrimento in più a 1280×800 |
+| 6 | due pulsanti principali | uno, «Prendi in carico» |
+| 7 | «Vedi i 1 finding nuovi» | singolare, plurale e, con zero, una frase senza collegamento |
+| 8 | l'errore restava dopo la correzione | sparisce quando il campo cambia (prova unitaria) |
+| 9 | `j`, `k` e frecce inattivi sul riquadro | portano alle righe (prova unitaria e in Chrome per `j`) |
+| 10 | tabella attaccata al collegamento | 13 px di spazio |
+
+Corretto anche un difetto minore visto durante le misure: il contorno del fuoco sul titolo passava sul nome della regola. Il rilevatore della skill, rilanciato sui file modificati, segnala solo il falso positivo già detto. Prove web: 117 (erano 111).
 
 ### Cosa è risultato corretto
 

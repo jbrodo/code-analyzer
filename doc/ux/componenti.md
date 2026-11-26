@@ -64,13 +64,15 @@ Ogni componente elenca struttura, stati e i criteri di `doc/ux/accessibilita.md`
 
 ### Tabella densa
 
-- `table` con intestazione fissa durante lo scorrimento, righe da `size.row-height`, separatore `border` tra le righe, nessuna riga alternata.
-- Colonne con larghezza stabile: livello, categoria, stato e novità fisse; problema e posizione si dividono lo spazio restante; il testo lungo si tronca, il percorso al centro.
+- `table` con intestazione fissa durante lo scorrimento, righe alte almeno `size.row-height`, separatore `border` tra le righe, nessuna riga alternata.
+- Colonne con larghezza stabile; `Problema` prende lo spazio restante e la tabella ha una larghezza minima, così non si schiaccia. Titolo e percorso vanno fino a due righe prima di tagliare (tre per il titolo quando la regione è stretta, 30rem o meno): la riga cresce quando serve, perché trovare e leggere il problema viene prima della densità (`PRODUCT.md`). Il percorso si tronca al centro, mai alla fine. Nella regione stretta livello e `Problema` riempiono la prima vista. (Modifica del 2026-11-27, da U-05.)
 - Stati della riga: normale; con il puntatore sopra (`bg-subtle`); con il fuoco (indicatore di fuoco sull'intera riga); aperta nel pannello (`bg-row-selected` e una barra di 2 px in `accent` sul bordo iniziale, che non dipende dal solo colore di sfondo).
 - Intestazione ordinabile: pulsante con il nome della colonna e il verso.
 - In fondo: pulsante "Carica altri" e conteggio "50 di 312".
 - Caricamento: righe segnaposto della stessa altezza. Vuoto ed errore: testo al posto del corpo della tabella, con l'azione di rimedio.
-- Regione scorrevole in orizzontale sotto la larghezza minima, raggiungibile da tastiera. Criteri: L1..L5, L8, L9, L12, L13, G8.
+- Regione scorrevole in orizzontale sotto la larghezza minima, raggiungibile da tastiera; con il fuoco sulla regione, frecce, `j`, `k`, `Home` portano alla prima riga, `End` all'ultima, `/` alla ricerca. Criteri: L1..L5, L8, L9, L12, L13, G8.
+- Sotto i 48rem di larghezza o i 32rem di altezza (zoom 200% compreso) la barra superiore non è fissa: scorre via.
+- Nelle azioni del pannello c'è un solo pulsante in `accent`, `Prendi in carico`.
 
 ### Filtri
 

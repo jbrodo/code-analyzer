@@ -129,3 +129,19 @@ test("una scansione completa non ha la sezione della baseline; una inesistente Ã
   mountScan(new ApiError(404, "not-found", null));
   await waitFor(() => { expect(screen.getByRole("alert").textContent).toContain("Scansione non trovata."); });
 });
+
+test.each([
+  [1, "Vedi il finding nuovo di questa scansione"],
+  [3, "Vedi i 3 finding nuovi di questa scansione"],
+  [0, null],
+])("i finding nuovi di una PR si dicono al singolare, al plurale o come assenza (%i)", async (count, name) => {
+  const baseline = { status: "valid" as const, source: "ci-artifact" as const, commit: "b".repeat(40), new: count, existing: 5, not_evaluated: 0, resolved: [] };
+  mountScan(detail({ baseline }, { kind: "pr", pull_request: 7 }));
+  const section = (await screen.findByRole("heading", { name: "Rispetto al branch base" })).closest("section") as HTMLElement;
+  if (name === null) {
+    expect(section.textContent).toContain("Nessun finding nuovo in questa scansione.");
+    expect(within(section).queryByRole("link", { name: /finding nuov/ })).toBeNull();
+  } else {
+    expect(within(section).getByRole("link", { name })).toBeDefined();
+  }
+});
