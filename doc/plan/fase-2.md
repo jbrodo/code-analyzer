@@ -593,7 +593,7 @@ Ogni contratto precede i task che lo implementano (ADR-0003). Il modello in `ca_
 - Spec: §7.3. ADR: 0026.
 
 #### F-04 — Snapshot congelato di EPSS e KEV
-- Agente: `test`. Stato: `LIBERO`.
+- Agente: `test`. Stato: **chiuso il 2026-11-26**. `tests/fixtures/feeds/enrichment/` con i file EPSS e KEV pubblici del 2026-11-17 ridotti ai 13 CVE delle fixture più due di controllo; `enrichment_snapshot.py` dà la porta dei feed e scrive la cache della CLI; 9 prove in `tests/unit/test_feeds_fixture_snapshot.py` (copertura delle fixture, soglia EPSS di 0,1 da entrambi i lati, cache letta senza rete, P della Variante A). **Scostamento:** nessun CVE delle fixture è in KEV, quindi due voci KEV sono inventate e dichiarate (`SYNTHETIC_KEV`, README). I limiti di produzione rifiutano uno snapshot così piccolo: vale per i test in processo, non per una CLI di un E2E.
 - Percorsi: `tests/fixtures/feeds/`.
 - Dipende da: V-05, C-06.
 - Accettazione: snapshot ridotto con i CVE delle fixture, alcuni in KEV e con EPSS sopra e sotto 0,1; nessuna rete nei test.
