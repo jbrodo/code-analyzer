@@ -43,3 +43,9 @@ repos:
         language: system
         files: ^(web/package\.json|web/bun\.lock)$
         pass_filenames: false
+      - id: license-ids
+        name: identificatori di licenza nei testi
+        entry: python3 scripts/hooks/check_license_ids.py
+        language: system
+        files: \.(md|rst|txt)$
+        pass_filenames: false

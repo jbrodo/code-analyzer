@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from container_images import POSTGRES
 from sqlalchemy import Engine, func, select
 from starlette.testclient import TestClient
 
@@ -56,7 +57,7 @@ FILES = {"report": "report.json"}
 def database() -> Iterator[Engine]:
     from testcontainers.community.postgres import PostgresContainer
 
-    with PostgresContainer("postgres:16", driver="pg8000") as postgres:
+    with PostgresContainer(POSTGRES, driver="pg8000") as postgres:
         engine = make_engine(postgres.get_connection_url())
         migrate.upgrade_global(engine)
         yield engine

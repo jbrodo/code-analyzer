@@ -11,6 +11,10 @@ Fonte: `doc/PROJECT.md` §16. Le decisioni sono in `doc/adr/`, il lavoro di Fase
 5. Prima di ogni PR passano tutti i comandi di verifica elencati sotto.
 6. Messaggi di commit: Conventional Commits.
 7. Nessuna chiamata a servizi esterni nei test.
+8. Nei documenti le licenze si descrivono a parole, senza identificatori: l'auto-analisi le rileva come finding di licenza. Lo controlla l'hook `license-ids`; se un identificatore serve davvero, prima un'eccezione approvata dall'utente.
+9. Le eccezioni nuove in `.code-analyzer.yml` vanno in una PR a sé, unita prima del codice che le richiede: una PR non applica le eccezioni che introduce (gate di auto-analisi).
+10. Ogni immagine di container usata nelle prove è fissata per digest, in `tests/integration/container_images.py`; mai un tag mobile.
+11. All'inizio di ogni ondata si unisce `main` nel ramo di lavoro, non solo alla fine.
 
 Il verso delle dipendenze tra i pacchetti è definito da ADR-0001 e imposto da `lint-imports`. I modelli di `ca-core` sono la fonte degli schemi in `schemas/` (ADR-0003): `schema_export --check` segnala ogni divergenza.
 

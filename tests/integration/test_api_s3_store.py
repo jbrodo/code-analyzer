@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from container_images import SEAWEEDFS
 
 # La batteria sta con i test unitari dell'API: la stessa per ogni adattatore.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "unit" / "api"))
@@ -25,11 +26,6 @@ from ca_core.ports import ArtifactConflict, ArtifactNotFound
 pytestmark = pytest.mark.skipif(
     os.environ.get("CA_TEST_DOCKER") != "1", reason="richiede Docker (CA_TEST_DOCKER=1)"
 )
-# Fissata per digest (4.55): un rilascio nuovo non cambia la prova senza un commit.
-IMAGE = (
-    "chrislusf/seaweedfs:4.55"
-    "@sha256:7ca46aeae2f223b37e5d91593c17ab37738eec6df6ab69b48a0487f7643342b9"
-)
 # Ogni bucket è una collezione con volumi propri. Senza limiti espliciti il numero di volumi
 # dipende dal disco libero (volumi da 30 GB): sul runner della CI si esaurisce a metà delle prove
 # e ogni scrittura risponde `InternalError`. Volumi piccoli e un tetto esplicito lo rendono stabile.
@@ -40,7 +36,7 @@ COMMAND = "server -s3 -dir=/data -master.volumeSizeLimitMB=64 -volume.max=200"
 def client() -> Iterator[Any]:
     from testcontainers.core.container import DockerContainer
 
-    container = DockerContainer(IMAGE).with_command(COMMAND).with_exposed_ports(8333)
+    container = DockerContainer(SEAWEEDFS).with_command(COMMAND).with_exposed_ports(8333)
     with container:
         endpoint = f"http://{container.get_container_host_ip()}:{container.get_exposed_port(8333)}"
         os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")

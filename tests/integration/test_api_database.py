@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from container_images import POSTGRES
 from sqlalchemy import Engine, inspect, text
 from sqlalchemy.exc import DBAPIError
 
@@ -34,7 +35,7 @@ NOW = datetime(2026, 11, 17, 12, 0, tzinfo=UTC)
 def engine() -> Iterator[Engine]:
     from testcontainers.community.postgres import PostgresContainer
 
-    with PostgresContainer("postgres:16", driver="pg8000") as postgres:
+    with PostgresContainer(POSTGRES, driver="pg8000") as postgres:
         created = make_engine(postgres.get_connection_url())
         migrate.upgrade_global(created)
         yield created
