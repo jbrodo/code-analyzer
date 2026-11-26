@@ -12,6 +12,12 @@ hook = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(hook)
 
 
+def ident(text: str) -> str:
+    """Gli identificatori sono scritti spezzati da `|`: scancode leggerebbe questo file e
+    l'auto-analisi aprirebbe un finding di licenza sulla prova stessa (AGENTS.md, regola 8)."""
+    return text.replace("|", "")
+
+
 def diff(path: str, *lines: str, start: int = 10) -> str:
     body = "\n".join(f"+{t}" for t in lines)
     head = f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n"
@@ -20,9 +26,11 @@ def diff(path: str, *lines: str, start: int = 10) -> str:
 
 @pytest.mark.parametrize(
     "text",
-    ["un repository AGPL", "GPL-3.0-only", "LGPL-2.1-or-later", "GPL", "SSPL", "MPL-2.0", "EUPL"],
-)
+    ["un repository AG|PL", "G|PL-3.0-only", "LG|PL-2.1-or-later", "G|PL", "SS|PL", "M|PL-2.0",
+     "EU|PL"],
+)  # fmt: skip
 def test_a_copyleft_identifier_in_an_added_line_is_reported(text: str) -> None:
+    text = ident(text)
     assert hook.offending(diff("doc/adr/0099-x.md", "testo", f"Scartato {text}.")) == [
         ("doc/adr/0099-x.md", 11, text.split()[-1])
     ]
@@ -30,10 +38,10 @@ def test_a_copyleft_identifier_in_an_added_line_is_reported(text: str) -> None:
 
 @pytest.mark.parametrize(
     "text",
-    ["licenza copyleft di rete", "GPLv", "the GPLOT library", "una licenza permissiva", "EPLAN"],
+    ["licenza copyleft di rete", "G|PLv", "the G|PLOT library", "una licenza permissiva", "EPLAN"],
 )
 def test_words_and_lookalikes_pass(text: str) -> None:
-    assert hook.offending(diff("doc/a.md", text)) == []
+    assert hook.offending(diff("doc/a.md", ident(text))) == []
 
 
 @pytest.mark.parametrize(
@@ -41,10 +49,12 @@ def test_words_and_lookalikes_pass(text: str) -> None:
              "deploy/docker/LICENSES-SBOM.md", "COPYING.LESSER"],
 )  # fmt: skip
 def test_license_files_are_exempt(path: str) -> None:
-    assert hook.offending(diff(path, "GPL-3.0-only")) == []
+    assert hook.offending(diff(path, ident("G|PL-3.0-only"))) == []
 
 
 def test_removed_lines_and_deleted_files_do_not_count() -> None:
-    removed = "diff --git a/d.md b/d.md\n--- a/d.md\n+++ b/d.md\n@@ -3 +2,0 @@\n-GPL-3.0-only\n"
-    deleted = "diff --git a/d.md b/d.md\n--- a/d.md\n+++ /dev/null\n@@ -1 +0,0 @@\n-GPL\n"
+    removed = ident(
+        "diff --git a/d.md b/d.md\n--- a/d.md\n+++ b/d.md\n@@ -3 +2,0 @@\n-G|PL-3.0-only\n"
+    )
+    deleted = ident("diff --git a/d.md b/d.md\n--- a/d.md\n+++ /dev/null\n@@ -1 +0,0 @@\n-G|PL\n")
     assert hook.offending(removed) == [] and hook.offending(deleted) == []
