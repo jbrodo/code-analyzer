@@ -3,7 +3,7 @@
 Gli E2E di rilevamento dei CVE (`tests/e2e/test_detection_cve.py`, T-08) non usano la rete: leggono
 uno snapshot dei feed scaricato una volta, datato e con checksum SHA-256. Lo snapshot sta fuori dal
 repository (1,9 GB: database di trivy 1,7 GB, osv-scanner npm 220 MB e PyPI 38 MB). Questa cartella
-contiene solo la procedura. E' provvisoria finche' O-03 (job CI dello snapshot) non la sostituisce.
+contiene solo la procedura. La usa il job `feeds-snapshot` della CI (O-03).
 ADR-0006, spec §16 regola 7.
 
 ## Formato
@@ -12,6 +12,7 @@ ADR-0006, spec §16 regola 7.
 <snapshot>/osv-scalibr/npm/all.zip         osv-scanner (nomi del bucket OSV)
 <snapshot>/osv-scalibr/PyPI/all.zip
 <snapshot>/trivy/db/trivy.db               trivy (+ metadata.json, policy/)
+<snapshot>/enrichment/{epss,kev}/                          EPSS e KEV: `current.json` e `snap-*/data` (O-03)
 <snapshot>/SNAPSHOT.json                   created_at, trivy_db_updated_at, sha256 e dimensione di ogni file
 ```
 
@@ -31,11 +32,12 @@ E' lo stesso albero che i plugin vedono in `/feeds` (cache `<cache>/<plugin>/sna
    ```
    python tests/fixtures/feeds/snapshot.py freeze --from-cache ~/.cache/code-analyzer/feeds --dest <snapshot>
    # oppure, da due cartelle gia' scaricate (osv-scalibr/ in --osv, trivy/ in --trivy)
-   python tests/fixtures/feeds/snapshot.py freeze --osv <dir> --trivy <dir> --dest <snapshot>
+   python tests/fixtures/feeds/snapshot.py freeze --osv <dir> --trivy <dir> --enrichment <dir> --dest <snapshot>
    ```
 
    `freeze` rifiuta una destinazione non vuota (uno snapshot non si sovrascrive), richiede i tre
-   file obbligatori (`npm/all.zip`, `PyPI/all.zip`, `trivy.db`) e scrive `SNAPSHOT.json`.
+   file obbligatori (`npm/all.zip`, `PyPI/all.zip`, `trivy.db`) e lo snapshot corrente di EPSS e
+   KEV, che la stessa scansione del passo 1 sincronizza, e scrive `SNAPSHOT.json`.
 3. **Verificare**: `python tests/fixtures/feeds/snapshot.py verify <snapshot>` ricalcola gli SHA-256
    (circa 7 s) e fallisce se un file manca, e' cambiato o e' stato aggiunto.
 4. **Usare**: `CA_TEST_OSV_FEEDS=<snapshot> CA_TEST_TRIVY_FEEDS=<snapshot>` (le stesse variabili
@@ -51,7 +53,13 @@ E' lo stesso albero che i plugin vedono in `/feeds` (cache `<cache>/<plugin>/sna
   riclassificato dal feed cambia gli attesi, non il test.
 - Il checksum prova che il file non e' cambiato, non che il contenuto sia quello del feed pubblico.
 - Se la data di `SNAPSHOT.json` e' vecchia, il test non lo segnala: invecchia da solo, come un
-  lockfile. Il rinnovo e' una scelta (O-03), non automatica.
+  lockfile. In CI lo rinnova il job `feeds-snapshot`, due volte alla settimana.
+- Uno snapshot salvato prima di O-03 non ha EPSS e KEV: gli E2E lo accettano, e T-08 controlla che
+  il report dica `enrichment-feed-missing`. Con uno snapshot nuovo controlla che la scansione usi
+  proprio quei file (stesso SHA-256).
+- Nessuna prova scarica i feed: in CI la cache predefinita punta a una cartella vuota e il job
+  fallisce se alla fine contiene dei feed. Copre chi usa la CLI senza una cache propria, come
+  faceva `test_scan_e2e.py` fino al 2026-11-26; non una prova che scaricasse altrove.
 
 Prove della procedura: `pytest tests/fixtures/feeds` (file piccoli, senza rete).
 

@@ -5,6 +5,7 @@ plugin vedono montato in `/feeds`:
 
     <snapshot>/osv-scalibr/npm/all.zip, osv-scalibr/PyPI/all.zip   (osv-scanner)
     <snapshot>/trivy/db/trivy.db, trivy/db/metadata.json, ...      (trivy)
+    <snapshot>/enrichment/{epss,kev}/current.json e snap-*/data    (EPSS e KEV, ADR-0024)
     <snapshot>/SNAPSHOT.json                                       (data, versioni, SHA-256)
 
 `freeze` lo produce da una cache per utente popolata dal prodotto (`code-analyzer scan` senza
@@ -14,7 +15,7 @@ serve solo al download che precede `freeze`. Vedi `README.md`.
 
 Uso:
     python snapshot.py freeze --from-cache ~/.cache/code-analyzer/feeds --dest DEST
-    python snapshot.py freeze --osv DIR --trivy DIR --dest DEST
+    python snapshot.py freeze --osv DIR --trivy DIR --enrichment DIR --dest DEST
     python snapshot.py verify DEST
 """
 
@@ -30,6 +31,8 @@ from typing import Any
 
 MANIFEST = "SNAPSHOT.json"
 PLUGIN_TREES = {"osv-scanner": "osv-scalibr", "trivy": "trivy"}  # plugin -> cartella nello snapshot
+ENRICHMENT = "enrichment"  # cartella dello snapshot, come nella cache per utente
+FEEDS = ("epss", "kev")
 REQUIRED = ("osv-scalibr/npm/all.zip", "osv-scalibr/PyPI/all.zip", "trivy/db/trivy.db")
 
 
@@ -80,13 +83,28 @@ def _copy_tree(source: Path, dest: Path) -> None:
     shutil.copytree(source, dest, symlinks=False)
 
 
-def freeze(*, osv: Path, trivy: Path, dest: Path, now: datetime | None = None) -> dict[str, Any]:
-    """Copia `osv/osv-scalibr` e `trivy/trivy` in `dest` e scrive `SNAPSHOT.json`."""
+def _copy_enrichment(source: Path, dest: Path) -> None:
+    """Di ogni feed solo il puntatore e lo snapshot corrente: niente residui di sincronizzazioni."""
+    for feed in FEEDS:
+        current = current_snapshot_dir(source, feed)
+        data = current / "data"
+        if not data.is_file() or data.is_symlink():
+            raise SnapshotError(f"snapshot di {feed} senza dati")
+        (dest / feed).mkdir(parents=True)
+        shutil.copyfile(source / feed / "current.json", dest / feed / "current.json")
+        _copy_tree(current, dest / feed / current.name)
+
+
+def freeze(
+    *, osv: Path, trivy: Path, enrichment: Path, dest: Path, now: datetime | None = None
+) -> dict[str, Any]:
+    """Copia i database di osv-scanner e trivy ed EPSS e KEV in `dest`, scrive `SNAPSHOT.json`."""
     if dest.exists() and any(dest.iterdir()):
         raise SnapshotError(f"{dest} non e' vuota: uno snapshot non si sovrascrive")
     dest.mkdir(parents=True, exist_ok=True)
     _copy_tree(osv / "osv-scalibr", dest / "osv-scalibr")
     _copy_tree(trivy / "trivy", dest / "trivy")
+    _copy_enrichment(enrichment, dest / ENRICHMENT)
     files = describe(dest)
     missing = [r for r in REQUIRED if r not in files]
     if missing:
@@ -137,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     fz.add_argument("--from-cache", type=Path)
     fz.add_argument("--osv", type=Path)
     fz.add_argument("--trivy", type=Path)
+    fz.add_argument("--enrichment", type=Path, help="cartella con epss/ e kev/")
     vf = sub.add_parser("verify")
     vf.add_argument("snapshot", type=Path)
     args = parser.parse_args(argv)
@@ -148,11 +167,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.from_cache:
             osv = current_snapshot_dir(args.from_cache, "osv-scanner")
             trivy = current_snapshot_dir(args.from_cache, "trivy")
-        elif args.osv and args.trivy:
-            osv, trivy = args.osv, args.trivy
+            enrichment = args.from_cache / ENRICHMENT
+        elif args.osv and args.trivy and args.enrichment:
+            osv, trivy, enrichment = args.osv, args.trivy, args.enrichment
         else:
-            parser.error("serve --from-cache oppure --osv e --trivy")
-        manifest = freeze(osv=osv, trivy=trivy, dest=args.dest)
+            parser.error("serve --from-cache oppure --osv, --trivy ed --enrichment")
+        manifest = freeze(osv=osv, trivy=trivy, enrichment=enrichment, dest=args.dest)
         print(f"snapshot in {args.dest}: {len(manifest['files'])} file, {manifest['created_at']}")
         return 0
     except SnapshotError as exc:

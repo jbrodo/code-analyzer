@@ -44,7 +44,14 @@ jobs:
         run: uv run --frozen --offline ty check packages --error-on-warning
 
       - name: pytest
+        env:
+          XDG_CACHE_HOME: ${{ runner.temp }}/xdg-sentinel
         run: uv run --frozen --offline pytest -q
+
+      # O-03: come in e2e.yml, nessuna prova scarica i feed nella cache predefinita.
+      - name: Nessun feed scaricato dalle prove
+        if: always()
+        run: test ! -e "$RUNNER_TEMP/xdg-sentinel/code-analyzer/feeds"
 
       - name: lint-imports
         run: uv run --frozen --offline lint-imports

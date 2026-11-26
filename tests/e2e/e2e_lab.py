@@ -289,7 +289,29 @@ def make_feeds_cache(cache: Path, digests: dict[str, str]) -> dict[str, Any]:
         (plugin_dir / "current.json").write_text(
             json.dumps({"dir": snap.name, "synced_at": synced, "image_digest": digests[plugin]})
         )
+    info["enrichment"] = add_enrichment(cache / "enrichment", Path(OSV_FEEDS))
     return info
+
+
+def add_enrichment(cache: Path, root: Path) -> bool:
+    """EPSS e KEV dello snapshot nella cache, copiati (la CLI vuole cartelle sue, a permessi
+    stretti). Gli snapshot salvati prima di O-03 non li hanno: allora `False`."""
+    if not has_enrichment(root):
+        return False
+    snapshot.verify(root, only=("enrichment/",))
+    for current, dirs, names in os.walk(root / "enrichment", followlinks=False):
+        target = cache / Path(current).relative_to(root / "enrichment")
+        target.mkdir(mode=0o700, parents=True, exist_ok=True)
+        target.chmod(0o700)
+        for name in names:
+            shutil.copyfile(Path(current) / name, target / name)
+            (target / name).chmod(0o600)
+        del dirs
+    return True
+
+
+def has_enrichment(root: Path) -> bool:
+    return all((root / "enrichment" / feed / "current.json").is_file() for feed in snapshot.FEEDS)
 
 
 def copy_fixture(name: str, dest: Path, *, license_policy: bool = False) -> Path:

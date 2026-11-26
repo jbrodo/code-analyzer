@@ -54,4 +54,16 @@ jobs:
       - name: E2E e integrazione con Docker
         env:
           PYTHONPATH: tests/ci
+          XDG_CACHE_HOME: ${{ runner.temp }}/xdg-sentinel
         run: uv run --frozen --offline pytest -q --no-cov -rs -p skip_guard tests/e2e tests/integration
+
+      # O-03: nessuna prova scarica i feed. La cache predefinita punta a una cartella vuota: se
+      # alla fine contiene dei feed, una prova ha usato la CLI senza una cache sua.
+      - name: Nessun feed scaricato dalle prove
+        if: always()
+        run: |
+          if [ -e "$RUNNER_TEMP/xdg-sentinel/code-analyzer/feeds" ]; then
+            find "$RUNNER_TEMP/xdg-sentinel/code-analyzer/feeds" -maxdepth 3
+            echo "::error::una prova ha scritto nella cache predefinita dei feed"
+            exit 1
+          fi

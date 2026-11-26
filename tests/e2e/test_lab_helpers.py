@@ -6,11 +6,13 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+import enrichment_snapshot
 import pytest
 import snapshot
 
 from ca_core.models import PackagedPluginManifest
 from ca_core.models.scan_report import Isolation
+from ca_plugins.enrichment import load_enrichment
 from ca_plugins.feeds import ensure_snapshot
 
 from . import e2e_lab
@@ -49,7 +51,15 @@ def test_feeds_cache_is_read_by_the_product_as_a_fresh_enough_offline_snapshot(
     (trivy / "trivy/db").mkdir(parents=True)
     (trivy / "trivy/db/trivy.db").write_bytes(b"db")
     root = tmp_path / "frozen"
-    snapshot.freeze(osv=osv, trivy=trivy, dest=root, now=datetime(2026, 1, 1, tzinfo=UTC))
+    downloaded = datetime(2026, 11, 8, tzinfo=UTC)
+    enrichment_snapshot.seed_cache(tmp_path / "enrichment", downloaded)
+    snapshot.freeze(
+        osv=osv,
+        trivy=trivy,
+        enrichment=tmp_path / "enrichment",
+        dest=root,
+        now=datetime(2026, 1, 1, tzinfo=UTC),
+    )
     monkeypatch.setattr(e2e_lab, "OSV_FEEDS", str(root))
     monkeypatch.setattr(e2e_lab, "TRIVY_FEEDS", str(root))
     cache = tmp_path / "cache"
@@ -82,6 +92,27 @@ def test_feeds_cache_is_read_by_the_product_as_a_fresh_enough_offline_snapshot(
         os.stat(root / "trivy/db/trivy.db").st_ino
         == os.stat(Path(outcome.snapshot_dir) / "trivy/db/trivy.db").st_ino
     )  # hard link: lo snapshot congelato non si copia a ogni prova
+
+    # O-03: EPSS e KEV copiati nella cache, e il prodotto li legge offline senza scaricare nulla
+    assert info["enrichment"] is True
+
+    class NoFetcher:
+        def fetch(self, *args: object, **kwargs: object) -> bytes:
+            raise AssertionError("offline: nessun download")
+
+    loaded = load_enrichment(
+        cache / "enrichment", NoFetcher(), Clock(), offline=True,
+        limits=enrichment_snapshot.LIMITS,
+    )  # fmt: skip
+    assert sorted(s.feed for s in loaded.feeds.snapshots()) == ["epss", "kev"]
+    assert "enrichment-feed-missing" not in {w.code for w in loaded.warnings}
+
+
+def test_a_snapshot_frozen_before_o_03_has_no_epss_and_kev_and_says_so(tmp_path: Path) -> None:
+    (tmp_path / "old").mkdir()
+    assert e2e_lab.has_enrichment(tmp_path / "old") is False
+    assert e2e_lab.add_enrichment(tmp_path / "cache", tmp_path / "old") is False
+    assert not (tmp_path / "cache").exists()
 
 
 def _manifest() -> dict[str, object]:
