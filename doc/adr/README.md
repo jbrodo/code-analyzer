@@ -26,6 +26,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto (le definizioni degli smell non sono ancora confrontate con le pubblicazioni) | No |
 | [0021](0021-scoring-variante-a-ombra-livelli-override.md) | Scoring Variante A, ombra, livelli e override | Proposto (valori da calibrare in X-02) | No |
 | [0022](0022-esposizione-e-churn.md) | Esposizione e churn | Accettato (2026-11-18) | No |
+| [0023](0023-variante-b-smell-e-debito-architetturale.md) | Variante B, smell e debito architetturale | Proposto (definizioni da confrontare con le pubblicazioni, benchmark di K-06) | No per la struttura (D2-11, presa il 2026-11-10) |
 | [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto (manca l'origine di OSV e trivy, E-04) | Sì, D2-05: presa il 2026-11-17 (nessun mirror) |
 | [0025](0025-baseline-modalita-pr-finding-nuovi.md) | Baseline, modalità PR e finding nuovi | Accettato (2026-11-18) | No |
 | [0026](0026-plugin-qualita-iac-coverage.md) | Plugin di qualità, IaC e coverage | Accettato (2026-11-18) | No |
