@@ -101,6 +101,48 @@ Dove cambiano: quasi sempre verso il basso (`medio → basso` è il grosso: 46 s
 - Nessun repository di team: gli unici repository riservati sono i due dell'utente; il terzo, facoltativo, non c'è.
 - `saleor` `partial` per il difetto di eslint (corretto nel codice, immagini non ricostruite).
 
+## X-02 ripetuta con la Variante B (2026-11-26)
+
+Stessi cinque repository agli stessi commit, `--offline` con le stesse cache dei feed del 2026-11-17, CLI impacchettata da `package-cli.sh` al commit `0988089` di `main` (ADR-0023 implementata, immagine di `ca-graph` con le righe dei file, immagini firmate sul registry locale). Configurazione di scoring `2+cf90f99e443e`, benchmark `1+35e3b0d58d49`. La misura del 2026-11-18, sopra, resta com'è. La data dei commit è la stessa; l'età dei feed è maggiore e il report lo dice (`feeds-stale`).
+
+**G2.a: superata**, entrambe le varianti sul 100% dei finding di tutti i repository. Nessun plugin fallito: la correzione di eslint vale anche su `saleor`, che resta `partial` solo per i collegamenti simbolici, come `full-stack-fastapi-template`. Nessun finding ricade su A in blocco, nessun avviso di versione del motore diversa da quella del benchmark, righe presenti su tutti i moduli del grafo.
+
+### Distribuzione dei livelli e punteggi
+
+| Repository | Finding | A (critico / alto / medio / basso) | B (id.) | Da A a B | Punteggi A (mediana / 99% / massimo) | B (id.) | Durata (s) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `full-stack-fastapi-template` | 161 | 0 / 1 / 24 / 136 | 0 / 1 / 46 / 114 | 22 (13,7%) | 3,2 / 15,8 / 15,8 | 6,1 / 27,3 / 28,5 | 20 |
+| `excalidraw` | 3.350 | 0 / 8 / 481 / 2.861 | 0 / 61 / 889 / 2.400 | 622 (18,6%) | 3,4 / 21,0 / 25,2 | 7,3 / 42,8 / 55,6 | 151 |
+| `saleor` | 3.815 | 0 / 1 / 27 / 3.787 | 0 / 1 / 43 / 3.771 | 16 (0,4%) | 2,1 / 6,3 / 15,8 | 2,1 / 10,5 / 38,9 | 238 |
+| `orario-scuola` | 1.169 | 1 / 3 / 87 / 1.078 | 1 / 4 / 187 / 977 | 167 (14,3%) | 4,2 / 20,8 / 37,0 | 4,0 / 33,0 / 46,6 | 91 |
+| `birds-cataloger` | 481 | 0 / 16 / 163 / 302 | 0 / 16 / 176 / 289 | 25 (5,2%) | 0,3 / 19,2 / 29,1 | 0,3 / 25,3 / 29,1 | 30 |
+
+A è invariata: sui due repository dell'utente, dove il confronto è possibile finding per finding, i fingerprint sono gli stessi del 2026-11-18 e nessun punteggio di A è cambiato. I livelli provvisori sono quelli della tabella del 2026-11-18, con un finding in meno su `saleor` (3.815 invece di 3.816).
+
+### Da dove vengono le differenze
+
+Su 7.493 finding `quality` e 300 `architecture` dei cinque repository:
+
+| Ripiego di B | Finding | Motivo |
+| --- | --- | --- |
+| `g:regola-senza-metrica` | 1.701 `quality` (23%) | previsto: G di A. Il restante 77% usa l'intensità |
+| `p:churn-ignoto` | 3.526 `quality` (più 14 senza churn né densità) e 200 `architecture` | quasi tutti su `saleor` e `full-stack-fastapi-template`: 80 commit non coprono i 90 giorni, la storia è `superficiale` e il churn è ignoto, come in A. Pochi altri (4 e 10) sono file fuori dal grafo |
+| `c:fuori-dal-grafo` | 3.722 `quality` | 3.708 sono moduli di test (senza PageRank); 14 sono file `.ts` fuori dal grafo |
+
+Mediana dei fattori: sui `quality` P di B è più alto di quello di A su tutti i repository; C di B è più basso di C di A dove il grafo distingue (0,27 contro 0,70 su `orario-scuola`, 0,56 su `birds-cataloger`). Sugli `architecture` C di B è più alto (0,76–0,89); dove il churn è ignoto P di B ha mediana 0,15 contro 0,30 di A, perché la densità di violazioni è 0 per almeno metà dei membri.
+
+### Cosa dicono i numeri
+
+1. **B ora è distinguibile da A, ma poco sui campioni.** Sul campione di X-03 di `orario-scuola` (30 finding, 18 `quality` e 1 `architecture`) A e B danno punteggi diversi a 19, il tau-b tra i due ordinamenti è 0,71 e i primi 10 in comune sono 6. Su `birds-cataloger` (6 `quality` e 1 `architecture`) i punteggi diversi sono 6, il tau-b è 0,97 e i primi 10 sono gli stessi: **lì G2.b non potrà dire quale variante è migliore**. Il campione è stratificato sulle categorie, e A e B differiscono solo su due.
+2. **Le soglie restano da ritarare.** B alza i punteggi alti (99° percentile fino a 42,8 contro 21,0), ma con soglie a 15, 40 e 70 non ci sono `critico` oltre all'unico di `orario-scuola`, e gli `alto` restano pochi.
+3. **File di test: effetto del disegno da decidere.** Un modulo di test non ha PageRank, quindi in B prende il C di A (0,7 senza tier). Dove la mediana di C per i file di produzione è sotto 0,7, un file di test risulta **più critico** della maggior parte del codice di produzione. E (0,2 per il solo codice di test) lo compensa in parte. ADR-0023 dice «File fuori dal grafo: C di A» senza considerare questo caso.
+4. **Tempi** invariati rispetto al 2026-11-18, entro pochi secondi, sotto i 10 minuti su tutti (massimo `saleor`, 238 s).
+
+### Limiti
+
+- Come il 2026-11-18: una sola esecuzione per caso, stessi snapshot dei feed, nessun repository di team.
+- Su due pilota il churn è ignoto: lì P di B è guidato solo dalla densità.
+
 ## X-03 — Materiale di valutazione (2026-11-18)
 
 Campioni generati con `scripts/gate2/gate2.py sample`, **seme 20261118**, 30 finding per repository, stratificati per categoria e livello provvisorio (quote proporzionali, almeno uno per strato non vuoto), dai finding con fingerprint distinto, di stato aperto, senza eccezione e senza `health`.
@@ -113,3 +155,5 @@ Campioni generati con `scripts/gate2/gate2.py sample`, **seme 20261118**, 30 fin
 Il materiale è **fuori dal repository**, in `~/gate2-material/` (cartella con permessi riservati): per ciascun repository `valutazione-<repo>.md` (i 30 finding in ordine casuale, con categoria, regola, posizione e messaggio, **senza** livelli, severità, punteggi né variante), `ordinamento-<repo>.csv` (da compilare con il rango, 1 il più urgente, pari merito ammessi), `chiave-<repo>.json` (corrispondenza con i fingerprint, da non aprire prima di consegnare) e il report su cui calcolare. Il calcolo dopo la consegna: `scripts/gate2/gate2.py score --report ~/gate2-material/report-<repo>.json --key ~/gate2-material/chiave-<repo>.json --ranking ~/gate2-material/ordinamento-<repo>.csv`, che stampa tau-b e sovrapposizione sui primi 10 per A, B e per i livelli provvisori e se la soglia (tau-b ≥ 0,5 e 6 su 10) è raggiunta.
 
 **Quando farla.** Ordinare 60 finding costa tempo, e finché la Variante B non esiste (K-06..K-10) il confronto A contro B è vuoto: A e B danno lo stesso ordinamento. L'ordinamento dell'utente si può comunque consegnare ora e misura A contro i livelli provvisori; non andrà rifatto quando B esisterà, perché il campione è fissato dal seme. Il riesame con una configurazione di scoring ritarata (punto 2 sopra) cambia i punteggi ma non il campione.
+
+**Aggiornamento del 2026-11-26 (Variante B definita).** Il campione non cambia: i 30 finding di ciascun repository ci sono tutti nelle scansioni nuove. Per il calcolo si usa il report nuovo, `~/gate2-material/report-<repo>-b.json`, con le stesse chiavi e gli stessi ordinamenti; il report del 2026-11-18 resta per riferimento. Al 2026-11-26 gli ordinamenti non sono ancora compilati. Una modifica di formule o pesi fatta **dopo** la consegna sarebbe una taratura sulla valutazione stessa: va decisa prima, oppure dichiarata in X-06.
