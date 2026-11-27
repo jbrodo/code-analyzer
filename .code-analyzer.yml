@@ -201,3 +201,11 @@ exceptions:
     reason: "picomatch (CVE-2026-112366, ReDoS con estglob ripetuti): nessuna versione corretta, 4.0.7 e' l'ultima. Solo strumenti di build e di analisi (web/ e plugin eslint), mai in un percorso che riceva input non fidato. Da rivedere appena esce una versione corretta"
     expires: 2027-02-18
     approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:78ec5389e569f2417f5a57075db13998d0f241064bbfc73e6937a0ae7f4153f3"
+    reason: "Rischio residuo accettato, non falso positivo: pacchetto Debian git (GPL-2.0-only) nell'immagine gitleaks, lo stesso componente gia' accettato con D-0015; impronta nuova perche' scancode attribuisce alle note anche la licenza del progetto, cambiata (ADR-0032). D-0015 era stata valutata con la licenza precedente: va rivalutata prima di distribuire immagini. Approvata il 2026-11-27"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
+  - fingerprint: "sha256:ca40f828337e5f0b615c28adeca3a2e55eac200b7b8f4362c9cf4b0ee38e65d1"
+    reason: "Rischio residuo accettato, non falso positivo: semgrep 1.184.0 sotto LGPL-2.1 nell'immagine semgrep, lo stesso componente gia' accettato con D-0015; impronta nuova perche' scancode attribuisce alle note anche la licenza del progetto, cambiata (ADR-0032). D-0015 era stata valutata con la licenza precedente: va rivalutata prima di distribuire immagini. Approvata il 2026-11-27"
+    expires: 2027-05-09
+    approved_by: "Riccardo Roveda"
