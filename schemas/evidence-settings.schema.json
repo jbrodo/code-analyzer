@@ -1,0 +1,77 @@
+{
+  "$id": "urn:code-analyzer:schema:evidence-settings:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Dato del prodotto: quanto codice si passa al motore e cosa si oscura (DE-02). Mai letto da\n`.code-analyzer.yml`.",
+  "properties": {
+    "entropy_min_bits": {
+      "description": "Entropia per carattere oltre cui una stringa tra apici si oscura.",
+      "exclusiveMinimum": 0,
+      "maximum": 8,
+      "title": "Entropy Min Bits",
+      "type": "number"
+    },
+    "entropy_min_length": {
+      "minimum": 1,
+      "title": "Entropy Min Length",
+      "type": "integer"
+    },
+    "max_characters": {
+      "maximum": 100000,
+      "minimum": 200,
+      "title": "Max Characters",
+      "type": "integer"
+    },
+    "max_line_characters": {
+      "maximum": 10000,
+      "minimum": 40,
+      "title": "Max Line Characters",
+      "type": "integer"
+    },
+    "redaction_patterns": {
+      "description": "Espressioni regolari. Si oscura il gruppo `secret`, o tutto se non c'è.",
+      "items": {
+        "maxLength": 1000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Redaction Patterns",
+      "type": "array"
+    },
+    "secret_rules": {
+      "description": "Regole SAST che segnalano segreti: i loro finding non hanno evidenza.",
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Secret Rules",
+      "type": "array"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "window_lines": {
+      "description": "Righe prima e dopo quelle del finding (§10.2).",
+      "minimum": 1,
+      "title": "Window Lines",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "window_lines",
+    "max_characters",
+    "max_line_characters",
+    "secret_rules",
+    "redaction_patterns",
+    "entropy_min_length",
+    "entropy_min_bits"
+  ],
+  "title": "EvidenceSettings",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

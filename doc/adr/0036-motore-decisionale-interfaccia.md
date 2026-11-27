@@ -65,3 +65,44 @@ Solo nella CLI, spento per default, su richiesta esplicita da riga di comando. I
 - DE-01 si può scrivere e provare senza modelli, pesi o etichette.
 - `ca-cli` potrà importare `ca-decision` solo al cablaggio (DE-04), con un emendamento ad ADR-0001.
 - Un confronto sulle sole voci decise non dice quanto il motore valga su quelle che rimanda: per questo la copertura minima resta una condizione a sé.
+
+## Emendamento del 2026-11-27: evidenza (DE-02)
+
+### Approvato dall'utente prima di scrivere il codice
+
+1. Se il file del finding ha un finding di segreti, il motore non riceve codice di quel file: decide l'umano.
+2. Se la ricerca dei segreti non è riuscita in quella scansione, il motore non riceve **nessun** codice.
+3. Anche nei file senza segnalazioni si oscura ciò che somiglia a una credenziale.
+
+Nessun controllo riconosce ogni segreto.
+
+### Aggiunto scrivendo il codice: temporaneo
+
+4. Se un finding di segreti indica un percorso che **nel commit non c'è**, il motore non riceve nessun codice. gitleaks legge la storia git: dopo una rinomina senza modifiche il contenuto compare solo col nome vecchio (provato il 2026-11-27 con `git log` su un repository di prova, con le opzioni di gitleaks ma senza eseguirlo), quindi il file che oggi lo contiene risulta pulito. Il costo è alto per i repository con segreti in file cancellati; quanto sia frequente **non è misurato** (`doc/verifiche/fase-3.md`, V-F3.10).
+
+**La regola 4 non basta:** se dopo la rinomina nasce un file nuovo col nome vecchio, il percorso segnalato esiste, la regola non scatta e il file rinominato sembra pulito.
+
+### Deciso dall'utente il 2026-11-27: cercare i segreti anche nei file del commit
+
+- In DE-04, oltre alla ricerca sulla storia, si cercano i segreti nei **file esatti del commit, senza storia** (la modalità sui soli file che il plugin ha già). I loro finding bloccano il file in cui il contenuto sta adesso.
+- Se questa ricerca non riesce, **nessun** codice va al motore. Con un `.gitleaksignore` nella radice la modalità sui soli file fallisce, quindi quel repository non ha evidenza.
+- La regola 4 resta finché la ricerca non c'è. **Si toglie solo** dopo prove con gitleaks vero che coprano la rinomina semplice e il riuso del vecchio nome.
+- Non misurati: tempo e memoria della seconda ricerca. Restano i limiti di riconoscimento di gitleaks, compresi i file che la sua configurazione predefinita salta.
+
+### Come è fatta
+
+- Solo finding SAST, escluse le regole che segnalano segreti. Contano i finding di segreti di qualunque stato, e le posizioni raccolte dalla deduplicazione.
+- L'oscuramento lavora sul file intero e sul messaggio del tool; ogni riga toccata porta il segno, e il numero di righe non cambia.
+- L'evidenza è: regola, messaggio, percorso e fino a 20 righe prima e dopo. Oltre il limite si restringe la finestra e si dichiara `reduced`; se non entrano nemmeno le righe del finding, non si dà nulla. Il limite è in **caratteri** (3200): quanti token siano per il motore vero si verifica in DE-04, e il motore rifiuta ciò che non gli sta.
+- Espressioni, soglie e limiti stanno in `ca_decision/evidence.json` (contratto `evidence-settings`), mai in `.code-analyzer.yml`.
+
+### Cosa DE-04 deve garantire
+
+- La ricerca dei segreti sui file del commit descritta sopra, prima di ogni evidenza.
+- Il testo passato è quello del **file al commit del report**. Con `.git`, la ricerca dei segreti non vede le modifiche non registrate.
+- Un file diverso dal commit non produce evidenza.
+
+### Limiti
+
+- Un segreto in una forma non prevista passa. Restano fuori anche i contenuti introdotti solo nella risoluzione di un merge, che la lettura della storia con le opzioni di gitleaks non mostra (dal comportamento di git, non provato qui), e le regole che la configurazione predefinita di gitleaks salta per percorso o parola.
+- In un clone senza storia completa gitleaks vede meno: l'avviso del report resta valido.

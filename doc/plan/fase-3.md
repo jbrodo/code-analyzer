@@ -129,10 +129,10 @@ Il Gate 2 ha mostrato che ordinare a mano senza uno strumento non è sostenibile
 | ID | Task | Dipende da | Accettazione |
 | --- | --- | --- | --- |
 | DE-01 | Pacchetto `ca-decision` con motore finto; `Decision` e porta in `ca-core`; basi di confronto di G3.c in `golden-set/eval/`; contratti in `lint-imports` (**fatto**) | ADR-0036 | Test senza modelli |
-| DE-02 | Selezione dell'evidenza entro il limite di token, con redazione e esclusione dei segreti | DE-01, D3-04 | Test con segreti piantati: non compaiono in evidenza, log o errori; il troncamento è dichiarato |
+| DE-02 | Selezione dell'evidenza entro il limite di token, con redazione e esclusione dei segreti (**fatto**; limite in caratteri, da verificare in token con DE-04; regola 4 dell'emendamento ad ADR-0036 temporanea) | DE-01, D3-04 | Test con segreti piantati: non compaiono in evidenza, log o errori; il troncamento è dichiarato |
 | DE-03 | Instradamento per confidenza, soglie in configurazione, `route` senza `auto` (D3-05) (**fatto con DE-01**; l'elenco delle soglie è vuoto finché non si calibrano) | DE-01 | Nessuna soglia nel codice |
-| DE-04 | Motore locale scelto in V3-06, in container senza rete, pesi per digest | DE-02, ADR-0035 | Prova di integrazione con pesi fissati, fuori dalla CI ordinaria |
-| DE-05 | Script in `golden-set/eval/`: accuratezza, precisione per classe, calibrazione, copertura, intervalli | DE-01, G3-02 | Riproduce gli stessi numeri a parità di pesi e dati |
+| DE-04 | Motore locale scelto in V3-06, in container senza rete, pesi per digest; ricerca dei segreti anche sui file del commit, senza storia (ADR-0036); evidenza solo dal file al commit | DE-02, ADR-0035 | Prova di integrazione con pesi fissati, fuori dalla CI ordinaria; con gitleaks vero, rinomina semplice e riuso del vecchio nome bloccati, poi si toglie la regola 4 |
+| DE-05 | Script in `golden-set/eval/`: accuratezza, precisione per classe, calibrazione, copertura, intervalli (**fatte le misure**; il comando che le applica a un motore richiede DE-02) | DE-01, G3-02 | Riproduce gli stessi numeri a parità di pesi e dati |
 | DE-06 | Rassegna di sicurezza di evidenza, esecuzione e pesi | DE-04 | Nessun rilievo alto aperto |
 
 DE-01 e DE-05 non dipendono dal motore scelto e possono iniziare con il motore finto.

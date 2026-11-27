@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "window_lines": 20,
+  "max_characters": 3200,
+  "max_line_characters": 200,
+  "secret_rules": ["B105", "B106", "B107"],
+  "redaction_patterns": [
+    "-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----[\\s\\S]*?(?:-----END [A-Z ]*PRIVATE KEY(?: BLOCK)?-----|\\Z)",
+    "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b",
+    "\\bgh[pousr]_[A-Za-z0-9]{20,}",
+    "\\bgithub_pat_[A-Za-z0-9_]{20,}",
+    "\\bglpat-[A-Za-z0-9_-]{16,}",
+    "\\bxox[abprs]-[A-Za-z0-9-]{10,}",
+    "\\bsk-[A-Za-z0-9_-]{20,}",
+    "\\bAIza[0-9A-Za-z_-]{30,}",
+    "\\beyJ[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{5,}",
+    "(?i)\\b[a-z][a-z0-9+.-]*://[^\\s/'\"@:]*:(?P<secret>[^\\s/'\"@]+)@",
+    "(?i)(?:passwd|password|pwd|secret|token|api_?key|access_?key|private_?key|client_?secret|credential|authorization)[A-Za-z0-9_]*['\"\\]]*\\s*(?:[:=]|=>)\\s*[rbuRBU]{0,2}(?P<quote>\"\"\"|'''|\"|')(?P<secret>[^\\n]+?)(?P=quote)",
+    "\\b[A-Z0-9_]*(?:PASSWD|PASSWORD|SECRET|TOKEN|API_?KEY|ACCESS_KEY|PRIVATE_KEY)[A-Z0-9_]*=(?P<secret>[^\\s'\"#()\\[\\]{},;]{6,})",
+    "(?i)\\bbearer\\s+(?P<secret>[A-Za-z0-9._~+/=-]{16,})"
+  ],
+  "entropy_min_length": 20,
+  "entropy_min_bits": 4.0
+}

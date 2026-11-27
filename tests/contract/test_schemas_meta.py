@@ -21,6 +21,7 @@ VERSIONS = {
     "golden-labels": "1.0",
     "decision": "1.0",
     "decision-thresholds": "1.0",
+    "evidence-settings": "1.0",
 }
 
 

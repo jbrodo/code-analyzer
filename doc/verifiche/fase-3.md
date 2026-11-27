@@ -251,3 +251,19 @@ Consegnato il 2026-11-27 (`golden-set/pilota-2.labels.annotatore-1.g1.json`; dig
 Ciascuna può aver spostato le risposte; se e quanto non si può stabilire. **La quota del secondo pilota non è una stima indipendente**, e nessuna delle due va usata per dimensionare il test.
 
 **Il tempo per etichetta** resta molto sotto l'ipotesi di 1–3 minuti in entrambi, salvo ricerche fuori dalla pagina, non registrate.
+
+## V-F3.10 — Selezione dell'evidenza sul bacino del golden set (DE-02)
+
+Misurato il 2026-11-27 sui 765 punti del bacino di V-F3.7, con i report di V-F3.6 e il codice ai commit del corpus. Solo conteggi.
+
+| Esito | Punti |
+| --- | --- |
+| Con evidenza | 656 (85,8%) |
+| Senza: ricerca dei segreti non riuscita (tutti di django-DefectDojo, dove gitleaks ha esaurito la memoria) | 107 (14,0%) |
+| Senza: segreto segnalato nel file | 2 (0,3%) |
+
+- Delle 656 evidenze, 61 hanno almeno un segno di oscuramento e 7 sono ridotte. Lunghezza: mediana 1947 caratteri, massimo 3153.
+- Sulle righe attorno ai 765 punti interviene quasi sempre il criterio dell'entropia (75 punti), poi quello sulle assegnazioni di credenziali (4). **Quanti siano falsi allarmi non è misurato**, né quanto l'oscuramento peggiori le decisioni.
+- **La regola sui percorsi scomparsi qui non si può misurare:** le copie sono senza storia, quindi ogni segreto segnalato sta in un file presente. Con la storia completa il suo effetto è ignoto.
+- **Conseguenza per il Gate 3:** le voci senza evidenza restano all'umano e contano nella copertura. Un repository dove gitleaks fallisce ha copertura zero; se finisse nel test, G3.b ne risentirebbe. Va considerato nella divisione per repository (G3-05).
+- Corretto in DE-05: una voce senza decisione ora si può rappresentare e conta nella copertura.
