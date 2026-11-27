@@ -264,3 +264,64 @@ Commit fissato in tabella prima della scansione. Scansione completa `--offline` 
 `complete`, nessun plugin fallito, 88 finding (53 `quality`, 2 `architecture`, 27 `dependency`, 6 `iac`), **G2.a al 100%**. Livelli provvisori (critico / alto / medio / basso): 0 / 21 / 30 / 37; A e B: 0 / 0 / 16 / 72 entrambe, nessun finding cambia livello tra A e B. Punteggi (mediana / 99% / massimo): A 0,5 / 10,5 / 10,5; B 1,7 / 10,5 / 10,5.
 
 **Campione** con lo stesso seme, 20261118: 30 finding su 88 ammissibili, 8 strati (17 `quality`, 10 `dependency`, 2 `iac`, 1 `architecture`). Sul campione A e B hanno punteggi diversi su 18 finding, tau-b tra i due ordini 0,84, 8 dei primi 10 in comune: **le due varianti si distinguono poco**, più che su `birds-cataloger` e meno che su `orario-scuola`. Il materiale è in `~/gate2-material/` (`valutazione-`, `ordinamento-`, `chiave-` e `report-school-planner`), con l'ordinamento vuoto. Il comando di calcolo usa `--report ~/gate2-material/report-school-planner.json`. Claude ha generato il materiale senza leggere il campione e **non ne fa un ordinamento**.
+
+## X-04 — Risultati sugli ordinamenti del proprietario (2026-11-27)
+
+`gate2.py score`, invariato, sui tre ordinamenti con le impronte registrate sopra (verificate prima del calcolo); report `-b` per i primi due repository. Campioni di 30, quindi primi 10 e almeno 6 in comune.
+
+| Repository | A: tau-b, primi 10 | B: tau-b, primi 10 | Provvisori: tau-b, primi 10 | Soglia per A e B |
+| --- | --- | --- | --- | --- |
+| `orario-scuola` | −0,310, 1 | −0,250, 1 | 0,385, 5 | non raggiunta |
+| `birds-cataloger` | −0,584, 0 | −0,574, 0 | 0,548, 6 | non raggiunta |
+| `school-planner` | −0,326, 1 | −0,301, 0 | 0,694, 7 | non raggiunta |
+| Media dei tau-b | −0,407 | −0,375 | 0,542 | |
+
+**Nessuna variante supera la soglia su alcun repository. G2.b non è superata.** Per il punto 4 della regola registrata il 2026-11-26, il gate resta sui livelli provvisori e A resta predefinita in via provvisoria. I livelli provvisori ordinano meglio di A e di B in tutti e tre i repository, ma **non sono validati nemmeno loro**: su `orario-scuola` non raggiungono la soglia.
+
+**Pari merito al confine dei primi 10.** In `birds-cataloger` e `school-planner` i primi 10 del proprietario cadono tutti dentro un gruppo alla pari (18 e 10 finding). Risolvendo i pari merito, sui due lati, in tutti i modi possibili: A e B non cambiano in nessun repository (da 0 a 1 in comune, il valore della tabella), quindi il loro esito non dipende da questa scelta. La sovrapposizione dei **livelli provvisori** invece sì: da 3 a 7 su `orario-scuola`, **da 1 a 10 su `birds-cataloger`** (il 6 della tabella dipende dall'ordine dei fingerprint), da 7 a 9 su `school-planner`.
+
+**Controllo del calcolo.** Un tau-b negativo su tutti i repository può indicare un errore di segno. Controlli: nell'ordinamento il gruppo «subito» occupa le prime posizioni, e i livelli provvisori concordano nello stesso verso; i punteggi di A di tutti i 1.738 finding delle tre scansioni coincidono (entro 0,011) con 100·G·P·E·C ricalcolato dai fattori del report. Non è emerso un errore di segno né di prodotto.
+
+**Da dove viene il segno negativo (analisi fatta dopo il risultato, esplorativa: non entra nella regola).**
+
+- In tutti e tre i campioni la prima posizione contiene **tutti e soli** i finding `dependency` (4, 18 e 10), alla pari tra loro.
+- A e B li mettono in fondo. In A e in B, per una dipendenza fuori da KEV, P è `max(EPSS, 0,01)`, una probabilità di sfruttamento con mediana 0,01 in tutte e tre le scansioni; per `quality` e `architecture` in A, P è il percentile di churn del file, minimo 0,1 e, sulle scansioni intere, mediane di `quality` da 0,10 a 0,70. A parità degli altri fattori il prodotto confronta due grandezze diverse sulla stessa scala. È il comportamento scritto in §6 e in ADR-0021, non un difetto del codice. Il limite inferiore dal CVSS (S5-A1) alza il livello e non il punteggio, quindi non cambia questo ordine.
+- **Togliendo le dipendenze** (26, 12 e 20 finding rimasti) A ha tau-b −0,078, 0,254 e 0,330; B −0,013, 0,299 e 0,417; i provvisori 0,336, 0,377 e 0,582. A e B restano sotto 0,5: il confronto tra categorie spiega il segno, ma **correggere solo quello non basta** su questi campioni.
+
+**Limiti.** Un solo valutatore, autore del prodotto, su repository propri. Per i primi due repository esisteva un ordinamento di Claude, che il proprietario ha dichiarato di aver copiato e poi sostituito: che non abbia influito non è verificabile; `school-planner`, senza ordinamento di Claude, dà lo stesso esito. Il giudizio è raccolto in quattro gruppi con pari merito, non previsti dal protocollo del 2026-11-13. Le dipendenze non sono distinte tra loro, quindi questi campioni non dicono quale delle due varianti le ordini meglio al loro interno. Package di `school-planner` costruito dal codice corrente ed EPSS/KEV del 2026-11-26 (vedi sopra).
+
+## X-06 — Proposta sulla variante predefinita (2026-11-27)
+
+**A contro B.** B ha il tau-b medio più alto di 0,032, sotto lo 0,05 della regola, e nessuna delle due è candidata: la differenza non conta. Sui campioni i due ordini sono vicini (tau-b tra A e B: 0,71, 0,97 e 0,84).
+
+**Raccomandazione:** applicare il punto 4 senza eccezioni.
+
+1. Livelli e gate restano provvisori (`levels.source: provisional`); A resta predefinita in via provvisoria; A e B restano in ombra. La UI e i documenti non li presentano come un ordinamento validato.
+2. G2.c si registra come «nessuna variante scelta» e G2.b come non superata in X-08.
+3. **Nessuna modifica a formule o pesi su questi dati dentro la Fase 2.** Una correzione della scala di P per le dipendenze, tarata su questi tre ordinamenti, andrebbe provata su campioni nuovi (seme o repository diversi), ordinati prima di vederne i punteggi; questi tre servirebbero solo a svilupparla.
+
+**Decisione dell'utente (2026-11-27): raccomandazione confermata** (ADR-0031, `PROJECT.md` §18).
+
+## X-08 — Esito del Gate 2 (2026-11-27)
+
+**Gate 2 non superato:** l'ordinamento non è validato.
+
+| Condizione | Evidenza | Valore misurato | Esito |
+| --- | --- | --- | --- |
+| **G2.a** Entrambe le varianti calcolate in ombra | X-02 (2026-11-18), X-02 ripetuta con B (2026-11-26), X-02 di `school-planner` | 100% dei finding con fattori e punteggi di A e di B e versione della configurazione: sui tre pilota e sui primi due repository del proprietario in entrambe le misure, e sugli 88 finding di `school-planner` | **superata** sui report. Nel database non è misurata sui repository del gate: non c'è un server del pilota (I-06) |
+| **G2.b** Ordinamento validato | X-04 | Tau-b di A da −0,584 a −0,310 e di B da −0,574 a −0,250; al massimo 1 dei primi 10 in comune; soglia 0,5 e 6 | **non superata**, su nessun repository |
+| **G2.c** Variante predefinita scelta | X-06, ADR-0031, `PROJECT.md` §18 | Regola del 2026-11-26, punto 4 | **decisione registrata: nessuna variante scelta.** A resta predefinita in via provvisoria |
+| **G2.d** Scansione PR sotto i 10 minuti | X-05 | 20,1, 172,6 e 263,9 s sulle PR di riferimento dei tre pilota | **superata**, con i limiti di X-05 |
+
+**Effetto sul prodotto: nessun cambio di comportamento.** `levels.source: provisional`, gate sui livelli di ADR-0009, A e B in ombra.
+
+**Scostamenti**
+
+- **Rispetto a §13** non c'è un ordinamento "validato dai team": un solo valutatore, il proprietario, autore del prodotto, su repository propri (D2-03).
+- **D2-10** prevedeva di attivare i livelli da punteggio dopo la scelta della variante: restano spenti (deciso il 2026-11-26, prima dell'ordinamento, e coerente con l'esito).
+- **Raccolta del giudizio** in quattro gruppi con pari merito, con la dashboard locale, non prevista dal protocollo del 2026-11-13.
+- **Ordinamenti dei primi due repository** consegnati prima come copie di quello di Claude, poi rifatti: l'indipendenza è una dichiarazione del proprietario.
+- **`school-planner`** scansionato con un pacchetto più recente e con EPSS e KEV di nove giorni dopo.
+- **Letteratura:** le definizioni di Martini et al. (ECSA 2018) e quelle degli smell e della Variante B non sono confrontate con le pubblicazioni (ADR-0020 e 0023 restano `Proposto`).
+
+I limiti della misura sono in X-02, X-04 e X-05. §13 chiede di confermare i valori dopo il pilota: soglie dei livelli, pesi e fattori **non sono confermati**. La chiusura della Fase 2 con G2.b non superata è materia di X-09 e resta da decidere.

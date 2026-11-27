@@ -34,6 +34,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0028](0028-catalogo-servizi.md) | Catalogo servizi | Accettato | Presa il 2026-11-16 (D2-04) |
 | [0029](0029-ui-elenco-finding-perimetro-e-dati.md) | UI dell'elenco finding: perimetro e dati | Accettato (2026-11-18) | Sì, D2-15: presa il 2026-11-17 (perimetro confermato) |
 | [0030](0030-componenti-server-e-object-storage.md) | Componenti del server e object storage | Accettato | Presa il 2026-11-16 (D2-07) |
+| [0031](0031-variante-predefinita-esito-gate-2.md) | Variante di scoring predefinita: esito del Gate 2 | Accettato (2026-11-27) | Sì, §18: presa il 2026-11-27 |
 
 ## Aggiornamenti dopo la stesura
 
