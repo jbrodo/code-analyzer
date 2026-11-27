@@ -28,6 +28,8 @@ SCHEMA_NAMES = (
     "service-context",
     "golden-sample",
     "golden-labels",
+    "decision",
+    "decision-thresholds",
 )
 
 Json = dict[str, Any]

@@ -7,6 +7,7 @@ members = [
     "ca-api",
     "ca-cli",
     "ca-core",
+    "ca-decision",
     "ca-graph",
     "ca-integrations",
     "ca-plugins",
@@ -172,6 +173,21 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.26,<5" },
+    { name = "pydantic", specifier = ">=2.14,<3" },
+]
+
+[[package]]
+name = "ca-decision"
+version = "0.0.0"
+source = { editable = "packages/ca-decision" }
+dependencies = [
+    { name = "ca-core" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ca-core", editable = "packages/ca-core" },
     { name = "pydantic", specifier = ">=2.14,<3" },
 ]
 
@@ -419,6 +435,7 @@ dependencies = [
     { name = "ca-api" },
     { name = "ca-cli" },
     { name = "ca-core" },
+    { name = "ca-decision" },
     { name = "ca-graph" },
     { name = "ca-integrations" },
     { name = "ca-plugins" },
@@ -445,6 +462,7 @@ requires-dist = [
     { name = "ca-api", editable = "packages/ca-api" },
     { name = "ca-cli", editable = "packages/ca-cli" },
     { name = "ca-core", editable = "packages/ca-core" },
+    { name = "ca-decision", editable = "packages/ca-decision" },
     { name = "ca-graph", editable = "packages/ca-graph" },
     { name = "ca-integrations", editable = "packages/ca-integrations" },
     { name = "ca-plugins", editable = "packages/ca-plugins" },

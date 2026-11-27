@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from ca_core.models import CodeAnalyzerConfig, Finding, PluginManifest
+from ca_core.models.decision import Decision, DecisionThresholds, Evidence
 from ca_core.models.golden_set import GoldenLabels, GoldenSample
 from ca_core.models.graph import Graph
 from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
@@ -63,6 +64,8 @@ CONTRACTS: tuple[Contract, ...] = (
     Contract("service-context", "1.0", ServiceContextFile),
     Contract("golden-sample", "1.0", GoldenSample),
     Contract("golden-labels", "1.0", GoldenLabels),
+    Contract("decision", "1.0", Decision, {"Evidence": Evidence.model_json_schema()}),
+    Contract("decision-thresholds", "1.0", DecisionThresholds),
 )
 
 

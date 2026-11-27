@@ -1,0 +1,105 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "Ciò che il motore può leggere, già ridotto entro il suo limite da chi lo seleziona.",
+      "properties": {
+        "reduced": {
+          "description": "Chi l'ha selezionata ha tolto parti per rientrare nel limite.",
+          "title": "Reduced",
+          "type": "boolean"
+        },
+        "text": {
+          "maxLength": 100000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "reduced"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Probabilities": {
+      "additionalProperties": false,
+      "properties": {
+        "false": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "False",
+          "type": "number"
+        },
+        "true": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "True",
+          "type": "number"
+        }
+      },
+      "required": [
+        "true",
+        "false"
+      ],
+      "title": "Probabilities",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:decision:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "confidence": {
+      "description": "Dichiarata dal motore: non è una probabilità calibrata.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "kind": {
+      "const": "boolean",
+      "title": "Kind",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][\\w./-]*$",
+      "title": "Model",
+      "type": "string"
+    },
+    "model_version": {
+      "description": "Digest dei pesi.",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Model Version",
+      "type": "string"
+    },
+    "probabilities": {
+      "$ref": "#/$defs/Probabilities"
+    },
+    "question_id": {
+      "const": "is_true_positive",
+      "title": "Question Id",
+      "type": "string"
+    },
+    "score": {
+      "default": null,
+      "description": "Per le domande a punteggio, non ancora fatte.",
+      "title": "Score",
+      "type": "null"
+    }
+  },
+  "required": [
+    "question_id",
+    "kind",
+    "probabilities",
+    "confidence",
+    "model",
+    "model_version"
+  ],
+  "title": "Decision",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

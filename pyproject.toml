@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Workspace di Code Analyzer"
 license = "LicenseRef-Apache-2.0-with-Commons-Clause"
 requires-python = ">=3.14"
-dependencies = ["ca-core", "ca-plugins", "ca-cli", "ca-graph", "ca-integrations", "ca-api"]
+dependencies = ["ca-core", "ca-plugins", "ca-cli", "ca-graph", "ca-integrations", "ca-api", "ca-decision"]
 
 [dependency-groups]
 dev = [
@@ -35,10 +35,11 @@ ca-cli = { workspace = true }
 ca-graph = { workspace = true }
 ca-integrations = { workspace = true }
 ca-api = { workspace = true }
+ca-decision = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=ca_core --cov=ca_graph --cov=ca_integrations --cov=ca_api --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=ca_core --cov=ca_graph --cov=ca_integrations --cov=ca_api --cov=ca_decision --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.report]
 exclude_also = ["if __name__ == .__main__.:"]
@@ -72,13 +73,15 @@ select = ["E", "F", "I", "UP", "B"]
 
 # ADR-0001: dipendenze interne solo verso ca-core.
 [tool.importlinter]
-root_packages = ["ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations", "ca_api"]
+root_packages = [
+    "ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations", "ca_api", "ca_decision",
+]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Dipendenze interne verso ca_core"
 type = "layers"
-layers = ["ca_cli", "ca_plugins | ca_graph | ca_integrations", "ca_core"]
+layers = ["ca_cli", "ca_plugins | ca_graph | ca_integrations | ca_decision", "ca_core"]
 
 [[tool.importlinter.contracts]]
 name = "ca_core senza framework, rete né processi"
@@ -148,3 +151,29 @@ name = "nessun altro pacchetto importa ca_api"
 type = "forbidden"
 source_modules = ["ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations"]
 forbidden_modules = ["ca_api"]
+
+[[tool.importlinter.contracts]]
+name = "ca_decision solo con ca_core, senza rete né processi (ADR-0036)"
+type = "forbidden"
+source_modules = ["ca_decision"]
+forbidden_modules = [
+    "ca_api",
+    "ca_cli",
+    "ca_graph",
+    "ca_integrations",
+    "ca_plugins",
+    "docker",
+    "http",
+    "httpx",
+    "requests",
+    "socket",
+    "subprocess",
+    "urllib",
+    "urllib3",
+]
+
+[[tool.importlinter.contracts]]
+name = "ca_decision non è ancora cablato: lo importerà ca_cli con DE-04 (ADR-0036)"
+type = "forbidden"
+source_modules = ["ca_core", "ca_plugins", "ca_cli", "ca_graph", "ca_integrations", "ca_api"]
+forbidden_modules = ["ca_decision"]

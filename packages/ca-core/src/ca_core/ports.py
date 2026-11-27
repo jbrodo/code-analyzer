@@ -13,6 +13,7 @@ from typing import Annotated, BinaryIO, Literal, Protocol, Self, runtime_checkab
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictFloat, model_validator
 
+from ca_core.models.decision import Decision, DecisionKind, QuestionId
 from ca_core.models.graph import HistoryStatus
 from ca_core.models.plugin_manifest import InputMode, PackagedPluginManifest
 from ca_core.models.scan_report import BaselineSourceKind, Isolation, Signature
@@ -432,3 +433,30 @@ __all__ = [
     "SourceReader",
     "SourceTooLarge",
 ]
+
+
+class DecisionError(Exception):
+    """Il motore non può rispondere (ADR-0036): nessuna decisione di ripiego. Il messaggio non
+    riporta l'evidenza."""
+
+
+class EvidenceTooLarge(DecisionError):
+    """L'evidenza supera il limite del motore, che non la tronca di nascosto."""
+
+
+class UnsupportedQuestion(DecisionError):
+    """Domanda, tipo o opzioni che il motore non gestisce."""
+
+
+class DecisionEngine(Protocol):
+    """§10.1. `evidence` è il testo di una `Evidence`; `options` serve solo alle domande a
+    scelta, che non esistono ancora."""
+
+    def decide(
+        self,
+        question_id: QuestionId,
+        question: str,
+        evidence: str,
+        options: list[str] | None,
+        kind: DecisionKind,
+    ) -> Decision: ...
