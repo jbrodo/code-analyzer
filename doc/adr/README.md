@@ -64,7 +64,7 @@ Tra gli ADR da 0016 a 0030 quattro restano `Proposto`, riaperti con motivo. Il p
 | --- | --- | --- |
 | 0020 | Le definizioni degli smell non sono confrontate con le pubblicazioni | Il confronto sui testi di §19 |
 | 0023 | Come 0020, per la Variante B; il Gate 2 non ha validato il suo ordinamento (ADR-0031) | Il confronto sui testi; l'ordinamento è una questione separata |
-| 0024 | Manca l'origine configurabile di OSV e trivy, e il flag della CLI (E-04) | Completare E-04, o togliere quella parte dall'ADR |
+| 0024 | Alla chiusura mancavano l'origine di OSV e trivy e il flag della CLI (E-04, completato dopo, il 2026-11-27) | La verifica del resto dell'ADR contro il codice |
 | 0027 | L'Action gira nella CI del progetto (N-05), ma il componente GitLab non è mai stato eseguito e nulla è pubblicato | D2-12 e la decisione di pubblicazione |
 
 ## Lacune rinviate

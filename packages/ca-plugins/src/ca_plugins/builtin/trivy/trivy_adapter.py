@@ -222,21 +222,49 @@ def run(
     return 0
 
 
-def sync(*, trivy: str = TRIVY, cache_dir: str = CACHE_DIR) -> int:
-    """Database (V-05: `fs --download-db-only`) e regole (`config` su una directory vuota)."""
-    if _call([trivy, "fs", "--download-db-only", "--cache-dir", cache_dir, *_COMMON]) != 0:
+def sync(
+    *,
+    trivy: str = TRIVY,
+    cache_dir: str = CACHE_DIR,
+    db_repository: str | None = None,
+    checks_repository: str | None = None,
+) -> int:
+    """Database (V-05: `fs --download-db-only`) e regole (`config` su una directory vuota). I
+    repository OCI, se indicati, sostituiscono quelli predefiniti di trivy (E-04)."""
+    database = [f"--db-repository={db_repository}"] if db_repository else []
+    checks = [f"--checks-bundle-repository={checks_repository}"] if checks_repository else []
+    download = [trivy, "fs", "--download-db-only", "--cache-dir", cache_dir, *database, *_COMMON]
+    if _call(download) != 0:
         return EXIT_SYNC
     with tempfile.TemporaryDirectory() as empty:
         return (
             0
-            if _call([trivy, "config", "--cache-dir", cache_dir, *_COMMON, empty]) == 0
+            if _call([trivy, "config", "--cache-dir", cache_dir, *checks, *_COMMON, empty]) == 0
             else EXIT_SYNC
         )
 
 
+_SYNC_OPTIONS = {
+    "--db-repository": "db_repository",
+    "--checks-bundle-repository": "checks_repository",
+}
+
+
+def _sync_command(argv: list[str]) -> int:
+    """Solo le due opzioni di origine, una volta ciascuna, con un valore che non sembri un flag."""
+    chosen: dict[str, str] = {}
+    for item in argv:
+        name, _, value = item.partition("=")
+        key = _SYNC_OPTIONS.get(name)
+        if key is None or key in chosen or not value or value.startswith("-") or "," in value:
+            return EXIT_SYNC
+        chosen[key] = value
+    return sync(**chosen)
+
+
 def main(argv: list[str]) -> int:
-    if argv == ["sync"]:
-        return sync()
+    if argv[:1] == ["sync"]:
+        return _sync_command(argv[1:])
     return run() if not argv else EXIT_TRIVY
 
 

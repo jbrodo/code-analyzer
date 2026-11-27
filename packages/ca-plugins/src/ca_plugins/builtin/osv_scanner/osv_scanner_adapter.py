@@ -6,9 +6,9 @@ Due modi, nella stessa immagine firmata (ADR-0006):
   nessuna rete. Esegue osv-scanner con `--offline-vulnerabilities --no-resolve`, legge il suo JSON
   nativo (vettore CVSS e alias non stanno nel SARIF) e scrive in `/out` un SARIF 2.1.0 con un solo
   run, `uri` relativi alla radice del workspace e solo le proprieta' del contratto ADR-0007.
-- `sync <ecosistema>...`: container con rete e senza workspace. Scarica gli `all.zip` degli
-  ecosistemi indicati, da un elenco chiuso, in `/feeds/osv-scalibr/<ecosistema>/all.zip`. Non
-  riceve ne' legge alcun dato del repository.
+- `sync <ecosistema>... [--base-url=URL]`: container con rete e senza workspace. Scarica gli
+  `all.zip` degli ecosistemi indicati, da un elenco chiuso, in
+  `/feeds/osv-scalibr/<ecosistema>/all.zip`. Non riceve ne' legge alcun dato del repository.
 
 Il repository e l'output di osv-scanner sono dati non fidati: si leggono come JSON, non si
 interpretano e non si riportano in stdout o stderr. Nessun `snippet` in uscita (ADR-0012).
@@ -36,7 +36,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 SCANNER = "/usr/local/bin/osv-scanner"
 SCANNER_VERSION = "2.7.0"
@@ -384,9 +384,28 @@ def sync(
     return 0
 
 
+def _sync_command(argv: list[str]) -> int:
+    """`<ecosistema>... [--base-url=URL]`: l'URL, se c'e', lo passa la CLI per un'origine scelta
+    da chi lancia la scansione (E-04). Si ricontrolla qui: https, un host, nessuna credenziale."""
+    ecosystems = [a for a in argv if not a.startswith("--")]
+    options = [a for a in argv if a.startswith("--")]
+    if not options:
+        return sync(ecosystems)
+    name, _, url = options[0].partition("=")
+    try:
+        parts = urlsplit(url)
+        valid = parts.scheme == "https" and bool(parts.hostname)
+        valid = valid and not (parts.username or parts.password or parts.query or parts.fragment)
+    except ValueError:
+        valid = False
+    if len(options) != 1 or name != "--base-url" or not valid:
+        return EXIT_SYNC
+    return sync(ecosystems, base_url=url.rstrip("/"))
+
+
 def main(argv: list[str]) -> int:
     if argv[:1] == ["sync"]:
-        return sync(argv[1:])
+        return _sync_command(argv[1:])
     return run() if not argv else EXIT_SCANNER
 
 

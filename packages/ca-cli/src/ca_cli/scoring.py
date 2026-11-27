@@ -47,8 +47,9 @@ from ca_graph.adi import with_adi
 from ca_graph.reachability import GraphReachability
 from ca_graph.smells import Smell
 from ca_graph.step import BuildGraphResult
-from ca_plugins.enrichment import FetchError, load_enrichment, origin_from_env
+from ca_plugins.enrichment import FetchError, load_enrichment
 from ca_plugins.feeds import default_cache_dir as default_feeds_dir
+from ca_plugins.origins import OriginError, resolve_origins
 
 SCORING_CONFIG_ENV = "CA_SCORING_CONFIG"
 MAX_INPUT_BYTES = 256 * 1024
@@ -138,9 +139,9 @@ def run_scoring(
     warnings += service_warnings
     feeds_dir = (context.feeds_cache or default_feeds_dir()) / "enrichment"
     try:
-        origin = origin_from_env()
-    except ValueError as exc:
-        raise ScanError("origine dei feed non valida") from exc
+        origin = resolve_origins(args.feed_origin).enrichment
+    except OriginError as exc:
+        raise ScanError(str(exc)) from exc
     enriched = load_enrichment(
         feeds_dir,
         context.enrichment_fetcher or _NoNetwork(),

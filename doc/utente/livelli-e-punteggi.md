@@ -41,7 +41,7 @@ Il report registra anche `service_context` (valore e fonte di tier ed esposizion
 
 ## Feed EPSS e KEV
 
-Li scarica la CLI, senza il workspace, e li tiene in cache per utente: EPSS dal file giornaliero di FIRST, KEV dal JSON di CISA, con controlli di forma, dimensione e plausibilità. Dopo un giorno si risincronizza. I punteggi EPSS sono generati da Empirical Security e pubblicati da FIRST (EPSS SIG); **FIRST chiede di citare EPSS nei prodotti che lo usano**. Le origini si cambiano solo con `CA_FEEDS_EPSS_URL` e `CA_FEEDS_KEV_URL` (https, senza credenziali), mai dal repository. Nessuna delle due fonti pubblica firme: uno snapshot plausibile ma alterato non si riconosce, con effetto limitato al P di una CVE.
+Li scarica la CLI, senza il workspace, e li tiene in cache per utente: EPSS dal file giornaliero di FIRST, KEV dal JSON di CISA, con controlli di forma, dimensione e plausibilità. Dopo un giorno si risincronizza. I punteggi EPSS sono generati da Empirical Security e pubblicati da FIRST (EPSS SIG); **FIRST chiede di citare EPSS nei prodotti che lo usano**. L'origine si cambia solo con `--feed-origin` o con le variabili d'ambiente (vedi «Origine dei feed» in `README.md` di questa cartella), mai dal repository. Nessuna delle due fonti pubblica firme: uno snapshot plausibile ma alterato non si riconosce, con effetto limitato al P di una CVE.
 
 ## Un feed alterato non nasconde una vulnerabilità grave
 
