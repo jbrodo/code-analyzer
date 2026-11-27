@@ -25,13 +25,16 @@ _Digest = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 
 
 class _Frozen(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, protected_namespaces=())
+    # gli errori di validazione non riportano l'ingresso, che può contenere codice
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, protected_namespaces=(), hide_input_in_errors=True
+    )
 
 
 class Evidence(_Frozen):
     """Ciò che il motore può leggere, già ridotto entro il suo limite da chi lo seleziona."""
 
-    text: str = Field(min_length=1, max_length=100_000)
+    text: str = Field(min_length=1, max_length=100_000, repr=False)
     reduced: StrictBool = Field(
         description="Chi l'ha selezionata ha tolto parti per rientrare nel limite."
     )
@@ -80,3 +83,28 @@ class DecisionThresholds(_Frozen):
         if len(set(keys)) != len(keys):
             raise ValueError("due soglie per la stessa domanda e gli stessi pesi")
         return self
+
+
+_Positive = Annotated[StrictInt, Field(ge=1)]
+_Pattern = Annotated[str, Field(min_length=1, max_length=1000)]
+
+
+class EvidenceSettings(_Frozen):
+    """Dato del prodotto: quanto codice si passa al motore e cosa si oscura (DE-02). Mai letto da
+    `.code-analyzer.yml`."""
+
+    version: StrictInt = Field(ge=1)
+    window_lines: _Positive = Field(description="Righe prima e dopo quelle del finding (§10.2).")
+    max_characters: Annotated[StrictInt, Field(ge=200, le=100_000)]
+    max_line_characters: Annotated[StrictInt, Field(ge=40, le=10_000)]
+    secret_rules: list[Annotated[str, Field(min_length=1, max_length=128)]] = Field(
+        description="Regole SAST che segnalano segreti: i loro finding non hanno evidenza."
+    )
+    redaction_patterns: list[_Pattern] = Field(
+        min_length=1,
+        description="Espressioni regolari. Si oscura il gruppo `secret`, o tutto se non c'è.",
+    )
+    entropy_min_length: _Positive
+    entropy_min_bits: Annotated[float, Field(gt=0, le=8, strict=True)] = Field(
+        description="Entropia per carattere oltre cui una stringa tra apici si oscura."
+    )

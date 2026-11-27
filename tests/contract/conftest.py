@@ -30,6 +30,7 @@ SCHEMA_NAMES = (
     "golden-labels",
     "decision",
     "decision-thresholds",
+    "evidence-settings",
 )
 
 Json = dict[str, Any]
