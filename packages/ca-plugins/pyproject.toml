@@ -2,7 +2,7 @@
 name = "ca-plugins"
 version = "0.0.0"
 description = "Runner e adattatori degli scanner di Code Analyzer"
-license = "GPL-3.0-only"
+license = "LicenseRef-Apache-2.0-with-Commons-Clause"
 requires-python = ">=3.14"
 dependencies = [
     "ca-core",

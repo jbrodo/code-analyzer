@@ -2,7 +2,7 @@
 name = "code-analyzer"
 version = "0.0.0"
 description = "Workspace di Code Analyzer"
-license = "GPL-3.0-only"
+license = "LicenseRef-Apache-2.0-with-Commons-Clause"
 requires-python = ">=3.14"
 dependencies = ["ca-core", "ca-plugins", "ca-cli", "ca-graph", "ca-integrations", "ca-api"]
 

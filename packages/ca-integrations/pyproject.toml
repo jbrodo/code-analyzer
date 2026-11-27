@@ -2,7 +2,7 @@
 name = "ca-integrations"
 version = "0.0.0"
 description = "Commenti PR, check run e report nativi dei provider CI per Code Analyzer"
-license = "GPL-3.0-only"
+license = "LicenseRef-Apache-2.0-with-Commons-Clause"
 requires-python = ">=3.14"
 dependencies = [
     "ca-core",
