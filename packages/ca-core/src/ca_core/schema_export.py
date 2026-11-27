@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from ca_core.models import CodeAnalyzerConfig, Finding, PluginManifest
+from ca_core.models.golden_set import GoldenLabels, GoldenSample
 from ca_core.models.graph import Graph
 from ca_core.models.plugin_manifest import PACKAGED_DEF, PACKAGED_DEF_NAME
 from ca_core.models.plugin_sarif import PluginSarifProperties
@@ -60,6 +61,8 @@ CONTRACTS: tuple[Contract, ...] = (
     Contract("scoring-config", "1.1", ScoringConfig),
     Contract("scoring-benchmark", "1.0", ScoringBenchmark),
     Contract("service-context", "1.0", ServiceContextFile),
+    Contract("golden-sample", "1.0", GoldenSample),
+    Contract("golden-labels", "1.0", GoldenLabels),
 )
 
 

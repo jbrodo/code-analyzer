@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "SampleItem": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Commit",
+          "type": "string"
+        },
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "fingerprint": {
+          "description": "Fingerprint del finding (ADR-0008).",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "path": {
+          "description": "Percorso relativo alla radice del repository.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^[^/\\x00][^\\x00]*$",
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "description": "Repository pubblico.",
+          "maxLength": 200,
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "rule_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][\\w./-]*$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        },
+        "tool": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][\\w./-]*$",
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "commit",
+        "tool",
+        "rule_id",
+        "path",
+        "start_line",
+        "end_line",
+        "fingerprint"
+      ],
+      "title": "SampleItem",
+      "type": "object"
+    },
+    "Sampling": {
+      "additionalProperties": false,
+      "properties": {
+        "cap_per_repository_and_rule": {
+          "minimum": 1,
+          "title": "Cap Per Repository And Rule",
+          "type": "integer"
+        },
+        "excluded_rules": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][\\w./-]*$",
+            "type": "string"
+          },
+          "title": "Excluded Rules",
+          "type": "array"
+        },
+        "pool_size": {
+          "description": "Punti di codice tra cui si è estratto, dopo filtri e tetto.",
+          "minimum": 1,
+          "title": "Pool Size",
+          "type": "integer"
+        },
+        "seed": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Seed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "seed",
+        "cap_per_repository_and_rule",
+        "excluded_rules",
+        "pool_size"
+      ],
+      "title": "Sampling",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:golden-sample:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "description": "Nell'ordine in cui si annotano.",
+      "items": {
+        "$ref": "#/$defs/SampleItem"
+      },
+      "maxItems": 5000,
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+    },
+    "language": {
+      "const": "python",
+      "title": "Language",
+      "type": "string"
+    },
+    "sampling": {
+      "$ref": "#/$defs/Sampling"
+    },
+    "set": {
+      "enum": [
+        "pilota",
+        "calibrazione",
+        "test",
+        "addestramento"
+      ],
+      "title": "Set",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "set",
+    "language",
+    "sampling",
+    "items"
+  ],
+  "title": "GoldenSample",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

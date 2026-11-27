@@ -26,6 +26,8 @@ SCHEMA_NAMES = (
     "scoring-config",
     "scoring-benchmark",
     "service-context",
+    "golden-sample",
+    "golden-labels",
 )
 
 Json = dict[str, Any]

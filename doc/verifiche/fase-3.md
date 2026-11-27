@@ -188,3 +188,19 @@ Per il tetto, un punto con più regole conta sotto la prima in ordine alfabetico
 - **Python basta per numero:** 772 punti distinti con tetto 20, contro le circa 630 etichette previste, da 15 repository.
 - **JavaScript e TypeScript non bastano**, e altri repository non lo risolvono: il prodotto ha 6 regole semgrep per JavaScript, di cui 4 producono finding, e bandit è solo per Python. I due repository senza semgrep potrebbero aggiungerne, in quantità ignota.
 - La quota di falsi positivi resta ignota: nessun finding è stato giudicato. Il piano richiede almeno 60 esempi della classe meno frequente nel test, e non si sa se ci saranno.
+
+## V-F3.7 — Bacino del golden set e campione pilota
+
+Calcolato il 2026-11-27 con `scripts/golden/sample.py` sui report di V-F3.6, con i filtri di `golden-set/sampling.json`. I conteggi differiscono da quelli di V-F3.6 perché ora si escludono anche B105–B107 e B401–B415, il filtro dei test è quello di `ca-core` e il punto di codice si sceglie con il seme `pilota-1`.
+
+- Finding candidati: 1238; punti di codice distinti: 888, da 15 repository, 33 regole.
+
+| Tetto per repository e regola | 10 | 15 | 20 | 30 | nessuno |
+| --- | --- | --- | --- | --- | --- |
+| Punti nel bacino | 538 | 673 | 765 | 861 | 888 |
+
+- Con il tetto 20: django 149, indico 134, django-DefectDojo 107, netbox 86, mealie 60. Insieme sono 536 punti su 765.
+- Resta il limite di V-F3.6: semgrep non è riuscito su `actual` e `medusa`.
+- Campione pilota: 30 voci da 11 repository, in `golden-set/pilota.sample.json`.
+- Interfaccia di annotazione provata in un browser con un campione finto: risposta, annulla, tasti rapidi, ripresa dopo la ricarica, consegna; nessun errore in console. Disposizione controllata misurando gli elementi a 1440×900, 1280×720, 1280×640, 390×844 e 320×640: nessuno scorrimento orizzontale, nessun pulsante tagliato o sovrapposto, contrasto minimo del testo 6,3:1. **L'aspetto non è stato guardato.**
+- **Nessun finding è stato giudicato.**
