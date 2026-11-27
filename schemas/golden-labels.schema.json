@@ -79,6 +79,7 @@
     "set": {
       "enum": [
         "pilota",
+        "pilota-2",
         "calibrazione",
         "test",
         "addestramento"

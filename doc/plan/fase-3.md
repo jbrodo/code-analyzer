@@ -89,7 +89,7 @@ Circa 630 etichette. A 1–3 minuti ciascuna (**ipotesi**, la misura il pilota) 
 | 0033 | Niente modelli esterni | Scritto insieme a questo piano |
 | 0034 | Golden set, protocollo di annotazione e Gate 3 | Accettato il 2026-11-27 |
 | 0035 | Esecuzione isolata dei modelli, pesi fissati per digest, licenze di pesi e modelli di base | Dopo V3-01, V3-03 e V3-04 |
-| 0036 | `ca-decision`: interfaccia, evidenza, instradamento | Dopo V3-06 |
+| 0036 | `ca-decision`: interfaccia, instradamento (**proposto**; l'evidenza reale si fissa con DE-02) | Prima di DE-01; il motore vero si sceglie in V3-06 |
 | 0037 | `ca-agents`: contratti di fase, sandbox di build e test, guardrail | Prima dell'onda 4 |
 
 I numeri sono provvisori.
@@ -179,7 +179,7 @@ L'elenco dei repository è stato approvato e scansionato il 2026-11-27 (V-F3.6):
 
 **Linguaggi.** Il corpus copre solo Python e JavaScript/TypeScript, l'ambito dell'MVP (§1); gli altri sono di Fase 4 (§13). Un risultato del Gate 3 vale solo per i linguaggi presenti nel test: ogni linguaggio aggiunto richiede nuove etichette e una nuova misura.
 
-**Onda 1, stato al 2026-11-27:** formato, contratti, campionamento e interfaccia di annotazione sono pronti e il campione pilota di 30 voci è estratto (V-F3.7). ADR-0034 è accettato: il pilota (G3-04) può iniziare. L'interfaccia è provata solo con dati finti: la prova sul pilota, che G3-03 richiede, è la sua annotazione.
+**Onda 1, stato al 2026-11-27:** formato, contratti, campionamento e interfaccia di annotazione sono pronti e il campione pilota di 30 voci è estratto (V-F3.7). ADR-0034 è accettato. Il primo pilota è annotato (V-F3.8): con la quota osservata il test del gate non si comporrebbe, e i tempi sono molto sotto l'ipotesi. G3-04 resta aperto con un secondo pilota di 30 voci. L'interfaccia è provata solo con dati finti: la prova sul pilota, che G3-03 richiede, è la sua annotazione.
 
 ## 7. Rischi
 

@@ -32,4 +32,5 @@ uv run python scripts/golden/sample.py --reports CARTELLA --set calibrazione --s
     --seed calibrazione-1 --exclude golden-set/pilota.sample.json
 ```
 
-Il comando non sovrascrive un campione esistente. A parità di report, filtri, seme ed esclusioni il risultato è identico. Il pilota è stato estratto con `--set pilota --size 30 --seed pilota-1`.
+Il comando non sovrascrive un campione esistente.
+Il secondo pilota (`pilota-2`, ADR-0034) è stato estratto con lo stesso seme del suo nome, escluso il primo; si annota con `--set pilota-2`. A parità di report, filtri, seme ed esclusioni il risultato è identico. Il pilota è stato estratto con `--set pilota --size 30 --seed pilota-1`.

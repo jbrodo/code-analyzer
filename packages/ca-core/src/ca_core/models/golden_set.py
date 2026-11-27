@@ -13,7 +13,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictInt
 
 MAX_ITEMS = 5000
 
-SetName = Literal["pilota", "calibrazione", "test", "addestramento"]
+SetName = Literal["pilota", "pilota-2", "calibrazione", "test", "addestramento"]
 Label = Literal["vero", "falso-positivo", "non-so"]
 
 _Url = Annotated[

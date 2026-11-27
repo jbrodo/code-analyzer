@@ -1,0 +1,190 @@
+{
+ "version": 1,
+ "set": "pilota",
+ "sample_sha256": "sha256:ebf16f91f93ca2c8d08c060cdd7713718d5ebec1c4f7a891dd18050f5afe4b78",
+ "annotator": "annotatore-1",
+ "round": 1,
+ "delivered_at": "2026-11-27T19:56:28Z",
+ "labels": [
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:403c906ddf98cea1fce4ec8e36192eaf62d5f1a39ab5e58ac1d9a6489d7dc7f7",
+   "label": "falso-positivo",
+   "seconds": 57
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:f37a15bb047b2119cfe2c9d9e36670269c9dddd2245786e46bba3753e5ff802c",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:048d742283312538bb0bc9c056073949a68c4ade83ec05095f28e35335e9b34a",
+   "label": "vero",
+   "seconds": 13
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:5351ad455f2b5854309d21e01d7154dbeb6008effdacea9dfb51f5c7409d194c",
+   "label": "vero",
+   "seconds": 21
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:8f89b5dcd1446b09d646c48da9873422e0df456cadf63245f2546fb54528a261",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:afd6802d239208879439ad34efe08d1fee335872d4b9cd714d9d0d0eabbb6347",
+   "label": "vero",
+   "seconds": 8
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "fingerprint": "sha256:1a02e308e2eec6a7417231685d615ba2b1075a10a5120c34d736713221000eb6",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:b10c5f8f91e50952b0092d956e715ce75b6fa4e5cd0c944a8c1b87a33cdb014a",
+   "label": "vero",
+   "seconds": 8
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:409d8f1107a561ee3ac5b5b2b5e6eae8fb8cbe59326f15b4e37672b15832ead9",
+   "label": "falso-positivo",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/paperless-ngx/paperless-ngx",
+   "fingerprint": "sha256:bae85c1257b964aa2215ad7f01ab56b8e670fa57eb7d9798b1aa51320f4e5e02",
+   "label": "vero",
+   "seconds": 18
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:bf51133de8a196532dede634176264b94761f95d0117df84d0720ff0b4aed4aa",
+   "label": "vero",
+   "seconds": 12
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "fingerprint": "sha256:a56fbb6057dd19dd3c7f2a0887588cd6322ec86892e6da87a6e5e896d896b6ff",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:fdc5d85d2e5ff320a9816bdeffcfa70f3b8ffe85ba55d2df3fcd992b76ff9af5",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:34df27d9032c2c35e2049319c0a9430827512423210f1bb105f796eabb0f1d7d",
+   "label": "vero",
+   "seconds": 6
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "fingerprint": "sha256:5e526c773ac8ac2d8c3068afbf396d128d33bfa3033ba974b1c7e0a8df3e33f0",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "fingerprint": "sha256:8d22dcb3efd3dce0d2923c68c5baa957eea0a4d3e52119a52f0ac1f095c44918",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:26ea592aeb8f746de034241830230f52dca49cc8f5189e2bc8c410143f31f983",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:0743ab0d533f846f9d2d3b2943735fb969f133b1652e06478b2755146207d90d",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:3a9c9c9af62ce1e765ef3acf1a88855a22f7d8f102360a61e8fff0a196cac3b7",
+   "label": "vero",
+   "seconds": 12
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:c5e9c6fdef092119f39d419e7827cb362b16ec4786efc2f8a45c09ae95826f46",
+   "label": "vero",
+   "seconds": 8
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:709d775dcf3ff424a3a1e30745e8feaf45961db7bc35f4ed7e18a86a58b835a5",
+   "label": "vero",
+   "seconds": 2
+  },
+  {
+   "repository": "https://github.com/scrapy/scrapy",
+   "fingerprint": "sha256:7e97bf0bdd1405387cf436a40c0676d4804fdfb55ec9e415dfcf9035522e3b7b",
+   "label": "vero",
+   "seconds": 2
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "fingerprint": "sha256:69b47d3d8553868056f4a382694ffa39b0d039f314e3b2175b7e746deab307fe",
+   "label": "vero",
+   "seconds": 2
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:dff79ff45ed400acd4829f46bca0d380727922a006fb03f495f0a90ac233d4d8",
+   "label": "non-so",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "fingerprint": "sha256:67eaaa270833623ecdcb791e089e234ccbb9a5632e9f55f37d84074b1f0d6baa",
+   "label": "vero",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "fingerprint": "sha256:1d3f23d7c4049a28051e2782b6566af71a7ff183a09fa5865f05c3765f83f68f",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:c195fc7715ad6b54adf6ccf676eb40269b4a0e90c3f80f4c59add5204bf17cca",
+   "label": "vero",
+   "seconds": 3
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:7d197a75f50a308e336b82971d0435b2b058d513d6a56a5675388daac9f3adfe",
+   "label": "vero",
+   "seconds": 2
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:7cc093de772def1b1df3a59976415c4a2fc14dbeb9e0abec9a9d42c2e9f55d0c",
+   "label": "vero",
+   "seconds": 1
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:c20b2b2166c8cfacc7361a70b37decf428640a0f0aebc06459823f4b0bebd683",
+   "label": "vero",
+   "seconds": 7
+  }
+ ]
+}

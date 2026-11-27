@@ -38,6 +38,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0032](0032-licenza-del-prodotto.md) | Licenza del prodotto | Accettato (2026-11-27) | Sì, presa il 2026-11-27 |
 | [0033](0033-niente-modelli-esterni.md) | Niente modelli esterni | Accettato (2026-11-27) | Sì, §18: presa il 2026-11-27 |
 | [0034](0034-golden-set-e-gate-3.md) | Golden set, protocollo di annotazione e Gate 3 | Accettato (2026-11-27) | Sì, D3-02: presa il 2026-11-27 |
+| [0036](0036-motore-decisionale-interfaccia.md) | Motore decisionale, interfaccia e instradamento | Proposto | Sì, D3-04, D3-05 e confronto di G3.c |
 
 ## Aggiornamenti dopo la stesura
 

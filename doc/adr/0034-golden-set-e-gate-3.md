@@ -75,3 +75,17 @@ Sull'insieme di test, chiuso prima di ogni addestramento e separato dall'addestr
 - Servono circa 630 etichette (30 di pilota, 100 di calibrazione, 200 di test, 300 per cominciare l'addestramento) su un bacino di 765: il margine per le voci «non so» è piccolo. Il pilota ne misura la quota; se è alta si rivedono tetto o corpus prima di proseguire.
 - Cinque repository danno 536 dei 765 punti: la divisione per repository (G3-05) ha poca libertà, e il risultato pesa molto su pochi progetti.
 - Le definizioni si possono correggere dopo il pilota, **prima** di estrarre gli altri insiemi, annotando qui il cambiamento; le risposte del pilota restano come sono.
+
+## Modifiche dopo il pilota
+
+### 2026-11-27 — Secondo pilota
+
+Dopo il primo pilota (`doc/verifiche/fase-3.md`, V-F3.8) l'utente ha chiesto un **secondo pilota di 30 voci nuove** (insieme `pilota-2`). Il motivo: con tempi per voce molto sotto l'ipotesi del piano, dai soli numeri non si capisce se la quota delle classi descriva il corpus o il modo in cui si è risposto.
+
+Fissato **prima di estrarlo**:
+- Definizioni, filtri, tetto, gate e pagina di annotazione **non cambiano**.
+- Le voci si estraggono con il seme `pilota-2` dallo stesso bacino, esclusi i punti del primo pilota. Nessuna delle 60 voci dei due pilota entra nella calibrazione o nel test.
+- Le risposte del primo pilota restano come sono. **I due pilota non si sommano.** Quota delle classi e tempo per voce si riportano separatamente.
+- La differenza tra i due non misura l'affidabilità di chi annota, perché le voci sono diverse.
+- Lettura: se anche nel secondo pilota l'estremo alto dell'intervallo di Wilson al 95% per la classe meno frequente resta sotto il 30%, il Gate 3 così com'è scritto si considera non valutabile, e prima di annotare altro si decide come procedere (finding da valutare, obiettivo o ambito della Fase 3). Altrimenti il risultato non basta a dirlo, in un senso o nell'altro.
+- La riannotazione di 30 voci prevista per un solo annotatore resta, su voci del secondo pilota.

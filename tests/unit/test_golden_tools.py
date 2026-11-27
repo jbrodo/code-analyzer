@@ -121,6 +121,13 @@ def test_the_committed_files_are_consistent() -> None:
         assert len({(i.repository, i.path, i.start_line) for i in sample.items}) == len(
             sample.items
         )
+    samples = (ROOT / "golden-set").glob("*.sample.json")
+    points = [
+        (i.repository, i.path, i.start_line)
+        for p in samples
+        for i in GoldenSample.model_validate_json(p.read_bytes()).items
+    ]
+    assert len(set(points)) == len(points), "due insiemi hanno un punto in comune"
     for path in (ROOT / "golden-set").glob("*.labels.*.json"):
         labels = GoldenLabels.model_validate_json(path.read_bytes())
         assert (path.parent / f"{labels.set}.sample.json").is_file()

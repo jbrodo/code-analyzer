@@ -1,0 +1,190 @@
+{
+ "version": 1,
+ "set": "pilota-2",
+ "sample_sha256": "sha256:a3edcf2d9ee9ccc06876b7081c72741c50bd3dbcc360a15135aae57e8b734349",
+ "annotator": "annotatore-1",
+ "round": 1,
+ "delivered_at": "2026-11-27T20:07:37Z",
+ "labels": [
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:8be46af03afbff9fdc1edda25ae3d7dd104e6d00df815a5820f49a924882a4c8",
+   "label": "vero",
+   "seconds": 38
+  },
+  {
+   "repository": "https://github.com/paperless-ngx/paperless-ngx",
+   "fingerprint": "sha256:68ab621ca783b3a7c9593309a963a6f524a2d4516a672c2bce696f0a5ab191b3",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:6d472002cd2d6444e8d31b8fa806b1c16139cdf53444c9511653102612313ad9",
+   "label": "falso-positivo",
+   "seconds": 16
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:a5d14618a31c429bcb01612529a03d1461c3817527424f192669cda3178968e2",
+   "label": "vero",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:cee7c79f773778abf582356b1beb80cc7d70f3eb4b12cdc3f5fb7365dbecb91a",
+   "label": "falso-positivo",
+   "seconds": 20
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "fingerprint": "sha256:1a191a94f00dfb9e7fabbaadc33ac6968fc6be06733d122a4005cf2cb0e42524",
+   "label": "vero",
+   "seconds": 9
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:65b5547a65e871f5dace2a6e213fbcfb4fe77e61541609254336989fc9b6ee96",
+   "label": "vero",
+   "seconds": 10
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:2dc9f8e8efd73a8ca98cee46b5334cc862c91e430b7b4e71ca79a002b188704a",
+   "label": "falso-positivo",
+   "seconds": 17
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "fingerprint": "sha256:1e27ba6cb5193a09a65c85d5e4dbd8d472b81cabe3a7381fa49d27a2ab478554",
+   "label": "falso-positivo",
+   "seconds": 18
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:41a480434b99701ea3ea77217450068607216927f86842c882189790123aa9ea",
+   "label": "falso-positivo",
+   "seconds": 19
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:5d0e123cb4b97a04ede9f65d324db615b080d32e13d8b775a8b81fda05520162",
+   "label": "vero",
+   "seconds": 11
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:29272f08e570801f8c4da3c0f50be44bb3b41d7ca9859ec24fa06900719942b5",
+   "label": "falso-positivo",
+   "seconds": 19
+  },
+  {
+   "repository": "https://github.com/scrapy/scrapy",
+   "fingerprint": "sha256:bad6f98a5f0965a8945dcd81035ac66c4d65cb8dda9a0464bf1f7ee7c2ba56b0",
+   "label": "vero",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:a8b8fe0120c5c06625c92c48abb816eeb7793b3a1fd1f0b1107ebc0aa8c6f6a2",
+   "label": "falso-positivo",
+   "seconds": 37
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:5303f63ef9ccb2af3ee90ce9ca4e2660bc6fab18eb874f5ee1729223ae31abcb",
+   "label": "vero",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:57e4292a25ad0a54a1a7b0b6274f3a28f789401ffe5d4d3fe102b3bb8eebf0e7",
+   "label": "falso-positivo",
+   "seconds": 15
+  },
+  {
+   "repository": "https://github.com/scrapy/scrapy",
+   "fingerprint": "sha256:4698d4ec030bbcbc631af67535b068b8a6711c3feae8fa44cc775c0f37f2d72f",
+   "label": "falso-positivo",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "fingerprint": "sha256:d9f68b04ad00fd572b41e6bcab06b5eea770559d16549d65702b8cf018389ca6",
+   "label": "vero",
+   "seconds": 6
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:0fba7f65acef56608d582c787fb16b3fbf2349b56953d00f9160454e040e3118",
+   "label": "falso-positivo",
+   "seconds": 7
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:dc4e0601d368d58cbab24acf6d3988a51c02cc68f951efeff5eab6a2d345584b",
+   "label": "falso-positivo",
+   "seconds": 8
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:201083794ef5e21a91310ac62e3f676162d8b418c41db8eac5a00fd6392245c4",
+   "label": "vero",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "fingerprint": "sha256:233d7bf0eb65341b82cf3b0e271a32fdb3fd5b8df5ee0fe2518ad5cdb6b087a4",
+   "label": "falso-positivo",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:7ee0805609b8e888908e5fbc1048f4d41bf2c8dc5fd27c238aff949eced26904",
+   "label": "vero",
+   "seconds": 9
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:2858bf75843993be13f8fe8104ce99ce6bbbc96075daae8b748dfb068b619eea",
+   "label": "falso-positivo",
+   "seconds": 9
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:69847f1114c79dec639728e050856e1d943d70b4d9135a0bef546df93e665cef",
+   "label": "vero",
+   "seconds": 6
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:17ff02b1bc0dd3afddd9e6fd6f2bc9d6b360d8dac90ad156162291ab408912cc",
+   "label": "vero",
+   "seconds": 5
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "fingerprint": "sha256:41636581cf665df883f9bbf86eaba12dccb3b3fe57695e6c0719aba145034935",
+   "label": "vero",
+   "seconds": 4
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "fingerprint": "sha256:149f717243e356ad08e073685615c30fafd0bcd22747d003884c750ad4486eff",
+   "label": "vero",
+   "seconds": 15
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "fingerprint": "sha256:64e89493b2d83394e7e5bf45ea3f6e01d72fcedf0c918b7c1bd7e1a7f06fd639",
+   "label": "falso-positivo",
+   "seconds": 11
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "fingerprint": "sha256:b0784e2d82b43b986c814bef895c03722f1535ef82da82ac5008846ffb604f20",
+   "label": "falso-positivo",
+   "seconds": 16
+  }
+ ]
+}
