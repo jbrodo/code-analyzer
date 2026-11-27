@@ -267,3 +267,73 @@ Misurato il 2026-11-27 sui 765 punti del bacino di V-F3.7, con i report di V-F3.
 - **La regola sui percorsi scomparsi qui non si può misurare:** le copie sono senza storia, quindi ogni segreto segnalato sta in un file presente. Con la storia completa il suo effetto è ignoto.
 - **Conseguenza per il Gate 3:** le voci senza evidenza restano all'umano e contano nella copertura. Un repository dove gitleaks fallisce ha copertura zero; se finisse nel test, G3.b ne risentirebbe. Va considerato nella divisione per repository (G3-05).
 - Corretto in DE-05: una voce senza decisione ora si può rappresentare e conta nella copertura.
+
+## V-F3.11 — Laya sul percorso del prodotto e su casi inventati
+
+Eseguito il 2026-11-27 su CPU, in un contenitore senza rete e in sola lettura, con i pesi di V-F3.1 (digest del modello verificato) e 8 thread. Nessun download. Script nello scratchpad, non nel repository.
+
+### Le evidenze di DE-02 stanno nel contesto
+
+Le 656 evidenze di V-F3.10. **Di ogni risposta si sono tenuti solo token e tempo; il resto è stato scartato nel contenitore:** nessuna risposta sui punti del golden set è stata salvata o vista.
+
+| Misura | Minimo | Mediana | 95° percentile | Massimo |
+| --- | --- | --- | --- | --- |
+| Token in ingresso | 187 | 648 | 844 | 1012 |
+| Token dell'evidenza | 145 | 606 | 802 | 970 |
+
+- Nessuna evidenza troncata. Tempo per voce: mediana 0,81 s, 95° percentile 1,12 s; 527 s in tutto; picco di memoria circa 2,7 GB.
+- Il massimo, 1012, è a 12 token da 1.024, il contesto di §10.2 (qui non ricontrollato sul modello). **Il limite di 3200 caratteri non garantisce i token:** l'adattatore di DE-04 deve trattare come errore un troncamento segnalato dal motore.
+- La libreria avvisa che il checkpoint ha una temperatura non valida per le scelte con 11 o più opzioni: non riguarda le domande sì/no.
+
+### Senza addestramento non distingue casi ovvi
+
+12 coppie inventate (SQL, comandi, `eval`, deserializzazione, hash, numeri casuali, YAML, URL, HTML): in ogni coppia una versione prende l'input di una richiesta, l'altra usa costanti o un uso innocuo. Una domanda sì/no in inglese.
+
+| Misura | Risultato |
+| --- | --- |
+| Risposte corrette | 11 su 24 (a caso: 12) |
+| Casi rischiosi riconosciuti | 4 su 12 |
+| Casi innocui riconosciuti | 7 su 12 |
+| Coppie in cui il caso rischioso ha la probabilità più alta | 4 su 12 (a caso: 6) |
+| Probabilità di «sì» | tra 0,30 e 0,68; mediana 0,49 per i rischiosi e 0,50 per gli innocui |
+
+**Conclusione:** in questa prova, senza addestramento, le risposte non portano informazione utile, come §10.3 e la documentazione degli autori facevano attendere.
+
+**Limiti:** poche coppie, scritte dall'assistente, non dal golden set; una sola formulazione della domanda; intestazioni dell'evidenza in italiano, il cui effetto non è provato. Non è E3-01 e non dice nulla su Laya **dopo l'addestramento**. Le coppie non si mostrano a chi annota finché la riannotazione non è conclusa.
+
+## V-F3.12 — `gemma3:4b` sulle stesse coppie
+
+**Fissato il 2026-11-27, prima di eseguire:** le 12 coppie di V-F3.11, invariate; modello `gemma3:4b` già presente in Ollama, in locale; una sola formulazione della domanda, in inglese, senza ritocchi dopo aver visto le risposte; temperatura 0; probabilità di «sì» ricavata dalle probabilità del primo token tra «yes» e «no». **Criterio:** almeno 18 risposte corrette su 24 **e** il caso rischioso con probabilità più alta in almeno 10 coppie su 12. Superarlo giustifica solo altre prove: non dimostra che il triage funzioni.
+
+**Risultato (stesso giorno, Ollama 0.40.18 su GPU): criterio non superato.**
+
+| Misura | Risultato | Richiesto |
+| --- | --- | --- |
+| Risposte corrette | **12 su 24**: ha risposto «yes» a tutti i 24 casi (12 rischiosi giusti, 0 innocui) | almeno 18 |
+| Coppie con il caso rischioso più alto | 10 su 12 | almeno 10 (soddisfatto) |
+
+- Le probabilità di «yes» sono tutte tra 0,99998 e 1: la soglia di 0,5 non separa nulla.
+- L'ordine dentro le coppie è giusto 10 volte su 12 (una coda, con scelte a caso: circa 0,02), ma poggia su differenze nelle code di probabilità quasi pari a 1. Può indicare un segnale; **una soglia scelta ora su questi stessi esempi non varrebbe come prova**, e ne servirebbero di nuovi.
+- Tempo: circa 35 s la prima chiamata, con il caricamento; poi mediana 0,05 s sui casi inventati, più corti delle evidenze vere e con un inizio comune. **Non è il tempo sulle evidenze vere.**
+- **Limiti:** una sola formulazione della domanda; le stesse 12 coppie scritte dall'assistente; Ollama non gira in un contenitore senza rete (i dati erano solo inventati), quindi non vale come prova di isolamento. I termini d'uso del modello non sono permissivi in senso stretto e **non sono stati letti**.
+
+## V-F3.13 — Ultima prova di `gemma3:4b`: spiegare prima di rispondere
+
+**Fissato il 2026-11-27, prima di scrivere le coppie e di eseguire.** 12 coppie **nuove**, diverse da quelle di V-F3.11, in ognuna un caso chiaramente rischioso e uno chiaramente innocuo. Temperatura 0, seme 1, al più 400 token, una sola esecuzione, nessun ritocco dopo. La domanda:
+
+> You review a static analysis finding. The question is whether the risk it describes is really present at the line marked with ">". First explain, in at most three sentences, where the data used at that line comes from and how it is used. Then end with exactly one line: "VERDICT: yes" or "VERDICT: no".
+
+Vale l'ultima riga «VERDICT»; se manca, la risposta è sbagliata. **Criterio:** almeno 18 corrette su 24 **e** almeno 8 su 12 in ciascuna classe. È l'ultima prova di questo tipo: se non passa, le prove sul motore si fermano finché non ci sono etichette affidabili.
+
+**Risultato: criterio non superato.**
+
+| Misura | Risultato | Richiesto |
+| --- | --- | --- |
+| Risposte corrette | 12 su 24 | almeno 18 |
+| Casi rischiosi riconosciuti | 12 su 12 | almeno 8 |
+| Casi innocui riconosciuti | **0 su 12** | almeno 8 |
+
+- Di nuovo «yes» a tutti i 24 casi; il verdetto c'è in tutte le risposte. Tempo per chiamata: mediana 0,57 s, massimo 3,47 s. Token generati: mediana 75,5, massimo 91. Anche qui i casi sono più corti delle evidenze vere.
+- Nelle risposte sbagliate (lette le prime righe di ciascuna) il modello in più casi riporta il valore costante o l'uso innocuo e conclude lo stesso che il rischio c'è, descrivendo la pericolosità generale del costrutto.
+
+**Le prove sul motore si fermano qui, come fissato prima**, finché non ci sono etichette affidabili. V3-05 (generazione di correzioni) non è stata fatta: queste prove riguardano il triage. Il punto di arresto V3-06 resta da decidere. Le coppie, gli script e le risposte sono fuori dal repository (`~/golden-material/prove-motore/`) e non si mostrano a chi annota finché la riannotazione non è conclusa.

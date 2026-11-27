@@ -4,7 +4,7 @@ Piano derivato da `doc/PROJECT.md` §10, §11, §13 e §14, scritto il 2026-11-2
 
 Obiettivo: un motore decisionale locale suggerisce il triage dei finding, e agenti locali propongono correzioni verificate, come PR in bozza che un umano unisce.
 
-**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus di 10 non bastava**; con 30 repository Python basta per numero e JavaScript/TypeScript no (D3-08); V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.** L'onda 1 è iniziata (sezione 6).
+**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus di 10 non bastava**; con 30 repository Python basta per numero e JavaScript/TypeScript no (D3-08); V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.** L'onda 1 è iniziata (sezione 6). Il 2026-11-27, senza addestramento, né Laya né `gemma3:4b` hanno distinto casi inventati ovvi (V-F3.11–V-F3.13): le prove sul motore sono ferme finché non ci sono etichette affidabili.
 
 **Il piano è dettagliato solo fino alla prima verifica di fattibilità (onde 0–2).** Che un modello locale possa raggiungere il Gate 3, o produrre correzioni utili su questo hardware, non è provato. Le onde successive si dettagliano dopo V3-06.
 
