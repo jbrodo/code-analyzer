@@ -1,6 +1,7 @@
 # ADR-0015: Regole Semgrep e licenze dei motori distribuiti
 
 - Stato: Accettato il 2026-11-10 dall'utente: opzione 2, licenza del prodotto GPL-3.0-only, D-0015 approvata con i punti aperti di `doc/verifiche/gate-1.md` accettati come rischio residuo
+- Aggiornamento del 2026-11-27: la licenza del prodotto è cambiata (ADR-0032). Le valutazioni di questo ADR e D-0015 sono state fatte con quella precedente e vanno rivalutate prima di distribuire immagini.
 - Data: 2026-11-08
 - Decisione umana richiesta: sì (valutazione legale, licenza del prodotto)
 - Riferimenti: §7.3, §8, §13, §16 regola 2

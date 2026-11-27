@@ -49,7 +49,15 @@ bun run --cwd web test
 
 ## Licenza
 
-Il codice del progetto è distribuito sotto [GPL-3.0-only](LICENSE). I componenti di terze parti, comprese le immagini dei plugin, restano sotto le proprie licenze.
+Il codice del progetto è distribuito con la licenza di Apache, versione 2.0, **con la condizione aggiuntiva Commons Clause** ([LICENSE](LICENSE), ADR-0032). Il sorgente è disponibile, ma **non è software open source** nel senso comune del termine, perché la vendita è limitata.
+
+In breve (fa fede il testo di [LICENSE](LICENSE)):
+
+- chiunque, aziende comprese, può usare, modificare e ridistribuire gratuitamente il programma;
+- chi lo riceve con questa licenza non può **venderlo**: nel senso della clausola, fornire a terzi dietro compenso un prodotto o un servizio il cui valore deriva del tutto o in gran parte dal programma, compresi hosting, consulenza e supporto a pagamento;
+- il titolare dei diritti, Riccardo Roveda, può venderlo e concedere licenze commerciali.
+
+Le versioni pubblicate prima di questo cambio restano disponibili, a chi le ha ottenute, con la licenza con cui erano pubblicate. I componenti di terze parti, comprese le immagini dei plugin e le cartelle di strumenti e schemi di terzi nel repository, restano sotto le proprie licenze.
 
 ## Documentazione
 

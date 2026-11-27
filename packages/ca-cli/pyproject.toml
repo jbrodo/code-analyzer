@@ -2,7 +2,7 @@
 name = "ca-cli"
 version = "0.0.0"
 description = "Comando code-analyzer"
-license = "GPL-3.0-only"
+license = "LicenseRef-Apache-2.0-with-Commons-Clause"
 requires-python = ">=3.14"
 dependencies = ["ca-core", "ca-plugins", "ca-graph", "ca-integrations", "pyyaml>=6"]
 

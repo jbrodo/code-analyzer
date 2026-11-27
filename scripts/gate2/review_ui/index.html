@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Valutazione alla cieca</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Valutazione alla cieca</h1>
+    <nav id="repos" aria-label="Repository"></nav>
+    <nav id="steps" aria-label="Passi">
+      <button type="button" data-view="classify">1. Classifica</button>
+      <button type="button" data-view="arrange">2. Riordina e consegna</button>
+    </nav>
+    <p id="saved" role="status"></p>
+  </header>
+  <div id="alert" role="alert" hidden>
+    <p id="alert-text"></p>
+    <button type="button" id="alert-action" hidden></button>
+  </div>
+  <p id="status" role="status" class="visually-hidden"></p>
+
+  <main id="classify">
+    <article id="card" aria-labelledby="title">
+      <div class="card-text">
+        <p class="progress"><span id="position"></span> · <span id="done"></span></p>
+        <h2 id="title" tabindex="-1"></h2>
+        <p class="meta"><span id="category"></span> · <code id="rule"></code></p>
+        <p class="where"><code id="where"></code></p>
+        <p id="message"></p>
+        <label for="note">Nota per te (facoltativa, non entra nel calcolo)</label>
+        <textarea id="note" rows="2" maxlength="1000"></textarea>
+        <label class="check"><input type="checkbox" id="shortcuts"> Tasti rapidi: <kbd>1</kbd>–<kbd>4</kbd> classificano, <kbd>←</kbd> <kbd>→</kbd> scorrono, <kbd>Z</kbd> annulla</label>
+      </div>
+      <div class="card-actions">
+        <fieldset id="buckets">
+          <legend>Quanto è urgente correggerlo?</legend>
+        </fieldset>
+        <div class="feedback">
+          <p id="last"></p>
+          <button type="button" id="undo">Annulla</button>
+        </div>
+        <p class="moves">
+          <button type="button" id="previous">← Precedente</button>
+          <button type="button" id="next">Successivo →</button>
+          <button type="button" id="unassigned"></button>
+        </p>
+      </div>
+    </article>
+    <section class="code-panel" aria-labelledby="code-title">
+      <div class="code-head">
+        <h2 id="code-title">Il codice al commit scansionato</h2>
+        <span>
+          <button type="button" id="wide">Più contesto</button>
+          <button type="button" id="full">File intero</button>
+        </span>
+      </div>
+      <p id="code-note" class="muted"></p>
+      <button type="button" id="code-retry" hidden>Riprova a caricare il codice</button>
+      <div id="code" tabindex="0" role="region" aria-labelledby="code-title"></div>
+    </section>
+  </main>
+
+  <main id="arrange" hidden>
+    <div class="arrange-head">
+      <p class="intro">I finding di un gruppo partono <strong>tutti alla pari</strong>, e lasciarli così è un giudizio valido. Sposta solo quelli che vengono prima o dopo gli altri: scegline uno dall'elenco. <kbd>Alt</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> sulla voce lo muove di un gradino.</p>
+      <p id="deliver-state"></p>
+      <p class="moves">
+        <button type="button" id="arrange-undo">Annulla l'ultima modifica</button>
+        <button type="button" id="deliver" class="primary">Rivedi e consegna…</button>
+        <button type="button" id="next-repo" class="primary" hidden></button>
+      </p>
+    </div>
+    <div class="split">
+      <div id="groups"></div>
+      <aside id="detail" aria-labelledby="detail-title">
+        <h2 id="detail-title" tabindex="-1">Nessun finding scelto</h2>
+        <p id="detail-empty" class="muted">Scegline uno dall'elenco per vederne il codice e, se serve, spostarlo.</p>
+        <div id="detail-body" hidden>
+        <div id="detail-tools" role="group" aria-label="Sposta il finding scelto">
+          <button type="button" data-action="top">In cima al gruppo</button>
+          <button type="button" data-action="up">Un gradino più su</button>
+          <button type="button" data-action="down">Un gradino più giù</button>
+          <button type="button" data-action="bottom">In fondo al gruppo</button>
+          <button type="button" data-action="reset">Torna tra i non spostati</button>
+        </div>
+        <p id="detail-help" class="muted">Un gradino: da una fascia condivisa esce subito sopra (o sotto); se è da solo, si unisce alla fascia vicina e diventa pari con lei.</p>
+        <p><button type="button" id="detail-open">Cambia il gruppo in «Classifica»</button></p>
+        <p class="meta"><span id="detail-category"></span> · <code id="detail-rule"></code></p>
+        <p class="where"><code id="detail-where"></code></p>
+        <p id="detail-message"></p>
+        <p id="detail-note" class="muted"></p>
+        <div id="detail-code" tabindex="0" role="region" aria-label="Codice del finding scelto"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <main id="summary" hidden aria-labelledby="summary-title">
+    <h2 id="summary-title" tabindex="-1"></h2>
+    <p><strong>Dopo la consegna l'ordine non si modifica più.</strong> Qui sotto c'è esattamente ciò che verrà scritto.</p>
+    <p id="summary-counts"></p>
+    <p class="moves">
+      <button type="button" id="confirm-no">No, continuo a modificare</button>
+      <button type="button" id="confirm-yes" class="primary"></button>
+    </p>
+    <table>
+      <thead><tr><th scope="col">Posizione</th><th scope="col">N.</th><th scope="col">Finding</th><th scope="col">Gruppo</th></tr></thead>
+      <tbody id="summary-rows"></tbody>
+    </table>
+  </main>
+  <script src="bands.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

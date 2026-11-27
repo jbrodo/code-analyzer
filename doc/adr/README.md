@@ -34,6 +34,8 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0028](0028-catalogo-servizi.md) | Catalogo servizi | Accettato | Presa il 2026-11-16 (D2-04) |
 | [0029](0029-ui-elenco-finding-perimetro-e-dati.md) | UI dell'elenco finding: perimetro e dati | Accettato (2026-11-18) | Sì, D2-15: presa il 2026-11-17 (perimetro confermato) |
 | [0030](0030-componenti-server-e-object-storage.md) | Componenti del server e object storage | Accettato | Presa il 2026-11-16 (D2-07) |
+| [0031](0031-variante-predefinita-esito-gate-2.md) | Variante di scoring predefinita: esito del Gate 2 | Accettato (2026-11-27) | Sì, §18: presa il 2026-11-27 |
+| [0032](0032-licenza-del-prodotto.md) | Licenza del prodotto | Accettato (2026-11-27) | Sì, presa il 2026-11-27 |
 
 ## Aggiornamenti dopo la stesura
 
@@ -53,6 +55,17 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 - ADR-0010: `--pr`, `--base`, `--baseline`, `--variant`, `--scoring-config`, `--service-context` e i comandi `notify`, `export`, `upload`.
 - ADR-0015: motori e componenti nuovi, hadolint solo per uso interno (D2-14).
 - ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove indicate nei rispettivi stati. ADR-0020, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione in tabella; ADR-0021 è `Accettato` dal 2026-11-26.
+
+## Stato alla chiusura della Fase 2 (X-09, 2026-11-27)
+
+Tra gli ADR da 0016 a 0030 quattro restano `Proposto`, riaperti con motivo. Il proprietario è l'utente.
+
+| ADR | Perché resta aperto | Cosa serve per `Accettato` |
+| --- | --- | --- |
+| 0020 | Le definizioni degli smell non sono confrontate con le pubblicazioni | Il confronto sui testi di §19 |
+| 0023 | Come 0020, per la Variante B; il Gate 2 non ha validato il suo ordinamento (ADR-0031) | Il confronto sui testi; l'ordinamento è una questione separata |
+| 0024 | Manca l'origine configurabile di OSV e trivy, e il flag della CLI (E-04) | Completare E-04, o togliere quella parte dall'ADR |
+| 0027 | L'Action gira nella CI del progetto (N-05), ma il componente GitLab non è mai stato eseguito e nulla è pubblicato | D2-12 e la decisione di pubblicazione |
 
 ## Lacune rinviate
 

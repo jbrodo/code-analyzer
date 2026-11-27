@@ -8,7 +8,7 @@ L'elenco completo e versionato dei pacchetti e' nell'SBOM CycloneDX associato al
 
 ## Code Analyzer
 
-- Pacchetti `ca-core`, `ca-plugins`, `ca-graph`, `ca-integrations`, `ca-cli`: codice del progetto, GPL-3.0-only.
+- Pacchetti `ca-core`, `ca-plugins`, `ca-graph`, `ca-integrations`, `ca-cli`: codice del progetto, con la licenza del progetto (`/licenses/code-analyzer/LICENSE`).
 - Testo: `/licenses/code-analyzer/LICENSE` (copia del file `LICENSE` del repository).
 
 ## cosign
