@@ -1,6 +1,6 @@
 # ADR-0021: Scoring Variante A, ombra, livelli e override
 
-- Stato: Proposto. Scelta tecnica. I valori numerici predefiniti sono ipotesi da calibrare in X-02 (Gate 2); la struttura non dipende da essi. Passa ad `Accettato` con le prove di K-04, K-05, K-14 e della tabella di regressione di F-05
+- Stato: Accettato il 2026-11-26, con delega dell'utente alla verifica delle condizioni: K-04, K-05 e K-14 chiusi con i loro test e la tabella di regressione F-05 completa. Scelta tecnica. I valori numerici predefiniti sono ipotesi da calibrare in X-02 (Gate 2); la struttura non dipende da essi. Passa ad `Accettato` con le prove di K-04, K-05, K-14 e della tabella di regressione di F-05
 - Data: 2026-11-17
 - Decisione umana richiesta: no. D2-10 (decisa il 2026-11-10) fissa quale livello decide il gate; qui si dice come
 - Riferimenti: §6, §6.1, §6.3, §8, §9.1, §16 regola 3; ADR-0009, 0012, 0013, 0014, 0018, 0022, 0025, 0026, 0028; lacune 4, 5, 6 e 7 del piano

@@ -255,3 +255,28 @@ test("G11: il testo scritto in un dialogo sopravvive a un ricaricamento della pa
   await waitFor(() => { expect(screen.queryByRole("dialog")).toBeNull(); });
   expect(Object.keys(window.sessionStorage).filter((k) => k.startsWith("ca.draft."))).toEqual([]);
 });
+
+test("un errore sparisce quando il suo campo cambia; quello dell'altro campo resta", async () => {
+  const user = userEvent.setup();
+  mount(detail(), me("lettore", "triage", "approvatore"));
+  await user.click((await actions()).getByRole("button", { name: "Accetta con eccezione" }));
+  const dialog = await screen.findByRole("dialog", { name: "Accetta con eccezione" });
+  await user.click(within(dialog).getByRole("button", { name: "Accetta con eccezione" }));
+  const reason = within(dialog).getByLabelText(/Motivazione/);
+  const expires = within(dialog).getByLabelText(/Scadenza/);
+  expect(within(dialog).getByText("Scrivi la motivazione.")).toBeDefined();
+  await user.type(reason, "v");
+  expect(within(dialog).queryByText("Scrivi la motivazione.")).toBeNull();
+  expect(reason.getAttribute("aria-invalid")).toBe("false");
+  expect(expires.getAttribute("aria-invalid")).toBe("true");
+  await user.type(expires, "2");
+  expect(expires.getAttribute("aria-invalid")).toBe("false");
+});
+
+test("tra le azioni del pannello una sola è quella principale", async () => {
+  mount(detail(), me("lettore", "triage", "approvatore"));
+  const buttons = (await actions()).getAllByRole("button");
+  expect(buttons.filter((b) => b.getAttribute("data-tone") === "accent").map((b) => b.textContent)).toEqual([
+    "Prendi in carico",
+  ]);
+});

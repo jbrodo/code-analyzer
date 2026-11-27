@@ -239,3 +239,21 @@ test("un repository inesistente o negato non mostra la lista", async () => {
   expect((await screen.findByRole("alert")).textContent).toContain("non trovato");
   expect(screen.queryByRole("table")).toBeNull();
 });
+
+test("dal riquadro della tabella j, k e le frecce portano alla prima riga e / alla ricerca (L3, L4)", async () => {
+  const user = userEvent.setup();
+  mount(fakeClient(page([item(1), item(2)])));
+  const first = await screen.findByRole("link", { name: /Problema 1/ });
+  const region = screen.getByRole("region", { name: "Elenco dei finding" });
+  for (const key of ["j", "k", "{ArrowDown}", "{ArrowUp}", "{Home}"]) {
+    region.focus();
+    await user.keyboard(key);
+    expect(document.activeElement, key).toBe(first);
+  }
+  region.focus();
+  await user.keyboard("{End}");
+  expect(document.activeElement).toBe(screen.getByRole("link", { name: /Problema 2/ }));
+  region.focus();
+  await user.keyboard("/");
+  expect(document.activeElement).toBe(screen.getByRole("searchbox"));
+});

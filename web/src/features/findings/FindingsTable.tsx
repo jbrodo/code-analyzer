@@ -66,18 +66,22 @@ export function FindingsTable({
   };
 
   // Le scorciatoie a un carattere valgono solo con il fuoco dentro la tabella (L4).
-  const onKeyDown = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
+  // Dal riquadro stesso, raggiungibile col Tab, i tasti di movimento portano alla prima riga.
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const from = event.target as HTMLElement;
-    if (!from.matches("a[data-row-link]") || event.ctrlKey || event.metaKey || event.altKey) return;
+    const onRegion = from === event.currentTarget;
+    if (!(onRegion || from.matches("a[data-row-link]")) || event.ctrlKey || event.metaKey || event.altKey) return;
+    // senza righe i tasti restano al browser (scorrimento del riquadro)
+    if (onRegion && event.key !== "/" && body.current?.querySelector("a[data-row-link]") === null) return;
     const handled = (() => {
       switch (event.key) {
         case "ArrowDown":
         case "j":
-          move(from, 1);
+          move(from, onRegion ? "first" : 1);
           return true;
         case "ArrowUp":
         case "k":
-          move(from, -1);
+          move(from, onRegion ? "first" : -1);
           return true;
         case "Home":
           move(from, "first");
@@ -98,7 +102,7 @@ export function FindingsTable({
   const ariaSort = (column: Sort): "ascending" | "none" => (sort === column ? "ascending" : "none");
 
   return (
-    <div className="table-region" role="region" aria-label="Elenco dei finding" tabIndex={0}>
+    <div className="table-region" role="region" aria-label="Elenco dei finding" tabIndex={0} onKeyDown={onKeyDown}>
       <table className="findings" aria-busy={loading}>
         <caption>{caption}</caption>
         <thead>
@@ -123,7 +127,7 @@ export function FindingsTable({
             <th scope="col" className="col-owner">Assegnato a</th>
           </tr>
         </thead>
-        <tbody ref={body} onKeyDown={onKeyDown}>
+        <tbody ref={body}>
           {loading && items.length === 0 ? <SkeletonRows /> : null}
           {items.map((item) => {
             const place = location(item.path, item.start_line);

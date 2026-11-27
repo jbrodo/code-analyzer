@@ -11,10 +11,12 @@ from test_scoring_exposure import Fake
 
 from ca_core.fakes import FakeEnrichmentFeeds
 from ca_core.models.finding import Category, Level, Location
+from ca_core.models.graph import Graph
 from ca_core.models.scan_report import ServiceContext, ServiceValue
 from ca_core.models.scoring_config import ScoringConfig
 from ca_core.ports import FeedStatus, KevAnswer
 from ca_core.scoring.base import Factor, ScoringContext, impact, round_score
+from ca_core.scoring.churn import ChurnIndex
 from ca_core.scoring.config import (
     ScoringConfigError,
     default_bytes,
@@ -178,6 +180,45 @@ def _feeds(case: dict[str, Any]) -> FakeEnrichmentFeeds | None:
 @pytest.mark.parametrize("case", CASES["p"], ids=[c["name"] for c in CASES["p"]])
 def test_p_matches_the_hand_derived_table(case: dict[str, Any]) -> None:
     factor = factor_p(_dep_with(), ScoringContext(config=CONFIG, feeds=_feeds(case)))
+    assert factor.value == pytest.approx(case["expected"], abs=1e-9)
+    assert factor.evidence.get("fallback") == case.get("fallback")
+
+
+def _churn_index(history: str) -> ChurnIndex:
+    table = CASES["p_code"]
+    files = [(path, churn, False) for path, churn in table["churn"].items()]
+    files += [(path, churn, True) for path, churn in table["test_files"].items()]
+    modules = []
+    for path, churn, is_test in sorted(files):
+        module: dict[str, Any] = {
+            "path": path, "language": "python", "parse": "completa", "test": is_test
+        }  # fmt: skip
+        if history == "completa":
+            module["churn"] = churn
+        modules.append(module)
+    return ChurnIndex(
+        Graph.model_validate(
+            {
+                "version": 1,
+                "modules": modules,
+                "stats": {"files_parsed": len(modules)},
+                "history": {"status": history, "window_days": 90},
+            }
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "case", CASES["p_code"]["cases"], ids=[c["name"] for c in CASES["p_code"]["cases"]]
+)
+def test_p_of_code_findings_matches_the_hand_derived_table(case: dict[str, Any]) -> None:
+    evidence: dict[str, Any] = dict(case.get("evidence", {}))
+    if "members" in case:
+        evidence["members"] = case["members"]
+    f = finding("x", category=Category(case["category"]), path=case["path"], evidence=evidence)
+    history = case.get("history", "completa")  # `None`: nessun grafo
+    context = ScoringContext(config=CONFIG, churn=_churn_index(history) if history else None)
+    factor = factor_p(f, context)
     assert factor.value == pytest.approx(case["expected"], abs=1e-9)
     assert factor.evidence.get("fallback") == case.get("fallback")
 

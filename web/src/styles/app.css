@@ -46,6 +46,7 @@
 }
 .topbar .field-inline {
   display: flex;
+  flex-direction: row; /* `.field` è a colonna: la barra tornerebbe alta quanto etichetta e menu */
   align-items: center;
   gap: var(--space-2);
 }
@@ -249,7 +250,8 @@ input[type="search"],
 }
 table.findings {
   width: 100%;
-  min-width: 40rem;
+  /* sotto questa larghezza la tabella scorre nella sua regione: `Problema` non si schiaccia */
+  min-width: 49rem;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -286,13 +288,22 @@ table.findings tr[data-selected="true"] {
   background: var(--color-bg-row-selected);
   box-shadow: inset 2px 0 0 var(--color-accent);
 }
-.col-level { width: 6.5rem; }
-.col-category { width: 8rem; }
-.col-path { width: 17rem; }
-.col-status { width: 8rem; }
-.col-new { width: 5rem; }
-.col-seen { width: 8.5rem; }
-.col-owner { width: 7rem; }
+/* `.col-level`: etichetta (5,25rem più il suo spazio) e margini della cella, senza puntini di taglio */
+.col-level { width: 8rem; }
+.col-category { width: 7rem; }
+.col-path { width: 13rem; }
+.col-status { width: 6.5rem; }
+.col-new { width: 4.5rem; }
+.col-seen { width: 8rem; }
+.col-owner { width: 6.5rem; }
+
+/* Titolo e percorso: due righe prima di tagliare. Il percorso arriva già accorciato al centro,
+   quindi va a capo per intero: tagliato dal CSS perderebbe il nome del file. */
+table.findings td.col-path {
+  line-height: var(--font-line-height-tight);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 
 /* Con il pannello aperto la lista si restringe: prima le colonne meno decisive, poi la categoria.
    Tutto ciò che si toglie è nel pannello di dettaglio. */
@@ -339,12 +350,40 @@ th[aria-sort="ascending"] .sort::after {
 .level-badge[data-level="medio"] { background: var(--color-level-medio-bg); color: var(--color-level-medio-text); }
 
 .row-link {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
   color: var(--color-text);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
+}
+/* Finestre strette (zoom compreso): livello e `Problema` riempiono la prima vista; le altre colonne
+   si raggiungono scorrendo la tabella nella sua regione (G8). */
+@container (max-width: 30rem) {
+  table.findings:not(.scans, .plugins) {
+    min-width: calc(100cqi + 23rem);
+  }
+  table.findings:not(.scans, .plugins) .col-level {
+    width: 7.25rem;
+  }
+  table.findings:not(.scans, .plugins) :is(td, th).col-level {
+    padding-inline: var(--space-2);
+  }
+  .row-link {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+/* il contorno del fuoco sta tra il titolo e la regola, senza passare sul testo */
+.row-link:focus-visible {
+  outline-offset: 0;
+}
+.row-link + .rule {
+  margin-top: var(--border-focus-width);
 }
 .row-link:hover {
   text-decoration: underline;
@@ -358,6 +397,7 @@ th[aria-sort="ascending"] .sort::after {
   color: var(--color-text-muted);
 }
 table.findings td.col-problem {
+  padding-block: var(--space-1);
   line-height: var(--font-line-height-tight);
 }
 .col-status .sub {
@@ -514,7 +554,7 @@ main h1 {
 .variants {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 .variant {
   min-width: 0;
@@ -524,6 +564,8 @@ main h1 {
 }
 table.factors {
   width: 100%;
+  table-layout: fixed; /* due tabelle affiancate in 30rem: le parole lunghe vanno a capo */
+  overflow-wrap: anywhere;
   border-collapse: collapse;
   font-size: var(--font-size-sm);
 }
@@ -533,7 +575,7 @@ table.factors caption {
 }
 table.factors th,
 table.factors td {
-  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  padding: var(--space-1) var(--space-1) var(--space-1) 0;
   text-align: left;
   vertical-align: top;
   border-bottom: var(--border-width) solid var(--color-border);
@@ -543,12 +585,21 @@ table.factors thead th {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
 }
+/* Le prime due colonne quanto basta per le loro parole; il resto all'evidenza, che ha le più lunghe */
+table.factors thead th:nth-child(1) {
+  width: 4.875rem;
+}
+table.factors thead th:nth-child(2) {
+  width: 2.5rem;
+}
 table.factors .num {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .evidence {
   margin: 0;
+  font-size: var(--font-size-xs);
+  hyphens: auto; /* dove una parola non entra, va a capo con la sillabazione e non a metà */
 }
 .evidence div {
   display: flex;
@@ -557,6 +608,12 @@ table.factors .num {
 }
 .evidence dt {
   color: var(--color-text-muted);
+}
+/* l'etichetta e i suoi due punti non si separano: al più sporgono di pochi pixel nello spazio accanto */
+table.factors .evidence dt {
+  overflow-wrap: normal;
+  hyphens: manual;
+  letter-spacing: -0.01em;
 }
 .evidence dt::after {
   content: ":";
@@ -576,6 +633,15 @@ table.factors .num {
 }
 .events li {
   margin-bottom: var(--space-1);
+}
+
+/* La barra fissa toglie troppo spazio allo zoom 200% e nelle finestre strette: lì scorre via */
+@media (max-width: 48rem), (max-height: 32rem) {
+  .topbar {
+    position: static;
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+  }
 }
 
 @media (max-width: 48rem) {
@@ -748,6 +814,7 @@ table.factors .num {
 }
 .table-region.plain {
   flex: none;
+  margin-top: var(--space-3);
   max-height: none;
 }
 table.findings.scans,

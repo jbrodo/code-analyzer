@@ -895,5 +895,96 @@
         "_why": "100·0,7·0,625·0,3·1 = 13,125"
       }
     ]
+  },
+  "p_code": {
+    "_note": "P della Variante A per SAST e per qualità, architettura e test (ADR-0021, ADR-0022), ricavati a mano. SAST: 0,8 con percorso confermato, altrimenti 0,4. Churn: percentile = quota dei file non di test con churn strettamente minore, minimo 0,1; ignoto 0,3. Popolazione: 0, 5, 10, 20 (il file di test non conta).",
+    "churn": {
+      "a.py": 0,
+      "b.py": 5,
+      "c.py": 10,
+      "d.py": 20
+    },
+    "test_files": {
+      "tests/test_a.py": 7
+    },
+    "cases": [
+      {
+        "name": "sast-percorso-confermato",
+        "category": "sast",
+        "path": "a.py",
+        "evidence": {
+          "path_confirmed": true
+        },
+        "expected": 0.8
+      },
+      {
+        "name": "sast-percorso-non-confermato",
+        "category": "sast",
+        "path": "a.py",
+        "evidence": {
+          "path_confirmed": false
+        },
+        "expected": 0.4
+      },
+      {
+        "name": "sast-senza-indicazione",
+        "category": "sast",
+        "path": "a.py",
+        "expected": 0.4
+      },
+      {
+        "name": "qualita-percentile-a-meta",
+        "category": "quality",
+        "path": "c.py",
+        "expected": 0.5,
+        "_why": "2 file su 4 con churn minore di 10"
+      },
+      {
+        "name": "qualita-mai-toccato-al-minimo",
+        "category": "quality",
+        "path": "a.py",
+        "expected": 0.1,
+        "_why": "percentile 0, minimo 0,1"
+      },
+      {
+        "name": "test-usa-lo-stesso-churn",
+        "category": "test",
+        "path": "d.py",
+        "expected": 0.75
+      },
+      {
+        "name": "architettura-massimo-tra-i-membri",
+        "category": "architecture",
+        "path": "a.py",
+        "members": [
+          "a.py",
+          "d.py"
+        ],
+        "expected": 0.75
+      },
+      {
+        "name": "qualita-storia-superficiale",
+        "category": "quality",
+        "path": "c.py",
+        "history": "superficiale",
+        "expected": 0.3,
+        "fallback": "churn-ignoto"
+      },
+      {
+        "name": "qualita-file-fuori-dal-grafo",
+        "category": "quality",
+        "path": "z.py",
+        "expected": 0.3,
+        "fallback": "percorso-senza-churn"
+      },
+      {
+        "name": "qualita-senza-grafo",
+        "category": "quality",
+        "path": "c.py",
+        "history": null,
+        "expected": 0.3,
+        "fallback": "churn-ignoto"
+      }
+    ]
   }
 }

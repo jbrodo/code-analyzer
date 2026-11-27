@@ -55,6 +55,25 @@ Si registra anche il risultato dei livelli provvisori, come termine di confronto
 
 In questo file: numero di finding per categoria e livello, dimensione dei campioni, seme, valori di tau-b e di sovrapposizione, durate. Non entrano percorsi, messaggi, regole per singolo finding né frammenti di codice dei due repository.
 
+## Regola di scelta e altre decisioni (2026-11-26, prima dell'ordinamento)
+
+Approvate dall'utente il 2026-11-26. A quella data l'utente non ha compilato alcun ordinamento e nessun risultato di G2.b è stato calcolato.
+
+**Regola per G2.c**, applicata ai risultati di X-04:
+
+1. è candidata solo una variante che supera la soglia del protocollo su **tutti** i repository della tabella;
+2. se le candidate sono due, vince quella con il tau-b medio più alto;
+3. se la differenza tra i due tau-b medi è inferiore a 0,05, **vince A**: si spiega più facilmente, e con A il progetto supera il proprio gate (X-07);
+4. se nessuna è candidata, il gate resta sui livelli provvisori, A resta predefinita in via provvisoria e **G2.b si dichiara non superata**.
+
+Se vince B, prima di attivarla si semplifica la funzione di `runner.py` che oggi fa fallire il gate del progetto (X-07), invece di aggiungere un'eccezione.
+
+**Terzo repository:** consigliato, se l'utente ne ha uno adatto (Python o JS/TS, con finding di qualità e architettura), perché sul campione di `birds-cataloger` A e B hanno gli stessi primi 10. Va fissato in tabella con il commit prima di calcolare i risultati. Non ancora indicato.
+
+**Livelli da punteggio: non si attivano per ora** (`levels.source: provisional`). È una modifica di D2-10, che prevedeva di attivarli dopo la scelta della variante: con le soglie attuali quasi nessun finding arriva ad `alto` (X-02, X-07), e un ordinamento dice quale variante ordina meglio, non dove mettere le soglie. L'esito del gate (X-08) la dichiara.
+
+**Ordinamento di Claude, fuori dal protocollo.** Su richiesta dell'utente, Claude ha ordinato i due campioni in file separati, fuori dal repository (`ordinamento-<repo>-claude.csv`), senza aprire report né chiavi. **Non è l'ordinamento di X-04 e non entra in G2.b:** chi l'ha fatto ha scritto le formule di B e ha visto i confronti aggregati tra A e B. I file ufficiali sono vuoti e su quelli di Claude non è stato calcolato nulla.
+
 ## X-02 — Scansione in ombra dei repository del gate (2026-11-18)
 
 Scansioni complete con `--offline` e gli snapshot dei feed già in cache (EPSS e KEV del 2026-11-17), con la CLI impacchettata da `package-cli.sh` al commit `311783f` (immagini firmate sul registry locale), sulla macchina di sviluppo (venti core), una esecuzione per caso. I pilota sono clonati con 80 commit di storia come in V-06; i due repository dell'utente sono cloni puliti dei commit della tabella sopra. `levels.source: provisional` (D2-10): il livello del gate è quello provvisorio di ADR-0009, A e B sono in ombra. Strumento: `scripts/gate2/gate2.py stats`. Qui entrano solo conteggi (i due repository dell'utente sono riservati).

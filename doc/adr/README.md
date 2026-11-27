@@ -24,7 +24,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 | [0018](0018-modello-dati-e-multi-tenancy.md) | Modello dati relazionale e multi-tenancy | Accettato (2026-11-18) | No (D2-02 per l'esercizio dei tenant) |
 | [0019](0019-autenticazione-e-rbac.md) | Autenticazione e RBAC | Accettato | Presa il 2026-11-16 (D2-02) |
 | [0020](0020-ca-graph-isolamento-grafo-smell.md) | `ca-graph`: isolamento, schema del grafo, smell | Proposto (le definizioni degli smell non sono ancora confrontate con le pubblicazioni) | No |
-| [0021](0021-scoring-variante-a-ombra-livelli-override.md) | Scoring Variante A, ombra, livelli e override | Proposto (valori da calibrare in X-02) | No |
+| [0021](0021-scoring-variante-a-ombra-livelli-override.md) | Scoring Variante A, ombra, livelli e override | Accettato (valori da calibrare in X-02) | No |
 | [0022](0022-esposizione-e-churn.md) | Esposizione e churn | Accettato (2026-11-18) | No |
 | [0023](0023-variante-b-smell-e-debito-architetturale.md) | Variante B, smell e debito architetturale | Proposto (definizioni da confrontare con le pubblicazioni, benchmark di K-06) | No per la struttura (D2-11, presa il 2026-11-10) |
 | [0024](0024-feed-epss-kev-cache-mirror.md) | Feed EPSS e KEV, cache, mirror e firma | Proposto (manca l'origine di OSV e trivy, E-04) | Sì, D2-05: presa il 2026-11-17 (nessun mirror) |
@@ -52,7 +52,7 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 - ADR-0009: superata dai livelli da punteggio solo con `levels.source: score` (D2-10, ADR-0021).
 - ADR-0010: `--pr`, `--base`, `--baseline`, `--variant`, `--scoring-config`, `--service-context` e i comandi `notify`, `export`, `upload`.
 - ADR-0015: motori e componenti nuovi, hadolint solo per uso interno (D2-14).
-- ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove indicate nei rispettivi stati. ADR-0020, 0021, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione in tabella.
+- ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove indicate nei rispettivi stati. ADR-0020, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione in tabella; ADR-0021 è `Accettato` dal 2026-11-26.
 
 ## Lacune rinviate
 
