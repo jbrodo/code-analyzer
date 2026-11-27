@@ -334,7 +334,7 @@ I limiti della misura sono in X-02, X-04 e X-05. §13 chiede di confermare i val
 
 | Voce | Evidenza | Esito |
 | --- | --- | --- |
-| Test e copertura | 5.107 test Python superati e 519 saltati in locale, 117 test web; copertura di `ca-core` 99,0%, `ca-graph` 95,9%, `ca-integrations` 98,7%, `ca-api` 87,6% (minimo 80%, imposto sul totale); nessun test marcato `xfail`. `ca-cli` e `ca-plugins` non sono nella misura | soddisfatta |
+| Test e copertura | 5.113 test Python superati e 519 saltati in locale, 117 test web; copertura di `ca-core` 99,0%, `ca-graph` 95,9%, `ca-integrations` 98,7%, `ca-api` 87,6% (minimo 80%, imposto sul totale); nessun test marcato `xfail`. `ca-cli` e `ca-plugins` non sono nella misura | soddisfatta |
 | Schemi aggiornati e validati | `schema_export --check` e `openapi_export --check` | soddisfatta |
 | Documentazione utente | `doc/utente/`, aggiornata il 2026-11-27 con l'esito del gate | soddisfatta |
 | Telemetria per le operazioni lunghe | Durate nel report; metriche del server (B-13) | soddisfatta in forma minima: niente tracce, log OTLP né cruscotti (Fase 4) |
