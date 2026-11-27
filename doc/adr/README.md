@@ -55,6 +55,17 @@ Decisioni necessarie prima di implementare la Fase 1 (`doc/PROJECT.md` §13) e, 
 - ADR-0015: motori e componenti nuovi, hadolint solo per uso interno (D2-14).
 - ADR-0017, 0018, 0022, 0025, 0026 e 0029 passano ad `Accettato` con le prove indicate nei rispettivi stati. ADR-0020, 0024 e 0027 restano `Proposto`, ciascuno con la sua ragione in tabella; ADR-0021 è `Accettato` dal 2026-11-26.
 
+## Stato alla chiusura della Fase 2 (X-09, 2026-11-27)
+
+Tra gli ADR da 0016 a 0030 quattro restano `Proposto`, riaperti con motivo. Il proprietario è l'utente.
+
+| ADR | Perché resta aperto | Cosa serve per `Accettato` |
+| --- | --- | --- |
+| 0020 | Le definizioni degli smell non sono confrontate con le pubblicazioni | Il confronto sui testi di §19 |
+| 0023 | Come 0020, per la Variante B; il Gate 2 non ha validato il suo ordinamento (ADR-0031) | Il confronto sui testi; l'ordinamento è una questione separata |
+| 0024 | Manca l'origine configurabile di OSV e trivy, e il flag della CLI (E-04) | Completare E-04, o togliere quella parte dall'ADR |
+| 0027 | L'Action gira nella CI del progetto (N-05), ma il componente GitLab non è mai stato eseguito e nulla è pubblicato | D2-12 e la decisione di pubblicazione |
+
 ## Lacune rinviate
 
 Numerazione di `.claude/agents/architect.md`.

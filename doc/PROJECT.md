@@ -652,7 +652,7 @@ Fase 1 chiusa il 2026-11-10 (X-07, `doc/verifiche/gate-1.md`). D-0015 approvata 
 
 ### Fase 2 — Qualità e impatto
 
-Stato al 2026-11-18, voce per voce (dettagli e limiti in `doc/plan/fase-2.md`):
+**Fase 2 chiusa il 2026-11-27 con limiti dichiarati, a Gate 2 non superato** (decisione dell'utente; `doc/verifiche/gate-2.md`, X-09). Stato voce per voce (dettagli e limiti in `doc/plan/fase-2.md`):
 
 - [x] `ca-graph`: tree-sitter, grafo dipendenze, smell Cyclic/Hub-Like/Unstable, PageRank, raggiungibilità e churn — in un contenitore come gli altri plugin (ADR-0020). Le definizioni degli smell non sono ancora confrontate con le pubblicazioni.
 - [x] Plugin ruff, eslint, checkov, hadolint, coverage — per sviluppo e uso interno: la pubblicazione delle immagini attende D2-14 e D2-16 (I-07).
@@ -660,7 +660,7 @@ Stato al 2026-11-18, voce per voce (dettagli e limiti in `doc/plan/fase-2.md`):
 - [x] Scoring Variante A e Variante B (modalità ombra entrambe) — realizzate e in ombra (G2.a). Le definizioni di B non sono ancora confrontate con le pubblicazioni (ADR-0023), e nessun ordinamento è validato (ADR-0031).
 - [x] Livelli, override, baseline e finding nuovi — con `levels.source: provisional` fino al Gate 2 (D2-10).
 - [x] API REST, DB, UI elenco finding — il server riceve i report e non esegue scansioni (ADR-0016); UI centrata sull'elenco, portfolio in Fase 4 (D2-15).
-- [ ] GitHub Action, GitLab component, commenti PR, check run — scritti e provati in locale; né l'Action né il componente sono stati eseguiti su GitHub o GitLab (N-05, N-08), e nessuna pubblicazione (N-09).
+- [ ] GitHub Action, GitLab component, commenti PR, check run — Action, commento e check run eseguiti su GitHub nella CI del progetto (N-05). **Rinviati:** il componente GitLab, scritto e mai eseguito su GitLab (N-07, N-08, D2-12), e la pubblicazione di entrambi (N-09).
 
 **Gate 2** (`doc/plan/fase-2.md`, sezione 2): G2.a entrambe le varianti calcolate in ombra su ogni finding dei repository del gate; G2.b ordinamento validato dai team (metodo Martini et al., ECSA 2018; con D2-03 un validatore unico e una variante predefinita provvisoria); G2.c scelta della variante predefinita; **G2.d scansione PR < 10 minuti**, che §5 e ADR-0009 assegnavano al Gate 2 senza che questa sezione lo dicesse.
 

@@ -15,6 +15,8 @@ chiavi di corrispondenza né altri ordinamenti. Dopo la consegna l'ordine non si
 
     python3 scripts/gate2/review.py            # poi aprire l'indirizzo stampato
 
+I repository e i commit scansionati vengono da `commit.json` nella cartella del materiale.
+
 Solo libreria standard. Ascolta solo su 127.0.0.1; l'API chiede il segreto dell'indirizzo stampato
 (nel frammento, che il browser non invia) e controlla l'intestazione `Host` (DNS rebinding). I
 repository valutati sono riservati: la pagina non carica nulla da fuori.
@@ -47,7 +49,6 @@ PAGES = {
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
 }
-PROTOCOL = HERE.parents[1] / "doc/verifiche/gate-2.md"
 BUCKETS = (1, 2, 3, 4)
 MAX_BODY = 64 * 1024
 MAX_FILE = 2 * 1024 * 1024
@@ -442,13 +443,22 @@ def make_handler(review: Review, token: str) -> type[BaseHTTPRequestHandler]:
     return Handler
 
 
-def protocol_commits(text: str) -> dict[str, str]:
-    """I repository della tabella «Repository» del protocollo, con il commit fissato. Il file ha
-    altre tabelle con dei commit (le PR di X-05): non contano."""
-    table = re.search(r"^### Repository$(.*?)^###? ", text, re.M | re.S)
-    if table is None:
-        raise ReviewError("nel protocollo manca la tabella dei repository", 500)
-    return dict(re.findall(r"^\| `([\w.-]+)` \| `([0-9a-f]{40})` \|", table[1], re.M))
+def sample_commits(materials: Path) -> dict[str, str]:
+    """I repository da valutare con il commit scansionato, da `commit.json` nel materiale:
+    `{"nome": "<40 cifre esadecimali>"}`. Nomi e commit sono riservati: non stanno nel
+    repository."""
+    try:
+        data = json.loads((materials / "commit.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise ReviewError("nel materiale manca un commit.json leggibile", 500) from error
+    if not isinstance(data, dict) or not all(
+        re.fullmatch(r"\w[\w.-]*", name)
+        and isinstance(commit, str)
+        and re.fullmatch(r"[0-9a-f]{40}", commit)
+        for name, commit in data.items()
+    ):
+        raise ReviewError("commit.json: attesi nomi e commit di 40 cifre", 500)
+    return data
 
 
 def find_sources(
@@ -483,7 +493,12 @@ def main(argv: list[str] | None = None) -> int:
         print("errore: il materiale sta fuori dal repository", file=sys.stderr)
         return 2
     chosen = {k: Path(v).expanduser() for k, _, v in (r.partition("=") for r in args.repo)}
-    sources, problems = find_sources(materials, protocol_commits(PROTOCOL.read_text()), chosen)
+    try:
+        commits = sample_commits(materials)
+    except ReviewError as error:
+        print(f"errore: {error}", file=sys.stderr)
+        return 2
+    sources, problems = find_sources(materials, commits, chosen)
     for problem in problems:
         print(f"avviso: {problem}", file=sys.stderr)
     review = Review(materials, sources)
