@@ -124,7 +124,7 @@ Nomi dei campi delle risposte, da usare in ADR-0036 al posto di quelli di §10.1
 
 ## V-F3.5 — Corpus proposto per il golden set (D3-07)
 
-L'utente ha scelto il 2026-11-27 di arrivare a circa 30 repository pubblici: i 10 di `scripts/benchmark/corpus.json` più i 20 seguenti. **L'elenco attende la sua approvazione: nessuno di questi 20 è stato scaricato o scansionato.**
+L'utente ha scelto il 2026-11-27 di arrivare a circa 30 repository pubblici: i 10 di `scripts/benchmark/corpus.json` più i 20 seguenti. **Elenco approvato dall'utente il 2026-11-27**; scaricati e scansionati lo stesso giorno (V-F3.6).
 
 Criteri: soprattutto applicazioni; 8 con prevalenza di Python e 12 di JavaScript o TypeScript; non archiviati; ultimo rilascio indicato da GitHub (può non essere il ramo più recente); nessuna applicazione volutamente vulnerabile, che falserebbe la quota di veri positivi. `searxng/searxng` è stato scartato perché non ha rilasci né tag. Dati letti dall'API di GitHub il 2026-11-27; la licenza è la classe dichiarata da GitHub, non verificata sul testo. Il golden set conterrà solo riferimenti, non codice (G3-02). La dimensione è quella dichiarata da GitHub con la storia (circa 6,8 GB in tutto): le copie senza storia sono più piccole.
 
@@ -150,3 +150,41 @@ Criteri: soprattutto applicazioni; 8 con prevalenza di Python e 12 di JavaScript
 | `parse-community/parse-server` | `8.6.123` | `e7ff814113e52ab5e1127c25670503966481046e` | JavaScript 98%, TypeScript 1% | permissiva | 156 MB |
 | `medusajs/medusa` | `v2.23.1` | `c2e715d7ee2aafae72bf7d4866b8795536e968c5` | TypeScript 87%, JavaScript 12% | non identificata da GitHub | 902 MB |
 | `payloadcms/payload` | `v3.94.2` | `d6297974e6a86dcfcd9ca11ff625d363b3ae11e9` | TypeScript 95%, CSS 2% | permissiva | 241 MB |
+
+## V-F3.6 — Finding sui 30 repository
+
+I 20 repository di V-F3.5, ai commit indicati, scaricati senza storia e senza file LFS (circa 2,0 GB). Tutti i commit coincidono con quelli approvati. CLI ricostruita da `main` (`af76fa6`), `scan --offline`. I 10 repository iniziali sono quelli di V-F3.2, scansionati con la CLI precedente: tra le due non cambiano i plugin SAST (E-04 tocca l'origine dei feed).
+
+### Plugin falliti sui repository grandi
+
+| Repository | Plugin falliti |
+| --- | --- |
+| actual | **semgrep** (memoria esaurita), eslint |
+| medusa | **semgrep** (memoria esaurita), eslint, gitleaks (memoria esaurita), scancode (oltre 600 s) |
+| django-DefectDojo | gitleaks (memoria esaurita), osv-scanner, scancode (oltre 600 s), syft |
+| hoppscotch, immich | osv-scanner |
+| payload | syft (output oltre il limite) |
+
+Gli altri 14 non hanno plugin falliti (alcuni report sono `partial` per i soli link simbolici). **Per `actual` e `medusa` il conteggio SAST è incompleto**: manca semgrep. Il suo limite è 1 GiB (`plugin.yaml`, misurato in Fase 1 sui tre pilota). Questi fallimenti sono un limite del prodotto su repository grandi, registrato qui e non corretto.
+
+### Conteggi
+
+SAST fuori dai test, su 30 repository: 2208 finding. Senza B101 (795): 1413. Tolti i 7 in percorsi di codice di terzi o minificato (filtro per nome di percorso, solo per questo conteggio): **1406**.
+
+Molti sono la stessa riga segnalata da due regole: B308 con B703 (161 punti), B608 con la regola del prodotto per l'SQL composto (74), B603 con B607 (47), B324 con la regola per gli hash deboli (40). I **punti di codice distinti** sono 1052.
+
+| | Python | JavaScript e TypeScript | Totale |
+| --- | --- | --- | --- |
+| Finding | 1323 | 83 | 1406 |
+| Punti di codice distinti | 973 | 79 | 1052 |
+| Regole che producono finding | 41 | 4 | 45 |
+| Punti con al più 10 per repository e regola | 570 | 78 | 648 |
+| Punti con al più 20 per repository e regola | 772 | 79 | 851 |
+
+Per il tetto, un punto con più regole conta sotto la prima in ordine alfabetico. Con il tetto, i due repository più ricchi fanno circa un terzo del totale (con tutti i finding, django e indico fanno il 39%). Quattro repository non hanno finding in questo conteggio: full-stack-fastapi-template, actual, medusa e verdaccio. Primi per finding: django 303, indico 239, django-DefectDojo 195, netbox 158, mealie 88.
+
+### Esito
+
+- **Python basta per numero:** 772 punti distinti con tetto 20, contro le circa 630 etichette previste, da 15 repository.
+- **JavaScript e TypeScript non bastano**, e altri repository non lo risolvono: il prodotto ha 6 regole semgrep per JavaScript, di cui 4 producono finding, e bandit è solo per Python. I due repository senza semgrep potrebbero aggiungerne, in quantità ignota.
+- La quota di falsi positivi resta ignota: nessun finding è stato giudicato. Il piano richiede almeno 60 esempi della classe meno frequente nel test, e non si sa se ci saranno.
