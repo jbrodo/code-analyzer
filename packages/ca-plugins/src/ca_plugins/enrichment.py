@@ -84,9 +84,18 @@ class Origin:
     epss_url: str = PUBLIC_EPSS
     kev_url: str = PUBLIC_KEV
 
-    @property
-    def label(self) -> Literal["public", "mirror"]:
-        return "public" if (self.epss_url, self.kev_url) == (PUBLIC_EPSS, PUBLIC_KEV) else "mirror"
+    def url(self, feed: str) -> str:
+        return self.epss_url if feed == "epss" else self.kev_url
+
+    def label(self, feed: str) -> Literal["public", "mirror"]:
+        public = PUBLIC_EPSS if feed == "epss" else PUBLIC_KEV
+        return "public" if self.url(feed) == public else "mirror"
+
+    def key(self, feed: str) -> str:
+        """Identifica l'origine in cache senza conservarne l'indirizzo; vuoto per la pubblica."""
+        if self.label(feed) == "public":
+            return ""
+        return hashlib.sha256(self.url(feed).encode()).hexdigest()
 
 
 def check_url(url: str, *, allow_loopback_http: bool = False) -> str:
@@ -103,23 +112,6 @@ def check_url(url: str, *, allow_loopback_http: bool = False) -> str:
 
 EPSS_URL_ENV = "CA_FEEDS_EPSS_URL"
 KEV_URL_ENV = "CA_FEEDS_KEV_URL"
-
-
-def origin_from_env(
-    environ: dict[str, str] | None = None, *, allow_loopback_http: bool = False
-) -> Origin:
-    """L'origine dalle variabili d'ambiente, mai da `.code-analyzer.yml` (ADR-0014, E-04).
-
-    Ognuna è facoltativa e sostituisce solo il proprio feed; un URL non ammesso è un errore
-    (`ValueError`, senza ripetere l'URL): meglio fallire che scaricare da un altro posto.
-    """
-    env = os.environ if environ is None else environ
-    epss = env.get(EPSS_URL_ENV) or PUBLIC_EPSS
-    kev = env.get(KEV_URL_ENV) or PUBLIC_KEV
-    return Origin(
-        check_url(epss, allow_loopback_http=allow_loopback_http),
-        check_url(kev, allow_loopback_http=allow_loopback_http),
-    )
 
 
 class _SameHostRedirect(urllib.request.HTTPRedirectHandler):
@@ -193,6 +185,7 @@ class _Pointer(BaseModel):
     downloaded_at: AwareDatetime
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     origin: Literal["public", "mirror"]
+    origin_key: str = Field(default="", pattern=r"^([0-9a-f]{64})?$")
     entries: int = Field(ge=0)
 
 
@@ -347,7 +340,8 @@ def _download(
             dir=new_dir.name,
             downloaded_at=clock.now(),
             sha256=hashlib.sha256(raw).hexdigest(),
-            origin=origin.label,
+            origin=origin.label(feed),
+            origin_key=origin.key(feed),
             entries=_entries(table),
         )
         _publish(feed_dir, pointer)
@@ -402,7 +396,9 @@ def load_enrichment(
         current = _load_cached(feed_dir, feed, limits)
         now = clock.now()
         fresh = (
-            current is not None and timedelta(0) <= now - current.pointer.downloaded_at <= max_age
+            current is not None
+            and current.pointer.origin_key == origin.key(feed)
+            and timedelta(0) <= now - current.pointer.downloaded_at <= max_age
         )
         if fresh:
             loaded[feed] = current
@@ -417,7 +413,7 @@ def load_enrichment(
             continue
         if on_sync is not None:
             on_sync(feed)
-        url = origin.epss_url if feed == "epss" else origin.kev_url
+        url = origin.url(feed)
         try:
             loaded[feed] = _download(feed, feed_dir, url, fetcher, limits, origin, clock, current)
         except FetchError, FeedRejected, OSError:

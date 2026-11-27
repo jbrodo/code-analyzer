@@ -9,7 +9,7 @@ import re
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import StrEnum
-from typing import BinaryIO, Literal, Protocol, Self, runtime_checkable
+from typing import Annotated, BinaryIO, Literal, Protocol, Self, runtime_checkable
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictFloat, model_validator
 
@@ -76,6 +76,11 @@ class FeedsSyncRequest(_Frozen):
     snapshot_dir: str
     # Tetto di byte allocati nella cartella durante la sincronizzazione (ADR-0006, R-09).
     max_bytes: int = Field(gt=0)
+    # Opzioni aggiunte al comando di sincronizzazione per un'origine diversa da quella del
+    # pacchetto (E-04). Vengono da chi lancia la scansione, mai dal repository analizzato.
+    origin_args: tuple[Annotated[str, Field(pattern=r"^--[a-z][a-z-]*=\S+$")], ...] = Field(
+        default=(), max_length=4
+    )
 
     @model_validator(mode="after")
     def _manifest_has_feeds(self) -> Self:

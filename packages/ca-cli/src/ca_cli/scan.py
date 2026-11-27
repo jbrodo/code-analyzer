@@ -76,6 +76,7 @@ from ca_core.ports import (
 )
 from ca_graph.step import BuildGraphRequest, build_graph
 from ca_plugins.feeds import FeedsError, FeedsOutcome, default_cache_dir, ensure_snapshot
+from ca_plugins.origins import FeedOrigins, OriginError, resolve_origins
 from ca_plugins.runner import require_isolation
 from ca_plugins.source import count_skipped_symlinks, count_unreadable
 
@@ -166,13 +167,20 @@ class _FeedingExecutor:
     """
 
     def __init__(
-        self, inner: Context, cache_dir: Path, *, offline: bool, configs: Mapping[str, str]
+        self,
+        inner: Context,
+        cache_dir: Path,
+        *,
+        offline: bool,
+        configs: Mapping[str, str],
+        origins: FeedOrigins,
     ) -> None:
         self._inner = inner.executor
         self._clock = inner.clock
         self._cache = cache_dir
         self._offline = offline
         self._configs = configs
+        self._origins = origins
         self.outcomes: dict[str, FeedsOutcome] = {}
 
     def isolation(self) -> Isolation:
@@ -190,7 +198,12 @@ class _FeedingExecutor:
     def _snapshot(self, manifest: PackagedPluginManifest) -> FeedsOutcome:
         if manifest.name not in self.outcomes:
             self.outcomes[manifest.name] = ensure_snapshot(
-                manifest, self._inner, self._cache, self._clock, offline=self._offline
+                manifest,
+                self._inner,
+                self._cache,
+                self._clock,
+                offline=self._offline,
+                origin_args=self._origins.sync_args(manifest.name),
             )
         return self.outcomes[manifest.name]
 
@@ -349,6 +362,11 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     except WorkspaceError as exc:
         raise ScanError(str(exc)) from exc
 
+    try:
+        origins = resolve_origins(args.feed_origin)  # prima di qualunque container o download
+    except OriginError as exc:
+        raise ScanError(str(exc)) from exc
+
     # Prima di qualunque container; il minimo viene solo dal flag.
     require_isolation(context.executor.isolation(), args.min_isolation)
     try:
@@ -363,7 +381,9 @@ def handle(args: argparse.Namespace, context: Context) -> int:
     cache = context.feeds_cache or default_cache_dir()
     with tempfile.TemporaryDirectory(prefix="ca-config-") as scratch:
         configs = _plugin_configs(config, Path(scratch))
-        feeding = _FeedingExecutor(context, cache, offline=args.offline, configs=configs)
+        feeding = _FeedingExecutor(
+            context, cache, offline=args.offline, configs=configs, origins=origins
+        )
         try:
             ran = run_plugins(
                 RunPluginsRequest(

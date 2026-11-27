@@ -666,3 +666,33 @@ def test_license_files_are_the_release_texts_without_a_product_license() -> None
     assert "non dichiara la licenza del prodotto" in " ".join(notices.split()).lower()
     licence = (PLUGIN / "licenses/osv-scanner/LICENSE").read_text()
     assert "Apache License" in licence and "Version 2.0, January 2004" in licence
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["--base-url=http://m.example"],
+        ["--base-url=https://u:p@m.example"],
+        ["--base-url=https://m.example/x?y=1"],
+        ["--base-url="],
+        ["--other=https://m.example"],
+        ["--base-url=https://a.example", "--base-url=https://b.example"],
+    ],
+)
+def test_sync_command_refuses_other_options_before_any_download(
+    monkeypatch: pytest.MonkeyPatch, options: list[str]
+) -> None:
+    called: list[object] = []
+    monkeypatch.setattr(adapter, "sync", lambda *a, **k: called.append((a, k)) or 0)
+    assert adapter.main(["sync", "npm", *options]) == adapter.EXIT_SYNC and called == []
+
+
+def test_sync_command_passes_a_mirror_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[object] = []
+    monkeypatch.setattr(adapter, "sync", lambda *a, **k: called.append((a, k)) or 0)
+    assert adapter.main(["sync", "npm", "--base-url=https://m.example/osv/"]) == 0
+    assert adapter.main(["sync", "npm", "PyPI"]) == 0
+    assert called == [
+        ((["npm"],), {"base_url": "https://m.example/osv"}),
+        ((["npm", "PyPI"],), {}),
+    ]

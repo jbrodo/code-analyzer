@@ -464,18 +464,9 @@ def test_the_default_cache_dir_follows_xdg(tmp_path: Path) -> None:
     assert os.sep in str(en.default_cache_dir({}))
 
 
-def test_the_origin_comes_from_the_environment_per_feed() -> None:
-    assert en.origin_from_env({}) == en.Origin()
-    assert en.origin_from_env({}).label == "public"
-    mixed = en.origin_from_env({en.KEV_URL_ENV: "https://mirror.example/k.json"})
-    assert (mixed.epss_url, mixed.kev_url) == (en.PUBLIC_EPSS, "https://mirror.example/k.json")
-    assert mixed.label == "mirror"
-
-
-@pytest.mark.parametrize(
-    "value", ["http://example.org/x", "https://u:p@example.org/x", "file:///x"]
-)
-def test_a_bad_origin_in_the_environment_is_an_error_that_does_not_echo_the_url(value: str) -> None:
-    with pytest.raises(ValueError) as caught:
-        en.origin_from_env({en.EPSS_URL_ENV: value})
-    assert value not in str(caught.value)
+def test_each_feed_has_its_own_origin_label() -> None:
+    assert [en.Origin().label(f) for f in en.FEEDS] == ["public", "public"]
+    mixed = en.Origin(kev_url="https://mirror.example/k.json")
+    assert [mixed.label(f) for f in en.FEEDS] == ["public", "mirror"]
+    assert mixed.key("epss") == "" and len(mixed.key("kev")) == 64
+    assert "mirror.example" not in mixed.key("kev")
