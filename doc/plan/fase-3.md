@@ -78,8 +78,8 @@ Circa 630 etichette. A 1–3 minuti ciascuna (**ipotesi**, la misura il pilota) 
 | **D3-01** | Chi annota il golden set, con quanto tempo | **Decisa il 2026-11-27: annota l'utente, da solo.** Si riannotano 30 voci dopo una settimana e il limite si dichiara. Il tempo disponibile si valuta dopo il pilota, che misura quello per etichetta. Un modello o un agente di coding non annota, e le sue proposte non si mostrano a chi annota | — |
 | **D3-02** | Definizione del Gate 3 | **Decisa il 2026-11-27:** la sezione 2, con le definizioni di ADR-0034 | — |
 | **D3-03** | Quali finding si valutano | Solo SAST in un primo momento (D3-07); la proposta iniziale era SAST, poi IaC. Esclusi i segreti (vincolo 5) e le dipendenze, dove «vero positivo» significa raggiungibilità, un problema diverso. V3-02 dice se SAST e IaC pubblici bastano | G3-02 |
-| **D3-04** | Dove gira il motore | Solo CLI, spento per default, su richiesta esplicita. Sui runner di una CI ospitata il codice è sulla macchina del fornitore e non c'è GPU: lì resta spento finché non decidi diversamente | DE-02 |
-| **D3-05** | Cosa può fare un suggerimento | In tutta la Fase 3 solo suggerire: nessuna azione `auto` di §10.3, nessun effetto su gate, livello o stato. `auto` si rivaluta dopo il gate, con un ADR | DE-03 |
+| **D3-04** | Dove gira il motore | **Decisa il 2026-11-27 (ADR-0036):** Solo CLI, spento per default, su richiesta esplicita. Sui runner di una CI ospitata il codice è sulla macchina del fornitore e non c'è GPU: lì resta spento finché non decidi diversamente | — |
+| **D3-05** | Cosa può fare un suggerimento | **Decisa il 2026-11-27 (ADR-0036):** In tutta la Fase 3 solo suggerire: nessuna azione `auto` di §10.3, nessun effetto su gate, livello o stato. `auto` si rivaluta dopo il gate, con un ADR | — |
 | **D3-06** | Quando costruire gli agenti (fasi 0–5) | Solo dopo V3-05 sui modelli generativi e dopo la prima misura del triage | Onda 4 |
 
 ## 4. ADR
@@ -89,7 +89,7 @@ Circa 630 etichette. A 1–3 minuti ciascuna (**ipotesi**, la misura il pilota) 
 | 0033 | Niente modelli esterni | Scritto insieme a questo piano |
 | 0034 | Golden set, protocollo di annotazione e Gate 3 | Accettato il 2026-11-27 |
 | 0035 | Esecuzione isolata dei modelli, pesi fissati per digest, licenze di pesi e modelli di base | Dopo V3-01, V3-03 e V3-04 |
-| 0036 | `ca-decision`: interfaccia, instradamento (**proposto**; l'evidenza reale si fissa con DE-02) | Prima di DE-01; il motore vero si sceglie in V3-06 |
+| 0036 | `ca-decision`: interfaccia, instradamento (accettato il 2026-11-27; l'evidenza reale si fissa con DE-02) | Prima di DE-01; il motore vero si sceglie in V3-06 |
 | 0037 | `ca-agents`: contratti di fase, sandbox di build e test, guardrail | Prima dell'onda 4 |
 
 I numeri sono provvisori.
@@ -128,9 +128,9 @@ Il Gate 2 ha mostrato che ordinare a mano senza uno strumento non è sostenibile
 
 | ID | Task | Dipende da | Accettazione |
 | --- | --- | --- | --- |
-| DE-01 | Pacchetto `ca-decision`: `Decision`, `DecisionEngine`, motore finto, basi di confronto di G3.c; contratto in `lint-imports` | ADR-0036 | Test senza modelli |
+| DE-01 | Pacchetto `ca-decision` con motore finto; `Decision` e porta in `ca-core`; basi di confronto di G3.c in `golden-set/eval/`; contratti in `lint-imports` (**fatto**) | ADR-0036 | Test senza modelli |
 | DE-02 | Selezione dell'evidenza entro il limite di token, con redazione e esclusione dei segreti | DE-01, D3-04 | Test con segreti piantati: non compaiono in evidenza, log o errori; il troncamento è dichiarato |
-| DE-03 | Instradamento per confidenza, soglie in configurazione, `route` senza `auto` (D3-05) | DE-01 | Nessuna soglia nel codice |
+| DE-03 | Instradamento per confidenza, soglie in configurazione, `route` senza `auto` (D3-05) (**fatto con DE-01**; l'elenco delle soglie è vuoto finché non si calibrano) | DE-01 | Nessuna soglia nel codice |
 | DE-04 | Motore locale scelto in V3-06, in container senza rete, pesi per digest | DE-02, ADR-0035 | Prova di integrazione con pesi fissati, fuori dalla CI ordinaria |
 | DE-05 | Script in `golden-set/eval/`: accuratezza, precisione per classe, calibrazione, copertura, intervalli | DE-01, G3-02 | Riproduce gli stessi numeri a parità di pesi e dati |
 | DE-06 | Rassegna di sicurezza di evidenza, esecuzione e pesi | DE-04 | Nessun rilievo alto aperto |

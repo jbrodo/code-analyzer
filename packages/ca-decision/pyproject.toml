@@ -1,0 +1,17 @@
+[project]
+name = "ca-decision"
+version = "0.0.0"
+description = "Motore decisionale di Code Analyzer: instradamento e motore finto"
+license = "LicenseRef-Apache-2.0-with-Commons-Clause"
+requires-python = ">=3.14"
+dependencies = [
+    "ca-core",
+    "pydantic>=2.14,<3",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+ca-core = { workspace = true }

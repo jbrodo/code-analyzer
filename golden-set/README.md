@@ -8,6 +8,7 @@ Giudizi umani su finding SAST di repository pubblici in Python, per addestrare, 
 | --- | --- |
 | `corpus.json` | I 30 repository pubblici con tag e commit |
 | `sampling.json` | Tetto, regole escluse, percorsi di terzi |
+| `eval/baselines.py` | Le basi di confronto di G3.c, costruite con le sole etichette di addestramento (ADR-0036) |
 | `<insieme>.sample.json` | Le voci da annotare, nell'ordine in cui si annotano (`schemas/golden-sample.schema.json`) |
 | `<insieme>.labels.<annotatore>.g<giro>.json` | Le risposte consegnate (`schemas/golden-labels.schema.json`) |
 

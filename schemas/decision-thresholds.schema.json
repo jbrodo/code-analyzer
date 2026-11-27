@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "Threshold": {
+      "additionalProperties": false,
+      "description": "Soglia calibrata per una domanda e per i pesi esatti di un modello.",
+      "properties": {
+        "minimum_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Minimum Confidence",
+          "type": "number"
+        },
+        "model": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][\\w./-]*$",
+          "title": "Model",
+          "type": "string"
+        },
+        "model_version": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "question_id": {
+          "const": "is_true_positive",
+          "title": "Question Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question_id",
+        "model",
+        "model_version",
+        "minimum_confidence"
+      ],
+      "title": "Threshold",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:decision-thresholds:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Dato del prodotto, mai letto da `.code-analyzer.yml`. Senza una soglia: `umano`.",
+  "properties": {
+    "thresholds": {
+      "items": {
+        "$ref": "#/$defs/Threshold"
+      },
+      "maxItems": 1000,
+      "title": "Thresholds",
+      "type": "array"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "thresholds"
+  ],
+  "title": "DecisionThresholds",
+  "type": "object",
+  "x-schema-version": "1.0"
+}

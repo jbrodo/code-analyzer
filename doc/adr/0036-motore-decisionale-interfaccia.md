@@ -1,15 +1,15 @@
 # ADR-0036: Motore decisionale, interfaccia e instradamento
 
-- Stato: Proposto
+- Stato: Accettato il 2026-11-27 dall'utente
 - Data: 2026-11-27
-- Decisione umana richiesta: sì (D3-04, D3-05 e il confronto di G3.c)
+- Decisione umana richiesta: sì (D3-04, D3-05 e il confronto di G3.c), presa il 2026-11-27
 - Riferimenti: §2, §3, §10; ADR-0001, 0003, 0016, 0033, 0034; `doc/plan/fase-3.md`
 
 ## Contesto
 
 §10 descrive un'interfaccia `DecisionEngine`, sei domande e un instradamento con tre esiti. Il piano chiede di fissarla prima di DE-01, che si costruisce con un motore finto: nessuna scelta qui dipende dal motore vero, che si decide in V3-06. Che un motore locale sappia fare il triage non è misurato.
 
-## Decisione proposta
+## Decisione
 
 ### Dove stanno le cose
 
