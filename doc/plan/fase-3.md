@@ -4,7 +4,7 @@ Piano derivato da `doc/PROJECT.md` §10, §11, §13 e §14, scritto il 2026-11-2
 
 Obiettivo: un motore decisionale locale suggerisce il triage dei finding, e agenti locali propongono correzioni verificate, come PR in bozza che un umano unisce.
 
-**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus non basta**; V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.**
+**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus di 10 non bastava**; con 30 repository Python basta per numero e JavaScript/TypeScript no (D3-08); V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.**
 
 **Il piano è dettagliato solo fino alla prima verifica di fattibilità (onde 0–2).** Che un modello locale possa raggiungere il Gate 3, o produrre correzioni utili su questo hardware, non è provato. Le onde successive si dettagliano dopo V3-06.
 
@@ -169,7 +169,15 @@ La fase 5 richiede un modello diverso dalla fase 4 (§11.2): su 12 GB i due gira
 - **V3-03:** Laya 0.5.5 con i pesi `typed-decisions` funziona in un contenitore senza rete, anche senza `vegaml`.
 - **V3-04, solo CPU:** 0,87 s per finding con 4 thread e 0,52 s con 8, circa 2,8 GB di memoria, nessun troncamento dell'evidenza sul campione. Il numero di thread va fissato.
 
-**D3-07, come avere abbastanza finding vari — decisa il 2026-11-27 dall'utente:** corpus del golden set di circa 30 repository pubblici, soprattutto applicazioni e con più JavaScript e TypeScript, separato da `scripts/benchmark/corpus.json` (che serve alla Variante B e non cambia); tetto per repository e regola, da fissare in ADR-0035; B101 escluso; **IaC fuori dal primo ambito** (D3-03 si riduce a SAST). Se 30 repository bastino si sa solo scansionandoli. L'elenco proposto è in `doc/verifiche/fase-3.md` (V-F3.5) e attende approvazione.
+**D3-07, come avere abbastanza finding vari — decisa il 2026-11-27 dall'utente:** corpus del golden set di circa 30 repository pubblici, soprattutto applicazioni e con più JavaScript e TypeScript, separato da `scripts/benchmark/corpus.json` (che serve alla Variante B e non cambia); tetto per repository e regola, da fissare in ADR-0035; B101 escluso; **IaC fuori dal primo ambito** (D3-03 si riduce a SAST). Se 30 repository bastino si sa solo scansionandoli. L'elenco è in `doc/verifiche/fase-3.md` (V-F3.5).
+
+L'elenco dei repository è stato approvato e scansionato il 2026-11-27 (V-F3.6): su Python i punti di codice distinti sono 973 (772 con al più 20 per repository e regola), su JavaScript e TypeScript 79, da 4 regole.
+
+| ID | Decisione nuova | Raccomandazione | Blocca |
+| --- | --- | --- | --- |
+| **D3-08** | Cosa fare con JavaScript e TypeScript | (1) **Golden set e Gate 3 solo per Python**, con il limite dichiarato; nel resto del prodotto non cambia nulla. (2) Aggiungere prima regole SAST per JavaScript, con la verifica di licenza di ADR-0015 se vengono da terzi: è un lavoro a sé, e solo dopo si riconta. (3) Un solo golden set misto, dove JavaScript sarebbe troppo scarso per una misura propria | G3-02 |
+
+**Linguaggi.** Il corpus copre solo Python e JavaScript/TypeScript, l'ambito dell'MVP (§1); gli altri sono di Fase 4 (§13). Un risultato del Gate 3 vale solo per i linguaggi presenti nel test: ogni linguaggio aggiunto richiede nuove etichette e una nuova misura.
 
 D3-01 serve prima di G3-04.
 
