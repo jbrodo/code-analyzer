@@ -20,6 +20,7 @@ l'adattatore del plugin (ADR-0006, `could not load db`).
 """
 
 import contextlib
+import hashlib
 import os
 import re
 import shutil
@@ -27,6 +28,7 @@ import stat
 import tempfile
 from datetime import timedelta
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, ValidationError
 
@@ -35,7 +37,6 @@ from ca_core.models.scan_report import FeedSnapshot, Warning_
 from ca_core.ports import Clock, FeedsPurgeRequest, FeedsSyncRequest, PluginExecutor, RunOutcome
 
 POINTER = "current.json"
-ORIGIN = "public"  # etichetta, non un URL: in Fase 2 i mirror cambiano solo questa
 DEFAULT_MAX_AGE = timedelta(days=1)
 DEFAULT_MAX_BYTES = 8 * 1024**3  # trivy: 1,6 GB; osv-scanner npm+PyPI: 250 MB (V-05)
 _SNAP = re.compile(r"^snap-[A-Za-z0-9_]{8}$")
@@ -52,6 +53,10 @@ class _Pointer(BaseModel):
     dir: str
     synced_at: AwareDatetime
     image_digest: str
+    # Etichetta per il report e impronta delle opzioni di origine: mai l'indirizzo. I puntatori
+    # precedenti a E-04 non li hanno e valgono come origine pubblica.
+    origin: Literal["public", "mirror"] = "public"
+    origin_key: str = ""
 
 
 class FeedsOutcome(BaseModel):
@@ -190,7 +195,7 @@ def _use(
 ) -> FeedsOutcome:
     return FeedsOutcome(
         snapshot_dir=str(plugin_dir / pointer.dir),
-        feed=FeedSnapshot(origin=ORIGIN, synced_at=pointer.synced_at, sync_failed=failed),
+        feed=FeedSnapshot(origin=pointer.origin, synced_at=pointer.synced_at, sync_failed=failed),
         warnings=warnings,
         failure=None,
     )
@@ -205,12 +210,18 @@ def ensure_snapshot(
     max_age: timedelta = DEFAULT_MAX_AGE,
     offline: bool = False,
     max_bytes: int = DEFAULT_MAX_BYTES,
+    origin_args: tuple[str, ...] = (),
 ) -> FeedsOutcome:
-    """Snapshot da montare in `/feeds` per `manifest`, sincronizzando se manca o è vecchio."""
+    """Snapshot da montare in `/feeds` per `manifest`, sincronizzando se manca, è vecchio o viene
+    da un'altra origine. `origin_args` sono le opzioni di un'origine diversa da quella del
+    pacchetto (`origins.FeedOrigins.sync_args`). Se la sincronizzazione non riesce si ripiega
+    sullo snapshot precedente, che nel report conserva l'etichetta della sua origine."""
     if manifest.feeds is None:
         raise ValueError("il manifest non ha feeds")
     name = manifest.name
     digest = manifest.image.rpartition("@")[2]
+    origin: Literal["public", "mirror"] = "mirror" if origin_args else "public"
+    origin_key = hashlib.sha256("\n".join(origin_args).encode()).hexdigest() if origin_args else ""
     _private_dir(cache_dir)
     plugin_dir = cache_dir / name
     _private_dir(plugin_dir)
@@ -220,6 +231,7 @@ def ensure_snapshot(
     fresh = (
         current is not None
         and current.image_digest == digest
+        and current.origin_key == origin_key
         and timedelta(0) <= now - current.synced_at <= max_age
     )
     if current is not None and fresh:
@@ -241,10 +253,21 @@ def ensure_snapshot(
     try:
         # ScanAborted (firma) e RuntimeUnavailable si propagano: nessun ripiego.
         result = executor.sync_feeds(
-            FeedsSyncRequest(manifest=manifest, snapshot_dir=str(new_dir), max_bytes=max_bytes)
+            FeedsSyncRequest(
+                manifest=manifest,
+                snapshot_dir=str(new_dir),
+                max_bytes=max_bytes,
+                origin_args=origin_args,
+            )
         )
         if result.outcome is RunOutcome.OK and _validate_tree(new_dir, max_bytes):
-            pointer = _Pointer(dir=new_dir.name, synced_at=clock.now(), image_digest=digest)
+            pointer = _Pointer(
+                dir=new_dir.name,
+                synced_at=clock.now(),
+                image_digest=digest,
+                origin=origin,
+                origin_key=origin_key,
+            )
             _publish(plugin_dir, pointer)
             published = True
             _prune(plugin_dir, new_dir.name, current.dir if current else None, manifest, executor)

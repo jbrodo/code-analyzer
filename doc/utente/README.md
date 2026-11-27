@@ -26,7 +26,7 @@ In alternativa all'installazione, la CLI gira in un container che avvia i plugin
 
 | Comando | Cosa fa | Exit |
 | --- | --- | --- |
-| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline] [--pr --base COMMIT --baseline FILE …] [--variant A\|B] [--scoring-config FILE] [--service-context FILE]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
+| `scan [PATH] [--output-dir DIR] [--format table\|json\|sarif] [--min-isolation LIVELLO] [--offline] [--feed-origin NOME=VALORE] [--pr --base COMMIT --baseline FILE …] [--variant A\|B] [--scoring-config FILE] [--service-context FILE]` | Analizza `PATH` (predefinito `.`) e scrive gli artefatti | 0 report prodotto, anche parziale; 2 nessun report |
 | `gate [--report FILE] [--fail-on LIVELLI] [--allow-partial]` | Decide dal report | 0 superato; 1 fallito; 2 errore o scansione non valutabile |
 | `config validate [PATH]` | Controlla `.code-analyzer.yml` offline: schema, espressioni SPDX, date, percorsi | 0 valido; 2 non valido |
 | `sbom [PATH] [--format cyclonedx] [--output FILE]` | Genera con syft l'SBOM CycloneDX 1.7 di `PATH`, su stdout o in `FILE` | 0 SBOM prodotto; 2 errore |
@@ -43,6 +43,24 @@ Scrive sempre `code-analyzer.report.json` e `code-analyzer.sarif` in `--output-d
 `--min-isolation` accetta `hardened-container` o `gvisor`: se il livello non è disponibile, `scan` esce con 2 prima di avviare i container. Il livello effettivo è registrato nel report per ogni plugin.
 
 Senza `--offline` i feed si sincronizzano in `~/.cache/code-analyzer/feeds` (o sotto `XDG_CACHE_HOME`). Con `--offline` si usa lo snapshot esistente, anche vecchio, con l'avviso `feeds-stale`; se manca, il plugin risulta fallito e la scansione parziale.
+
+### Origine dei feed
+
+Per scaricare i feed da un proprio mirror si cambia l'origine, con `--feed-origin NOME=VALORE` (ripetibile) o con la variabile d'ambiente. Il flag vince sulla variabile; senza nessuno dei due vale l'origine del prodotto. **Mai da `.code-analyzer.yml`:** chi controlla l'origine controlla i dati che determinano il punteggio.
+
+| Nome | Variabile | Valore |
+| --- | --- | --- |
+| `epss` | `CA_FEEDS_EPSS_URL` | URL `https` del file |
+| `kev` | `CA_FEEDS_KEV_URL` | URL `https` del file |
+| `osv` | `CA_FEEDS_OSV_URL` | URL `https` di base: si scarica `<base>/<ecosistema>/all.zip` |
+| `trivy-db` | `CA_FEEDS_TRIVY_DB` | riferimento OCI senza schema, per esempio `registro.example/aquasec/trivy-db:2` |
+| `trivy-checks` | `CA_FEEDS_TRIVY_CHECKS` | riferimento OCI delle regole IaC di trivy |
+
+- Un valore non ammesso ferma la scansione prima di qualunque download (exit 2). Gli URL non possono contenere credenziali e **non è prevista autenticazione** verso il mirror; il messaggio di errore non ripete il valore.
+- Cambiando origine lo snapshot in cache non conta più come aggiornato e si risincronizza. Se la sincronizzazione fallisce, o con `--offline`, si usa lo snapshot precedente con l'avviso, e il report ne conserva l'etichetta di origine.
+- Nel report l'origine è `public` o `mirror`, mai l'indirizzo. In cache non si conserva l'indirizzo: per trivy e OSV un'impronta delle opzioni, per EPSS e KEV dell'URL.
+- Non c'è verifica di firma: un mirror è creduto quanto la sua connessione `https` e i controlli sul contenuto.
+- Un URL passato a OSV compare tra gli argomenti del contenitore di sincronizzazione, visibile a chi può ispezionare il motore di container.
 
 Il report è `partial`, e quindi non supera il gate, quando:
 

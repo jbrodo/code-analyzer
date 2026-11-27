@@ -951,7 +951,7 @@ class OciExecutor:
                 timeout=parse_duration(feeds.sync_timeout),
                 network=True,
                 entrypoint=feeds.sync_command[0],
-                command=feeds.sync_command[1:],
+                command=[*feeds.sync_command[1:], *request.origin_args],
                 guard=feeds_guard(snapshot, request.max_bytes),
                 file_size_limit=request.max_bytes,
             )

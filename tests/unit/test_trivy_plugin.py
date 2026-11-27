@@ -369,7 +369,7 @@ def test_sync_fails_when_either_step_fails(tmp_path: Path, failing: str) -> None
 
 def test_main_dispatch() -> None:
     assert adapter.main(["--help"]) == adapter.EXIT_TRIVY
-    assert adapter.main(["sync", "extra"]) == adapter.EXIT_TRIVY
+    assert adapter.main(["sync", "extra"]) == adapter.EXIT_SYNC
 
 
 def test_adapter_does_not_import_ca_core() -> None:
@@ -406,3 +406,36 @@ def test_license_files_are_the_release_texts_without_a_product_license() -> None
     licence = (PLUGIN / "licenses/trivy/LICENSE").read_text()
     assert "Apache License" in licence and "Version 2.0, January 2004" in licence
     assert "Aqua Security" in (PLUGIN / "licenses/trivy/NOTICE").read_text()
+
+
+def test_sync_passes_each_repository_to_the_step_that_uses_it(tmp_path: Path) -> None:
+    log = tmp_path / "argv"
+    binary = fake_trivy(tmp_path, f'echo "$@" >> {log}')
+    code = adapter.sync(
+        trivy=binary, db_repository="r.example/db:2", checks_repository="r.example/checks:2"
+    )
+    assert code == 0
+    download, config = log.read_text().splitlines()
+    assert "--db-repository=r.example/db:2" in download and "checks" not in download
+    assert "--checks-bundle-repository=r.example/checks:2" in config and "db:2" not in config
+    log.unlink()
+    assert adapter.sync(trivy=binary) == 0 and "repository" not in log.read_text()
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["--insecure"],
+        ["--insecure=true"],
+        ["--db-repository=--insecure"],
+        ["--db-repository="],
+        ["--db-repository=a.example/x,b.example/x"],
+        ["--db-repository=a.example/x", "--db-repository=b.example/x"],
+    ],
+)
+def test_sync_command_refuses_any_other_option(
+    monkeypatch: pytest.MonkeyPatch, options: list[str]
+) -> None:
+    called: list[object] = []
+    monkeypatch.setattr(adapter, "sync", lambda **k: called.append(k) or 0)
+    assert adapter.main(["sync", *options]) == adapter.EXIT_SYNC and called == []

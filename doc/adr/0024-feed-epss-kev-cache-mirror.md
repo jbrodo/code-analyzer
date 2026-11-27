@@ -58,6 +58,7 @@ I campi di testo di KEV (descrizione, azione richiesta, note) non entrano nel re
 
 - L'origine predefinita, `public`, è nel pacchetto: gli URL di V-05.
 - Si cambia solo con un flag della CLI o con una variabile d'ambiente, mai da `.code-analyzer.yml` (ADR-0014): un repository non può indicare da dove prendere i dati che ne determinano il punteggio. Nomi di flag e variabile in E-04, validi per tutti i feed (OSV, trivy, EPSS, KEV).
+- **Realizzato il 2026-11-27 (E-04):** flag `--feed-origin NOME=VALORE` di `scan`, che vince sulle variabili `CA_FEEDS_EPSS_URL`, `CA_FEEDS_KEV_URL`, `CA_FEEDS_OSV_URL`, `CA_FEEDS_TRIVY_DB` e `CA_FEEDS_TRIVY_CHECKS` (`ca_plugins/origins.py`). Al contenitore di sincronizzazione arrivano solo le opzioni di un'origine diversa da quella del pacchetto, ricontrollate dall'adattatore. Cambiare origine rende lo snapshot da rinnovare. Senza autenticazione e senza firma.
 - L'origine è un'etichetta nel report, non un URL.
 
 ### Mirror e firma (D2-05: non in Fase 2)

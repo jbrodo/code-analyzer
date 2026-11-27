@@ -76,7 +76,13 @@ def test_first_sync_publishes_snapshot_and_fresh_reuses_it(cache: Path) -> None:
 def test_sync_request_has_no_workspace_or_repo_data(cache: Path) -> None:
     ex = SyncStub(good)
     ensure_snapshot(MANIFEST, ex, cache, FixedClock())
-    assert set(FeedsSyncRequest.model_fields) == {"manifest", "snapshot_dir", "max_bytes"}
+    assert set(FeedsSyncRequest.model_fields) == {
+        "manifest",
+        "snapshot_dir",
+        "max_bytes",
+        "origin_args",
+    }
+    assert ex.syncs[0].origin_args == ()
     assert Path(ex.syncs[0].snapshot_dir).parent == cache / "osv-scanner"
 
 

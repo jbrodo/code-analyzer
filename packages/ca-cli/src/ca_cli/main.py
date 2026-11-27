@@ -57,6 +57,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--offline", action="store_true", help="non sincronizzare i feed: usa lo snapshot esistente"
     )
     scan_parser.add_argument(
+        "--feed-origin",
+        action="append",
+        default=[],
+        metavar="NOME=VALORE",
+        help="origine di un feed (epss, kev, osv, trivy-db, trivy-checks); ripetibile, mai dal"
+        " repository",
+    )
+    scan_parser.add_argument(
         "--pr", action="store_true", help="scansione di PR: confronto con la baseline (ADR-0025)"
     )
     scan_parser.add_argument("--base", type=scan.parse_commit, help="commit base (con --pr)")
