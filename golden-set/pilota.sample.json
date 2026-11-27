@@ -1,0 +1,332 @@
+{
+ "version": 1,
+ "set": "pilota",
+ "language": "python",
+ "sampling": {
+  "seed": "pilota-1",
+  "cap_per_repository_and_rule": 20,
+  "excluded_rules": [
+   "B101",
+   "B105",
+   "B106",
+   "B107",
+   "B401",
+   "B402",
+   "B403",
+   "B404",
+   "B405",
+   "B406",
+   "B407",
+   "B408",
+   "B409",
+   "B410",
+   "B411",
+   "B412",
+   "B413",
+   "B415"
+  ],
+  "pool_size": 765
+ },
+ "items": [
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "dojo/templatetags/display_tags.py",
+   "start_line": 96,
+   "end_line": 96,
+   "fingerprint": "sha256:403c906ddf98cea1fce4ec8e36192eaf62d5f1a39ab5e58ac1d9a6489d7dc7f7"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "django/template/defaultfilters.py",
+   "start_line": 244,
+   "end_line": 244,
+   "fingerprint": "sha256:f37a15bb047b2119cfe2c9d9e36670269c9dddd2245786e46bba3753e5ff802c"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "django/template/base.py",
+   "start_line": 922,
+   "end_line": 922,
+   "fingerprint": "sha256:048d742283312538bb0bc9c056073949a68c4ade83ec05095f28e35335e9b34a"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "dojo/templatetags/display_tags.py",
+   "start_line": 596,
+   "end_line": 596,
+   "fingerprint": "sha256:5351ad455f2b5854309d21e01d7154dbeb6008effdacea9dfb51f5c7409d194c"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "django/db/models/functions/text.py",
+   "start_line": 272,
+   "end_line": 273,
+   "fingerprint": "sha256:8f89b5dcd1446b09d646c48da9873422e0df456cadf63245f2546fb54528a261"
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "commit": "51a503531d845fc11d5ef270d576c59c300e3620",
+   "tool": "bandit",
+   "rule_id": "B324",
+   "path": "hc/api/models.py",
+   "start_line": 434,
+   "end_line": 434,
+   "fingerprint": "sha256:afd6802d239208879439ad34efe08d1fee335872d4b9cd714d9d0d0eabbb6347"
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "commit": "441357f16bac9cf38005b9447508a7cdfb80cc72",
+   "tool": "bandit",
+   "rule_id": "B113",
+   "path": ".semgrep/security/requests/no-use-requests-lib.py",
+   "start_line": 54,
+   "end_line": 54,
+   "fingerprint": "sha256:1a02e308e2eec6a7417231685d615ba2b1075a10a5120c34d736713221000eb6"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B607",
+   "path": "bin/maintenance/dump_url_map.py",
+   "start_line": 24,
+   "end_line": 24,
+   "fingerprint": "sha256:b10c5f8f91e50952b0092d956e715ce75b6fa4e5cd0c944a8c1b87a33cdb014a"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "netbox/netbox/views/generic/object_views.py",
+   "start_line": 506,
+   "end_line": 506,
+   "fingerprint": "sha256:409d8f1107a561ee3ac5b5b2b5e6eae8fb8cbe59326f15b4e37672b15832ead9"
+  },
+  {
+   "repository": "https://github.com/paperless-ngx/paperless-ngx",
+   "commit": "35b0439195bbdb87a6d519152e6782abe0720c3b",
+   "tool": "bandit",
+   "rule_id": "B110",
+   "path": "src/documents/signals/handlers.py",
+   "start_line": 634,
+   "end_line": 635,
+   "fingerprint": "sha256:bae85c1257b964aa2215ad7f01ab56b8e670fa57eb7d9798b1aa51320f4e5e02"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "netbox/dcim/forms/bulk_import.py",
+   "start_line": 1257,
+   "end_line": 1258,
+   "fingerprint": "sha256:bf51133de8a196532dede634176264b94761f95d0117df84d0720ff0b4aed4aa"
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "commit": "c87f20d1293b6e7732afe1b25d07ed79152b75a8",
+   "tool": "bandit",
+   "rule_id": "B607",
+   "path": "dev/code-generation/gen_py_pytest_data_paths.py",
+   "start_line": 116,
+   "end_line": 116,
+   "fingerprint": "sha256:a56fbb6057dd19dd3c7f2a0887588cd6322ec86892e6da87a6e5e896d896b6ff"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B603",
+   "path": "bin/maintenance/build-assets.py",
+   "start_line": 176,
+   "end_line": 176,
+   "fingerprint": "sha256:fdc5d85d2e5ff320a9816bdeffcfa70f3b8ffe85ba55d2df3fcd992b76ff9af5"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "semgrep",
+   "rule_id": "ca-py-weak-hash",
+   "path": "dojo/tools/noseyparker/parser.py",
+   "start_line": 142,
+   "end_line": 142,
+   "fingerprint": "sha256:34df27d9032c2c35e2049319c0a9430827512423210f1bb105f796eabb0f1d7d"
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "commit": "99924bbfbfd5075f9d603771981111ffd9e4a1c1",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "wagtail/admin/templatetags/wagtailadmin_tags.py",
+   "start_line": 313,
+   "end_line": 313,
+   "fingerprint": "sha256:5e526c773ac8ac2d8c3068afbf396d128d33bfa3033ba974b1c7e0a8df3e33f0"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "ckanext/datastore/logic/action.py",
+   "start_line": 290,
+   "end_line": 290,
+   "fingerprint": "sha256:8d22dcb3efd3dce0d2923c68c5baa957eea0a4d3e52119a52f0ac1f095c44918"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B113",
+   "path": "indico/modules/events/editing/service.py",
+   "start_line": 121,
+   "end_line": 122,
+   "fingerprint": "sha256:26ea592aeb8f746de034241830230f52dca49cc8f5189e2bc8c410143f31f983"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B301",
+   "path": "django/core/cache/backends/filebased.py",
+   "start_line": 38,
+   "end_line": 38,
+   "fingerprint": "sha256:0743ab0d533f846f9d2d3b2943735fb969f133b1652e06478b2755146207d90d"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B324",
+   "path": "indico/modules/events/api.py",
+   "start_line": 175,
+   "end_line": 175,
+   "fingerprint": "sha256:3a9c9c9af62ce1e765ef3acf1a88855a22f7d8f102360a61e8fff0a196cac3b7"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B102",
+   "path": "netbox/extras/utils.py",
+   "start_line": 139,
+   "end_line": 139,
+   "fingerprint": "sha256:c5e9c6fdef092119f39d419e7827cb362b16ec4786efc2f8a45c09ae95826f46"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "indico/migrations/versions/20230810_1300_0af8f63aa603_refactor_editing_revisions.py",
+   "start_line": 159,
+   "end_line": 163,
+   "fingerprint": "sha256:709d775dcf3ff424a3a1e30745e8feaf45961db7bc35f4ed7e18a86a58b835a5"
+  },
+  {
+   "repository": "https://github.com/scrapy/scrapy",
+   "commit": "4a421e451845ac0b3047402e43dc285a37ca7664",
+   "tool": "semgrep",
+   "rule_id": "ca-py-pickle-load",
+   "path": "scrapy/extensions/httpcache.py",
+   "start_line": 423,
+   "end_line": 423,
+   "fingerprint": "sha256:7e97bf0bdd1405387cf436a40c0676d4804fdfb55ec9e415dfcf9035522e3b7b"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "ckanext/datastore/backend/postgres.py",
+   "start_line": 388,
+   "end_line": 390,
+   "fingerprint": "sha256:69b47d3d8553868056f4a382694ffa39b0d039f314e3b2175b7e746deab307fe"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B704",
+   "path": "indico/web/flask/templating.py",
+   "start_line": 218,
+   "end_line": 218,
+   "fingerprint": "sha256:dff79ff45ed400acd4829f46bca0d380727922a006fb03f495f0a90ac233d4d8"
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "commit": "441357f16bac9cf38005b9447508a7cdfb80cc72",
+   "tool": "bandit",
+   "rule_id": "B311",
+   "path": "saleor/core/development/random_data.py",
+   "start_line": 1294,
+   "end_line": 1294,
+   "fingerprint": "sha256:67eaaa270833623ecdcb791e089e234ccbb9a5632e9f55f37d84074b1f0d6baa"
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "commit": "99924bbfbfd5075f9d603771981111ffd9e4a1c1",
+   "tool": "bandit",
+   "rule_id": "B310",
+   "path": "wagtail/embeds/finders/instagram.py",
+   "start_line": 64,
+   "end_line": 64,
+   "fingerprint": "sha256:1d3f23d7c4049a28051e2782b6566af71a7ff183a09fa5865f05c3765f83f68f"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "dojo/management/commands/migrate_surveys.py",
+   "start_line": 55,
+   "end_line": 55,
+   "fingerprint": "sha256:c195fc7715ad6b54adf6ccf676eb40269b4a0e90c3f80f4c59add5204bf17cca"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "netbox/netbox/tables/columns.py",
+   "start_line": 227,
+   "end_line": 227,
+   "fingerprint": "sha256:7d197a75f50a308e336b82971d0435b2b058d513d6a56a5675388daac9f3adfe"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "django/contrib/gis/db/backends/mysql/introspection.py",
+   "start_line": 17,
+   "end_line": 17,
+   "fingerprint": "sha256:7cc093de772def1b1df3a59976415c4a2fc14dbeb9e0abec9a9d42c2e9f55d0c"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "netbox/netbox/tables/columns.py",
+   "start_line": 679,
+   "end_line": 679,
+   "fingerprint": "sha256:c20b2b2166c8cfacc7361a70b37decf428640a0f0aebc06459823f4b0bebd683"
+  }
+ ]
+}

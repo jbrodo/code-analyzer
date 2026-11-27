@@ -677,7 +677,7 @@ Stato del Gate 2 al 2026-11-27: **non superato** (`doc/verifiche/gate-2.md`, X-0
 
 **Gate 3:** precisione del triage ≥ 80% sul golden set.
 
-Piano di lavoro: `doc/plan/fase-3.md`, che propone di precisare il gate (D3-02, non ancora decisa).
+Piano di lavoro: `doc/plan/fase-3.md`. Il gate è precisato in ADR-0034 (D3-02, decisa il 2026-11-27) e riguarda solo Python.
 
 ### Fase 4 — Scala e plugin
 

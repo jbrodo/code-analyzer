@@ -4,7 +4,7 @@ Piano derivato da `doc/PROJECT.md` §10, §11, §13 e §14, scritto il 2026-11-2
 
 Obiettivo: un motore decisionale locale suggerisce il triage dei finding, e agenti locali propongono correzioni verificate, come PR in bozza che un umano unisce.
 
-**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus di 10 non bastava**; con 30 repository Python basta per numero e JavaScript/TypeScript no (D3-08); V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.**
+**Stato al 2026-11-27** (`doc/verifiche/fase-3.md`): V3-01 fatto per quanto leggibile senza eseguire nulla; V3-02 fatto, **il corpus di 10 non bastava**; con 30 repository Python basta per numero e JavaScript/TypeScript no (D3-08); V3-03 superato (Laya funziona senza rete); di V3-04 fatta la parte CPU. Restano V3-04 su GPU, V3-05 e il punto di arresto V3-06. **Che Laya sappia fare il triage non è ancora misurato.** L'onda 1 è iniziata (sezione 6).
 
 **Il piano è dettagliato solo fino alla prima verifica di fattibilità (onde 0–2).** Che un modello locale possa raggiungere il Gate 3, o produrre correzioni utili su questo hardware, non è provato. Le onde successive si dettagliano dopo V3-06.
 
@@ -49,7 +49,7 @@ Letta il 2026-11-27 (README, scheda del modello, commit e release), **solo in pa
 
 ## 2. Gate 3
 
-§13 dice solo "precisione del triage ≥ 80% sul golden set". Così com'è, il gate si può superare senza valore: se l'85% dei finding è vero, rispondere sempre «vero» dà l'85%. **Proposta, da decidere in D3-02 prima di annotare:**
+§13 dice solo "precisione del triage ≥ 80% sul golden set". Così com'è, il gate si può superare senza valore: se l'85% dei finding è vero, rispondere sempre «vero» dà l'85%. **Deciso il 2026-11-27 (D3-02, ADR-0034, che precisa anche le voci «non so» e le dimensioni del test):**
 
 | Condizione | Misura, su un insieme di test mai usato per addestrare o calibrare |
 | --- | --- |
@@ -75,8 +75,8 @@ Circa 630 etichette. A 1–3 minuti ciascuna (**ipotesi**, la misura il pilota) 
 
 | ID | Decisione | Raccomandazione | Blocca |
 | --- | --- | --- | --- |
-| **D3-01** | Chi annota il golden set, con quanto tempo | **Aperta.** Serve almeno una persona; una seconda su un sottoinsieme di 50 permette di misurare l'accordo. Con una sola, si riannotano 30 esempi dopo una settimana e il limite si dichiara. **Un modello o un agente di coding non annota**, e le sue proposte non si mostrano a chi annota | G3-04 e seguenti |
-| **D3-02** | Definizione del Gate 3 | La sezione 2 | G3-01 |
+| **D3-01** | Chi annota il golden set, con quanto tempo | **Decisa il 2026-11-27: annota l'utente, da solo.** Si riannotano 30 voci dopo una settimana e il limite si dichiara. Il tempo disponibile si valuta dopo il pilota, che misura quello per etichetta. Un modello o un agente di coding non annota, e le sue proposte non si mostrano a chi annota | — |
+| **D3-02** | Definizione del Gate 3 | **Decisa il 2026-11-27:** la sezione 2, con le definizioni di ADR-0034 | — |
 | **D3-03** | Quali finding si valutano | Solo SAST in un primo momento (D3-07); la proposta iniziale era SAST, poi IaC. Esclusi i segreti (vincolo 5) e le dipendenze, dove «vero positivo» significa raggiungibilità, un problema diverso. V3-02 dice se SAST e IaC pubblici bastano | G3-02 |
 | **D3-04** | Dove gira il motore | Solo CLI, spento per default, su richiesta esplicita. Sui runner di una CI ospitata il codice è sulla macchina del fornitore e non c'è GPU: lì resta spento finché non decidi diversamente | DE-02 |
 | **D3-05** | Cosa può fare un suggerimento | In tutta la Fase 3 solo suggerire: nessuna azione `auto` di §10.3, nessun effetto su gate, livello o stato. `auto` si rivaluta dopo il gate, con un ADR | DE-03 |
@@ -87,9 +87,9 @@ Circa 630 etichette. A 1–3 minuti ciascuna (**ipotesi**, la misura il pilota) 
 | ADR | Oggetto | Quando |
 | --- | --- | --- |
 | 0033 | Niente modelli esterni | Scritto insieme a questo piano |
-| 0034 | Esecuzione isolata dei modelli, pesi fissati per digest, licenze di pesi e modelli di base | Dopo V3-01, V3-03 e V3-04 |
-| 0035 | Golden set, protocollo di annotazione e Gate 3 | Prima di G3-04 |
-| 0036 | `ca-decision`: interfaccia, evidenza, instradamento | Dopo V3-06 |
+| 0034 | Golden set, protocollo di annotazione e Gate 3 | Accettato il 2026-11-27 |
+| 0035 | Esecuzione isolata dei modelli, pesi fissati per digest, licenze di pesi e modelli di base | Dopo V3-01, V3-03 e V3-04 |
+| 0036 | `ca-decision`: interfaccia, instradamento (**proposto**; l'evidenza reale si fissa con DE-02) | Prima di DE-01; il motore vero si sceglie in V3-06 |
 | 0037 | `ca-agents`: contratti di fase, sandbox di build e test, guardrail | Prima dell'onda 4 |
 
 I numeri sono provvisori.
@@ -115,7 +115,7 @@ Scaricare pesi nuovi (V3-01, V3-05) usa disco e rete: nessun codice esce, ma i d
 
 | ID | Task | Dipende da | Accettazione |
 | --- | --- | --- | --- |
-| G3-01 | ADR-0035: definizioni di «vero» e «falso positivo», terza risposta «non so», regole per i casi dubbi, gate | D3-02 | Approvato prima della prima etichetta |
+| G3-01 | ADR-0034: definizioni di «vero» e «falso positivo», terza risposta «non so», regole per i casi dubbi, gate | D3-02 | Approvato prima della prima etichetta |
 | G3-02 | Formato in `golden-set/`: riferimenti (repository pubblico, commit, fingerprint, etichetta), **senza copie di codice**; il frammento si ricostruisce in locale. Schema e test di contratto | D3-03 | Lo stesso riferimento produce la stessa evidenza; l'auto-analisi non riceve finding nuovi dal golden set |
 | G3-03 | Interfaccia di annotazione, a partire da `scripts/gate2/review_ui`: codice, regola, tre risposte, tastiera, ripresa; nessun suggerimento di modelli | G3-02 | Provata sul pilota |
 | G3-04 | Pilota di 30 etichette | G3-01, G3-03, D3-01 | Tempo per etichetta, quota per classe e casi dubbi misurati; sezione 2 ricalcolata |
@@ -131,7 +131,7 @@ Il Gate 2 ha mostrato che ordinare a mano senza uno strumento non è sostenibile
 | DE-01 | Pacchetto `ca-decision`: `Decision`, `DecisionEngine`, motore finto, basi di confronto di G3.c; contratto in `lint-imports` | ADR-0036 | Test senza modelli |
 | DE-02 | Selezione dell'evidenza entro il limite di token, con redazione e esclusione dei segreti | DE-01, D3-04 | Test con segreti piantati: non compaiono in evidenza, log o errori; il troncamento è dichiarato |
 | DE-03 | Instradamento per confidenza, soglie in configurazione, `route` senza `auto` (D3-05) | DE-01 | Nessuna soglia nel codice |
-| DE-04 | Motore locale scelto in V3-06, in container senza rete, pesi per digest | DE-02, ADR-0034 | Prova di integrazione con pesi fissati, fuori dalla CI ordinaria |
+| DE-04 | Motore locale scelto in V3-06, in container senza rete, pesi per digest | DE-02, ADR-0035 | Prova di integrazione con pesi fissati, fuori dalla CI ordinaria |
 | DE-05 | Script in `golden-set/eval/`: accuratezza, precisione per classe, calibrazione, copertura, intervalli | DE-01, G3-02 | Riproduce gli stessi numeri a parità di pesi e dati |
 | DE-06 | Rassegna di sicurezza di evidenza, esecuzione e pesi | DE-04 | Nessun rilievo alto aperto |
 
@@ -169,17 +169,17 @@ La fase 5 richiede un modello diverso dalla fase 4 (§11.2): su 12 GB i due gira
 - **V3-03:** Laya 0.5.5 con i pesi `typed-decisions` funziona in un contenitore senza rete, anche senza `vegaml`.
 - **V3-04, solo CPU:** 0,87 s per finding con 4 thread e 0,52 s con 8, circa 2,8 GB di memoria, nessun troncamento dell'evidenza sul campione. Il numero di thread va fissato.
 
-**D3-07, come avere abbastanza finding vari — decisa il 2026-11-27 dall'utente:** corpus del golden set di circa 30 repository pubblici, soprattutto applicazioni e con più JavaScript e TypeScript, separato da `scripts/benchmark/corpus.json` (che serve alla Variante B e non cambia); tetto per repository e regola, da fissare in ADR-0035; B101 escluso; **IaC fuori dal primo ambito** (D3-03 si riduce a SAST). Se 30 repository bastino si sa solo scansionandoli. L'elenco è in `doc/verifiche/fase-3.md` (V-F3.5).
+**D3-07, come avere abbastanza finding vari — decisa il 2026-11-27 dall'utente:** corpus del golden set di circa 30 repository pubblici, soprattutto applicazioni e con più JavaScript e TypeScript, separato da `scripts/benchmark/corpus.json` (che serve alla Variante B e non cambia); tetto per repository e regola, proposto in ADR-0034 (20); B101 escluso; **IaC fuori dal primo ambito** (D3-03 si riduce a SAST). Se 30 repository bastino si sa solo scansionandoli. L'elenco è in `doc/verifiche/fase-3.md` (V-F3.5).
 
 L'elenco dei repository è stato approvato e scansionato il 2026-11-27 (V-F3.6): su Python i punti di codice distinti sono 973 (772 con al più 20 per repository e regola), su JavaScript e TypeScript 79, da 4 regole.
 
 | ID | Decisione nuova | Raccomandazione | Blocca |
 | --- | --- | --- | --- |
-| **D3-08** | Cosa fare con JavaScript e TypeScript | (1) **Golden set e Gate 3 solo per Python**, con il limite dichiarato; nel resto del prodotto non cambia nulla. (2) Aggiungere prima regole SAST per JavaScript, con la verifica di licenza di ADR-0015 se vengono da terzi: è un lavoro a sé, e solo dopo si riconta. (3) Un solo golden set misto, dove JavaScript sarebbe troppo scarso per una misura propria | G3-02 |
+| **D3-08** | Cosa fare con JavaScript e TypeScript | **Decisa il 2026-11-27: golden set e Gate 3 solo per Python**, con il limite dichiarato; nel resto del prodotto non cambia nulla. Scartate: aggiungere prima regole SAST per JavaScript (con la verifica di licenza di ADR-0015 se di terzi), e un golden set misto | — |
 
 **Linguaggi.** Il corpus copre solo Python e JavaScript/TypeScript, l'ambito dell'MVP (§1); gli altri sono di Fase 4 (§13). Un risultato del Gate 3 vale solo per i linguaggi presenti nel test: ogni linguaggio aggiunto richiede nuove etichette e una nuova misura.
 
-D3-01 serve prima di G3-04.
+**Onda 1, stato al 2026-11-27:** formato, contratti, campionamento e interfaccia di annotazione sono pronti e il campione pilota di 30 voci è estratto (V-F3.7). ADR-0034 è accettato. Il primo pilota è annotato (V-F3.8): con la quota osservata il test del gate non si comporrebbe, e i tempi sono molto sotto l'ipotesi. G3-04 resta aperto con un secondo pilota di 30 voci. L'interfaccia è provata solo con dati finti: la prova sul pilota, che G3-03 richiede, è la sua annotazione.
 
 ## 7. Rischi
 

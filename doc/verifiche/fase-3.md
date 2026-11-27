@@ -188,3 +188,66 @@ Per il tetto, un punto con più regole conta sotto la prima in ordine alfabetico
 - **Python basta per numero:** 772 punti distinti con tetto 20, contro le circa 630 etichette previste, da 15 repository.
 - **JavaScript e TypeScript non bastano**, e altri repository non lo risolvono: il prodotto ha 6 regole semgrep per JavaScript, di cui 4 producono finding, e bandit è solo per Python. I due repository senza semgrep potrebbero aggiungerne, in quantità ignota.
 - La quota di falsi positivi resta ignota: nessun finding è stato giudicato. Il piano richiede almeno 60 esempi della classe meno frequente nel test, e non si sa se ci saranno.
+
+## V-F3.7 — Bacino del golden set e campione pilota
+
+Calcolato il 2026-11-27 con `scripts/golden/sample.py` sui report di V-F3.6, con i filtri di `golden-set/sampling.json`. I conteggi differiscono da quelli di V-F3.6 perché ora si escludono anche B105–B107 e B401–B415, il filtro dei test è quello di `ca-core` e il punto di codice si sceglie con il seme `pilota-1`.
+
+- Finding candidati: 1238; punti di codice distinti: 888, da 15 repository, 33 regole.
+
+| Tetto per repository e regola | 10 | 15 | 20 | 30 | nessuno |
+| --- | --- | --- | --- | --- | --- |
+| Punti nel bacino | 538 | 673 | 765 | 861 | 888 |
+
+- Con il tetto 20: django 149, indico 134, django-DefectDojo 107, netbox 86, mealie 60. Insieme sono 536 punti su 765.
+- Resta il limite di V-F3.6: semgrep non è riuscito su `actual` e `medusa`.
+- Campione pilota: 30 voci da 11 repository, in `golden-set/pilota.sample.json`.
+- Interfaccia di annotazione provata in un browser con un campione finto: risposta, annulla, tasti rapidi, ripresa dopo la ricarica, consegna; nessun errore in console. Disposizione controllata misurando gli elementi a 1440×900, 1280×720, 1280×640, 390×844 e 320×640: nessuno scorrimento orizzontale, nessun pulsante tagliato o sovrapposto, contrasto minimo del testo 6,3:1. **L'aspetto non è stato guardato.**
+- **Nessun finding è stato giudicato.**
+
+## V-F3.8 — Pilota di 30 etichette (G3-04)
+
+Consegnato il 2026-11-27 dall'annotatore (`golden-set/pilota.labels.annotatore-1.g1.json`; digest del campione coincidente, 30 voci su 30). Qui ci sono solo conteggi: nessuna risposta è stata riesaminata.
+
+| Misura | Valore |
+| --- | --- |
+| Risposte | 27 vero, 2 falso positivo, 1 non so |
+| Falsi positivi sulle 29 voci con risposta | 6,9% (intervallo di Wilson al 95%: 1,9%–22,0%) |
+| «Non so» | 3,3% (1 su 30) |
+| Tempo registrato per voce | mediana 5,5 s, media 8,0 s, massimo 57 s; 13 voci sotto i 5 s, 24 sotto i 10 s; 4 minuti in tutto |
+| Note scritte | nessuna |
+
+Il tempo non comprende le ricerche fatte fuori dalla pagina.
+
+**Cosa ne segue, se la quota è questa:**
+- Il test di ADR-0034 richiede 60 voci della classe meno frequente su 200, cioè il 30%: sopra l'estremo alto dell'intervallo. Nei 735 punti rimasti del bacino i falsi positivi attesi sono circa 51 (14–162). Con il valore centrale **il Gate 3 non è valutabile**, nemmeno usando tutto il bacino per il test.
+- Rispondere sempre «vero» avrebbe una precisione di circa il 93% sulle voci decise.
+
+**Cosa non si sa:** se le risposte applicano le definizioni di ADR-0034. I tempi sono molto sotto l'ipotesi del piano (1–3 minuti), e 30 voci di una sola persona non distinguono tra un corpus quasi tutto di «veri» e un giudizio dato sulla sola presenza del costrutto. La riannotazione dopo una settimana misura la stabilità, non questo. **L'ipotesi sul tempo per etichetta non è né confermata né smentita.**
+
+**Secondo pilota:** richiesto dall'utente lo stesso giorno. Prima dell'estrazione ADR-0034 fissa che cosa non cambia e come si leggono i risultati. `golden-set/pilota-2.sample.json`: 30 voci nuove dal bacino di 735 punti rimasti, seme `pilota-2`; il codice di tutte si carica. Non ancora annotato.
+
+## V-F3.9 — Secondo pilota
+
+Consegnato il 2026-11-27 (`golden-set/pilota-2.labels.annotatore-1.g1.json`; digest coincidente, 30 voci su 30). Solo conteggi: nessuna risposta è stata riesaminata.
+
+| Misura | Primo pilota | Secondo pilota |
+| --- | --- | --- |
+| Vero / falso positivo / non so | 27 / 2 / 1 | 15 / 15 / 0 |
+| Falsi positivi sulle voci con risposta | 6,9% (1,9%–22,0%) | 50,0% (33,1%–66,9%) |
+| Tempo per voce registrato: mediana, media, massimo | 5,5 s, 8,0 s, 57 s | 9 s, 12,1 s, 38 s |
+| Tempo totale registrato | 4 minuti | 6 minuti |
+| Note scritte | nessuna | nessuna |
+
+**Lettura fissata prima dell'estrazione:** l'estremo alto per la classe meno frequente non resta sotto il 30%, quindi il risultato **non basta** a dire se il gate sia valutabile.
+
+**I due pilota sono incompatibili tra loro.** Sono estrazioni casuali dallo stesso bacino: una differenza così grande nelle quote ha probabilità di circa 0,0004 di venire dal solo caso (test di Fisher a due code, calcolato dopo aver visto i dati). La spiegazione più plausibile è che sia cambiato il modo di rispondere. Quale dei due applichi le definizioni di ADR-0034 **non si sa**.
+
+**Influenze introdotte dall'assistente che ha preparato lo strumento, tra i due pilota.** Il protocollo vieta di mostrare proposte di un modello sulle voci, e non ne sono state mostrate. Ma prima del secondo pilota l'annotatore ha ricevuto in conversazione:
+- l'esito per classe del primo e il dubbio che si fosse risposto sulla sola presenza del costrutto;
+- indicazioni di metodo che davano esempi solo di casi da «falso positivo», senza esempi da «vero»;
+- la soglia di lettura sulla classe meno frequente (con un numero sbagliato: «al massimo 3 risposte», mentre con 30 voci decise sono 4), insieme alla richiesta di non tenerne conto.
+
+Ciascuna può aver spostato le risposte; se e quanto non si può stabilire. **La quota del secondo pilota non è una stima indipendente**, e nessuna delle due va usata per dimensionare il test.
+
+**Il tempo per etichetta** resta molto sotto l'ipotesi di 1–3 minuti in entrambi, salvo ricerche fuori dalla pagina, non registrate.

@@ -16,7 +16,9 @@ VERSIONS = {
     "graph": "1.2",  # K-09, G-13: `Module.lines`, `Metrics.adi` (ADR-0023)
     "scoring-config": "1.1",  # K-07..K-10: blocco facoltativo `variant_b` (ADR-0023)
     "scoring-benchmark": "1.0",  # K-06: distribuzione di benchmark di ADR-0023
-    "service-context": "1.0",  # K-05: file di contesto di ADR-0028
+    "service-context": "1.0",
+    "golden-sample": "1.0",
+    "golden-labels": "1.0",  # K-05: file di contesto di ADR-0028
 }
 
 

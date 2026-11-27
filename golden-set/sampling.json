@@ -1,0 +1,11 @@
+{
+  "comment": "Filtri del campionamento (ADR-0034). B101: assert. B105-B107: segreti, fuori dal golden set. B401-B415: segnalano il solo import di un modulo.",
+  "cap_per_repository_and_rule": 20,
+  "excluded_rules": [
+    "B101",
+    "B105", "B106", "B107",
+    "B401", "B402", "B403", "B404", "B405", "B406", "B407", "B408", "B409", "B410", "B411",
+    "B412", "B413", "B415"
+  ],
+  "third_party_path": "(^|/)(vendor|vendors|vendored|third_party|third-party|node_modules|bower_components|dist|static/lib|static/vendor)/"
+}

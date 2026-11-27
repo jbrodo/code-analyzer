@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "LabelItem": {
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "label": {
+          "enum": [
+            "vero",
+            "falso-positivo",
+            "non-so"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "repository": {
+          "maxLength": 200,
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "seconds": {
+          "description": "Tempo in cui la voce è stata sullo schermo con la pagina in uso.",
+          "minimum": 0,
+          "title": "Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "repository",
+        "fingerprint",
+        "label",
+        "seconds"
+      ],
+      "title": "LabelItem",
+      "type": "object"
+    }
+  },
+  "$id": "urn:code-analyzer:schema:golden-labels:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "annotator": {
+      "description": "Una persona, indicata senza nome. Un modello non annota.",
+      "pattern": "^annotatore-[0-9]{1,3}$",
+      "title": "Annotator",
+      "type": "string"
+    },
+    "delivered_at": {
+      "format": "date-time",
+      "title": "Delivered At",
+      "type": "string"
+    },
+    "labels": {
+      "items": {
+        "$ref": "#/$defs/LabelItem"
+      },
+      "maxItems": 5000,
+      "minItems": 1,
+      "title": "Labels",
+      "type": "array"
+    },
+    "round": {
+      "description": "1 per il primo giro; oltre, riannotazione.",
+      "minimum": 1,
+      "title": "Round",
+      "type": "integer"
+    },
+    "sample_sha256": {
+      "description": "Digest del file del campione annotato.",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Sample Sha256",
+      "type": "string"
+    },
+    "set": {
+      "enum": [
+        "pilota",
+        "pilota-2",
+        "calibrazione",
+        "test",
+        "addestramento"
+      ],
+      "title": "Set",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "set",
+    "sample_sha256",
+    "annotator",
+    "round",
+    "delivered_at",
+    "labels"
+  ],
+  "title": "GoldenLabels",
+  "type": "object",
+  "x-schema-version": "1.0"
+}
