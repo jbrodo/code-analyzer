@@ -318,10 +318,24 @@ def test_a_path_outside_the_repository_gives_no_code(setup: Any) -> None:
     assert found["blocks"] == [] and "segreto" not in json.dumps(found)
 
 
-def test_the_commits_come_from_the_protocol_table() -> None:
-    commits = review_tool.protocol_commits(review_tool.PROTOCOL.read_text())
-    # solo la tabella dei repository del gate, non quella delle PR di riferimento di X-05
-    assert set(commits) == {"orario-scuola", "birds-cataloger", "school-planner"}
+def test_the_commits_come_from_the_materials(tmp_path: Path) -> None:
+    commits = {"uno": "a" * 40, "due-x": "0" * 40}
+    (tmp_path / "commit.json").write_text(json.dumps(commits))
+    assert review_tool.sample_commits(tmp_path) == commits
+
+
+@pytest.mark.parametrize(
+    "content",
+    [None, "non json", "[]", '{"uno": "abc"}', '{"../x": "' + "a" * 40 + '"}', '{"uno": 1}'],
+)
+def test_a_missing_or_malformed_commit_file_stops_the_tool(
+    tmp_path: Path, content: str | None
+) -> None:
+    if content is not None:
+        (tmp_path / "commit.json").write_text(content)
+    with pytest.raises(review_tool.ReviewError):
+        review_tool.sample_commits(tmp_path)
+    assert review_tool.main(["--materials", str(tmp_path)]) == 2
 
 
 def test_the_materials_stay_outside_the_repository() -> None:

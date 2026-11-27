@@ -18,13 +18,13 @@ Il metodo di Martini et al. (ECSA 2018) citato da §13 non è ancora trascritto 
 
 ### Repository
 
-| Repository | Commit | Data del commit | File versionati | Python | JS/TS |
-| --- | --- | --- | --- | --- | --- |
-| `orario-scuola` | `8b9cee9cc54d456f987f2aaf080d031e6fc62c20` | 2026-11-09 | 1.103 | 170 | 241 |
-| `birds-cataloger` | `cb9227f2813b0843a5c0d4d2829c4da7a2d6ae53` | 2025-11-22 | 165 | 36 | 25 |
-| `school-planner` | `9c1d2ce9328bb3c4ca50b67cac430865407890fd` | 2026-11-15 | 155 | 0 | 35 |
+| Repository | File versionati | Python | JS/TS |
+| --- | --- | --- | --- |
+| `repo-1` | 1.103 | 170 | 241 |
+| `repo-2` | 165 | 36 | 25 |
+| `repo-3` | 155 | 0 | 35 |
 
-Sono dell'utente e si trattano come riservati. D2-03 ne ammette 2 o 3. **`school-planner` è il terzo, scelto dall'utente il 2026-11-27** e fissato qui prima della sua scansione e prima di qualunque risultato di G2.b. È entrato dopo X-02 del 2026-11-18: la sua scansione è descritta più sotto. Era stato proposto anche un altro repository dell'utente, non inserito perché i suoi finding stavano quasi tutti nella copia di uno strumento di terze parti.
+Sono dell'utente e si trattano come riservati: qui hanno **nomi generici**, e nomi veri e commit scansionati stanno solo nel materiale del proprietario, fuori dal repository (`~/gate2-material/commit.json`, impronta SHA-256 `06a76c6598898ed0c55012677a706be2d4c7caf51bf2c6c581ce116154085954`). Dove sotto un nome di file locale contiene `repo-N`, il file vero ha il nome del repository. D2-03 ne ammette 2 o 3. **`repo-3` è il terzo, scelto dall'utente il 2026-11-27** e fissato con il suo commit prima della sua scansione e prima di qualunque risultato di G2.b. È entrato dopo X-02 del 2026-11-18: la sua scansione è descritta più sotto. Era stato proposto anche un altro repository dell'utente, non inserito perché i suoi finding stavano quasi tutti nella copia di uno strumento di terze parti.
 
 Le scansioni si eseguono su un clone pulito del commit indicato, sulla macchina di riferimento, con le immagini del registry locale (D2-16). I 3 pilota pubblici della Fase 1 servono a G2.a e G2.d, non a G2.b.
 
@@ -34,7 +34,7 @@ Le scansioni si eseguono su un clone pulito del commit indicato, sulla macchina 
 
 Cambia il modo di raccogliere il giudizio, non ciò che si misura; in X-06 vanno ricordati i **gruppi**, assenti nel protocollo del 2026-11-13, e il loro effetto: i pari merito sono ammessi e il tau-b ne tiene conto, ma se una fascia attraversa la decima posizione, quali suoi finding entrino nei primi 10 dipende dall'ordine dei fingerprint (regola già scritta sotto «Soglia»). La pagina non lo segnala, per non orientare il giudizio verso la misura.
 
-**Revisione e correzioni (2026-11-27).** La revisione con la skill `impeccable critique` (due valutatori separati, solo dati finti) ha dato 19/40 sulla prima versione: poteva consegnare un ordine diverso da quello a schermo dopo un salvataggio fallito o con due schede, registrare voti non voluti (tasto tenuto premuto, Invio ripetuto) e creare posizioni mai espresse (aprire il riordino numerava un gruppo nell'ordine del campione). Corretti insieme ai due problemi di livello inferiore (riordino faticoso, codice tagliato senza dirlo), prima di qualunque consegna. L'avanzamento di `orario-scuola` raccolto con quella versione è stato messo da parte **senza leggerlo** (`progresso-orario-scuola.prima-correzioni-2026-11-27.json`) e si riparte da zero; per gli altri due repository non ce n'era.
+**Revisione e correzioni (2026-11-27).** La revisione con la skill `impeccable critique` (due valutatori separati, solo dati finti) ha dato 19/40 sulla prima versione: poteva consegnare un ordine diverso da quello a schermo dopo un salvataggio fallito o con due schede, registrare voti non voluti (tasto tenuto premuto, Invio ripetuto) e creare posizioni mai espresse (aprire il riordino numerava un gruppo nell'ordine del campione). Corretti insieme ai due problemi di livello inferiore (riordino faticoso, codice tagliato senza dirlo), prima di qualunque consegna. L'avanzamento di `repo-1` raccolto con quella versione è stato messo da parte **senza leggerlo** (`progresso-repo-1.prima-correzioni-2026-11-27.json`) e si riparte da zero; per gli altri due repository non ce n'era.
 
 ### Campione
 
@@ -77,19 +77,19 @@ Approvate dall'utente il 2026-11-26. A quella data l'utente non ha compilato alc
 
 Se vince B, prima di attivarla si semplifica la funzione di `runner.py` che oggi fa fallire il gate del progetto (X-07), invece di aggiungere un'eccezione.
 
-**Terzo repository:** consigliato perché sul campione di `birds-cataloger` A e B hanno gli stessi primi 10. Indicato il 2026-11-27: `school-planner` (tabella dei repository).
+**Terzo repository:** consigliato perché sul campione di `repo-2` A e B hanno gli stessi primi 10. Indicato il 2026-11-27: `repo-3` (tabella dei repository).
 
 **Livelli da punteggio: non si attivano per ora** (`levels.source: provisional`). È una modifica di D2-10, che prevedeva di attivarli dopo la scelta della variante: con le soglie attuali quasi nessun finding arriva ad `alto` (X-02, X-07), e un ordinamento dice quale variante ordina meglio, non dove mettere le soglie. L'esito del gate (X-08) la dichiara.
 
-**Ordinamenti consegnati il 2026-11-27 per i primi due repository: non utilizzabili, in attesa di chiarimento.** I file ufficiali, completi (30 righe ciascuno, ultima modifica alle 00:13), coincidono con quelli di Claude (più sotto, «Ordinamento di Claude») in tutte le 60 posizioni: non sono un ordinamento indipendente. Impronte SHA-256 al momento del controllo: `orario-scuola` `47af864078448936fe38ba140491d017610dc99f0a485bd7f8dc40679bf23d00`, `birds-cataloger` `606e8070f86036eee0696733381d02444e68f22b7dd6b5c0ee69b3b49826d540`. Su di essi **non è stato calcolato nulla**. Che fare è deciso nel paragrafo seguente.
+**Ordinamenti consegnati il 2026-11-27 per i primi due repository: non utilizzabili, in attesa di chiarimento.** I file ufficiali, completi (30 righe ciascuno, ultima modifica alle 00:13), coincidono con quelli di Claude (più sotto, «Ordinamento di Claude») in tutte le 60 posizioni: non sono un ordinamento indipendente. Impronte SHA-256 al momento del controllo: `repo-1` `47af864078448936fe38ba140491d017610dc99f0a485bd7f8dc40679bf23d00`, `repo-2` `606e8070f86036eee0696733381d02444e68f22b7dd6b5c0ee69b3b49826d540`. Su di essi **non è stato calcolato nulla**. Che fare è deciso nel paragrafo seguente.
 
-**Chiarimento e nuova consegna (2026-11-27).** Alla domanda se avesse letto l'ordine di Claude o solo copiato i file, il proprietario ha risposto di averli copiati. Ha poi ordinato i tre campioni da capo con la dashboard, che non carica i CSV esistenti; le copie sostituite restano accanto ai file ufficiali (`ordinamento-<repo>.prima-<ora>.csv`) e non entrano nel calcolo. I nuovi file hanno 30 righe compilate su 30, con 14, 9 e 10 posizioni distinte (`orario-scuola`, `birds-cataloger`, `school-planner`); nei primi due coincidono con l'ordine di Claude 3 e 2 posizioni su 30. **Sono questi gli ordinamenti di X-04.** Che l'ordine di Claude non abbia influito sul nuovo giudizio è una dichiarazione del proprietario, non verificabile: X-06 la riporta tra i limiti. Impronte SHA-256, uguali a quelle dei registri di consegna e registrate **prima di calcolare qualunque risultato**:
+**Chiarimento e nuova consegna (2026-11-27).** Alla domanda se avesse letto l'ordine di Claude o solo copiato i file, il proprietario ha risposto di averli copiati. Ha poi ordinato i tre campioni da capo con la dashboard, che non carica i CSV esistenti; le copie sostituite restano accanto ai file ufficiali (`ordinamento-<repo>.prima-<ora>.csv`) e non entrano nel calcolo. I nuovi file hanno 30 righe compilate su 30, con 14, 9 e 10 posizioni distinte (`repo-1`, `repo-2`, `repo-3`); nei primi due coincidono con l'ordine di Claude 3 e 2 posizioni su 30. **Sono questi gli ordinamenti di X-04.** Che l'ordine di Claude non abbia influito sul nuovo giudizio è una dichiarazione del proprietario, non verificabile: X-06 la riporta tra i limiti. Impronte SHA-256, uguali a quelle dei registri di consegna e registrate **prima di calcolare qualunque risultato**:
 
-- `orario-scuola`, consegnato il 2026-11-27T07:46:02+00:00: `afe366beaae61ac05ef5eed932a6489103859fa93dddec503932e1586baafc0c`
-- `birds-cataloger`, consegnato il 2026-11-27T07:51:01+00:00: `fe8683aa2936941cd59ac904091fe57cd296156fe50fb190dae3045a4948a75b`
-- `school-planner`, consegnato il 2026-11-27T07:56:26+00:00: `6ea61a3c6cf77bbec1c6576ae74f229f0b81f12fd231a0e8cc9dcac509bce5f7`
+- `repo-1`, consegnato il 2026-11-27T07:46:02+00:00: `afe366beaae61ac05ef5eed932a6489103859fa93dddec503932e1586baafc0c`
+- `repo-2`, consegnato il 2026-11-27T07:51:01+00:00: `fe8683aa2936941cd59ac904091fe57cd296156fe50fb190dae3045a4948a75b`
+- `repo-3`, consegnato il 2026-11-27T07:56:26+00:00: `6ea61a3c6cf77bbec1c6576ae74f229f0b81f12fd231a0e8cc9dcac509bce5f7`
 
-**Ordinamento di Claude, fuori dal protocollo.** Su richiesta dell'utente, Claude ha ordinato i due campioni in file separati, fuori dal repository (`ordinamento-<repo>-claude.csv`), senza aprire report né chiavi. **Non è l'ordinamento di X-04 e non entra in G2.b:** chi l'ha fatto ha scritto le formule di B e ha visto i confronti aggregati tra A e B. Quando è stato scritto questo paragrafo i file ufficiali erano vuoti; su quelli di Claude non è stato calcolato nulla. **Per `school-planner` Claude non fa alcun ordinamento.**
+**Ordinamento di Claude, fuori dal protocollo.** Su richiesta dell'utente, Claude ha ordinato i due campioni in file separati, fuori dal repository (`ordinamento-<repo>-claude.csv`), senza aprire report né chiavi. **Non è l'ordinamento di X-04 e non entra in G2.b:** chi l'ha fatto ha scritto le formule di B e ha visto i confronti aggregati tra A e B. Quando è stato scritto questo paragrafo i file ufficiali erano vuoti; su quelli di Claude non è stato calcolato nulla. **Per `repo-3` Claude non fa alcun ordinamento.**
 
 ## X-02 — Scansione in ombra dei repository del gate (2026-11-18)
 
@@ -106,8 +106,8 @@ Scansioni complete con `--offline` e gli snapshot dei feed già in cache (EPSS e
 | `full-stack-fastapi-template` | `partial` ¹ | 161 | 1 / 27 / 46 / 87 | 0 / 1 / 24 / 136 | uguale ad A | 19 |
 | `excalidraw` | `complete` | 3.350 | 8 / 176 / 1.287 / 1.879 | 0 / 8 / 481 / 2.861 | uguale ad A | 150 |
 | `saleor` | `partial` ² | 3.816 | 1 / 53 / 3.414 / 348 | 0 / 1 / 28 / 3.787 | uguale ad A | 235 |
-| `orario-scuola` | `complete` | 1.169 | 3 / 52 / 476 / 638 | 1 / 3 / 87 / 1.078 | uguale ad A | 92 |
-| `birds-cataloger` | `complete` | 481 | 13 / 207 / 201 / 60 | 0 / 16 / 163 / 302 | uguale ad A | 29 |
+| `repo-1` | `complete` | 1.169 | 3 / 52 / 476 / 638 | 1 / 3 / 87 / 1.078 | uguale ad A | 92 |
+| `repo-2` | `complete` | 481 | 13 / 207 / 201 / 60 | 0 / 16 / 163 / 302 | uguale ad A | 29 |
 
 ¹ `partial` per l'avviso `workspace-symlinks` (quattro collegamenti simbolici con contenuto non analizzato), non per un plugin fallito.
 ² `partial` perché eslint usciva con 3: `saleor` ha un `package.json` ma nessun file JavaScript e eslint, che non trova nulla da analizzare, esce con 2. **Difetto trovato da questa misura e corretto**: l'adattatore ora riconosce l'unico messaggio di eslint per «niente da analizzare» e dà un risultato vuoto (`eslint_adapter.py`, con test). Le immagini del pacchetto di questa misura sono precedenti alla correzione, quindi la scansione di `saleor` resta `partial` qui; i finding degli altri plugin non cambiano.
@@ -119,15 +119,15 @@ Scansioni complete con `--offline` e gli snapshot dei feed già in cache (EPSS e
 | `full-stack-fastapi-template` | 74 (46,0%) | 74 | 0 |
 | `excalidraw` | 1.163 (34,7%) | 1.163 | 0 |
 | `saleor` | 3.467 (90,9%) | 3.467 | 0 |
-| `orario-scuola` | 479 (41,0%) | 479 | 0 |
-| `birds-cataloger` | 392 (81,5%) | 392 | 0 |
+| `repo-1` | 479 (41,0%) | 479 | 0 |
+| `repo-2` | 392 (81,5%) | 392 | 0 |
 
-Dove cambiano: quasi sempre verso il basso (`medio → basso` è il grosso: 46 su 74, 964 su 1.163, 3.413 su 3.467, 417 su 479, 174 su 392; poi `alto → medio` e `alto → basso`). Controcorrente: `basso → medio` (15 su `excalidraw`, 7 su `orario-scuola`, 1 su `birds-cataloger`) e un solo `alto → critico`, su `orario-scuola`.
+Dove cambiano: quasi sempre verso il basso (`medio → basso` è il grosso: 46 su 74, 964 su 1.163, 3.413 su 3.467, 417 su 479, 174 su 392; poi `alto → medio` e `alto → basso`). Controcorrente: `basso → medio` (15 su `excalidraw`, 7 su `repo-1`, 1 su `repo-2`) e un solo `alto → critico`, su `repo-1`.
 
 ### Cosa dicono i numeri
 
 1. **A e B sono identiche ovunque, e non per caso.** La Variante B non è ancora definita per `quality` e `architecture` (ADR-0023, K-06..K-10) e per le altre categorie è per costruzione uguale ad A: il report lo dichiara con `variante-b-non-definita`. Finché B non esiste, G2.b non può distinguere le due varianti: può solo confrontare A con i livelli provvisori.
-2. **Con i valori predefiniti, il livello da punteggio quasi non produce livelli alti.** I punteggi massimi sono 15,8, 25,2, 21,0, 37,0 e 29,1 su cinque repository, il 99° percentile tra 6 e 21, la mediana tra 0,3 e 4,2, con soglie a 15, 40 e 70. Se `levels.source` passasse a `score` così com'è, il gate non bloccherebbe quasi nulla (non c'è un `critico` da punteggio in quattro repository su cinque; il solo caso è uno su `orario-scuola`). È la taratura che ADR-0021 dichiara da fare in X-02: **le soglie, i valori di G e P e i limiti minimi dal CVSS vanno rivisti prima di passare a `score`**, non dopo.
+2. **Con i valori predefiniti, il livello da punteggio quasi non produce livelli alti.** I punteggi massimi sono 15,8, 25,2, 21,0, 37,0 e 29,1 su cinque repository, il 99° percentile tra 6 e 21, la mediana tra 0,3 e 4,2, con soglie a 15, 40 e 70. Se `levels.source` passasse a `score` così com'è, il gate non bloccherebbe quasi nulla (non c'è un `critico` da punteggio in quattro repository su cinque; il solo caso è uno su `repo-1`). È la taratura che ADR-0021 dichiara da fare in X-02: **le soglie, i valori di G e P e i limiti minimi dal CVSS vanno rivisti prima di passare a `score`**, non dopo.
 3. **I livelli provvisori e quelli da punteggio hanno significati diversi.** Un CVSS alto irraggiungibile è `alto` per ADR-0009 e `basso` per A (ADR-0009 lo notava: un CVSS alto irraggiungibile blocca). Il confronto che il Gate 2 deve fare è quale dei due ordina meglio per l'utente, non quale concorda con l'altro.
 4. **Il tempo di una scansione completa**, in secondi sopra, resta sotto i 10 minuti su tutti e cinque (il massimo è `saleor`, 235 s). Non è G2.d, che misura la modalità PR (X-05).
 
@@ -150,8 +150,8 @@ Stessi cinque repository agli stessi commit, `--offline` con le stesse cache dei
 | `full-stack-fastapi-template` | 161 | 0 / 1 / 24 / 136 | 0 / 1 / 46 / 114 | 22 (13,7%) | 3,2 / 15,8 / 15,8 | 6,1 / 27,3 / 28,5 | 20 |
 | `excalidraw` | 3.350 | 0 / 8 / 481 / 2.861 | 0 / 61 / 889 / 2.400 | 622 (18,6%) | 3,4 / 21,0 / 25,2 | 7,3 / 42,8 / 55,6 | 151 |
 | `saleor` | 3.815 | 0 / 1 / 27 / 3.787 | 0 / 1 / 43 / 3.771 | 16 (0,4%) | 2,1 / 6,3 / 15,8 | 2,1 / 10,5 / 38,9 | 238 |
-| `orario-scuola` | 1.169 | 1 / 3 / 87 / 1.078 | 1 / 4 / 187 / 977 | 167 (14,3%) | 4,2 / 20,8 / 37,0 | 4,0 / 33,0 / 46,6 | 91 |
-| `birds-cataloger` | 481 | 0 / 16 / 163 / 302 | 0 / 16 / 176 / 289 | 25 (5,2%) | 0,3 / 19,2 / 29,1 | 0,3 / 25,3 / 29,1 | 30 |
+| `repo-1` | 1.169 | 1 / 3 / 87 / 1.078 | 1 / 4 / 187 / 977 | 167 (14,3%) | 4,2 / 20,8 / 37,0 | 4,0 / 33,0 / 46,6 | 91 |
+| `repo-2` | 481 | 0 / 16 / 163 / 302 | 0 / 16 / 176 / 289 | 25 (5,2%) | 0,3 / 19,2 / 29,1 | 0,3 / 25,3 / 29,1 | 30 |
 
 A è invariata: sui due repository dell'utente, dove il confronto è possibile finding per finding, i fingerprint sono gli stessi del 2026-11-18 e nessun punteggio di A è cambiato. I livelli provvisori sono quelli della tabella del 2026-11-18, con un finding in meno su `saleor` (3.815 invece di 3.816).
 
@@ -165,12 +165,12 @@ Su 7.493 finding `quality` e 300 `architecture` dei cinque repository:
 | `p:churn-ignoto` | 3.526 `quality` (più 14 senza churn né densità) e 200 `architecture` | quasi tutti su `saleor` e `full-stack-fastapi-template`: 80 commit non coprono i 90 giorni, la storia è `superficiale` e il churn è ignoto, come in A. Pochi altri (4 e 10) sono file fuori dal grafo |
 | `c:fuori-dal-grafo` | 3.722 `quality` | 3.708 sono moduli di test (senza PageRank); 14 sono file `.ts` fuori dal grafo |
 
-Mediana dei fattori: sui `quality` P di B è più alto di quello di A su tutti i repository; C di B è più basso di C di A dove il grafo distingue (0,27 contro 0,70 su `orario-scuola`, 0,56 su `birds-cataloger`). Sugli `architecture` C di B è più alto (0,76–0,89); dove il churn è ignoto P di B ha mediana 0,15 contro 0,30 di A, perché la densità di violazioni è 0 per almeno metà dei membri.
+Mediana dei fattori: sui `quality` P di B è più alto di quello di A su tutti i repository; C di B è più basso di C di A dove il grafo distingue (0,27 contro 0,70 su `repo-1`, 0,56 su `repo-2`). Sugli `architecture` C di B è più alto (0,76–0,89); dove il churn è ignoto P di B ha mediana 0,15 contro 0,30 di A, perché la densità di violazioni è 0 per almeno metà dei membri.
 
 ### Cosa dicono i numeri
 
-1. **B ora è distinguibile da A, ma poco sui campioni.** Sul campione di X-03 di `orario-scuola` (30 finding, 18 `quality` e 1 `architecture`) A e B danno punteggi diversi a 19, il tau-b tra i due ordinamenti è 0,71 e i primi 10 in comune sono 6. Su `birds-cataloger` (6 `quality` e 1 `architecture`) i punteggi diversi sono 6, il tau-b è 0,97 e i primi 10 sono gli stessi: **lì G2.b non potrà dire quale variante è migliore**. Il campione è stratificato sulle categorie, e A e B differiscono solo su due.
-2. **Le soglie restano da ritarare.** B alza i punteggi alti (99° percentile fino a 42,8 contro 21,0), ma con soglie a 15, 40 e 70 non ci sono `critico` oltre all'unico di `orario-scuola`, e gli `alto` restano pochi.
+1. **B ora è distinguibile da A, ma poco sui campioni.** Sul campione di X-03 di `repo-1` (30 finding, 18 `quality` e 1 `architecture`) A e B danno punteggi diversi a 19, il tau-b tra i due ordinamenti è 0,71 e i primi 10 in comune sono 6. Su `repo-2` (6 `quality` e 1 `architecture`) i punteggi diversi sono 6, il tau-b è 0,97 e i primi 10 sono gli stessi: **lì G2.b non potrà dire quale variante è migliore**. Il campione è stratificato sulle categorie, e A e B differiscono solo su due.
+2. **Le soglie restano da ritarare.** B alza i punteggi alti (99° percentile fino a 42,8 contro 21,0), ma con soglie a 15, 40 e 70 non ci sono `critico` oltre all'unico di `repo-1`, e gli `alto` restano pochi.
 3. **File di test: C alto, effetto piccolo sul punteggio.** Un modulo di test non ha PageRank, quindi in B prende il C di A (0,7 senza tier), spesso più alto del C dei file di produzione. Sul punteggio però pesa E (0,2 su tutti i finding nei test): sui quattro repository con finding `quality` nei test, un finding su un test supera in media tra l'11% e il 28% di quelli di produzione, nessuno arriva a `medio`, e tra i primi 50 `quality` per punteggio di B ce n'è al più uno (su `saleor`, dove i test sono l'84% dei finding). Con C = 0,5 o C = 0,1 per i test la quota superata scenderebbe tra il 5% e il 19%, o tra lo 0% e il 2%: con 0,1 l'essere un test conterebbe due volte, in E e in C. **Deciso dall'utente il 2026-11-26, prima di ordinare i campioni: resta com'è** (ADR-0023).
 4. **Tempi** invariati rispetto al 2026-11-18, entro pochi secondi, sotto i 10 minuti su tutti (massimo `saleor`, 238 s).
 
@@ -185,8 +185,8 @@ Campioni generati con `scripts/gate2/gate2.py sample`, **seme 20261118**, 30 fin
 
 | Repository | Finding ammissibili | Campione | Strati non vuoti |
 | --- | --- | --- | --- |
-| `orario-scuola` | 1.169 | 30 | 13 |
-| `birds-cataloger` | 481 | 30 | 12 |
+| `repo-1` | 1.169 | 30 | 13 |
+| `repo-2` | 481 | 30 | 12 |
 
 Il materiale è **fuori dal repository**, in `~/gate2-material/` (cartella con permessi riservati): per ciascun repository `valutazione-<repo>.md` (i 30 finding in ordine casuale, con categoria, regola, posizione e messaggio, **senza** livelli, severità, punteggi né variante), `ordinamento-<repo>.csv` (da compilare con il rango, 1 il più urgente, pari merito ammessi), `chiave-<repo>.json` (corrispondenza con i fingerprint, da non aprire prima di consegnare) e il report su cui calcolare. Il calcolo dopo la consegna: `scripts/gate2/gate2.py score --report ~/gate2-material/report-<repo>.json --key ~/gate2-material/chiave-<repo>.json --ranking ~/gate2-material/ordinamento-<repo>.csv`, che stampa tau-b e sovrapposizione sui primi 10 per A, B e per i livelli provvisori e se la soglia (tau-b ≥ 0,5 e 6 su 10) è raggiunta.
 
@@ -257,13 +257,13 @@ Clone pulito di `main` al commit `b10b9de`, CLI impacchettata con lo stesso codi
 
 Con `--variant B` e i livelli da punteggio il gate esce con **1**: tre finding `quality` aperti diventano `alto` (`PLR0911`, `PLR0912` e `C901`, punteggi tra 40,3 e 42,1; in A sono `medio` con 20,6). Riguardano la stessa funzione di `packages/ca-plugins/src/ca_plugins/runner.py`: complessità oltre quasi tutto il benchmark (G tra 0,96 e 1,0), in un file con molte modifiche e violazioni (P 0,93). Non sono falsi positivi. **Se X-06 propone B**, per tenere verde X-07 va semplificata quella funzione, oppure serve un'eccezione approvata o una ritaratura delle soglie.
 
-## X-02 e X-03 per il terzo repository, `school-planner` (2026-11-27)
+## X-02 e X-03 per il terzo repository, `repo-3` (2026-11-27)
 
-Commit fissato in tabella prima della scansione. Scansione completa `--offline` in 29 s (30 s il processo intero), CLI impacchettata da `package-cli.sh` dal codice di `main` dopo la PR #38 (correzioni di adattatori e di `ca-graph`; scoring `2+cf90f99e443e` e benchmark `1+35e3b0d58d49`, come per gli altri). Feed: osv-scanner e trivy del 2026-11-17, EPSS e KEV del 2026-11-26. **Differenze dagli altri due:** il pacchetto è più recente di quello di X-02, e EPSS e KEV sono di nove giorni dopo; il confronto tra A e B si fa dentro la stessa scansione e non ne dipende.
+Commit fissato prima della scansione. Scansione completa `--offline` in 29 s (30 s il processo intero), CLI impacchettata da `package-cli.sh` dal codice di `main` dopo la PR #38 (correzioni di adattatori e di `ca-graph`; scoring `2+cf90f99e443e` e benchmark `1+35e3b0d58d49`, come per gli altri). Feed: osv-scanner e trivy del 2026-11-17, EPSS e KEV del 2026-11-26. **Differenze dagli altri due:** il pacchetto è più recente di quello di X-02, e EPSS e KEV sono di nove giorni dopo; il confronto tra A e B si fa dentro la stessa scansione e non ne dipende.
 
 `complete`, nessun plugin fallito, 88 finding (53 `quality`, 2 `architecture`, 27 `dependency`, 6 `iac`), **G2.a al 100%**. Livelli provvisori (critico / alto / medio / basso): 0 / 21 / 30 / 37; A e B: 0 / 0 / 16 / 72 entrambe, nessun finding cambia livello tra A e B. Punteggi (mediana / 99% / massimo): A 0,5 / 10,5 / 10,5; B 1,7 / 10,5 / 10,5.
 
-**Campione** con lo stesso seme, 20261118: 30 finding su 88 ammissibili, 8 strati (17 `quality`, 10 `dependency`, 2 `iac`, 1 `architecture`). Sul campione A e B hanno punteggi diversi su 18 finding, tau-b tra i due ordini 0,84, 8 dei primi 10 in comune: **le due varianti si distinguono poco**, più che su `birds-cataloger` e meno che su `orario-scuola`. Il materiale è in `~/gate2-material/` (`valutazione-`, `ordinamento-`, `chiave-` e `report-school-planner`), con l'ordinamento vuoto. Il comando di calcolo usa `--report ~/gate2-material/report-school-planner.json`. Claude ha generato il materiale senza leggere il campione e **non ne fa un ordinamento**.
+**Campione** con lo stesso seme, 20261118: 30 finding su 88 ammissibili, 8 strati (17 `quality`, 10 `dependency`, 2 `iac`, 1 `architecture`). Sul campione A e B hanno punteggi diversi su 18 finding, tau-b tra i due ordini 0,84, 8 dei primi 10 in comune: **le due varianti si distinguono poco**, più che su `repo-2` e meno che su `repo-1`. Il materiale è in `~/gate2-material/` (`valutazione-`, `ordinamento-`, `chiave-` e `report-repo-3`), con l'ordinamento vuoto. Il comando di calcolo usa `--report ~/gate2-material/report-repo-3.json`. Claude ha generato il materiale senza leggere il campione e **non ne fa un ordinamento**.
 
 ## X-04 — Risultati sugli ordinamenti del proprietario (2026-11-27)
 
@@ -271,14 +271,14 @@ Commit fissato in tabella prima della scansione. Scansione completa `--offline` 
 
 | Repository | A: tau-b, primi 10 | B: tau-b, primi 10 | Provvisori: tau-b, primi 10 | Soglia per A e B |
 | --- | --- | --- | --- | --- |
-| `orario-scuola` | −0,310, 1 | −0,250, 1 | 0,385, 5 | non raggiunta |
-| `birds-cataloger` | −0,584, 0 | −0,574, 0 | 0,548, 6 | non raggiunta |
-| `school-planner` | −0,326, 1 | −0,301, 0 | 0,694, 7 | non raggiunta |
+| `repo-1` | −0,310, 1 | −0,250, 1 | 0,385, 5 | non raggiunta |
+| `repo-2` | −0,584, 0 | −0,574, 0 | 0,548, 6 | non raggiunta |
+| `repo-3` | −0,326, 1 | −0,301, 0 | 0,694, 7 | non raggiunta |
 | Media dei tau-b | −0,407 | −0,375 | 0,542 | |
 
-**Nessuna variante supera la soglia su alcun repository. G2.b non è superata.** Per il punto 4 della regola registrata il 2026-11-26, il gate resta sui livelli provvisori e A resta predefinita in via provvisoria. I livelli provvisori ordinano meglio di A e di B in tutti e tre i repository, ma **non sono validati nemmeno loro**: su `orario-scuola` non raggiungono la soglia.
+**Nessuna variante supera la soglia su alcun repository. G2.b non è superata.** Per il punto 4 della regola registrata il 2026-11-26, il gate resta sui livelli provvisori e A resta predefinita in via provvisoria. I livelli provvisori ordinano meglio di A e di B in tutti e tre i repository, ma **non sono validati nemmeno loro**: su `repo-1` non raggiungono la soglia.
 
-**Pari merito al confine dei primi 10.** In `birds-cataloger` e `school-planner` i primi 10 del proprietario cadono tutti dentro un gruppo alla pari (18 e 10 finding). Risolvendo i pari merito, sui due lati, in tutti i modi possibili: A e B non cambiano in nessun repository (da 0 a 1 in comune, il valore della tabella), quindi il loro esito non dipende da questa scelta. La sovrapposizione dei **livelli provvisori** invece sì: da 3 a 7 su `orario-scuola`, **da 1 a 10 su `birds-cataloger`** (il 6 della tabella dipende dall'ordine dei fingerprint), da 7 a 9 su `school-planner`.
+**Pari merito al confine dei primi 10.** In `repo-2` e `repo-3` i primi 10 del proprietario cadono tutti dentro un gruppo alla pari (18 e 10 finding). Risolvendo i pari merito, sui due lati, in tutti i modi possibili: A e B non cambiano in nessun repository (da 0 a 1 in comune, il valore della tabella), quindi il loro esito non dipende da questa scelta. La sovrapposizione dei **livelli provvisori** invece sì: da 3 a 7 su `repo-1`, **da 1 a 10 su `repo-2`** (il 6 della tabella dipende dall'ordine dei fingerprint), da 7 a 9 su `repo-3`.
 
 **Controllo del calcolo.** Un tau-b negativo su tutti i repository può indicare un errore di segno. Controlli: nell'ordinamento il gruppo «subito» occupa le prime posizioni, e i livelli provvisori concordano nello stesso verso; i punteggi di A di tutti i 1.738 finding delle tre scansioni coincidono (entro 0,011) con 100·G·P·E·C ricalcolato dai fattori del report. Non è emerso un errore di segno né di prodotto.
 
@@ -288,7 +288,7 @@ Commit fissato in tabella prima della scansione. Scansione completa `--offline` 
 - A e B li mettono in fondo. In A e in B, per una dipendenza fuori da KEV, P è `max(EPSS, 0,01)`, una probabilità di sfruttamento con mediana 0,01 in tutte e tre le scansioni; per `quality` e `architecture` in A, P è il percentile di churn del file, minimo 0,1 e, sulle scansioni intere, mediane di `quality` da 0,10 a 0,70. A parità degli altri fattori il prodotto confronta due grandezze diverse sulla stessa scala. È il comportamento scritto in §6 e in ADR-0021, non un difetto del codice. Il limite inferiore dal CVSS (S5-A1) alza il livello e non il punteggio, quindi non cambia questo ordine.
 - **Togliendo le dipendenze** (26, 12 e 20 finding rimasti) A ha tau-b −0,078, 0,254 e 0,330; B −0,013, 0,299 e 0,417; i provvisori 0,336, 0,377 e 0,582. A e B restano sotto 0,5: il confronto tra categorie spiega il segno, ma **correggere solo quello non basta** su questi campioni.
 
-**Limiti.** Un solo valutatore, autore del prodotto, su repository propri. Per i primi due repository esisteva un ordinamento di Claude, che il proprietario ha dichiarato di aver copiato e poi sostituito: che non abbia influito non è verificabile; `school-planner`, senza ordinamento di Claude, dà lo stesso esito. Il giudizio è raccolto in quattro gruppi con pari merito, non previsti dal protocollo del 2026-11-13. Le dipendenze non sono distinte tra loro, quindi questi campioni non dicono quale delle due varianti le ordini meglio al loro interno. Package di `school-planner` costruito dal codice corrente ed EPSS/KEV del 2026-11-26 (vedi sopra).
+**Limiti.** Un solo valutatore, autore del prodotto, su repository propri. Per i primi due repository esisteva un ordinamento di Claude, che il proprietario ha dichiarato di aver copiato e poi sostituito: che non abbia influito non è verificabile; `repo-3`, senza ordinamento di Claude, dà lo stesso esito. Il giudizio è raccolto in quattro gruppi con pari merito, non previsti dal protocollo del 2026-11-13. Le dipendenze non sono distinte tra loro, quindi questi campioni non dicono quale delle due varianti le ordini meglio al loro interno. Package di `repo-3` costruito dal codice corrente ed EPSS/KEV del 2026-11-26 (vedi sopra).
 
 ## X-06 — Proposta sulla variante predefinita (2026-11-27)
 
@@ -308,7 +308,7 @@ Commit fissato in tabella prima della scansione. Scansione completa `--offline` 
 
 | Condizione | Evidenza | Valore misurato | Esito |
 | --- | --- | --- | --- |
-| **G2.a** Entrambe le varianti calcolate in ombra | X-02 (2026-11-18), X-02 ripetuta con B (2026-11-26), X-02 di `school-planner` | 100% dei finding con fattori e punteggi di A e di B e versione della configurazione: sui tre pilota e sui primi due repository del proprietario in entrambe le misure, e sugli 88 finding di `school-planner` | **superata** sui report. Nel database non è misurata sui repository del gate: non c'è un server del pilota (I-06) |
+| **G2.a** Entrambe le varianti calcolate in ombra | X-02 (2026-11-18), X-02 ripetuta con B (2026-11-26), X-02 di `repo-3` | 100% dei finding con fattori e punteggi di A e di B e versione della configurazione: sui tre pilota e sui primi due repository del proprietario in entrambe le misure, e sugli 88 finding di `repo-3` | **superata** sui report. Nel database non è misurata sui repository del gate: non c'è un server del pilota (I-06) |
 | **G2.b** Ordinamento validato | X-04 | Tau-b di A da −0,584 a −0,310 e di B da −0,574 a −0,250; al massimo 1 dei primi 10 in comune; soglia 0,5 e 6 | **non superata**, su nessun repository |
 | **G2.c** Variante predefinita scelta | X-06, ADR-0031, `PROJECT.md` §18 | Regola del 2026-11-26, punto 4 | **decisione registrata: nessuna variante scelta.** A resta predefinita in via provvisoria |
 | **G2.d** Scansione PR sotto i 10 minuti | X-05 | 20,1, 172,6 e 263,9 s sulle PR di riferimento dei tre pilota | **superata**, con i limiti di X-05 |
@@ -321,7 +321,43 @@ Commit fissato in tabella prima della scansione. Scansione completa `--offline` 
 - **D2-10** prevedeva di attivare i livelli da punteggio dopo la scelta della variante: restano spenti (deciso il 2026-11-26, prima dell'ordinamento, e coerente con l'esito).
 - **Raccolta del giudizio** in quattro gruppi con pari merito, con la dashboard locale, non prevista dal protocollo del 2026-11-13.
 - **Ordinamenti dei primi due repository** consegnati prima come copie di quello di Claude, poi rifatti: l'indipendenza è una dichiarazione del proprietario.
-- **`school-planner`** scansionato con un pacchetto più recente e con EPSS e KEV di nove giorni dopo.
+- **`repo-3`** scansionato con un pacchetto più recente e con EPSS e KEV di nove giorni dopo.
 - **Letteratura:** le definizioni di Martini et al. (ECSA 2018) e quelle degli smell e della Variante B non sono confrontate con le pubblicazioni (ADR-0020 e 0023 restano `Proposto`).
 
 I limiti della misura sono in X-02, X-04 e X-05. §13 chiede di confermare i valori dopo il pilota: soglie dei livelli, pesi e fattori **non sono confermati**. La chiusura della Fase 2 con G2.b non superata è materia di X-09 e resta da decidere.
+
+## X-09 — Chiusura della Fase 2 (2026-11-27)
+
+**Decisione dell'utente: la Fase 2 si chiude con i limiti dichiarati.** §13 vuole che ogni fase si chiuda con un gate misurabile: il Gate 2 è misurato e **non superato** (X-08), e la chiusura non lo cambia. Il limite principale è che **l'ordine di priorità del prodotto non è validato**.
+
+### Definition of Done (§17)
+
+| Voce | Evidenza | Esito |
+| --- | --- | --- |
+| Test e copertura | 5.107 test Python superati e 519 saltati in locale, 117 test web; copertura di `ca-core` 99,0%, `ca-graph` 95,9%, `ca-integrations` 98,7%, `ca-api` 87,6% (minimo 80%, imposto sul totale); nessun test marcato `xfail`. `ca-cli` e `ca-plugins` non sono nella misura | soddisfatta |
+| Schemi aggiornati e validati | `schema_export --check` e `openapi_export --check` | soddisfatta |
+| Documentazione utente | `doc/utente/`, aggiornata il 2026-11-27 con l'esito del gate | soddisfatta |
+| Telemetria per le operazioni lunghe | Durate nel report; metriche del server (B-13) | soddisfatta in forma minima: niente tracce, log OTLP né cruscotti (Fase 4) |
+| Auto-analisi senza critici o alti nuovi | X-07; in CI l'Action con `fail-on: critico,alto` sul progetto, verde su `main` al commit `68f9a53` | soddisfatta con i livelli provvisori e le eccezioni approvate; con la Variante B e i livelli da punteggio non lo era (X-07) |
+
+**CI verde su `main`.** La chiusura vale quando `verify` (con `server-integration`), `e2e` ed `e2e-action` sono verdi sul commit di `main` che la contiene; l'evidenza è la cronologia della CI.
+
+**Voci di §13:** tutte spuntate tranne le integrazioni CI, per la parte rinviata (GitLab e pubblicazione). **ADR 0016..0030:** `Accettato` tranne 0020, 0023, 0024 e 0027, riaperti con motivo (`doc/adr/README.md`).
+
+### Riporti
+
+Proprietario di tutti: Riccardo Roveda, per la decisione che li sblocca.
+
+| Voce | Stato alla chiusura | Cosa la sblocca |
+| --- | --- | --- |
+| D2-14 licenze dei motori e componenti nuovi | rinviata | la sua approvazione, prima di distribuire immagini |
+| D2-16 destinazione privata e gratuita delle immagini | criterio deciso il 2026-11-10; nessuna immagine resa disponibile | la scelta di pubblicare |
+| I-04 primo rilascio, I-07 plugin nuovi, N-09 Action e componente | rinviati | decisione di pubblicazione del 2026-11-10, D2-14, D2-16 |
+| E-05 mirror dei feed | fuori dalla Fase 2 (D2-05) | un lavoro futuro che scelga di avere un mirror |
+| E-04 origine dei feed | chiuso in parte: mancano OSV, trivy e il flag della CLI | solo lavoro |
+| N-07, N-08 componente GitLab | scritto, mai eseguito su GitLab | D2-12 |
+| I-06 ambiente del pilota con server | non realizzato | D2-06 |
+| Ordinamento non validato (G2.b) | aperto | un lavoro sul punteggio provato su **campioni nuovi** (ADR-0031) |
+| Definizioni confrontate con le pubblicazioni | aperto (ADR-0020, 0023) | i testi di §19 |
+
+**Limiti che restano da dire a chi usa il prodotto:** livelli e punteggi non sono validati; un solo valutatore; le soglie dei livelli da punteggio non sono calibrate (X-02, X-07); la UI non è stata provata con un lettore di schermo (`PRODUCT.md`).
