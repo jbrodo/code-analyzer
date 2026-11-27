@@ -38,7 +38,9 @@ Ambito MVP: **Python e JavaScript/TypeScript**. Fasi successive: Java/Kotlin, Go
 | Deploy | Fase 2: immagine CLI, immagine del server (API e SPA) e compose di sviluppo; Kubernetes e Helm in Fase 4 | Stesso motore in CI e in locale; il server riceve i report |
 | Osservabilità (interna) | Fase 2: metriche OpenTelemetry del server con esportazione OTLP opzionale e spenta (ADR-0016); Collector, Tempo, Loki, Prometheus e Grafana in Fase 4 | |
 | Modello decisionale | Laya (Apache 2.0) dietro interfaccia astratta | Alternative: jevos (CPU), Jev (API) |
-| LLM generativi | Interfaccia astratta; provider a zero retention o self-hosted | Configurabile per tenant |
+| LLM generativi | Interfaccia astratta; solo modelli eseguiti in locale (ADR-0033) | Nessuna API di modelli di terzi |
+
+L'alternativa «Jev (API)» della riga «Modello decisionale» è esclusa, perché è un'API esterna (ADR-0033); `jevos` è da verificare.
 
 ---
 
@@ -99,7 +101,6 @@ code-analyzer/
 │   │       ├── interface.py       # DecisionEngine (astratto)
 │   │       ├── laya_engine.py
 │   │       ├── jevos_engine.py
-│   │       ├── jev_engine.py
 │   │       └── routing.py         # instradamento per confidenza
 │   ├── ca-agents/                 # (Fase 3) agenti LLM sulle 8 fasi (§11)
 │   │   └── src/ca_agents/
@@ -504,7 +505,7 @@ class DecisionEngine(Protocol):
                options: list[str] | None, kind: str) -> Decision: ...
 ```
 
-Implementazioni: `LayaEngine` (predefinito), `JevosEngine` (CPU), `JevEngine` (API gestita, per confronto). Le chiamate concrete alle librerie vanno verificate sulla loro documentazione al momento dell'implementazione.
+Implementazioni: `LayaEngine` (predefinito), `JevosEngine` (CPU, da verificare). `JevEngine`, un'API gestita, è esclusa (ADR-0033). Le chiamate concrete alle librerie vanno verificate sulla loro documentazione al momento dell'implementazione.
 
 ### 10.2 Domande gestite
 
@@ -579,7 +580,7 @@ ca-agents/controls/
 
 - Redazione di segreti e dati sensibili prima di ogni prompt.
 - Solo gli snippet necessari, recuperati via pgvector.
-- Provider LLM a zero retention o self-hosted.
+- Solo modelli eseguiti in locale (ADR-0033).
 - Budget token per scansione; log completo di prompt e risposte in `agent_runs`.
 
 ---
@@ -676,6 +677,8 @@ Stato del Gate 2 al 2026-11-27: **non superato** (`doc/verifiche/gate-2.md`, X-0
 
 **Gate 3:** precisione del triage ≥ 80% sul golden set.
 
+Piano di lavoro: `doc/plan/fase-3.md`, che propone di precisare il gate (D3-02, non ancora decisa).
+
 ### Fase 4 — Scala e plugin
 
 - [ ] SDK plugin pubblico + registry firmato
@@ -757,7 +760,7 @@ Una funzionalità è completa quando:
 
 - [ ] Catalogo servizi disponibile per C ed E? Formato e fonte.
 - [x] Elenco licenze vietate o soggette ad approvazione — D-0013, 2026-11-08. Gli identificatori sono esatti secondo SPDX; rivedere la policy con il referente legale prima della distribuzione.
-- [ ] Provider LLM ammessi dalle policy.
+- [x] Provider LLM ammessi dalle policy — deciso il 2026-11-27: **nessun modello esterno** nel prodotto, il codice non esce dalla macchina (ADR-0033).
 - [ ] Hardware per Laya in self-hosted (GPU o solo CPU → valutare jevos).
 - [x] Variante di scoring predefinita (esito del Gate 2) — deciso il 2026-11-27: **nessuna variante validata**. A resta predefinita in via provvisoria, livelli e gate restano provvisori (ADR-0031).
 
