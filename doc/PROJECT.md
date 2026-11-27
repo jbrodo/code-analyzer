@@ -37,8 +37,10 @@ Ambito MVP: **Python e JavaScript/TypeScript**. Fasi successive: Java/Kotlin, Go
 | Isolamento plugin | `hardened-container` in CI e in locale, gVisor (runsc) dove disponibile; Firecracker non è in Fase 2 (ADR-0004) | Rete disattivata per default |
 | Deploy | Fase 2: immagine CLI, immagine del server (API e SPA) e compose di sviluppo; Kubernetes e Helm in Fase 4 | Stesso motore in CI e in locale; il server riceve i report |
 | Osservabilità (interna) | Fase 2: metriche OpenTelemetry del server con esportazione OTLP opzionale e spenta (ADR-0016); Collector, Tempo, Loki, Prometheus e Grafana in Fase 4 | |
-| Modello decisionale | Laya (Apache 2.0) dietro interfaccia astratta | Alternativa da verificare: jevos (CPU); Jev esclusa perché è un'API esterna (ADR-0033) |
+| Modello decisionale | Laya (Apache 2.0) dietro interfaccia astratta | Alternative: jevos (CPU), Jev (API) |
 | LLM generativi | Interfaccia astratta; solo modelli eseguiti in locale (ADR-0033) | Nessuna API di modelli di terzi |
+
+L'alternativa «Jev (API)» della riga «Modello decisionale» è esclusa, perché è un'API esterna (ADR-0033); `jevos` è da verificare.
 
 ---
 
