@@ -59,4 +59,5 @@ l'evidenza dice che il livello è stato alzato dal limite.
 - **«Percorso confermato» non è un'analisi tra file:** vale solo per i risultati delle regole di flusso dei dati che il prodotto stesso porta, nel perimetro della regola. Il SARIF di semgrep non contiene `codeFlows`.
 - **Raggiungibilità prudente:** un solo import calcolato o un file letto in parte rende `ignota` ogni modulo non raggiunto del suo linguaggio; un repository senza entrypoint riconosciuti (una libreria) ha tutto `ignota`, quindi E = 0,3 ovunque e punteggi più bassi di un'applicazione. Le dipendenze transitive e quelle di sviluppo dichiarate da lockfile non sono ancora distinte.
 - **Churn** richiede una storia git che copra 90 giorni: con `fetch-depth: 2` il confronto della PR funziona, il churn no.
-- I valori numerici predefiniti sono ipotesi da calibrare sui repository pilota (Gate 2).
+- **L'ordine dei punteggi non è validato.** Nella verifica del 2026-11-27 né A né B ha concordato abbastanza con l'ordine di chi le ha valutate, su tre repository e con un solo valutatore: tra l'altro mettono le dipendenze vulnerabili molto più in basso. Per questo i livelli e il gate restano quelli provvisori, che a loro volta non sono validati (`doc/verifiche/gate-2.md`, ADR-0031).
+- I valori numerici predefiniti restano ipotesi da calibrare.

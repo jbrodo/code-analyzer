@@ -44,8 +44,9 @@ livello i nuovi prima.
 Si apre a destra e ha, nell'ordine: **Come risolvere** (i passi, come testo), **Dove**, **Perché questo livello**
 e **Stato e storia**. In «Perché questo livello» compaiono il livello attivo con la sua origine e i **punteggi
 in ombra di A e B**, con la stessa struttura: fattori G, P, E, C con la loro evidenza e la formula con i
-numeri veri. Non decidono il livello finché il Gate 2 non passa a `levels.source: score`. Dove la Variante B
-non è definita (qualità, architettura) coincide con A e il blocco lo dice. Gli intervalli dei livelli non si
+numeri veri. Non decidono il livello finché la configurazione di scoring ha `levels.source: provisional`, e il loro
+ordine non è validato (verifica del 2026-11-27, ADR-0031). La Variante B differisce da A per qualità e
+architettura; quando un report la fa coincidere con A, il blocco lo dice. Gli intervalli dei livelli non si
 vedono ancora: non sono nella risposta del server.
 
 Tutto ciò che viene dal report (titoli, messaggi, passi, evidenze, percorsi) è testo: mai interpretato come

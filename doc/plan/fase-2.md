@@ -215,7 +215,7 @@ Esito di A-16 e A-17 al 2026-11-18, voce per voce:
 | 16 | D2-07, ADR-0030, `PROJECT.md` §2 | Risolta: nessun server di object storage |
 | 17 | `PROJECT.md` §2; `requires-python` e `target-version` di ruff a 3.14 | Risolta |
 | 18 | ADR-0027, ADR-0001 (emendamento) | Risolta: `ca-cli` importa `ca-integrations` |
-| 19 | D2-03 | Risolta con un validatore unico; **G2.b ancora da fare** (X-02, X-03) |
+| 19 | D2-03 | Risolta con un validatore unico; G2.b misurata il 2026-11-27 e **non superata** (X-04, ADR-0031) |
 | 20 | `PROJECT.md` §6.2, sezione 6 di questo piano | Rinviata alla Fase 4 |
 | 21 | Sezione 6 di questo piano | Fuori ambito |
 | 22 | ADR-0016 (metriche), `PROJECT.md` §2 | Risolta: Grafana in Fase 4 |
@@ -1406,7 +1406,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §13. ADR: nessuno.
 
 #### X-04 — Validazione con i team
-- Agente: `test` per la raccolta; la valutazione la fanno i team. Stato: `LIBERO`.
+- Agente: `test` per la raccolta; la valutazione la fa l'utente (D2-03). Stato: **chiuso il 2026-11-27** (`doc/verifiche/gate-2.md`). **G2.b non superata:** né A né B raggiunge la soglia su alcuno dei tre repository.
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: X-03.
 - Accettazione: ordinamenti dei team raccolti per tutti i campioni; metriche di G2.b calcolate per ciascuna variante e ciascun team.
@@ -1420,7 +1420,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §5, §13. ADR: 0009, 0025.
 
 #### X-06 — Proposta della variante predefinita
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-27**: raccomandazione confermata dall'utente, nessuna variante scelta (ADR-0031).
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: X-04.
 - Accettazione: confronto tra A e B sui valori di G2.b e di X-02, con raccomandazione; la scelta resta all'utente (§18).
@@ -1441,7 +1441,7 @@ Decisione dell'utente del 2026-11-10: nessuna pubblicazione, né su GHCR né alt
 - Spec: §8, §17. ADR: 0013, 0014, 0015.
 
 #### X-08 — Esito del Gate 2
-- Agente: `architect`. Stato: `LIBERO`.
+- Agente: `architect`. Stato: **chiuso il 2026-11-27** (`doc/verifiche/gate-2.md`). **Gate 2 non superato:** G2.a e G2.d superate, G2.b non superata, per G2.c registrata la decisione di non scegliere una variante (ADR-0031, `PROJECT.md` §18).
 - Percorsi: `doc/verifiche/gate-2.md`.
 - Dipende da: X-05, X-06.
 - Accettazione: G2.a..G2.d con evidenza, valore misurato ed esito; scelta della variante registrata in §18 e in un ADR; scostamenti all'utente (§13: valori da confermare dopo il pilota).

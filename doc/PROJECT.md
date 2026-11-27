@@ -289,7 +289,7 @@ class ScoringModel(Protocol):
     def factors(self, f: Finding, ctx: ScoringContext) -> ImpactFactors: ...
 ```
 
-La variante attiva si sceglie con `--variant`, poi con `scoring.variant` di `.code-analyzer.yml` (A | B), poi con il file di configurazione di scoring (ADR-0021). Entrambe calcolano sempre i punteggi in modalità "ombra", così da confrontarle (Gate 2): finché la configurazione di scoring ha `levels.source: provisional` (D2-10) i livelli e il gate restano quelli provvisori di ADR-0009 e A e B stanno solo in `variant_scores`. Per `quality` e `architecture` la Variante B coincide con A finché ADR-0023 non la definisce, e il report lo dichiara.
+La variante attiva si sceglie con `--variant`, poi con `scoring.variant` di `.code-analyzer.yml` (A | B), poi con il file di configurazione di scoring (ADR-0021). Entrambe calcolano sempre i punteggi in modalità "ombra", così da confrontarle (Gate 2): finché la configurazione di scoring ha `levels.source: provisional` (D2-10) i livelli e il gate restano quelli provvisori di ADR-0009 e A e B stanno solo in `variant_scores`. La Variante B (ADR-0023) differisce da A solo per `quality` e `architecture`; con una configurazione di scoring senza il blocco `variant_b` coincide con A anche lì, e il report lo dichiara. Il Gate 2 non ha validato nessuna delle due: A è predefinita in via provvisoria (ADR-0031).
 
 ### 6.1 Variante A — generica
 
@@ -657,12 +657,14 @@ Stato al 2026-11-18, voce per voce (dettagli e limiti in `doc/plan/fase-2.md`):
 - [x] `ca-graph`: tree-sitter, grafo dipendenze, smell Cyclic/Hub-Like/Unstable, PageRank, raggiungibilità e churn — in un contenitore come gli altri plugin (ADR-0020). Le definizioni degli smell non sono ancora confrontate con le pubblicazioni.
 - [x] Plugin ruff, eslint, checkov, hadolint, coverage — per sviluppo e uso interno: la pubblicazione delle immagini attende D2-14 e D2-16 (I-07).
 - [x] Feed EPSS/KEV/OSV con cache (ADR-0024); **il mirror è fuori dalla Fase 2** (D2-05: nessun mirror, solo fonti pubbliche e cache).
-- [ ] Scoring Variante A e Variante B (modalità ombra entrambe) — A realizzata e in ombra; la Variante B coincide con A finché ADR-0023 non la definisce (D2-11, K-06..K-10).
+- [x] Scoring Variante A e Variante B (modalità ombra entrambe) — realizzate e in ombra (G2.a). Le definizioni di B non sono ancora confrontate con le pubblicazioni (ADR-0023), e nessun ordinamento è validato (ADR-0031).
 - [x] Livelli, override, baseline e finding nuovi — con `levels.source: provisional` fino al Gate 2 (D2-10).
 - [x] API REST, DB, UI elenco finding — il server riceve i report e non esegue scansioni (ADR-0016); UI centrata sull'elenco, portfolio in Fase 4 (D2-15).
 - [ ] GitHub Action, GitLab component, commenti PR, check run — scritti e provati in locale; né l'Action né il componente sono stati eseguiti su GitHub o GitLab (N-05, N-08), e nessuna pubblicazione (N-09).
 
 **Gate 2** (`doc/plan/fase-2.md`, sezione 2): G2.a entrambe le varianti calcolate in ombra su ogni finding dei repository del gate; G2.b ordinamento validato dai team (metodo Martini et al., ECSA 2018; con D2-03 un validatore unico e una variante predefinita provvisoria); G2.c scelta della variante predefinita; **G2.d scansione PR < 10 minuti**, che §5 e ADR-0009 assegnavano al Gate 2 senza che questa sezione lo dicesse.
+
+Stato del Gate 2 al 2026-11-27: **non superato** (`doc/verifiche/gate-2.md`, X-08). G2.a e G2.d superate; **G2.b non superata** (né A né B raggiunge la soglia su alcuno dei tre repository); per G2.c è registrata la decisione di non scegliere una variante (ADR-0031). Valutatore unico (D2-03).
 
 ### Fase 3 — Agenti LLM e motore decisionale
 
@@ -757,7 +759,7 @@ Una funzionalità è completa quando:
 - [x] Elenco licenze vietate o soggette ad approvazione — D-0013, 2026-11-08. Gli identificatori sono esatti secondo SPDX; rivedere la policy con il referente legale prima della distribuzione.
 - [ ] Provider LLM ammessi dalle policy.
 - [ ] Hardware per Laya in self-hosted (GPU o solo CPU → valutare jevos).
-- [ ] Variante di scoring predefinita (esito del Gate 2).
+- [x] Variante di scoring predefinita (esito del Gate 2) — deciso il 2026-11-27: **nessuna variante validata**. A resta predefinita in via provvisoria, livelli e gate restano provvisori (ADR-0031).
 
 ---
 
