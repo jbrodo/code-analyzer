@@ -18,12 +18,12 @@ Giudizi umani su finding SAST di repository pubblici in Python, per addestrare, 
 Le definizioni delle tre risposte sono quelle di ADR-0034. Si decide da soli: non si chiede a un modello o a un assistente, nemmeno per capire un finding.
 
 ```
-uv run python scripts/golden/annotate.py --set pilota --fetch
+uv run python scripts/golden/annotate.py --set pilota-3 --fetch
 ```
 
-Si apre l'indirizzo stampato, che contiene il segreto di accesso. `--fetch` scarica da GitHub le copie che mancano, senza storia; il codice scaricato si legge soltanto, non va eseguito. L'avanzamento si salva da sé e si riprende rilanciando il comando. «Consegna» scrive il file delle risposte in questa cartella, una volta sola.
+Si apre l'indirizzo stampato, che contiene il segreto di accesso. `--fetch` scarica da GitHub le copie che mancano, senza storia; il codice scaricato si legge soltanto, non va eseguito. L'avanzamento si salva da sé e si riprende rilanciando il comando. Dopo una risposta la pagina resta sulla voce: si passa oltre con «Successivo» o con le frecce, se i tasti rapidi sono attivi. «Consegna» scrive il file delle risposte in questa cartella, una volta sola.
 
-Per la riannotazione di controllo si usa `--round 2`: non mostra le risposte del primo giro. Non vanno aperte in altro modo prima di aver finito.
+Il pilota in corso è il terzo (`pilota-3`, ADR-0034). La riannotazione di controllo si fa su quello, almeno una settimana dopo, con la stessa versione della pagina e con `--round 2`: non mostra le risposte del primo giro. Non vanno aperte in altro modo prima di aver finito.
 
 ## Estrarre un insieme
 

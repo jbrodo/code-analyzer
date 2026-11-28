@@ -3,6 +3,7 @@ perde né riscrive risposte, server solo locale. Dati e repository finti."""
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import threading
@@ -309,3 +310,19 @@ def test_the_page_never_writes_html() -> None:
     script = (ROOT / "scripts/golden/annotate_ui/app.js").read_text()
     for forbidden in ("innerHTML", "insertAdjacentHTML", "outerHTML", "document.write", "eval("):
         assert forbidden not in script
+
+
+def plain(text: str) -> str:
+    """Testo senza marcatura Markdown o HTML, con gli spazi normalizzati."""
+    return " ".join(re.sub(r"<[^>]+>|\*\*", "", text).split())
+
+
+def test_the_page_carries_the_definitions_and_cases_of_the_adr_word_for_word() -> None:
+    adr = (ROOT / "doc/adr/0034-golden-set-e-gate-3.md").read_text(encoding="utf-8")
+    page = plain((ROOT / "scripts/golden/annotate_ui/index.html").read_text(encoding="utf-8"))
+    definitions = re.findall(r"^\| \*\*(?:vero|falso positivo|non so)\*\* \| (.+) \|$", adr, re.M)
+    block = adr.split("Casi da fissare, perché cambiano molte risposte:")[1]
+    cases = re.findall(r"^\d\. (.+)$", block.split("Si può leggere")[0], re.M)
+    assert (len(definitions), len(cases)) == (3, 4)
+    for text in [*definitions, *cases]:
+        assert plain(text) in page, text

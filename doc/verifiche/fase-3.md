@@ -337,3 +337,17 @@ Vale l'ultima riga «VERDICT»; se manca, la risposta è sbagliata. **Criterio:*
 - Nelle risposte sbagliate (lette le prime righe di ciascuna) il modello in più casi riporta il valore costante o l'uso innocuo e conclude lo stesso che il rischio c'è, descrivendo la pericolosità generale del costrutto.
 
 **Le prove sul motore si fermano qui, come fissato prima**, finché non ci sono etichette affidabili. V3-05 (generazione di correzioni) non è stata fatta: queste prove riguardano il triage. Il punto di arresto V3-06 resta da decidere. Le coppie, gli script e le risposte sono fuori dal repository (`~/golden-material/prove-motore/`) e non si mostrano a chi annota finché la riannotazione non è conclusa.
+
+## V-F3.14 — Revisione della pagina di annotazione, correzioni e terzo pilota
+
+Il 2026-11-27 una revisione dell'interfaccia con due valutazioni indipendenti (design; rilevatore e browser), con soli dati finti, ha dato 23 su 40 e questi problemi: un solo gesto rispondeva a più voci (doppio clic, Invio tenuto premuto); in finestre strette la pagina scorreva da sola e portava fuori vista titolo, risposte e avvisi; il riquadro dei criteri non aveva i casi 3 e 4 di ADR-0034 e riduceva il caso 1; la riga segnalata poteva uscire dal riquadro; correzioni, errori e annunci fragili.
+
+**Correzione di V-F3.7:** lì si diceva che in finestra stretta nulla era fuori posto. Il controllo guardava solo il bordo inferiore, quindi passava anche con gli elementi usciti sopra lo schermo.
+
+**Nei dati dei primi due pilota** (solo tempi): nessuna voce a 0 s; nel primo una a 1 s e cinque fino a 2 s, nel secondo nessuna fino a 2 s. Non c'è un segno chiaro di risposte date con un solo gesto, e questi tempi non permettono di escluderle.
+
+**Dopo le correzioni**, in un browser con dati finti, tutti i controlli sono riusciti: otto dimensioni da 1440×900 a 320×640 (pagina ferma all'apertura, titolo visibile, nessuno scorrimento orizzontale di pagina o codice, nessuna sovrapposizione; su schermo largo e alto anche risposte e «Successivo» visibili); doppio clic, Invio tenuto premuto e tasto ripetuto cambiano al più la voce corrente; annulla a più passi; salto a un numero; conflitto tra due schede senza annuncio di successo; conferma chiusa con Esc; consegna. Lo script non è nel repository (Playwright non è una dipendenza): nel repository c'è solo il test che confronta i testi in pagina con ADR-0034. **Non guardato:** l'aspetto. **Non provati:** lettore di schermo, zoom del browser, tocco. A 1280×640 il riquadro di regola e criteri è alto circa 200 px: i criteri si leggono scorrendolo.
+
+**Terzo pilota:** `golden-set/pilota-3.sample.json`, 30 voci nuove, seme `pilota-3`; nessun punto in comune con i primi due; il codice di tutte si carica. Non annotato.
+
+**Campionamento:** il bacino dipende dal seme (ADR-0034, «Pagina corretta e terzo pilota»). Da correggere prima di estrarre la calibrazione.

@@ -179,7 +179,7 @@ L'elenco dei repository è stato approvato e scansionato il 2026-11-27 (V-F3.6):
 
 **Linguaggi.** Il corpus copre solo Python e JavaScript/TypeScript, l'ambito dell'MVP (§1); gli altri sono di Fase 4 (§13). Un risultato del Gate 3 vale solo per i linguaggi presenti nel test: ogni linguaggio aggiunto richiede nuove etichette e una nuova misura.
 
-**Onda 1, stato al 2026-11-27:** formato, contratti, campionamento e interfaccia di annotazione sono pronti e il campione pilota di 30 voci è estratto (V-F3.7). ADR-0034 è accettato. Il primo pilota è annotato (V-F3.8): con la quota osservata il test del gate non si comporrebbe, e i tempi sono molto sotto l'ipotesi. G3-04 resta aperto con un secondo pilota di 30 voci. L'interfaccia è provata solo con dati finti: la prova sul pilota, che G3-03 richiede, è la sua annotazione.
+**Onda 1, stato al 2026-11-27:** formato, contratti, campionamento e interfaccia di annotazione sono pronti e il campione pilota di 30 voci è estratto (V-F3.7). ADR-0034 è accettato. Il primo pilota è annotato (V-F3.8): con la quota osservata il test del gate non si comporrebbe, e i tempi sono molto sotto l'ipotesi. G3-04 resta aperto. Dopo il secondo pilota una revisione ha trovato difetti nella pagina e criteri incompleti (V-F3.14): corretti, si annota un terzo pilota, poi riannotato per la stabilità. Prima della calibrazione va corretto il campionamento. L'interfaccia è provata solo con dati finti: la prova sul pilota, che G3-03 richiede, è la sua annotazione.
 
 ## 7. Rischi
 
