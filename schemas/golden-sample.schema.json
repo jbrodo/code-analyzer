@@ -134,6 +134,7 @@
       "enum": [
         "pilota",
         "pilota-2",
+        "pilota-3",
         "calibrazione",
         "test",
         "addestramento"

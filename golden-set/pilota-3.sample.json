@@ -1,0 +1,332 @@
+{
+ "version": 1,
+ "set": "pilota-3",
+ "language": "python",
+ "sampling": {
+  "seed": "pilota-3",
+  "cap_per_repository_and_rule": 20,
+  "excluded_rules": [
+   "B101",
+   "B105",
+   "B106",
+   "B107",
+   "B401",
+   "B402",
+   "B403",
+   "B404",
+   "B405",
+   "B406",
+   "B407",
+   "B408",
+   "B409",
+   "B410",
+   "B411",
+   "B412",
+   "B413",
+   "B415"
+  ],
+  "pool_size": 703
+ },
+ "items": [
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "django/db/backends/oracle/operations.py",
+   "start_line": 354,
+   "end_line": 354,
+   "fingerprint": "sha256:e8db3aca609fff79e0249327e5b1c64bdb623a6e7ba863c7a9a155240be30fb0"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "ckan/model/group.py",
+   "start_line": 467,
+   "end_line": 468,
+   "fingerprint": "sha256:fc594816dbd24df0776f0b456cceb000f051e3b20cf8e4ed643763a909ef4403"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "netbox/utilities/migration.py",
+   "start_line": 134,
+   "end_line": 143,
+   "fingerprint": "sha256:5a0e96635db1354f315921896b57d4e99f4a751dc0c9920d6aedd14e69bba07e"
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "commit": "441357f16bac9cf38005b9447508a7cdfb80cc72",
+   "tool": "semgrep",
+   "rule_id": "ca-py-weak-hash",
+   "path": "saleor/graphql/app/dataloaders/app.py",
+   "start_line": 17,
+   "end_line": 17,
+   "fingerprint": "sha256:68309bf83d894a639da2445375f5e940d1c2e678c8b43c0826e60f42c169a04b"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "django/db/backends/sqlite3/base.py",
+   "start_line": 288,
+   "end_line": 288,
+   "fingerprint": "sha256:59d67b64eb70e77615c8c2bd3be92de0ac0d27c0a85922686531240b13354fc4"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "semgrep",
+   "rule_id": "ca-py-weak-hash",
+   "path": "dojo/tools/ggshield/parser.py",
+   "start_line": 115,
+   "end_line": 122,
+   "fingerprint": "sha256:776225befb76b410c75495da376726dd45871000108424d117db583ca5194439"
+  },
+  {
+   "repository": "https://github.com/netbox-community/netbox",
+   "commit": "4cfaa8f7b45fc2e8bf95309909880c70e80bef64",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "netbox/extras/templatetags/custom_links.py",
+   "start_line": 96,
+   "end_line": 96,
+   "fingerprint": "sha256:aefc0b31a81a378f0cf48944e61b5a128740144ad26e5e65eb2a32d4e2ea1a22"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "django/db/backends/base/operations.py",
+   "start_line": 113,
+   "end_line": 113,
+   "fingerprint": "sha256:3f557867571f9e68935f35fdbcc816df08ba34cd3b2322d24ea36c6be98d0fb0"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B603",
+   "path": "scripts/prepare_commit_msg.py",
+   "start_line": 28,
+   "end_line": 28,
+   "fingerprint": "sha256:e0996dfc3cff51b555c7b7842c0d09bf8f94be4934069256837ecd1550e39a73"
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "commit": "c87f20d1293b6e7732afe1b25d07ed79152b75a8",
+   "tool": "bandit",
+   "rule_id": "B112",
+   "path": "mealie/scripts/reprocess_images.py",
+   "start_line": 117,
+   "end_line": 118,
+   "fingerprint": "sha256:7e4e4d5d3904e2f3fa6547e60604875854b4771cdd6bbdad73b9dec56c692262"
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "commit": "c87f20d1293b6e7732afe1b25d07ed79152b75a8",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "mealie/alembic/versions/2023-10-04-14.29.26_dded3119c1fe_added_unique_constraints.py",
+   "start_line": 195,
+   "end_line": 195,
+   "fingerprint": "sha256:345da1994a7a1257c9a5599d51d6a2315f80c9493af298e61b78dbba2450db9a"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "dojo/db_migrations/0297_customizable_asset_attributes.py",
+   "start_line": 113,
+   "end_line": 114,
+   "fingerprint": "sha256:54867e96797b5b2146cad3c661a284e1c7f3419d0f5d9ed2eb1afbb5e0e95443"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B603",
+   "path": "django/utils/autoreload.py",
+   "start_line": 290,
+   "end_line": 290,
+   "fingerprint": "sha256:3cbca13596237f4de46059ec26942c07c9b6c4dc5b9e6841cdc4ee7bbcbddd24"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "bandit",
+   "rule_id": "B113",
+   "path": "indico/modules/events/editing/service.py",
+   "start_line": 131,
+   "end_line": 132,
+   "fingerprint": "sha256:127bd4854849ba47393b44e6fec45fe172f1b3025963dbbbbbe660cb085728cc"
+  },
+  {
+   "repository": "https://github.com/saleor/saleor",
+   "commit": "441357f16bac9cf38005b9447508a7cdfb80cc72",
+   "tool": "bandit",
+   "rule_id": "B112",
+   "path": "saleor/graphql/context.py",
+   "start_line": 58,
+   "end_line": 59,
+   "fingerprint": "sha256:42a133112811e9397200b62305872cb76662b87ac05442763420389251205805"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "ckanext/datastore/backend/postgres.py",
+   "start_line": 963,
+   "end_line": 964,
+   "fingerprint": "sha256:87d903926a7f5d2b6c380c5d54097a4af3396c37e833dd02b894c4ac60d1b503"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "indico/migrations/versions/20171124_1138_2af245be72a6_review_questions_models.py",
+   "start_line": 48,
+   "end_line": 48,
+   "fingerprint": "sha256:b6abc9e4118578f77651af71254951e5ee04c54a0c9e20fa06c0493b1b03c597"
+  },
+  {
+   "repository": "https://github.com/wagtail/wagtail",
+   "commit": "99924bbfbfd5075f9d603771981111ffd9e4a1c1",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "wagtail/search/migrations/0006_customise_indexentry.py",
+   "start_line": 122,
+   "end_line": 123,
+   "fingerprint": "sha256:069ffd07f8c4846c47fb6aaf436f6ff280e86e44d9c11b80b5036725bf94498d"
+  },
+  {
+   "repository": "https://github.com/indico/indico",
+   "commit": "a42252ead3509f9b31db0691cc9af899ab18416e",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "indico/migrations/versions/20231124_0941_fb0ca1440185_add_redirect_uri_checkin_app.py",
+   "start_line": 30,
+   "end_line": 34,
+   "fingerprint": "sha256:20dd93f23f241b93a3034cfbdfbb72b085c91c6490b285445eb5179f50c1b92d"
+  },
+  {
+   "repository": "https://github.com/healthchecks/healthchecks",
+   "commit": "51a503531d845fc11d5ef270d576c59c300e3620",
+   "tool": "bandit",
+   "rule_id": "B324",
+   "path": "hc/api/models.py",
+   "start_line": 1518,
+   "end_line": 1518,
+   "fingerprint": "sha256:171a69c337e6200984fa530f94f0d2dc2f5cad80b7e94730bda11972daf658a9"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "semgrep",
+   "rule_id": "ca-py-weak-hash",
+   "path": "ckanext/datastore/backend/postgres.py",
+   "start_line": 714,
+   "end_line": 714,
+   "fingerprint": "sha256:ce639abffb674c40cc4eb4a935f79bb9c1939170bab38c8446f527a6823e451f"
+  },
+  {
+   "repository": "https://github.com/paperless-ngx/paperless-ngx",
+   "commit": "35b0439195bbdb87a6d519152e6782abe0720c3b",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "src/paperless_ai/vector_store.py",
+   "start_line": 149,
+   "end_line": 149,
+   "fingerprint": "sha256:6c2a73e4f0b6ad89344aebe2b64862bb3c831d80f1ba99c2a5500f037d99d8b7"
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "commit": "c87f20d1293b6e7732afe1b25d07ed79152b75a8",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "mealie/alembic/versions/2023-02-14-20.45.41_5ab195a474eb_add_normalized_search_properties.py",
+   "start_line": 65,
+   "end_line": 65,
+   "fingerprint": "sha256:dc07d30c40b397a09ce2f89ae8678d2eba2818f7c71711fc6306341236dba5be"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B611",
+   "path": "django/db/models/sql/compiler.py",
+   "start_line": 463,
+   "end_line": 463,
+   "fingerprint": "sha256:1f14507f56b4347f31291b0fc461543e7d8217ba03ca8486996bc5d5331a938e"
+  },
+  {
+   "repository": "https://github.com/ckan/ckan",
+   "commit": "3e9afe078125182454c36c8adfc96f545d119553",
+   "tool": "bandit",
+   "rule_id": "B608",
+   "path": "ckanext/datastore/backend/postgres.py",
+   "start_line": 2525,
+   "end_line": 2526,
+   "fingerprint": "sha256:4d5f42796ca99df01a8f9fa245921998852fa5943eeb252c6c4973260c942df7"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "django/forms/widgets.py",
+   "start_line": 186,
+   "end_line": 187,
+   "fingerprint": "sha256:9cd32c77b76f03456ea87663699c352ea40663697dc200792118d5a513664f88"
+  },
+  {
+   "repository": "https://github.com/django/django",
+   "commit": "f16e25dcb9fe55734ba4ea2b00ac34405b7df74a",
+   "tool": "bandit",
+   "rule_id": "B308",
+   "path": "django/template/defaultfilters.py",
+   "start_line": 621,
+   "end_line": 621,
+   "fingerprint": "sha256:d45e332ec224f96d6b3f63277fe217ff6f46e7fffa8e8fe031a51b61940a814c"
+  },
+  {
+   "repository": "https://github.com/mealie-recipes/mealie",
+   "commit": "c87f20d1293b6e7732afe1b25d07ed79152b75a8",
+   "tool": "semgrep",
+   "rule_id": "ca-py-sql-string-building",
+   "path": "mealie/alembic/versions/2026-05-10-18.44.53_c7427796f7b6_more_aggresive_normalization.py",
+   "start_line": 24,
+   "end_line": 24,
+   "fingerprint": "sha256:55d52f3358b14261a1e616bb9ce244f2fc210ecddafd55ef513ee7a78126239f"
+  },
+  {
+   "repository": "https://github.com/DefectDojo/django-DefectDojo",
+   "commit": "cd0a4483a224707f72a0fc3112359089c1446b55",
+   "tool": "bandit",
+   "rule_id": "B703",
+   "path": "dojo/reports/widgets.py",
+   "start_line": 177,
+   "end_line": 177,
+   "fingerprint": "sha256:06030c3b3c211ff12960ea07cc6ea9cedc9ac2b37b4f5a464155cdda46383b82"
+  },
+  {
+   "repository": "https://github.com/scrapy/scrapy",
+   "commit": "4a421e451845ac0b3047402e43dc285a37ca7664",
+   "tool": "bandit",
+   "rule_id": "B603",
+   "path": "scrapy/commands/edit.py",
+   "start_line": 26,
+   "end_line": 26,
+   "fingerprint": "sha256:8ded444ab6e85c22fd619ed7e4e52ed0d7bed6adc365aa0badf0792ac4954b4a"
+  }
+ ]
+}

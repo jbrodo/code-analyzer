@@ -10,7 +10,17 @@
   <header>
     <h1>Golden set <span id="set"></span></h1>
     <p id="progress"></p>
-    <p id="saved" role="status"></p>
+    <label class="check"><input type="checkbox" id="shortcuts"> Tasti rapidi: <kbd>1</kbd> vero, <kbd>2</kbd> falso positivo, <kbd>3</kbd> non so, <kbd>←</kbd> <kbd>→</kbd> scorrono, <kbd>Z</kbd> annulla</label>
+    <p id="saved"></p>
+    <div id="delivery">
+      <p id="delivery-text" tabindex="-1"></p>
+      <button type="button" id="deliver">Consegna…</button>
+      <span id="confirm" hidden>
+        <span id="confirm-warning">La consegna è definitiva: le risposte non si potranno più modificare.</span>
+        <button type="button" id="confirm-no" aria-describedby="confirm-warning">No, rivedo</button>
+        <button type="button" id="confirm-yes" class="primary" aria-describedby="confirm-warning">Consegna definitiva</button>
+      </span>
+    </div>
   </header>
   <div id="alert" role="alert" hidden>
     <p id="alert-text"></p>
@@ -19,55 +29,33 @@
   <p id="status" role="status" class="visually-hidden"></p>
 
   <main>
-    <section id="card" aria-labelledby="title">
-      <div class="card-text">
-        <p class="muted" id="position"></p>
-        <h2 id="title" tabindex="-1"></h2>
-        <p class="where"><code id="where"></code></p>
-        <p id="message"></p>
-        <p class="muted">Copia locale per cercare negli altri file: <code id="clone"></code></p>
-        <details id="rules" open>
-          <summary>Come decidere</summary>
-          <p>La domanda è se il rischio descritto dalla regola <strong>c'è davvero in questo punto</strong>, al commit mostrato. Quanto è grave non conta.</p>
-          <dl>
-            <dt>Vero</dt>
-            <dd>La situazione esiste e in un uso realistico può fare danno: va corretta o mitigata, anche se poco grave.</dd>
-            <dt>Falso positivo</dt>
-            <dd>Qui il rischio non c'è: il dato non è controllabile da chi non ha già quel potere, è già protetto, l'uso non riguarda la sicurezza, oppure il codice non è ciò che la regola crede.</dd>
-            <dt>Non so</dt>
-            <dd>Dopo circa cinque minuti, letto anche il codice collegato, non riesci a decidere.</dd>
-          </dl>
-          <p>Si decide da sé: non chiedere a un modello o a un assistente.</p>
-        </details>
-        <label for="note">Nota (facoltativa, resta solo sul tuo computer)</label>
-        <textarea id="note" rows="2" maxlength="1000"></textarea>
-        <label class="check"><input type="checkbox" id="shortcuts"> Tasti rapidi: <kbd>1</kbd> vero, <kbd>2</kbd> falso positivo, <kbd>3</kbd> non so, <kbd>←</kbd> <kbd>→</kbd> scorrono, <kbd>Z</kbd> annulla</label>
-      </div>
-      <div class="card-actions">
-        <fieldset id="answers">
-          <legend>Il rischio c'è davvero?</legend>
-          <button type="button" data-label="vero" aria-pressed="false">Vero</button>
-          <button type="button" data-label="falso-positivo" aria-pressed="false">Falso positivo</button>
-          <button type="button" data-label="non-so" aria-pressed="false">Non so</button>
-        </fieldset>
-        <div class="feedback">
-          <p id="last"></p>
-          <button type="button" id="undo" hidden>Annulla</button>
-        </div>
-        <p class="moves">
-          <button type="button" id="previous">← Precedente</button>
-          <button type="button" id="next">Successivo →</button>
-          <button type="button" id="unanswered">Prima senza risposta</button>
-        </p>
-        <div id="delivery">
-          <p id="delivery-text"></p>
-          <button type="button" id="deliver">Consegna…</button>
-          <span id="confirm" hidden>
-            <button type="button" id="confirm-no">No, rivedo</button>
-            <button type="button" id="confirm-yes" class="primary">Consegna definitiva</button>
-          </span>
-        </div>
-      </div>
+    <!-- Nell'ordine in cui si decide: cosa dice la regola, il codice, la risposta. -->
+    <section id="claim" aria-labelledby="title">
+      <p class="muted" id="position"></p>
+      <h2 id="title" tabindex="-1" aria-describedby="position"></h2>
+      <p class="where"><code id="where"></code></p>
+      <p id="message"></p>
+      <p class="muted">Copia locale per cercare negli altri file: <code id="clone"></code></p>
+      <details id="rules" open>
+        <summary>Come decidere</summary>
+        <p>«Il rischio che la regola descrive <strong>c'è davvero in questo punto</strong>, al commit mostrato?» La gravità non fa parte della domanda.</p>
+        <dl>
+          <dt>Vero</dt>
+          <dd>La situazione esiste e in un uso realistico del programma può fare danno: va corretta o mitigata, anche se poco grave</dd>
+          <dt>Falso positivo</dt>
+          <dd>Qui il rischio non c'è: il dato non è controllabile da chi non ha già quel potere, è già protetto, l'uso non riguarda la sicurezza, oppure il codice non è ciò che la regola crede</dd>
+          <dt>Non so</dt>
+          <dd>Dopo circa cinque minuti, letto anche il codice collegato, non si riesce a decidere</dd>
+        </dl>
+        <p>Casi fissati:</p>
+        <ol>
+          <li><strong>Chi attacca.</strong> Un valore che decide solo chi già controlla la macchina o la configurazione (argomenti da riga di comando, variabili d'ambiente, file di configurazione) non rende «vero» il finding.</li>
+          <li><strong>Costrutto presente ma innocuo</strong> (per esempio un hash debole per una chiave di cache, numeri casuali non usati per segreti): «falso positivo».</li>
+          <li><strong>Ipotesi sul futuro</strong> («se un domani il valore arrivasse da fuori»): non contano. Si giudica il codice mostrato.</li>
+          <li><strong>Script, migrazioni, esempi</strong> dentro il repository: si giudicano come il resto, con la regola 1.</li>
+        </ol>
+        <p>Si può leggere tutto il repository al commit mostrato. Si decide da sé: non chiedere a un modello o a un assistente.</p>
+      </details>
     </section>
     <section class="code-panel" aria-labelledby="code-title">
       <div class="code-head">
@@ -75,11 +63,37 @@
         <span>
           <button type="button" id="wide" data-view="wide" aria-pressed="false">Più contesto</button>
           <button type="button" id="full" data-view="full" aria-pressed="false">File intero</button>
+          <button type="button" id="to-marked">Riga segnalata</button>
         </span>
       </div>
-      <p id="code-note" class="muted"></p>
+      <p id="code-note" class="muted" role="status"></p>
       <button type="button" id="code-retry" hidden>Riprova a caricare il codice</button>
       <div id="code" tabindex="0" role="region" aria-labelledby="code-title"></div>
+    </section>
+    <section id="actions" aria-label="Risposta">
+      <fieldset id="answers">
+        <legend>Il rischio c'è davvero?</legend>
+        <button type="button" data-label="vero" aria-pressed="false">Vero</button>
+        <button type="button" data-label="falso-positivo" aria-pressed="false">Falso positivo</button>
+        <button type="button" data-label="non-so" aria-pressed="false">Non so</button>
+      </fieldset>
+      <div class="feedback">
+        <p id="last"></p>
+        <button type="button" id="show-rules">Rivedi i criteri</button>
+        <button type="button" id="undo" hidden>Annulla</button>
+      </div>
+      <label for="note">Nota (facoltativa, resta solo sul tuo computer)</label>
+      <textarea id="note" rows="2" maxlength="1000"></textarea>
+      <p class="moves">
+        <button type="button" id="previous">← Precedente</button>
+        <button type="button" id="next">Successivo →</button>
+        <button type="button" id="unanswered">Prima senza risposta</button>
+        <span class="jump">
+          <label for="jump">Voce n.</label>
+          <input type="number" id="jump" min="1" inputmode="numeric">
+          <button type="button" id="jump-go">Vai</button>
+        </span>
+      </p>
     </section>
   </main>
   <script src="app.js"></script>

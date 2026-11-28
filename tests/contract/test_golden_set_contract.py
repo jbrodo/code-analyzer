@@ -54,6 +54,7 @@ VALID = {
     "golden-sample": {
         "full": SAMPLE,
         "second-pilot": mutated(SAMPLE, lambda i: i.update(set="pilota-2")),
+        "third-pilot": mutated(SAMPLE, lambda i: i.update(set="pilota-3")),
         "semgrep": mutated(SAMPLE, _item(tool="semgrep", rule_id="ca-py-weak-hash")),
         "nothing-excluded": mutated(SAMPLE, lambda i: i["sampling"].update(excluded_rules=[])),
     },

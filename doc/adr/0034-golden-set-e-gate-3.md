@@ -89,3 +89,20 @@ Fissato **prima di estrarlo**:
 - La differenza tra i due non misura l'affidabilità di chi annota, perché le voci sono diverse.
 - Lettura: se anche nel secondo pilota l'estremo alto dell'intervallo di Wilson al 95% per la classe meno frequente resta sotto il 30%, il Gate 3 così com'è scritto si considera non valutabile, e prima di annotare altro si decide come procedere (finding da valutare, obiettivo o ambito della Fase 3). Altrimenti il risultato non basta a dirlo, in un senso o nell'altro.
 - La riannotazione di 30 voci prevista per un solo annotatore resta, su voci del secondo pilota.
+
+### 2026-11-27 — Pagina corretta e terzo pilota
+
+Una revisione dell'interfaccia (critique del 2026-11-27) ha trovato due difetti che toccano la validità delle risposte:
+- un solo gesto (doppio clic, tasto tenuto premuto) poteva rispondere a più voci non lette, perché la pagina avanzava da sola;
+- il riquadro «Come decidere» **non riportava i casi 3 e 4** e riduceva il caso 1. **Entrambi i pilota sono stati annotati con quella pagina.** Quanto abbia pesato non si sa.
+
+Deciso dall'utente:
+- La pagina si corregge: niente avanzamento automatico; definizioni e quattro casi con le parole di questo ADR; la pagina non si sposta da sola; il codice va a capo; correzioni ed errori più affidabili. **Il punto «pagina di annotazione non cambia» del secondo pilota vale solo per quello.**
+- **Terzo pilota di 30 voci nuove** (`pilota-3`, seme `pilota-3`), esclusi i punti dei primi due. Domanda, definizioni, filtri, tetto e gate non cambiano.
+- **La riannotazione di controllo si fa sul `pilota-3`**, almeno una settimana dopo la sua consegna, con la **stessa versione della pagina**. Sostituisce quella prevista sul secondo pilota. La soglia di accordo si fissa **prima** del secondo giro.
+- Le risposte dei primi due pilota restano registrate e **non si usano per stimare la quota delle classi** né per dimensionare il test. Nessuna delle loro voci, né di quelle del terzo, entra in calibrazione o test.
+- Chi prepara lo strumento non dà indicazioni sul merito delle risposte, non anticipa soglie di lettura sulle quote e non commenta gli esiti precedenti mentre un giro è aperto.
+
+Costo: i tre pilota usano 90 punti. Restano circa 675 dei 765, per le 600 etichette di calibrazione, test e addestramento iniziale.
+
+**Difetto del campionamento, da correggere prima di estrarre la calibrazione.** Il bacino dipende dal seme: quale regola rappresenta una riga cambia, e con essa chi entra nel tetto. Con i semi `pilota-1`, `pilota-2` e `pilota-3` si hanno 765, 759 e 755 punti; primo e terzo differiscono per 168, e i tre insieme ne coprono 871. I punti già usati non contano nel tetto delle estrazioni successive, quindi **più insiemi insieme possono superare 20 per repository e regola**. I tre pilota non ne risentono (al massimo 5). I conteggi del bacino riportati sopra valgono per il seme `pilota-1`.

@@ -13,19 +13,25 @@ let delivered = null;
 let current = 0;
 let view = "normal";
 let readable = false; // si risponde solo con il codice della voce sullo schermo
+let request = 0; // vale solo l'ultima richiesta di codice
 let broken = false; // un salvataggio fallito ferma tutto
-let queue = Promise.resolve();
+let queue = Promise.resolve(true);
 let pendingSaves = 0;
-let undoStep = null;
+const history = []; // risposte cambiate, per annullarle una alla volta
 let spent = 0;
 let tick = Date.now();
 let lastActivity = Date.now();
 
 async function api(path, options = {}) {
-  const response = await fetch(`/api/${path}`, {
-    ...options,
-    headers: { "X-Token": token, "Content-Type": "application/json" },
-  });
+  let response;
+  try {
+    response = await fetch(`/api/${path}`, {
+      ...options,
+      headers: { "X-Token": token, "Content-Type": "application/json" },
+    });
+  } catch {
+    throw new Error("il server non risponde: controlla che lo strumento sia ancora in esecuzione");
+  }
   const data = await response.json();
   if (!response.ok) throw new Error(data.error ?? `errore ${response.status}`);
   return data;
@@ -36,6 +42,7 @@ function stop(message) {
   $("alert-text").textContent = message;
   $("alert").hidden = false;
   render();
+  $("alert-action").focus();
 }
 
 // --- tempo -------------------------------------------------------------------------------------
@@ -60,22 +67,27 @@ function takeSeconds() {
 
 // --- salvataggio -------------------------------------------------------------------------------
 
+// Vero se la voce è stata salvata: solo allora la pagina lo può dire.
 function save(n) {
-  if (broken || delivered) return queue;
+  if (broken || delivered) return queue.then(() => false);
   const key = String(n);
   const body = { label: state.labels[key] ?? null, note: state.notes[key] ?? "", seconds: takeSeconds() };
   pendingSaves += 1;
   $("saved").textContent = "Salvataggio…";
   queue = queue.then(async () => {
-    if (broken) return;
+    if (broken) return false;
     try {
       const done = await api(`item/${n}`, { method: "PUT", body: JSON.stringify({ ...body, revision: state.revision }) });
       state.revision = done.revision;
       pendingSaves -= 1;
       if (pendingSaves === 0) $("saved").textContent = "Salvato";
+      return true;
     } catch (error) {
       $("saved").textContent = "Non salvato";
+      $("last").textContent = "";
+      $("status").textContent = "";
       stop(`Non salvato: ${error.message}. L'ultima modifica va rifatta.`);
+      return false;
     }
   });
   return queue;
@@ -102,26 +114,34 @@ function render() {
   $("previous").setAttribute("aria-disabled", String(current === 0));
   $("next").setAttribute("aria-disabled", String(current === items.length - 1));
   $("unanswered").hidden = missing === 0;
-  $("undo").hidden = undoStep === null || locked();
+  $("undo").hidden = history.length === 0 || locked();
   $("delivery-text").textContent = delivered
     ? `Consegnato in golden-set/${delivered}.`
     : missing ? `Per consegnare mancano ${missing} risposte.` : "Tutte le voci hanno una risposta. Dopo la consegna non si modificano.";
   $("deliver").hidden = missing > 0 || locked() || !$("confirm").hidden;
 }
 
+// Scorre solo il riquadro del codice: la pagina resta dov'è.
+function centreMarked() {
+  const box = $("code");
+  const row = box.querySelector(".marked");
+  if (!row) return;
+  const offset = row.getBoundingClientRect().top - box.getBoundingClientRect().top;
+  box.scrollTop += offset - Math.max(0, (box.clientHeight - row.offsetHeight) / 2);
+}
+
 async function loadCode() {
   const item = items[current];
+  const mine = ++request;
   readable = false;
   $("code").replaceChildren();
   $("code-note").textContent = "Carico il codice…";
   $("code-retry").hidden = true;
   for (const id of ["wide", "full"]) $(id).setAttribute("aria-pressed", String(view === id));
   render();
-  const wanted = `${item.n} ${view}`;
   try {
     const evidence = await api(`evidence/${item.n}?view=${view}`);
-    if (wanted !== `${items[current].n} ${view}`) return;
-    let marked = null;
+    if (mine !== request) return;
     for (const block of evidence.blocks) {
       const list = document.createElement("ol");
       list.className = "block";
@@ -137,7 +157,6 @@ async function loadCode() {
         if (number === block.highlight) {
           row.className = "marked";
           row.setAttribute("aria-current", "true");
-          marked = row;
         }
         list.append(row);
       });
@@ -146,8 +165,9 @@ async function loadCode() {
     $("code-note").textContent = evidence.note;
     readable = evidence.blocks.length > 0;
     $("code-retry").hidden = readable;
-    marked?.scrollIntoView({ block: "center" });
+    centreMarked();
   } catch (error) {
+    if (mine !== request) return;
     $("code-note").textContent = `Codice non caricato: ${error.message}`;
     $("code-retry").hidden = false;
   }
@@ -164,7 +184,9 @@ function show(index, focus = true) {
   $("message").textContent = item.message || "Messaggio del tool non disponibile.";
   $("clone").textContent = item.clone;
   $("note").value = state.notes[String(item.n)] ?? "";
+  $("last").textContent = ""; // niente della voce precedente accanto alle risposte di questa
   $("confirm").hidden = true;
+  $("status").textContent = `Voce ${item.n} di ${items.length}: ${item.rule}, ${item.path}, riga ${item.line}.`;
   if (focus) $("title").focus();
   loadCode();
 }
@@ -176,36 +198,61 @@ function leave(index) {
   show(index);
 }
 
-const firstUnanswered = (from) => {
-  const order = [...items.keys()].map((i) => (i + from) % items.length);
-  return order.find((i) => !state.labels[String(items[i].n)]);
-};
+const firstUnanswered = () => items.findIndex((i) => !state.labels[String(i.n)]);
 
-function answer(label) {
+function jump() {
+  const index = items.findIndex((i) => String(i.n) === $("jump").value.trim());
+  if (index < 0) {
+    $("status").textContent = `Le voci vanno da 1 a ${items.length}.`;
+    $("last").textContent = $("status").textContent;
+    return;
+  }
+  $("jump").value = "";
+  leave(index);
+}
+
+function setLabel(key, label) {
+  if (label) state.labels[key] = label;
+  else delete state.labels[key];
+}
+
+// La risposta resta sulla voce: per passare oltre serve un gesto diverso.
+async function answer(label) {
   if (locked() || !readable) return;
   const n = items[current].n;
   const key = String(n);
-  undoStep = { n, label: state.labels[key] ?? null };
-  state.labels[key] = label;
-  save(n);
-  $("last").textContent = `Voce ${n}: ${NAMES[label]}.`;
-  $("status").textContent = $("last").textContent;
-  const next = firstUnanswered(current + 1);
-  if (next === undefined) render();
-  else show(next, false);
+  const before = state.labels[key] ?? null;
+  if (before === label) return; // ripetere la stessa risposta non cambia nulla
+  setLabel(key, label);
+  render();
+  if (await save(n)) {
+    history.push({ n, label: before });
+    const missing = items.length - answered();
+    const message = `Voce ${n}: ${NAMES[label]}, salvata.${missing ? "" : " Tutte le voci hanno una risposta."}`;
+    $("status").textContent = message;
+    if (items[current].n === n) $("last").textContent = message;
+  } else {
+    setLabel(key, before);
+  }
+  render();
 }
 
-function undo() {
-  if (locked() || !undoStep) return;
-  const { n, label } = undoStep;
-  undoStep = null;
-  if (label) state.labels[String(n)] = label;
-  else delete state.labels[String(n)];
+async function undo() {
+  if (locked() || history.length === 0) return;
+  const { n, label } = history.pop();
+  const key = String(n);
+  const undone = state.labels[key] ?? null;
   const index = items.findIndex((i) => i.n === n);
   if (index !== current) { save(items[current].n); show(index); }
-  save(n);
-  $("last").textContent = `Annullata la risposta alla voce ${n}.`;
-  $("status").textContent = $("last").textContent;
+  setLabel(key, label);
+  render();
+  if (await save(n)) {
+    const message = `Annullata l'ultima modifica alla voce ${n}.`;
+    $("status").textContent = message;
+    $("last").textContent = message;
+  } else {
+    setLabel(key, undone);
+  }
   render();
 }
 
@@ -218,7 +265,16 @@ for (const id of ["wide", "full"]) {
 $("code-retry").addEventListener("click", loadCode);
 $("previous").addEventListener("click", () => leave(current - 1));
 $("next").addEventListener("click", () => leave(current + 1));
-$("unanswered").addEventListener("click", () => leave(firstUnanswered(0) ?? current));
+$("unanswered").addEventListener("click", () => leave(firstUnanswered()));
+$("jump-go").addEventListener("click", jump);
+$("jump").addEventListener("keydown", (event) => { if (event.key === "Enter") jump(); });
+$("to-marked").addEventListener("click", centreMarked);
+$("show-rules").addEventListener("click", () => {
+  $("rules").open = true;
+  const summary = $("rules").querySelector("summary");
+  summary.focus({ preventScroll: true });
+  summary.scrollIntoView({ block: "start" });
+});
 $("undo").addEventListener("click", undo);
 $("alert-action").addEventListener("click", () => location.reload());
 $("note").addEventListener("change", () => {
@@ -227,11 +283,17 @@ $("note").addEventListener("change", () => {
   else delete state.notes[key];
   save(items[current].n);
 });
+function closeConfirm() {
+  $("confirm").hidden = true;
+  render();
+  $("deliver").focus();
+}
 $("deliver").addEventListener("click", () => { $("confirm").hidden = false; render(); $("confirm-no").focus(); });
-$("confirm-no").addEventListener("click", () => { $("confirm").hidden = true; render(); $("deliver").focus(); });
+$("confirm-no").addEventListener("click", closeConfirm);
 $("confirm-yes").addEventListener("click", async () => {
   $("confirm").hidden = true;
-  await save(items[current].n);
+  save(items[current].n);
+  await queue;
   if (broken) return;
   try {
     const done = await api("deliver", { method: "POST", body: JSON.stringify({ revision: state.revision }) });
@@ -239,8 +301,26 @@ $("confirm-yes").addEventListener("click", async () => {
     $("status").textContent = `Consegnato in golden-set/${delivered}.`;
   } catch (error) {
     stop(`Non consegnato: ${error.message}.`);
+    return;
   }
   render();
+  $("delivery-text").focus();
+});
+
+// Un gesto, un'azione: né il secondo clic di un doppio clic né un tasto tenuto premuto ripetono.
+for (const area of [$("actions"), $("delivery")]) {
+  area.addEventListener("click", (event) => {
+    if (event.detail > 1 && event.target.closest("button")) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, { capture: true });
+  area.addEventListener("keydown", (event) => {
+    if (event.repeat && (event.key === "Enter" || event.key === " ") && event.target.closest("button")) event.preventDefault();
+  }, { capture: true });
+}
+addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("confirm").hidden) closeConfirm();
 });
 
 const shortcuts = $("shortcuts");
@@ -248,7 +328,7 @@ shortcuts.checked = localStorage.getItem("shortcuts") === "on";
 shortcuts.addEventListener("change", () => localStorage.setItem("shortcuts", shortcuts.checked ? "on" : "off"));
 addEventListener("keydown", (event) => {
   if (!shortcuts.checked || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
-  if (event.target.closest("textarea, #code")) return;
+  if (event.target.closest("textarea, input[type=number], #code")) return;
   const label = { 1: "vero", 2: "falso-positivo", 3: "non-so" }[event.key];
   if (label) answer(label);
   else if (event.key === "ArrowLeft") leave(current - 1);
@@ -261,6 +341,6 @@ addEventListener("keydown", (event) => {
 api("sample").then((data) => {
   ({ items, state, delivered } = data);
   $("set").textContent = `· ${data.set} · ${data.annotator}, giro ${data.round}`;
-  $("rules").open = answered() === 0;
-  show(firstUnanswered(0) ?? 0, false);
+  $("jump").max = String(items.length);
+  show(Math.max(0, firstUnanswered()), false);
 }).catch((error) => stop(`Non riesco a caricare il campione: ${error.message}.`));
